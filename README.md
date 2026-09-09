@@ -20,8 +20,9 @@ EOF
 echo "Pat likes short, plain answers and hates surprises." > ~/.config/liaise/briefs/pat.md
 liaise setup pat
 liaise poll
-liaise schedule install
 ```
+
+That's read-only by default (non-negotiable #4) — `poll` reports Pat's issues and their readiness without changing anything. Once you believe the plan it shows, `liaise run --once --dry-run` prints what a real pass would do, still without acting; drop `--dry-run` to actually act; and `liaise schedule install` sets up the recurring job once you're ready to stop running it by hand.
 
 That's a working loop for one partner (`pat`, testing the fictional `example/app`) polling every couple of minutes. Add more partners by adding more files under `partners/` and `briefs/`.
 

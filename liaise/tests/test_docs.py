@@ -13,30 +13,49 @@ PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
 REPO = "example/app"  # the README's own fictional partner repo
 
 
-def test_readme_quick_start_config_shape_works(tmp_path):
-    """Walk through the README's quick start (minus `liaise setup`/`schedule
-    install`, which need `gh`/a real scheduler) against a clean config dir,
-    and confirm `liaise partner show pat` resolves it correctly.
-    """
-    root = tmp_path / "config"
-    (root / "partners").mkdir(parents=True)
-    (root / "briefs").mkdir()
+def _readme_quick_start_block() -> str:
+    """The fenced shell block under README's "## Quick start" heading, verbatim."""
+    readme = (PACKAGE_ROOT / "README.md").read_text()
+    marker = "## Quick start"
+    start = readme.index(marker)
+    fence_start = readme.index("```", start) + 3
+    fence_end = readme.index("```", fence_start)
+    return readme[fence_start:fence_end].strip("\n")
 
-    (root / "config.toml").write_text(
-        'owner_login = "you"\nstate_dir = "%s"\n' % (tmp_path / "state")
+
+def test_readme_quick_start_actually_builds_a_working_config(tmp_path):
+    """M-9: drives the test from the README's own fenced block — instead of a
+    hand-typed config that could drift from it silently — up to the first
+    line that needs a real `gh` (`liaise setup pat`). Runs it as real shell
+    (the heredocs, `~` expansion, quoting — exactly as a reader would type
+    it) against a fake $HOME, then confirms `liaise partner show pat`
+    resolves the config it actually built.
+    """
+    block = _readme_quick_start_block()
+    lines = block.splitlines()
+
+    setup_end = next(i for i, line in enumerate(lines) if line.startswith("liaise setup"))
+    setup_lines = [line for line in lines[:setup_end] if line != "pip install liaise"]
+    assert setup_lines, "README quick start block shape changed — nothing to run"
+
+    fake_home = tmp_path / "home"
+    fake_home.mkdir()
+    subprocess.run(
+        ["bash", "-c", "\n".join(setup_lines)],
+        env={"HOME": str(fake_home), "PATH": __import__("os").environ["PATH"]},
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=20,
     )
-    (root / "partners" / "pat.toml").write_text(
-        'display_name = "Pat"\n'
-        'github_logins = ["pat"]\n'
-        f'repo = "{REPO}"\n'
-        f'brief = "{root / "briefs" / "pat.md"}"\n'
-    )
-    (root / "briefs" / "pat.md").write_text(
-        "Pat likes short, plain answers and hates surprises.\n"
-    )
+
+    config_root = fake_home / ".config" / "liaise"
+    assert (config_root / "config.toml").exists()
+    assert (config_root / "partners" / "pat.toml").exists()
+    assert (config_root / "briefs" / "pat.md").exists()
 
     out = subprocess.run(
-        [sys.executable, "-m", "liaise", "partner", "show", "pat", "--root", str(root)],
+        [sys.executable, "-m", "liaise", "partner", "show", "pat", "--root", str(config_root)],
         capture_output=True,
         text=True,
         timeout=20,
@@ -45,6 +64,19 @@ def test_readme_quick_start_config_shape_works(tmp_path):
     assert "partner: pat" in out.stdout
     assert "display_name:   Pat" in out.stdout
     assert f"repo:           {REPO}" in out.stdout
+
+
+def test_readme_quick_start_does_not_end_by_installing_a_live_daemon():
+    """M-9: read-only-by-default is non-negotiable (A.1 rule 4) — the quick
+    start must not end on an acting command (`liaise schedule install`
+    installs a recurring scheduled job). It should end at a read-only
+    command (`poll`, or `run --once --dry-run`).
+    """
+    block = _readme_quick_start_block()
+    lines = [line for line in block.splitlines() if line.strip()]
+    last_command = lines[-1]
+    assert "schedule install" not in last_command
+    assert last_command.startswith("liaise poll") or "--dry-run" in last_command
 
 
 def test_readme_uses_the_fictional_partner_and_repo():
