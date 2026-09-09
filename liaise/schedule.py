@@ -18,10 +18,11 @@ import sys
 from pathlib import Path
 from typing import Optional, Sequence
 
+from liaise.config import DFLT_NTFY_TOPIC_ENV
+
 DFLT_LAUNCHD_LABEL = "com.liaise.run"
 DFLT_SYSTEMD_UNIT = "liaise-run"
 DFLT_INTERVAL_MINUTES = 2
-DFLT_NTFY_TOPIC_ENV = "LIAISE_NTFY_TOPIC"
 
 DFLT_LAUNCHD_DIR = Path.home() / "Library" / "LaunchAgents"
 DFLT_LAUNCHD_LOG_DIR = Path.home() / "Library" / "Logs"
@@ -143,6 +144,7 @@ def install_schedule(
     label: str = DFLT_LAUNCHD_LABEL,
     unit: str = DFLT_SYSTEMD_UNIT,
     load: bool = True,
+    ntfy_topic_env: str = DFLT_NTFY_TOPIC_ENV,
     extra_env_vars: Sequence[str] = (),
 ) -> str:
     """Install (or replace) the scheduled job. Returns the path(s) written.
@@ -151,10 +153,13 @@ def install_schedule(
     / `launchd_log_dir` / `systemd_dir` override the real locations under
     `$HOME` (also for tests); `load=False` writes the files without calling
     `launchctl`/`systemctl` — the actual scheduler state is left untouched.
+    `ntfy_topic_env` should be this installation's actual configured
+    `notify.ntfy_topic_env` (M-4) — a custom variable name that never reaches
+    here means every scheduled-run notification silently disappears.
     """
     system = system or platform.system()
     program_args = _liaise_command(root=root)
-    env = job_environment(extra_env_vars=extra_env_vars)
+    env = job_environment(extra_env_vars=extra_env_vars, ntfy_topic_env=ntfy_topic_env)
 
     if system == "Darwin":
         return _install_launchd(

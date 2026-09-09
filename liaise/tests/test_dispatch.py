@@ -204,6 +204,74 @@ def test_daily_cap_sets_budget_label_and_does_not_dispatch(tmp_path):
     assert current_state(fake.get_issue(REPO, 1), partner) == "budget"
 
 
+def test_daily_cap_posts_a_comment_and_notifies_the_owner_once(tmp_path):
+    """M-8 regression: A.1 rule 5 says a tripped cap is "a visible label AND
+    A SHORT COMMENT, never silence" — the label alone was already correct;
+    nothing was ever posted or notified.
+    """
+    partner = _partner(tmp_path, budget=Budget(daily_dispatches=1), reply_mode="direct")
+    fake = FakeGitHub([_issue(number=1), _issue(number=2)])
+    dispatcher = EchoDispatcher()
+    store: dict = {}
+    notifications = []
+
+    def fake_notify(*a, **k):
+        notifications.append(a)
+        return True
+
+    dispatch_issue(fake, dispatcher, store, partner, fake.get_issue(REPO, 1), now=T0)  # uses the day's one slot
+    dispatch_issue(
+        fake, dispatcher, store, partner, fake.get_issue(REPO, 2), now=T0, notify_fn=fake_notify
+    )  # capped
+
+    comments = fake.get_issue(REPO, 2).comments
+    assert len(comments) == 1
+    assert "tomorrow" in comments[0].body.lower()
+    assert len(notifications) == 1
+
+
+def test_daily_cap_owner_notified_once_per_day_not_per_issue(tmp_path):
+    partner = _partner(tmp_path, budget=Budget(daily_dispatches=0), reply_mode="direct")
+    fake = FakeGitHub([_issue(number=1), _issue(number=2)])
+    store: dict = {}
+    notifications = []
+
+    dispatch_issue(fake, EchoDispatcher(), store, partner, fake.get_issue(REPO, 1), now=T0,
+                    notify_fn=lambda *a, **k: notifications.append(a) or True)
+    dispatch_issue(fake, EchoDispatcher(), store, partner, fake.get_issue(REPO, 2), now=T0,
+                    notify_fn=lambda *a, **k: notifications.append(a) or True)
+
+    assert len(notifications) == 1  # not one per issue
+    # but each issue still gets its own comment
+    assert len(fake.get_issue(REPO, 1).comments) == 1
+    assert len(fake.get_issue(REPO, 2).comments) == 1
+
+
+def test_daily_cap_does_not_repost_every_pass_while_still_capped(tmp_path):
+    partner = _partner(tmp_path, budget=Budget(daily_dispatches=0), reply_mode="direct")
+    fake = FakeGitHub([_issue(number=1)])
+    store: dict = {}
+
+    dispatch_issue(fake, EchoDispatcher(), store, partner, fake.get_issue(REPO, 1), now=T0)
+    dispatch_issue(fake, EchoDispatcher(), store, partner, fake.get_issue(REPO, 1), now=T0)
+    dispatch_issue(fake, EchoDispatcher(), store, partner, fake.get_issue(REPO, 1), now=T0)
+
+    assert len(fake.get_issue(REPO, 1).comments) == 1  # not reposted every call
+
+
+def test_daily_cap_draft_mode_notifies_but_posts_nothing(tmp_path):
+    partner = _partner(tmp_path, budget=Budget(daily_dispatches=0), reply_mode="draft")
+    fake = FakeGitHub([_issue(number=1)])
+    store: dict = {}
+    notifications = []
+
+    dispatch_issue(fake, EchoDispatcher(), store, partner, fake.get_issue(REPO, 1), now=T0,
+                    notify_fn=lambda *a, **k: notifications.append(a) or True)
+
+    assert fake.get_issue(REPO, 1).comments == ()
+    assert len(notifications) == 1
+
+
 def test_daily_count_resets_the_next_day(tmp_path):
     partner = _partner(tmp_path, budget=Budget(daily_dispatches=1))
     fake = FakeGitHub([_issue()])
