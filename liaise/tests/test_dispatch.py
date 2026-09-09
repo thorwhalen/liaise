@@ -135,6 +135,51 @@ def test_claude_headless_writes_prompt_to_a_tempfile_not_argv(tmp_path):
     assert "SECRET-LOOKING-PROMPT-TEXT" not in result.stdout
 
 
+def test_claude_headless_rejects_a_malformed_session_id(tmp_path):
+    """L-1 regression. `session_id` comes from the dispatched agent's own
+    stdout and is later `.format()`-ed into `resume_command` before
+    `shlex.split` — not a shell, but a value containing whitespace becomes
+    extra argv elements on the next invocation. A session id shaped like
+    that must not be captured at all.
+    """
+    script = tmp_path / "bad_session.py"
+    script.write_text(
+        "import json\n"
+        "print(json.dumps({'session_id': 'not a valid id; --dangerous-flag'}))\n"
+    )
+    job = Job(
+        prompt="hi",
+        cwd=str(tmp_path),
+        budget=Budget(timeout_minutes=1),
+        command=f"{sys.executable} {script} -p {{prompt_file}}",
+        resume_command=f"{sys.executable} {script} --resume {{session_id}} -p {{prompt_file}}",
+    )
+    result = ClaudeHeadless().dispatch(job)
+    assert result.session_id is None
+
+
+def test_claude_headless_timeout_returns_a_result_instead_of_raising(tmp_path):
+    """H-7 regression. A hung dispatch used to raise `subprocess.TimeoutExpired`
+    straight out of `ClaudeHeadless.dispatch` — uncaught, it propagated through
+    `dispatch_issue` (leaving the issue at `liaise:working`, no reconciliation,
+    no notification, the daily counter already incremented) and killed the
+    rest of `run_once`'s pass. The `Dispatcher` protocol's own contract is
+    "must not raise on a nonzero exit"; a timeout is the extreme case of that.
+    """
+    script = tmp_path / "hangs.py"
+    script.write_text("import time\ntime.sleep(2)\n")
+    job = Job(
+        prompt="hi",
+        cwd=str(tmp_path),
+        budget=Budget(timeout_minutes=0),  # 0 seconds: expires immediately
+        command=f"{sys.executable} {script} -p {{prompt_file}}",
+        resume_command=f"{sys.executable} {script} --resume {{session_id}} -p {{prompt_file}}",
+    )
+    result = ClaudeHeadless().dispatch(job)  # must not raise
+    assert result.returncode != 0
+    assert "timed out" in result.stderr.lower()
+
+
 # ---- budgets: daily cap sets liaise:budget ----
 
 

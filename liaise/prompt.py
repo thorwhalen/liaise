@@ -95,10 +95,10 @@ def _budget(partner: PartnerConfig) -> str:
         [
             "## Budget",
             "",
-            f"- timeout: {b.timeout_minutes} minutes",
-            f"- turn cap: {b.max_turns} turns",
-            "",
-            "Stop cleanly (right label, one-line comment saying why) if you're going to hit either.",
+            f"- timeout: {b.timeout_minutes} minutes — enforced from outside: past this, "
+            f"the dispatch is killed and reconciled as a crash, whatever you were doing.",
+            f"- turn cap: {b.max_turns} turns — not enforced from outside; please self-monitor "
+            f"and stop cleanly (right label, one-line comment saying why) before you'd exceed it.",
         ]
     )
 

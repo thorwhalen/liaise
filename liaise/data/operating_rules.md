@@ -6,6 +6,11 @@ is specific to this dispatch (the partner's brief, the issue, which label to set
 on each exit path, the verify/deploy commands, and your budget) follows this
 section in the prompt you were given.
 
+**The label names below (`liaise:needs-partner` and so on) are illustrative.**
+This partner's actual label prefix may not be `liaise:` — the **State contract**
+section later in this prompt gives the exact label names to use for this
+dispatch. If the two ever disagree, the State contract section is authoritative.
+
 - **Speak plainly.** Describe what changed in the partner's terms. Never name
   packages, files, paths, logs, status codes, or internal vocabulary in the
   thread.

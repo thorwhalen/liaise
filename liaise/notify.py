@@ -11,7 +11,13 @@ import os
 import urllib.error
 import urllib.request
 
-DFLT_TOPIC_ENV = "LIAISE_NTFY_TOPIC"
+from liaise.config import DFLT_NTFY_TOPIC_ENV
+
+#: M-4: this used to be a second, independent definition of the same default
+#: env var name as config.py's — the two could drift silently. config.py is
+#: the SSOT (it's what a partner/global config resolves against); this module
+#: just uses it.
+DFLT_TOPIC_ENV = DFLT_NTFY_TOPIC_ENV
 DFLT_NTFY_BASE_URL = "https://ntfy.sh"
 
 
@@ -20,7 +26,7 @@ def notify(
     body: str,
     *,
     priority: str = "default",
-    topic_env: str = DFLT_TOPIC_ENV,
+    topic_env: str = DFLT_NTFY_TOPIC_ENV,
     base_url: str = DFLT_NTFY_BASE_URL,
 ) -> bool:
     """POST `body` to the ntfy topic named by the `topic_env` environment variable.

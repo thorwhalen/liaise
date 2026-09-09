@@ -10,6 +10,7 @@ headless; :class:`EchoDispatcher` just records jobs, for tests. Local state
 from __future__ import annotations
 
 import json
+import re
 import shlex
 import subprocess
 import tempfile
@@ -75,13 +76,28 @@ class ClaudeHeadless:
             command = template.format(
                 prompt_file=str(prompt_file), session_id=job.session_id or ""
             )
-            proc = subprocess.run(
-                shlex.split(command),
-                cwd=job.cwd,
-                capture_output=True,
-                text=True,
-                timeout=job.budget.timeout_minutes * 60,
-            )
+            try:
+                proc = subprocess.run(
+                    shlex.split(command),
+                    cwd=job.cwd,
+                    capture_output=True,
+                    text=True,
+                    timeout=job.budget.timeout_minutes * 60,
+                )
+            except subprocess.TimeoutExpired as e:
+                # H-7: uncaught, this propagated out of dispatch_issue and left
+                # the daily counter incremented, the issue at liaise:working
+                # (excluded from every later pass's eligible states, so never
+                # reconsidered), no notification, and killed the rest of
+                # run_once's pass for every partner sorted after this one — a
+                # hung dispatch must reconcile exactly like a crash, not
+                # escape reconciliation by raising instead of returning.
+                return DispatchResult(
+                    returncode=124,  # the shell convention for "command timed out"
+                    session_id=job.session_id,
+                    stdout=_decode(e.stdout),
+                    stderr=_decode(e.stderr) + "\n[liaise: dispatch timed out]",
+                )
             session_id = _extract_session_id(proc.stdout) or job.session_id
             return DispatchResult(
                 returncode=proc.returncode,
@@ -93,12 +109,34 @@ class ClaudeHeadless:
             prompt_file.unlink(missing_ok=True)
 
 
+def _decode(output) -> str:
+    """`TimeoutExpired.stdout`/`.stderr` may be `None`, `str`, or `bytes` —
+    `text=True` on the run that timed out still leaves the partially-captured
+    buffer's type up to the platform.
+    """
+    if output is None:
+        return ""
+    return output if isinstance(output, str) else output.decode(errors="replace")
+
+
+#: A session id is `.format()`-ed into `resume_command` before `shlex.split`
+#: (L-1) — not a shell, but an unvalidated value containing whitespace would
+#: become extra argv elements on the next `claude` invocation. Real session
+#: ids are UUID-shaped; this is deliberately generous beyond that so a format
+#: change upstream doesn't silently break resume, while still rejecting
+#: anything that could split into more than one argv token.
+_SESSION_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+
+
 def _extract_session_id(stdout: str) -> Optional[str]:
     try:
         raw = json.loads(stdout)
     except (json.JSONDecodeError, TypeError):
         return None
-    return raw.get("session_id") if isinstance(raw, dict) else None
+    session_id = raw.get("session_id") if isinstance(raw, dict) else None
+    if session_id is not None and not _SESSION_ID_RE.match(session_id):
+        return None
+    return session_id
 
 
 class EchoDispatcher:

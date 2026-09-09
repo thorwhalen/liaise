@@ -61,14 +61,16 @@ def test_compose_prompt_includes_every_section_in_order(tmp_path):
     assert "Budget" in prompt
 
     # in the design's order: operating rules, brief, issue pointer, state
-    # contract, commands, budget
+    # contract, commands, budget. "## State contract" (the heading), not the
+    # bare phrase — operating_rules.md itself mentions "State contract" in
+    # its own text (M-6), earlier in the prompt.
     order = [
         prompt.index("Operating rules"),
         prompt.index("Pat likes short, plain answers."),
         prompt.index(issue.url),
-        prompt.index("State contract"),
-        prompt.index("Commands"),
-        prompt.index("Budget"),
+        prompt.index("## State contract"),
+        prompt.index("## Commands"),
+        prompt.index("## Budget"),
     ]
     assert order == sorted(order)
 
@@ -132,3 +134,27 @@ def test_operating_rules_written_in_full_includes_every_bullet(tmp_path):
         "In `draft` reply mode",
     ]:
         assert phrase in prompt
+
+
+def test_operating_rules_defer_to_the_state_contract_for_label_names(tmp_path):
+    """M-6: the packaged rules hardcode `liaise:` while `label_prefix` is
+    configurable, so a custom-prefix partner's prompt could contain two
+    contradictory instructions. The rules must say the State contract
+    section is authoritative.
+    """
+    partner = _partner(tmp_path, label_prefix="custom:")
+    prompt = compose_prompt(partner, _issue(), "fresh")
+    assert "State contract section is authoritative" in prompt
+    # and the state contract itself uses the configured prefix, not liaise:
+    assert "custom:needs-partner" in prompt
+
+
+def test_budget_section_distinguishes_enforced_from_advisory(tmp_path):
+    """M-7: the turn cap has no real enforcement mechanism (the installed
+    `claude` has no `--max-turns` flag) — the prompt must say so rather than
+    imply it is a hard limit the way the timeout is.
+    """
+    partner = _partner(tmp_path)
+    prompt = compose_prompt(partner, _issue(), "fresh")
+    assert "enforced from outside" in prompt
+    assert "not enforced from outside" in prompt
