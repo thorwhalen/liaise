@@ -223,6 +223,66 @@ def test_dispatch_that_sets_its_own_exit_label_is_not_reconciled(tmp_path):
     assert notifications == []
 
 
+# ---- expect_working_on_success: the deploy_per == "batch" exception ----
+
+
+def test_batch_deploy_success_left_working_is_not_a_crash_when_excused(tmp_path):
+    partner = _partner(tmp_path, deploy_per="batch")
+    fake = FakeGitHub([_issue()])
+    dispatcher = EchoDispatcher(returncode=0)  # succeeds, never touches labels
+    store: dict = {}
+    notifications = []
+
+    outcome = dispatch_issue(
+        fake, dispatcher, store, partner, fake.get_issue(REPO, 1),
+        notify_fn=lambda *a, **k: notifications.append((a, k)),
+        expect_working_on_success=True, now=T0,
+    )
+
+    assert not outcome.crashed
+    assert outcome.landed_awaiting_batch_deploy
+    assert current_state(fake.get_issue(REPO, 1), partner) == "working"
+    assert notifications == []
+
+
+def test_still_working_success_without_the_flag_is_reconciled(tmp_path):
+    """deploy_per == "issue": the agent owns its own exit label. Silently
+    leaving `working` after a successful run is still a protocol violation
+    worth flagging to the owner, not silently excused.
+    """
+    partner = _partner(tmp_path, deploy_per="issue")
+    fake = FakeGitHub([_issue()])
+    dispatcher = EchoDispatcher(returncode=0)
+    store: dict = {}
+    notifications = []
+
+    outcome = dispatch_issue(
+        fake, dispatcher, store, partner, fake.get_issue(REPO, 1),
+        notify_fn=lambda *a, **k: notifications.append((a, k)), now=T0,
+    )  # expect_working_on_success defaults to False
+
+    assert outcome.crashed
+    assert not outcome.landed_awaiting_batch_deploy
+    assert current_state(fake.get_issue(REPO, 1), partner) == "needs-owner"
+    assert len(notifications) == 1
+
+
+def test_nonzero_exit_is_always_a_crash_even_with_the_flag_set(tmp_path):
+    partner = _partner(tmp_path, deploy_per="batch")
+    fake = FakeGitHub([_issue()])
+    dispatcher = EchoDispatcher(returncode=1)
+    store: dict = {}
+
+    outcome = dispatch_issue(
+        fake, dispatcher, store, partner, fake.get_issue(REPO, 1),
+        expect_working_on_success=True, now=T0,
+    )
+
+    assert outcome.crashed
+    assert not outcome.landed_awaiting_batch_deploy
+    assert current_state(fake.get_issue(REPO, 1), partner) == "needs-owner"
+
+
 # ---- session id memory (resume) ----
 
 

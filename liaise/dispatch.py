@@ -152,6 +152,11 @@ class DispatchOutcome:
     crashed: bool
     result: Optional[DispatchResult] = None
     log_path: Optional[str] = None
+    #: True when the dispatch succeeded (exit 0) and left the issue at
+    #: `liaise:working` because `expect_working_on_success` was set — the
+    #: `deploy_per == "batch"` case, where the agent lands without deploying
+    #: and `run.py` deploys once after the batch. Not a crash.
+    landed_awaiting_batch_deploy: bool = False
 
 
 def dispatch_issue(
@@ -164,15 +169,24 @@ def dispatch_issue(
     notify_fn: Callable[..., bool] = _default_notify,
     log_dir: Optional[Path] = None,
     now: Optional[datetime] = None,
+    expect_working_on_success: bool = False,
 ) -> DispatchOutcome:
     """Dispatch `issue` to `partner`'s coding agent, honoring the daily cap.
 
-    Sets `liaise:working` before dispatching. If the dispatcher returns and the
-    issue is *still* `liaise:working` — the agent crashed or exited without
-    setting an exit-path label per the operating rules — reconciles it to
+    Sets `liaise:working` before dispatching. If the dispatcher exits nonzero
+    and the issue is *still* `liaise:working`, that is a crash: reconciles to
     `liaise:needs-owner` and notifies the owner with the exit code and the log
     path (A.5 "Reconciliation"). A crashed run is not evidence of anything and
     must not look like progress.
+
+    If the dispatcher exits **zero** and the issue is still `liaise:working`,
+    that is only excused when `expect_working_on_success` is set — the
+    `deploy_per == "batch"` path, where the agent lands the change but does
+    not deploy or set an exit label; `run.py` sets `landed_awaiting_batch_deploy`
+    and handles the batch deploy itself. Without that flag (the
+    `deploy_per == "issue"` path, where the agent owns deploying, posting and
+    setting its own exit label) a still-`working` success is *also* reconciled
+    to `liaise:needs-owner` — the agent silently didn't do its job.
     """
     if daily_dispatch_count(store, partner, now=now) >= partner.budget.daily_dispatches:
         set_state(gh, issue, partner, "budget")
@@ -200,7 +214,10 @@ def dispatch_issue(
     log_path = _write_log(log_dir, issue, result) if log_dir is not None else None
 
     refreshed = gh.get_issue(issue.repo, issue.number)
-    if current_state(refreshed, partner) == "working":
+    still_working = current_state(refreshed, partner) == "working"
+    excused = still_working and result.returncode == 0 and expect_working_on_success
+
+    if still_working and not excused:
         set_state(gh, refreshed, partner, "needs-owner")
         notify_fn(
             "liaise: dispatch crashed",
@@ -213,7 +230,12 @@ def dispatch_issue(
         )
 
     return DispatchOutcome(
-        dispatched=True, budget_capped=False, crashed=False, result=result, log_path=log_path
+        dispatched=True,
+        budget_capped=False,
+        crashed=False,
+        result=result,
+        log_path=log_path,
+        landed_awaiting_batch_deploy=excused,
     )
 
 
