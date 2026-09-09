@@ -12,14 +12,21 @@ from liaise.config import (
     PartnerConfig,
     load_config,
 )
+from liaise.github import Comment, FakeGitHub, GhCli, GitHub, GitHubError, Issue
 
 __all__ = [
     "Budget",
+    "Comment",
     "Config",
     "ConfigError",
     "DispatchConfig",
     "EscalateConfig",
+    "FakeGitHub",
+    "GhCli",
+    "GitHub",
+    "GitHubError",
     "GlobalConfig",
+    "Issue",
     "Markers",
     "NotifyConfig",
     "PartnerConfig",
