@@ -1,0 +1,230 @@
+"""Dispatch (A.5): running the coding agent, budgets, and reconciliation.
+
+`Dispatcher` is the seam: :class:`ClaudeHeadless` runs the real `claude` CLI
+headless; :class:`EchoDispatcher` just records jobs, for tests. Local state
+(session ids to resume, daily dispatch counters) lives in whatever
+`MutableMapping` is passed in — a `dict` in tests, a `dol` store for real
+(A.1 rule 3: `liaise` never keeps this state on GitHub).
+"""
+
+from __future__ import annotations
+
+import json
+import shlex
+import subprocess
+import tempfile
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Callable, MutableMapping, Optional, Protocol
+
+from liaise.config import Budget, PartnerConfig
+from liaise.github import GitHub, Issue
+from liaise.notify import notify as _default_notify
+from liaise.prompt import compose_prompt
+from liaise.state import current_state, set_state
+
+
+@dataclass(frozen=True)
+class Job:
+    """Everything a :class:`Dispatcher` needs to run one dispatch."""
+
+    prompt: str
+    cwd: str
+    budget: Budget
+    command: str
+    resume_command: str
+    session_id: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class DispatchResult:
+    """What a :class:`Dispatcher` returns."""
+
+    returncode: int
+    session_id: Optional[str]
+    stdout: str = ""
+    stderr: str = ""
+
+
+class Dispatcher(Protocol):
+    """What `liaise` needs to run a coding agent."""
+
+    def dispatch(self, job: Job) -> DispatchResult:
+        """Run `job` and return its result. Must not raise on a nonzero exit."""
+        ...
+
+
+class ClaudeHeadless:
+    """The default :class:`Dispatcher`: runs the configured `claude` command headless.
+
+    The prompt is written to a temp file and referenced by path in the command
+    template — never passed on the command line. Never inherits an assumed
+    environment beyond what `subprocess.run` gives it by default; callers that
+    need specific variables (see `schedule.py`) pass them explicitly.
+    """
+
+    def dispatch(self, job: Job) -> DispatchResult:
+        fd, path = tempfile.mkstemp(prefix="liaise-prompt-", suffix=".md")
+        prompt_file = Path(path)
+        try:
+            with open(fd, "w") as f:
+                f.write(job.prompt)
+
+            template = job.resume_command if job.session_id else job.command
+            command = template.format(
+                prompt_file=str(prompt_file), session_id=job.session_id or ""
+            )
+            proc = subprocess.run(
+                shlex.split(command),
+                cwd=job.cwd,
+                capture_output=True,
+                text=True,
+                timeout=job.budget.timeout_minutes * 60,
+            )
+            session_id = _extract_session_id(proc.stdout) or job.session_id
+            return DispatchResult(
+                returncode=proc.returncode,
+                session_id=session_id,
+                stdout=proc.stdout,
+                stderr=proc.stderr,
+            )
+        finally:
+            prompt_file.unlink(missing_ok=True)
+
+
+def _extract_session_id(stdout: str) -> Optional[str]:
+    try:
+        raw = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return raw.get("session_id") if isinstance(raw, dict) else None
+
+
+class EchoDispatcher:
+    """Records every job it's given instead of running anything. For tests."""
+
+    def __init__(self, *, returncode: int = 0):
+        self.jobs: list[Job] = []
+        self._returncode = returncode
+        self._next_id = 0
+
+    def dispatch(self, job: Job) -> DispatchResult:
+        self.jobs.append(job)
+        self._next_id += 1
+        session_id = job.session_id or f"echo-session-{self._next_id}"
+        return DispatchResult(returncode=self._returncode, session_id=session_id)
+
+
+# ---- budgets: daily dispatch cap, session-id memory (dol-backed store, injectable) ----
+
+
+def _today(now: Optional[datetime] = None) -> str:
+    return (now or datetime.now(timezone.utc)).date().isoformat()
+
+
+def _daily_key(partner: PartnerConfig, day: str) -> str:
+    return f"daily/{partner.slug}/{day}"
+
+
+def _session_key(issue: Issue) -> str:
+    return f"sessions/{issue.repo}#{issue.number}"
+
+
+def daily_dispatch_count(
+    store: MutableMapping, partner: PartnerConfig, *, now: Optional[datetime] = None
+) -> int:
+    """How many times `partner` has been dispatched to today."""
+    return store.get(_daily_key(partner, _today(now)), 0)
+
+
+def stored_session_id(store: MutableMapping, issue: Issue) -> Optional[str]:
+    """The session id stored for `issue`, if a previous dispatch left one."""
+    return store.get(_session_key(issue))
+
+
+@dataclass(frozen=True)
+class DispatchOutcome:
+    """What :func:`dispatch_issue` did."""
+
+    dispatched: bool
+    budget_capped: bool
+    crashed: bool
+    result: Optional[DispatchResult] = None
+    log_path: Optional[str] = None
+
+
+def dispatch_issue(
+    gh: GitHub,
+    dispatcher: Dispatcher,
+    store: MutableMapping,
+    partner: PartnerConfig,
+    issue: Issue,
+    *,
+    notify_fn: Callable[..., bool] = _default_notify,
+    log_dir: Optional[Path] = None,
+    now: Optional[datetime] = None,
+) -> DispatchOutcome:
+    """Dispatch `issue` to `partner`'s coding agent, honoring the daily cap.
+
+    Sets `liaise:working` before dispatching. If the dispatcher returns and the
+    issue is *still* `liaise:working` — the agent crashed or exited without
+    setting an exit-path label per the operating rules — reconciles it to
+    `liaise:needs-owner` and notifies the owner with the exit code and the log
+    path (A.5 "Reconciliation"). A crashed run is not evidence of anything and
+    must not look like progress.
+    """
+    if daily_dispatch_count(store, partner, now=now) >= partner.budget.daily_dispatches:
+        set_state(gh, issue, partner, "budget")
+        return DispatchOutcome(dispatched=False, budget_capped=True, crashed=False)
+
+    session_id = stored_session_id(store, issue)
+    mode = "resume" if session_id else "fresh"
+    prompt = compose_prompt(partner, issue, mode)
+    job = Job(
+        prompt=prompt,
+        cwd=partner.dispatch.cwd,
+        budget=partner.budget,
+        command=partner.dispatch.command,
+        resume_command=partner.dispatch.resume_command,
+        session_id=session_id,
+    )
+
+    set_state(gh, issue, partner, "working")
+    store[_daily_key(partner, _today(now))] = daily_dispatch_count(store, partner, now=now) + 1
+
+    result = dispatcher.dispatch(job)
+    if result.session_id:
+        store[_session_key(issue)] = result.session_id
+
+    log_path = _write_log(log_dir, issue, result) if log_dir is not None else None
+
+    refreshed = gh.get_issue(issue.repo, issue.number)
+    if current_state(refreshed, partner) == "working":
+        set_state(gh, refreshed, partner, "needs-owner")
+        notify_fn(
+            "liaise: dispatch crashed",
+            f"{issue.url} exited {result.returncode} without changing state. "
+            f"Log: {log_path or '(no log_dir configured)'}",
+            priority="high",
+        )
+        return DispatchOutcome(
+            dispatched=True, budget_capped=False, crashed=True, result=result, log_path=log_path
+        )
+
+    return DispatchOutcome(
+        dispatched=True, budget_capped=False, crashed=False, result=result, log_path=log_path
+    )
+
+
+def _write_log(log_dir: Path, issue: Issue, result: DispatchResult) -> str:
+    log_dir = Path(log_dir)
+    log_dir.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    safe_repo = issue.repo.replace("/", "-")
+    path = log_dir / f"{safe_repo}-{issue.number}-{stamp}.log"
+    path.write_text(
+        f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
+        f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
+    )
+    return str(path)
