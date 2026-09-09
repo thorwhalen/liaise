@@ -109,12 +109,23 @@ _FAKE_GH_ISSUE_VIEW = {
     "updatedAt": "2026-01-02T00:00:00Z",
     "state": "OPEN",
     "labels": [{"name": "partner:pat"}, {"name": "liaise:intake"}],
+    # Real `gh issue view --json comments` shape (H-1): no `updatedAt` key on
+    # a comment at all — only `createdAt` and `includesCreatedEdit` (whether
+    # it was ever edited, not when). A fixture inventing `updatedAt` here is
+    # exactly what let a real-world KeyError through the original test.
     "comments": [
         {
             "author": {"login": "pat"},
+            "authorAssociation": "NONE",
             "body": "also the color",
             "createdAt": "2026-01-01T12:00:00Z",
-            "updatedAt": "2026-01-01T12:05:00Z",
+            "includesCreatedEdit": False,
+            "id": "IC_kwtest",
+            "isMinimized": False,
+            "minimizedReason": "",
+            "reactionGroups": [],
+            "url": "https://github.com/example/app/issues/7#issuecomment-1",
+            "viewerDidAuthor": False,
         }
     ],
 }
@@ -146,8 +157,33 @@ def test_ghcli_parses_issue_view_json(fake_gh_bin: Path):
     assert issue.state == "open"
     assert issue.labels == ("partner:pat", "liaise:intake")
     assert issue.comments[0].author == "pat"
-    assert issue.comments[0].updated_at > issue.comments[0].created_at
+    # H-1 regression: real `gh` output has no `updatedAt` on a comment, so the
+    # parser falls back to `createdAt` rather than KeyError.
+    assert issue.comments[0].updated_at == issue.comments[0].created_at
     assert issue.url == f"https://github.com/{REPO}/issues/7"
+
+
+def test_ghcli_parses_a_comment_with_no_updated_at_key_at_all(tmp_path: Path):
+    """H-1, isolated: the exact real-world shape (`updatedAt` absent from the
+    comment) must not raise. Reverting the `c.get("updatedAt")` fallback in
+    `_issue_from_json` back to `c["updatedAt"]` makes this raise KeyError.
+    """
+    payload = dict(_FAKE_GH_ISSUE_VIEW)
+    payload["comments"] = [
+        {k: v for k, v in _FAKE_GH_ISSUE_VIEW["comments"][0].items() if k != "updatedAt"}
+    ]
+    assert "updatedAt" not in payload["comments"][0]
+
+    script = tmp_path / "gh"
+    script.write_text(
+        f"#!{sys.executable}\nimport sys\n"
+        f"if 'view' in sys.argv:\n    print({json.dumps(payload)!r})\n    sys.exit(0)\nsys.exit(1)\n"
+    )
+    script.chmod(script.stat().st_mode | stat.S_IEXEC)
+
+    gh = GhCli(gh_bin=str(script))
+    issue = gh.get_issue(REPO, 7)  # must not raise
+    assert issue.comments[0].updated_at == issue.comments[0].created_at
 
 
 def test_ghcli_raises_githuberror_on_failure(tmp_path: Path):

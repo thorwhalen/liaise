@@ -113,7 +113,12 @@ def _issue_from_json(repo: str, raw: dict) -> Issue:
                 author=(c.get("author") or {}).get("login", ""),
                 body=c.get("body", ""),
                 created_at=_parse_dt(c["createdAt"]),
-                updated_at=_parse_dt(c["updatedAt"]),
+                # `gh issue view --json comments` does not emit `updatedAt` for
+                # a comment (verified against real `gh` output) — only
+                # `createdAt` and `includesCreatedEdit` (whether it was ever
+                # edited, not when). Fall back to `createdAt` rather than
+                # KeyError on every issue that has ever been commented on.
+                updated_at=_parse_dt(c["updatedAt"]) if c.get("updatedAt") else _parse_dt(c["createdAt"]),
             )
             for c in raw.get("comments", [])
         ),
