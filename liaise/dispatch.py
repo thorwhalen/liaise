@@ -157,16 +157,29 @@ class EchoDispatcher:
 # ---- budgets: daily dispatch cap, session-id memory (dol-backed store, injectable) ----
 
 
+def default_store(state_dir: str) -> MutableMapping:
+    """The `dol`-backed store `liaise` uses by default: one JSON file per key,
+    under `state_dir`. Session ids, daily counters and the last-run stamp all
+    live here — never on GitHub (A.1 rule 3). Tests use a plain `dict` instead.
+    """
+    import dol
+
+    return dol.Jsons(str(Path(state_dir).expanduser()))
+
+
 def _today(now: Optional[datetime] = None) -> str:
     return (now or datetime.now(timezone.utc)).date().isoformat()
 
 
 def _daily_key(partner: PartnerConfig, day: str) -> str:
-    return f"daily/{partner.slug}/{day}"
+    # No "/" — the default store (dol.Jsons) treats it as a subdirectory
+    # separator and won't create missing parent directories on write.
+    return f"daily__{partner.slug}__{day}"
 
 
 def _session_key(issue: Issue) -> str:
-    return f"sessions/{issue.repo}#{issue.number}"
+    safe_repo = issue.repo.replace("/", "-")
+    return f"sessions__{safe_repo}__{issue.number}"
 
 
 def daily_dispatch_count(

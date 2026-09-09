@@ -9,15 +9,28 @@ boundary. The list grows as later issues add ``setup``, ``poll``, ``run``,
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
-from typing import Optional
+from typing import MutableMapping, Optional
 
 import cw
 
 from liaise.config import ConfigError, PartnerConfig, load_config
+from liaise.dispatch import (
+    ClaudeHeadless,
+    Dispatcher,
+    daily_dispatch_count,
+    default_store,
+)
 from liaise.github import GhCli, GitHub
 from liaise.intake import compute_readiness, find_partner_issues
-from liaise.state import STATE_LABELS, setup as _state_setup
+from liaise.run import last_run_age, run_once
+from liaise.schedule import (
+    install_schedule,
+    schedule_status,
+    uninstall_schedule,
+)
+from liaise.state import STATE_LABELS, current_state, setup as _state_setup
 
 
 def _format_partner(p: PartnerConfig) -> str:
@@ -109,6 +122,89 @@ def setup(slug: str, *, root: Optional[str] = None, gh: Optional[GitHub] = None)
     )
 
 
+def run(
+    *,
+    root: Optional[str] = None,
+    once: bool = False,
+    dry_run: bool = False,
+    partner: Optional[str] = None,
+    gh: Optional[GitHub] = None,
+    dispatcher: Optional[Dispatcher] = None,
+    store: Optional[MutableMapping] = None,
+) -> str:
+    """Intake, label, dispatch ready issues, batch-deploy, reconcile.
+
+    `--dry-run` prints the plan and changes nothing. Without `--once`, keeps
+    running one pass after another — the scheduled job always passes
+    `--once` (see `liaise schedule install`); this is for a foreground,
+    manual "keep watching" run.
+    """
+    config = load_config(Path(root) if root else None)
+    github = gh if gh is not None else GhCli()
+    agent = dispatcher if dispatcher is not None else ClaudeHeadless()
+    state_store = store if store is not None else default_store(config.global_.state_dir)
+
+    def one_pass() -> str:
+        report = run_once(github, agent, state_store, config, partner=partner, dry_run=dry_run)
+        lines = [f"plan ({len(report.plan)} item(s)):"]
+        for item in report.plan:
+            lines.append(f"  {item.partner_slug} #{item.issue_number:<5} {item.action:<18} {item.issue_title}")
+        if report.dispatched:
+            lines.append(f"dispatched: {len(report.dispatched)}")
+        for slug, numbers in report.deployed.items():
+            lines.append(f"deployed for {slug}: {', '.join(f'#{n}' for n in numbers)}")
+        return "\n".join(lines)
+
+    if once or dry_run:
+        return one_pass()
+
+    outputs = []
+    try:
+        while True:
+            outputs.append(one_pass())
+            time.sleep(60)
+    except KeyboardInterrupt:
+        return "\n\n".join(outputs)
+
+
+def status(*, root: Optional[str] = None, gh: Optional[GitHub] = None, store: Optional[MutableMapping] = None) -> str:
+    """Last run stamp, today's dispatches per partner, and anything needing the owner."""
+    config = load_config(Path(root) if root else None)
+    github = gh if gh is not None else GhCli()
+    state_store = store if store is not None else default_store(config.global_.state_dir)
+
+    age = last_run_age(state_store)
+    lines = [f"last_run: {f'{int(age)}s ago' if age is not None else 'never'}"]
+
+    for p in sorted(config.partners.values(), key=lambda p: p.slug):
+        count = daily_dispatch_count(state_store, p)
+        lines.append(f"partner {p.slug}: {count}/{p.budget.daily_dispatches} dispatches today")
+        needs_owner = [
+            i for i in find_partner_issues(github, p) if current_state(i, p) == "needs-owner"
+        ]
+        for issue in needs_owner:
+            lines.append(f"  needs-owner: #{issue.number} {issue.title}")
+    return "\n".join(lines)
+
+
+def schedule_install(
+    *, root: Optional[str] = None, interval_minutes: int = 2
+) -> str:
+    """Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux)."""
+    path = install_schedule(root=root, interval_minutes=interval_minutes)
+    return f"installed: {path}"
+
+
+def schedule_uninstall() -> str:
+    """Remove the scheduled job. Idempotent."""
+    return uninstall_schedule()
+
+
+def schedule_status_cmd() -> str:
+    """Whether the scheduled job is installed."""
+    return schedule_status()
+
+
 #: SSOT command tree consumed by both ``__main__.py`` and (later) MCP/HTTP surfaces.
 #: Named explicitly (not by function `__name__`) so `liaise partner show`, not
 #: `liaise partner partner-show`.
@@ -116,8 +212,20 @@ _dispatch_funcs = {
     "partner": {"show": partner_show, "list": partner_list},
     "poll": poll,
     "setup": setup,
+    "run": run,
+    "status": status,
+    "schedule": {
+        "install": schedule_install,
+        "uninstall": schedule_uninstall,
+        "status": schedule_status_cmd,
+    },
 }
 
-#: `gh` is a dependency-injection seam (defaults to the real GhCli), not something
-#: to expose on the command line.
-_dispatch_config = {"poll": {"gh": cw.HIDE}, "setup": {"gh": cw.HIDE}}
+#: DI seams (real `GitHub`/`Dispatcher`/store by default) — not CLI-serializable,
+#: so hidden from the command line.
+_dispatch_config = {
+    "poll": {"gh": cw.HIDE},
+    "setup": {"gh": cw.HIDE},
+    "run": {"gh": cw.HIDE, "dispatcher": cw.HIDE, "store": cw.HIDE},
+    "status": {"gh": cw.HIDE, "store": cw.HIDE},
+}
