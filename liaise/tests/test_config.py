@@ -34,7 +34,7 @@ def test_load_config_returns_frozen_dataclasses_with_defaults(config_root):
     assert pat.reply_mode == "draft"
     assert pat.label == "partner:pat"
     with pytest.raises(AttributeError):
-        pat.repo = "someone/else"  # frozen
+        pat.repo = "example/other"  # frozen
 
 
 def test_partner_override_beats_global_default(config_root):

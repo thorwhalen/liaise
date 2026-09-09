@@ -30,13 +30,19 @@ DFLT_TIMEOUT_MINUTES = 60
 DFLT_MAX_TURNS = 200
 DFLT_DAILY_DISPATCHES = 6
 DFLT_DEPLOY_PER = "batch"
+DFLT_DEPLOYED_NUDGE_DAYS = 3
 DFLT_REPLY_MODE = "draft"
 DFLT_NTFY_TOPIC_ENV = "LIAISE_NTFY_TOPIC"
+#: `-p`/`--print` takes the prompt as its next argument, not a file to open on
+#: its own — a bare path here IS the prompt (an agent seeing only a path has no
+#: instruction to read it), so the templates spell that out explicitly.
 DFLT_DISPATCH_COMMAND = (
-    "claude -p {prompt_file} --permission-mode auto --output-format json"
+    'claude -p "Read and follow the instructions in {prompt_file}" '
+    "--permission-mode auto --output-format json"
 )
 DFLT_RESUME_COMMAND = (
-    "claude --resume {session_id} -p {prompt_file} --output-format json"
+    'claude --resume {session_id} -p "Read and follow the instructions in '
+    '{prompt_file}" --output-format json'
 )
 
 
@@ -114,6 +120,7 @@ class GlobalConfig:
     label_prefix: str = DFLT_LABEL_PREFIX
     budget: Budget = field(default_factory=Budget)
     deploy_per: str = DFLT_DEPLOY_PER
+    deployed_nudge_days: int = DFLT_DEPLOYED_NUDGE_DAYS
 
 
 @dataclass(frozen=True)
@@ -137,6 +144,7 @@ class PartnerConfig:
     label_prefix: str = DFLT_LABEL_PREFIX
     budget: Budget = field(default_factory=Budget)
     deploy_per: str = DFLT_DEPLOY_PER
+    deployed_nudge_days: int = DFLT_DEPLOYED_NUDGE_DAYS
 
 
 @dataclass(frozen=True)
@@ -201,6 +209,16 @@ def _budget_from(raw: Optional[dict], *, dflt: Budget) -> Budget:
     )
 
 
+def _escalate_from(raw: Optional[dict]) -> EscalateConfig:
+    dflt = EscalateConfig()
+    if not raw:
+        return dflt
+    return EscalateConfig(
+        money_usd=raw.get("money_usd", dflt.money_usd),
+        max_scope=raw.get("max_scope", dflt.max_scope),
+    )
+
+
 def _load_global_config(root: Path) -> GlobalConfig:
     path = root / "config.toml"
     if not path.exists():
@@ -226,6 +244,7 @@ def _load_global_config(root: Path) -> GlobalConfig:
         label_prefix=raw.get("label_prefix", DFLT_LABEL_PREFIX),
         budget=_budget_from(raw.get("budget"), dflt=dflt_budget),
         deploy_per=raw.get("deploy_per", DFLT_DEPLOY_PER),
+        deployed_nudge_days=raw.get("deployed_nudge_days", DFLT_DEPLOYED_NUDGE_DAYS),
     )
 
 
@@ -242,11 +261,7 @@ def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
         cwd=dispatch_raw.get("cwd", "."),
         resume_command=dispatch_raw.get("resume_command", DFLT_RESUME_COMMAND),
     )
-    escalate_raw = raw.get("escalate") or {}
-    escalate = EscalateConfig(
-        money_usd=escalate_raw.get("money_usd", 50.0),
-        max_scope=escalate_raw.get("max_scope", "about a day of work"),
-    )
+    escalate = _escalate_from(raw.get("escalate"))
 
     return PartnerConfig(
         slug=slug,
@@ -266,6 +281,7 @@ def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
         label_prefix=raw.get("label_prefix", glob.label_prefix),
         budget=_budget_from(raw.get("budget"), dflt=glob.budget),
         deploy_per=raw.get("deploy_per", glob.deploy_per),
+        deployed_nudge_days=raw.get("deployed_nudge_days", glob.deployed_nudge_days),
     )
 
 
