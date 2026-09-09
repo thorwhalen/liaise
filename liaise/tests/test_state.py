@@ -125,6 +125,12 @@ def test_setup_creates_partner_label_and_every_state_label():
         assert f"liaise:{state}" in created
         assert created[f"liaise:{state}"]  # plain-language description, non-empty
 
+    # L-2: operating_rules.md tells the agent to open a "discovered" note for
+    # the owner; setup must actually create that label or the word is a
+    # dead reference.
+    assert "discovered" in created
+    assert created["discovered"]
+
 
 def test_setup_is_idempotent():
     partner = _partner()

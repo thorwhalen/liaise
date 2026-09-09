@@ -104,8 +104,8 @@ def setup(slug: str, *, root: Optional[str] = None, gh: Optional[GitHub] = None)
     github = gh if gh is not None else GhCli()
     _state_setup(github, partner)
     return (
-        f"created {partner.label!r} and {len(STATE_LABELS)} state labels "
-        f"in {partner.repo}"
+        f"created {partner.label!r}, {len(STATE_LABELS)} state labels, "
+        f"and 'discovered' in {partner.repo}"
     )
 
 

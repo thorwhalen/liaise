@@ -28,6 +28,16 @@ STATE_LABELS = (
     "budget",
 )
 
+#: Not a `liaise:` state label (not partner-prefixed, not part of the
+#: one-label invariant) — it marks an issue the *agent* opened on the
+#: owner's behalf (A.6: "except a plain `discovered` note for the owner"),
+#: repo-wide rather than per-partner. L-2: the operating rules used this
+#: word without `setup` ever creating it.
+DISCOVERED_LABEL = "discovered"
+DISCOVERED_LABEL_DESCRIPTION = (
+    "Opened by a coding agent, not the partner — something it noticed while working."
+)
+
 
 def _label_specs() -> dict[str, dict[str, str]]:
     """``{state: {"description": ..., "color": ...}}`` from ``data/labels.json``."""
@@ -74,7 +84,10 @@ def set_state(gh: GitHub, issue: Issue, partner: PartnerConfig, state: str) -> N
 
 
 def setup(gh: GitHub, partner: PartnerConfig) -> None:
-    """Create the partner label and every state label in `partner.repo`. Idempotent."""
+    """Create the partner label, every state label, and `discovered` in `partner.repo`.
+
+    Idempotent.
+    """
     specs = _label_specs()
     gh.create_label(
         partner.repo,
@@ -89,3 +102,6 @@ def setup(gh: GitHub, partner: PartnerConfig) -> None:
             color=spec.get("color", "ededed"),
             description=spec.get("description", ""),
         )
+    gh.create_label(
+        partner.repo, DISCOVERED_LABEL, color="c5def5", description=DISCOVERED_LABEL_DESCRIPTION
+    )
