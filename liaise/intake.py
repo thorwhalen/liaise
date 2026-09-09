@@ -5,14 +5,17 @@ and a :class:`~liaise.config.PartnerConfig`. Applying the answer (adding labels 
 sight, dispatching a ready issue) is `run.py`'s job (a later issue); this module only
 computes.
 
-**A caveat about "last edit by the partner".** GitHub's issue JSON (via `gh`) exposes
-`updatedAt` for the issue as a whole, but that field also moves on label changes and other
-metadata edits — it is not a clean "the author edited the body at this time" signal. This
-module treats ``issue.updated_at`` as a best-effort proxy for a body edit **only when the
-issue's author is the partner**, since :class:`~liaise.github.FakeGitHub` (and this
-package's own label/comment operations) never bump ``updated_at`` on a label change, only
-on content changes. A real `GhCli`-backed run should be conservative about trusting this
-for anything but the common "partner keeps editing while drafting" case.
+**A caveat about "last edit by the partner".** ``issue.updated_at`` looks like the
+obvious signal for this — it is not one: GitHub bumps it on *anyone's* comment and on
+every label change, including `liaise`'s own. Verified on a live issue: the issue's
+`updatedAt` matched its last comment's `createdAt` to the second, regardless of who
+posted the comment. Using it here would mean an owner "just thinking out loud" in the
+thread, or `liaise`'s own two-label-edit-per-transition `set_state` call, resets the
+partner's own quiet window — exactly the rule A.3 forbids ("the owner commenting is not
+the partner writing"). There is no clean "the author edited the body at this time"
+signal available from `gh`'s JSON (the GraphQL `lastEditedAt` field is not among the
+fields `gh issue view --json` exposes), so :func:`last_partner_activity` only trusts the
+issue's creation time and the partner's own comments — never `issue.updated_at`.
 """
 
 from __future__ import annotations
@@ -36,12 +39,13 @@ def is_partner_issue(issue: Issue, partner: PartnerConfig) -> bool:
 
 
 def last_partner_activity(issue: Issue, partner: PartnerConfig) -> datetime:
-    """The latest of: the issue's creation, its last edit by the partner, the partner's
-    last comment. Activity by anyone else never contributes here.
+    """The latest of: the issue's creation, and the partner's own comments.
+
+    Deliberately never reads `issue.updated_at` — see the module docstring
+    (H-2): that field moves on anyone's activity, not just the partner's.
+    Activity by anyone else never contributes here.
     """
     candidates = [issue.created_at]
-    if issue.author in partner.github_logins:
-        candidates.append(issue.updated_at)  # best-effort body-edit proxy; see module docstring
     for comment in issue.comments:
         if comment.author in partner.github_logins:
             candidates.append(comment.created_at)

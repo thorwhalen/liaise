@@ -109,6 +109,42 @@ def test_non_partner_comment_does_not_move_the_clock():
     assert last_partner_activity(issue, partner) == T0
 
 
+def test_issue_updated_at_bumped_by_anyone_does_not_move_the_clock():
+    """H-2 regression.
+
+    GitHub bumps `issue.updated_at` on ANY comment (and on label changes,
+    including liaise's own `set_state`), not just the partner's. Simulate
+    that directly by setting `updated_at` well after `created_at` even
+    though the only comment present is the owner's, not the partner's —
+    the old code used `issue.updated_at` as a proxy whenever the issue's
+    author was the partner, which would have returned the later timestamp
+    here. Reverting `last_partner_activity` to read `issue.updated_at`
+    makes this fail.
+    """
+    partner = _partner()
+    owner_comment = Comment(
+        author="owner", body="hi", created_at=T0 + timedelta(minutes=30), updated_at=T0 + timedelta(minutes=30)
+    )
+    issue = _issue(
+        author="pat",  # issue.updated_at proxy, when it existed, only fired for this case
+        created_at=T0,
+        updated_at=T0 + timedelta(minutes=30),  # bumped by the owner's comment, not the partner's
+        comments=(owner_comment,),
+    )
+    assert last_partner_activity(issue, partner) == T0
+
+
+def test_liaise_own_label_edits_do_not_move_the_clock():
+    """H-2, the other half: a bare label change (no comment at all) also
+    bumps a real issue's `updated_at` — including liaise's own two labels-
+    per-transition `set_state` calls. Simulated the same way: `updated_at`
+    moved with nothing else changing.
+    """
+    partner = _partner()
+    issue = _issue(author="pat", created_at=T0, updated_at=T0 + timedelta(hours=2), comments=())
+    assert last_partner_activity(issue, partner) == T0
+
+
 def test_non_partner_comment_does_not_make_issue_ready_early():
     partner = _partner(quiet_minutes=10)
     owner_comment = Comment(
@@ -149,6 +185,30 @@ def test_go_marker_in_body_shortens_wait():
     issue = _issue(body="please fix this #startwork#", created_at=T0, updated_at=T0)
     # far short of the 60-minute quiet window, but past the 2-minute go window
     readiness = compute_readiness(issue, partner, now=T0 + timedelta(minutes=3))
+    assert readiness.ready
+    assert readiness.reason == "go marker"
+
+
+def test_go_marker_not_ready_before_go_minutes_elapses():
+    """M-5 boundary regression: `ready_by_go` must require the full
+    `go_minutes` to have passed, not merely that a go marker exists.
+    Replacing `ready_by_go = go_deadline is not None and now >= go_deadline`
+    with `ready_by_go = last_go is not None` (making the marker fire
+    instantly) leaves this passing where it shouldn't — this test, run one
+    second before the deadline, is what catches it.
+    """
+    partner = _partner(quiet_minutes=60, go_minutes=2)
+    issue = _issue(body="please fix this #startwork#", created_at=T0, updated_at=T0)
+    readiness = compute_readiness(
+        issue, partner, now=T0 + timedelta(minutes=2) - timedelta(seconds=1)
+    )
+    assert not readiness.ready
+
+
+def test_go_marker_ready_exactly_at_go_minutes():
+    partner = _partner(quiet_minutes=60, go_minutes=2)
+    issue = _issue(body="please fix this #startwork#", created_at=T0, updated_at=T0)
+    readiness = compute_readiness(issue, partner, now=T0 + timedelta(minutes=2))
     assert readiness.ready
     assert readiness.reason == "go marker"
 
