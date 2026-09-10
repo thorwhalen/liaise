@@ -5,6 +5,8 @@ works, and the skill file is well-formed.
 from __future__ import annotations
 
 import os
+import platform
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +14,27 @@ from pathlib import Path
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
 
 REPO = "example/app"  # the README's own fictional partner repo
+
+
+def _bash_executable() -> str:
+    """A real, usable `bash`.
+
+    On Windows, the `bash` GitHub's runner puts first on PATH is the WSL
+    launcher shim (`System32\\bash.exe`), not Git Bash — it runs and exits 1
+    with "Windows Subsystem for Linux has no installed distributions"
+    (confirmed in CI), which looks exactly like a script failure until you
+    read the stdout. Git for Windows (present on every windows-latest
+    runner) installs its own real bash at a fixed path; prefer that
+    explicitly rather than trusting whatever `bash` PATH resolution finds.
+    """
+    if platform.system() == "Windows":
+        for candidate in (
+            r"C:\Program Files\Git\bin\bash.exe",
+            r"C:\Program Files\Git\usr\bin\bash.exe",
+        ):
+            if Path(candidate).exists():
+                return candidate
+    return shutil.which("bash") or "bash"
 
 
 def _readme_quick_start_block() -> str:
@@ -47,7 +70,7 @@ def test_readme_quick_start_actually_builds_a_working_config(tmp_path):
     # confirmed in CI: bash exited 1 before running a single line.
     env = {**os.environ, "HOME": str(fake_home)}
     result = subprocess.run(
-        ["bash", "-c", "\n".join(setup_lines)],
+        [_bash_executable(), "-c", "\n".join(setup_lines)],
         env=env,
         capture_output=True,
         text=True,
