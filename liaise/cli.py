@@ -12,7 +12,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
+import cw
+
 from liaise.config import ConfigError, PartnerConfig, load_config
+from liaise.github import GhCli, GitHub
+from liaise.intake import compute_readiness, find_partner_issues
 
 
 def _format_partner(p: PartnerConfig) -> str:
@@ -58,7 +62,45 @@ def partner_list(*, root: Optional[str] = None) -> str:
     )
 
 
+def _fmt_countdown(td) -> str:
+    total_seconds = int(td.total_seconds())
+    if total_seconds <= 0:
+        return "0m"
+    hours, remainder = divmod(total_seconds, 3600)
+    minutes = remainder // 60
+    return f"{hours}h{minutes:02d}m" if hours else f"{minutes}m"
+
+
+def poll(*, root: Optional[str] = None, partner: Optional[str] = None, gh: Optional[GitHub] = None) -> str:
+    """Report each partner's open issues, their readiness, and a countdown. Changes nothing."""
+    config = load_config(Path(root) if root else None)
+    partners = [config.partner(partner)] if partner else list(config.partners.values())
+    github = gh if gh is not None else GhCli()
+
+    if not partners:
+        return "(no partners configured)"
+
+    lines = []
+    for p in sorted(partners, key=lambda p: p.slug):
+        issues = find_partner_issues(github, p)
+        lines.append(f"partner: {p.slug} ({len(issues)} open)")
+        for issue in issues:
+            readiness = compute_readiness(issue, p)
+            if readiness.paused:
+                status = "PAUSED"
+            elif readiness.ready:
+                status = "READY"
+            else:
+                status = f"in {_fmt_countdown(readiness.countdown)}"
+            lines.append(f"  #{issue.number:<5} {status:<10} {issue.title}")
+    return "\n".join(lines)
+
+
 #: SSOT command tree consumed by both ``__main__.py`` and (later) MCP/HTTP surfaces.
 #: Named explicitly (not by function `__name__`) so `liaise partner show`, not
 #: `liaise partner partner-show`.
-_dispatch_funcs = {"partner": {"show": partner_show, "list": partner_list}}
+_dispatch_funcs = {"partner": {"show": partner_show, "list": partner_list}, "poll": poll}
+
+#: `gh` is a dependency-injection seam (defaults to the real GhCli), not something
+#: to expose on the command line.
+_dispatch_config = {"poll": {"gh": cw.HIDE}}
