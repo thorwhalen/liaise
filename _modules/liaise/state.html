@@ -1,0 +1,238 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.state &mdash; liaise 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.state</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.state</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""State labels (A.4): exactly one `liaise:` state label at a time.</span>
+
+<span class="sd">Labels are the state machine — the only mutable state `liaise` keeps on GitHub.</span>
+<span class="sd">Every module that changes an issue's state MUST go through :func:`set_state`</span>
+<span class="sd">rather than calling `gh.add_labels`/`gh.remove_labels` directly; that single</span>
+<span class="sd">choke point is what keeps the one-label invariant true.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">PartnerConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">Issue</span>
+
+<span class="c1">#: The seven states from the design table (A.4), in the order they're listed</span>
+<span class="c1">#: there. Each value is the suffix after the configurable `label_prefix`</span>
+<span class="c1">#: ("liaise:" by default).</span>
+<span class="n">STATE_LABELS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"intake"</span><span class="p">,</span>
+    <span class="s2">"paused"</span><span class="p">,</span>
+    <span class="s2">"working"</span><span class="p">,</span>
+    <span class="s2">"needs-partner"</span><span class="p">,</span>
+    <span class="s2">"needs-owner"</span><span class="p">,</span>
+    <span class="s2">"deployed"</span><span class="p">,</span>
+    <span class="s2">"budget"</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#: Not a `liaise:` state label (not partner-prefixed, not part of the</span>
+<span class="c1">#: one-label invariant) — it marks an issue the *agent* opened on the</span>
+<span class="c1">#: owner's behalf (A.6: "except a plain `discovered` note for the owner"),</span>
+<span class="c1">#: repo-wide rather than per-partner. L-2: the operating rules used this</span>
+<span class="c1">#: word without `setup` ever creating it.</span>
+<span class="n">DISCOVERED_LABEL</span> <span class="o">=</span> <span class="s2">"discovered"</span>
+<span class="n">DISCOVERED_LABEL_DESCRIPTION</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"Opened by a coding agent, not the partner — something it noticed while working."</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_label_specs</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""``{state: {"description": ..., "color": ...}}`` from ``data/labels.json``."""</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">"liaise.data"</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">"labels.json"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="state_label">
+<a class="viewcode-back" href="../../module_docs/liaise/state.html#liaise.state_label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">state_label</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The full label name (prefix applied) for one state."""</span>
+    <span class="k">if</span> <span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">STATE_LABELS</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"not a state label: </span><span class="si">{</span><span class="n">state</span><span class="si">!r}</span><span class="s2">. Known: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">STATE_LABELS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">label_prefix</span><span class="si">}{</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="current_state">
+<a class="viewcode-back" href="../../module_docs/liaise/state.html#liaise.current_state">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">current_state</span><span class="p">(</span><span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The issue's current state (a suffix from :data:`STATE_LABELS`), or None."""</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">label_prefix</span>
+    <span class="n">present</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">label</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span>
+        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">issue</span><span class="o">.</span><span class="n">labels</span>
+        <span class="k">if</span> <span class="n">label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="ow">and</span> <span class="n">label</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span> <span class="ow">in</span> <span class="n">STATE_LABELS</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">present</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"issue #</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2"> carries more than one state label: </span><span class="si">{</span><span class="n">present</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"— the one-label invariant has already been broken."</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">present</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">present</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="set_state">
+<a class="viewcode-back" href="../../module_docs/liaise/state.html#liaise.set_state">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Transition `issue` to `state`. Removes every other `liaise:` state label first.</span>
+
+<span class="sd">    This is the one transition helper (A.4): the only place in the package that</span>
+<span class="sd">    may change an issue's `liaise:` state label, so it is the only place the</span>
+<span class="sd">    one-label invariant needs to be enforced.</span>
+<span class="sd">    """</span>
+    <span class="n">new_label</span> <span class="o">=</span> <span class="n">state_label</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+    <span class="n">other_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">state_label</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">STATE_LABELS</span> <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">state</span><span class="p">]</span>
+    <span class="n">gh</span><span class="o">.</span><span class="n">remove_labels</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">other_labels</span><span class="p">)</span>
+    <span class="n">gh</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="p">[</span><span class="n">new_label</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="setup">
+<a class="viewcode-back" href="../../module_docs/liaise/state.html#liaise.setup">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Create the partner label, every state label, and `discovered` in `partner.repo`.</span>
+
+<span class="sd">    Idempotent.</span>
+<span class="sd">    """</span>
+    <span class="n">specs</span> <span class="o">=</span> <span class="n">_label_specs</span><span class="p">()</span>
+    <span class="n">gh</span><span class="o">.</span><span class="n">create_label</span><span class="p">(</span>
+        <span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
+        <span class="n">partner</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Issues from </span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">display_name</span><span class="si">}</span><span class="s2">."</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">STATE_LABELS</span><span class="p">:</span>
+        <span class="n">spec</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="p">{})</span>
+        <span class="n">gh</span><span class="o">.</span><span class="n">create_label</span><span class="p">(</span>
+            <span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
+            <span class="n">state_label</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">state</span><span class="p">),</span>
+            <span class="n">color</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"color"</span><span class="p">,</span> <span class="s2">"ededed"</span><span class="p">),</span>
+            <span class="n">description</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"description"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="n">gh</span><span class="o">.</span><span class="n">create_label</span><span class="p">(</span>
+        <span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">DISCOVERED_LABEL</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"c5def5"</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">DISCOVERED_LABEL_DESCRIPTION</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

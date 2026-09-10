@@ -54,12 +54,14 @@
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/config.html">liaise.config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 
         </div>
@@ -109,10 +111,14 @@
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.PartnerConfig"><code class="docutils literal notranslate"><span class="pre">PartnerConfig</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.Readiness"><code class="docutils literal notranslate"><span class="pre">Readiness</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.compute_readiness"><code class="docutils literal notranslate"><span class="pre">compute_readiness()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.current_state"><code class="docutils literal notranslate"><span class="pre">current_state()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.find_partner_issues"><code class="docutils literal notranslate"><span class="pre">find_partner_issues()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.is_partner_issue"><code class="docutils literal notranslate"><span class="pre">is_partner_issue()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.last_partner_activity"><code class="docutils literal notranslate"><span class="pre">last_partner_activity()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.set_state"><code class="docutils literal notranslate"><span class="pre">set_state()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.setup_labels"><code class="docutils literal notranslate"><span class="pre">setup_labels()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise.html#liaise.state_label"><code class="docutils literal notranslate"><span class="pre">state_label()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/__main__.html">liaise.__main__</a></li>
@@ -120,6 +126,7 @@
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/cli.html#liaise.cli.partner_list"><code class="docutils literal notranslate"><span class="pre">partner_list()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/cli.html#liaise.cli.partner_show"><code class="docutils literal notranslate"><span class="pre">partner_show()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/cli.html#liaise.cli.poll"><code class="docutils literal notranslate"><span class="pre">poll()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/cli.html#liaise.cli.setup"><code class="docutils literal notranslate"><span class="pre">setup()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/config.html">liaise.config</a><ul>
@@ -153,6 +160,15 @@
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/intake.html#liaise.intake.last_partner_activity"><code class="docutils literal notranslate"><span class="pre">last_partner_activity()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/state.html">liaise.state</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/state.html#liaise.state.DISCOVERED_LABEL"><code class="docutils literal notranslate"><span class="pre">DISCOVERED_LABEL</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/state.html#liaise.state.STATE_LABELS"><code class="docutils literal notranslate"><span class="pre">STATE_LABELS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/state.html#liaise.state.current_state"><code class="docutils literal notranslate"><span class="pre">current_state()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/state.html#liaise.state.set_state"><code class="docutils literal notranslate"><span class="pre">set_state()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/state.html#liaise.state.setup"><code class="docutils literal notranslate"><span class="pre">setup()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/state.html#liaise.state.state_label"><code class="docutils literal notranslate"><span class="pre">state_label()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
@@ -168,6 +184,7 @@
 <li class="toctree-l2"><a class="reference internal" href="module_docs/liaise/tests/test_no_personal_data.html#liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE"><code class="docutils literal notranslate"><span class="pre">WINDOWS_LOCAL_PATH_RE</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 </div>
 </section>

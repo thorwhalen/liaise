@@ -52,12 +52,14 @@
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/config.html">liaise.config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 
         </div>
@@ -151,20 +153,26 @@
         <li><a href="module_docs/liaise/intake.html#liaise.intake.compute_readiness">(in module liaise.intake)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.Config">Config (class in liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/config.html#liaise.config.Config">(class in liaise.config)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.ConfigError">ConfigError</a>, <a href="module_docs/liaise/config.html#liaise.config.ConfigError">[1]</a>
 </li>
       <li><a href="module_docs/liaise.html#liaise.GitHub.create_label">create_label() (liaise.GitHub method)</a>
 
       <ul>
         <li><a href="module_docs/liaise/github.html#liaise.github.GitHub.create_label">(liaise.github.GitHub method)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.current_state">current_state() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/state.html#liaise.state.current_state">(in module liaise.state)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -174,6 +182,8 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise/config.html#liaise.config.DFLT_DISPATCH_COMMAND">DFLT_DISPATCH_COMMAND (in module liaise.config)</a>
+</li>
+      <li><a href="module_docs/liaise/state.html#liaise.state.DISCOVERED_LABEL">DISCOVERED_LABEL (in module liaise.state)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -317,8 +327,6 @@
         <li><a href="module_docs/liaise/config.html#module-liaise.config">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     liaise.github
 
@@ -326,11 +334,20 @@
         <li><a href="module_docs/liaise/github.html#module-liaise.github">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     liaise.intake
 
       <ul>
         <li><a href="module_docs/liaise/intake.html#module-liaise.intake">module</a>
+</li>
+      </ul></li>
+      <li>
+    liaise.state
+
+      <ul>
+        <li><a href="module_docs/liaise/state.html#module-liaise.state">module</a>
 </li>
       </ul></li>
       <li>
@@ -386,6 +403,8 @@
         <li><a href="module_docs/liaise/github.html#module-liaise.github">liaise.github</a>
 </li>
         <li><a href="module_docs/liaise/intake.html#module-liaise.intake">liaise.intake</a>
+</li>
+        <li><a href="module_docs/liaise/state.html#module-liaise.state">liaise.state</a>
 </li>
         <li><a href="module_docs/liaise/tests.html#module-liaise.tests">liaise.tests</a>
 </li>
@@ -482,6 +501,30 @@
         <li><a href="module_docs/liaise/github.html#liaise.github.FakeGitHub.seed">(liaise.github.FakeGitHub method)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.set_state">set_state() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/state.html#liaise.state.set_state">(in module liaise.state)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise/cli.html#liaise.cli.setup">setup() (in module liaise.cli)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/state.html#liaise.state.setup">(in module liaise.state)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.setup_labels">setup_labels() (in module liaise)</a>
+</li>
+      <li><a href="module_docs/liaise.html#liaise.state_label">state_label() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/state.html#liaise.state.state_label">(in module liaise.state)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise/state.html#liaise.state.STATE_LABELS">STATE_LABELS (in module liaise.state)</a>
+</li>
   </ul></td>
 </tr></table>
 

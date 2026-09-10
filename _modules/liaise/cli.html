@@ -52,12 +52,14 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 
         </div>
@@ -104,6 +106,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigError</span><span class="p">,</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">load_config</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GhCli</span><span class="p">,</span> <span class="n">GitHub</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.intake</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">find_partner_issues</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">STATE_LABELS</span><span class="p">,</span> <span class="n">setup</span> <span class="k">as</span> <span class="n">_state_setup</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_format_partner</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -192,14 +195,33 @@
 
 
 
+<div class="viewcode-block" id="setup">
+<a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.setup">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="n">slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Create partner `slug`'s label and every state label in their repo. Idempotent."""</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">partner</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">partner</span><span class="p">(</span><span class="n">slug</span><span class="p">)</span>
+    <span class="n">github</span> <span class="o">=</span> <span class="n">gh</span> <span class="k">if</span> <span class="n">gh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
+    <span class="n">_state_setup</span><span class="p">(</span><span class="n">github</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"created </span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">label</span><span class="si">!r}</span><span class="s2">, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">STATE_LABELS</span><span class="p">)</span><span class="si">}</span><span class="s2"> state labels, "</span>
+        <span class="sa">f</span><span class="s2">"and 'discovered' in </span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span></div>
+
+
+
 <span class="c1">#: SSOT command tree consumed by both ``__main__.py`` and (later) MCP/HTTP surfaces.</span>
 <span class="c1">#: Named explicitly (not by function `__name__`) so `liaise partner show`, not</span>
 <span class="c1">#: `liaise partner partner-show`.</span>
-<span class="n">_dispatch_funcs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"partner"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"show"</span><span class="p">:</span> <span class="n">partner_show</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">:</span> <span class="n">partner_list</span><span class="p">},</span> <span class="s2">"poll"</span><span class="p">:</span> <span class="n">poll</span><span class="p">}</span>
+<span class="n">_dispatch_funcs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"partner"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"show"</span><span class="p">:</span> <span class="n">partner_show</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">:</span> <span class="n">partner_list</span><span class="p">},</span>
+    <span class="s2">"poll"</span><span class="p">:</span> <span class="n">poll</span><span class="p">,</span>
+    <span class="s2">"setup"</span><span class="p">:</span> <span class="n">setup</span><span class="p">,</span>
+<span class="p">}</span>
 
 <span class="c1">#: `gh` is a dependency-injection seam (defaults to the real GhCli), not something</span>
 <span class="c1">#: to expose on the command line.</span>
-<span class="n">_dispatch_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"poll"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">}}</span>
+<span class="n">_dispatch_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"poll"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">},</span> <span class="s2">"setup"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">}}</span>
 </pre></div>
 
            </div>
