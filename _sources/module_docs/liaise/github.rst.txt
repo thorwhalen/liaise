@@ -1,0 +1,4 @@
+liaise.github
+=============
+.. automodule:: liaise.github
+   :members:
