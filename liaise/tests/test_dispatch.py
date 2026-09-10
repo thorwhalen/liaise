@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import stat
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -20,9 +19,17 @@ from liaise.dispatch import (
 )
 from liaise.github import FakeGitHub, Issue
 from liaise.state import current_state, set_state
+from liaise.tests.conftest import write_executable_script
 
 REPO = "example/app"
 T0 = datetime(2026, 1, 1, tzinfo=timezone.utc)
+
+#: A `command`/`resume_command` template gets `shlex.split()` after
+#: `.format()`. `shlex` treats "\" as a POSIX escape character, so a raw
+#: Windows path (sys.executable, or a tmp_path-derived script path) embedded
+#: directly corrupts under shlex — .as_posix() sidesteps it; Windows accepts
+#: forward-slash paths from Python just fine.
+_PY = Path(sys.executable).as_posix()
 
 
 def _partner(tmp_path, **overrides) -> PartnerConfig:
@@ -76,26 +83,22 @@ def test_echo_dispatcher_records_jobs_and_returns_a_session_id():
 @pytest.fixture
 def fake_claude_bin(tmp_path: Path) -> Path:
     """A fake `claude` that echoes a session id and records whether it was a resume."""
-    script = tmp_path / "claude"
-    script.write_text(
-        f"""#!{sys.executable}
-import sys, json
-resumed = "--resume" if "--resume" in sys.argv else "fresh"
-# the prompt file path is the last argument after -p
-print(json.dumps({{"session_id": "sess-abc123", "mode": resumed}}))
-"""
+    return write_executable_script(
+        tmp_path / "claude",
+        'import sys, json\n'
+        'resumed = "--resume" if "--resume" in sys.argv else "fresh"\n'
+        'print(json.dumps({"session_id": "sess-abc123", "mode": resumed}))\n',
     )
-    script.chmod(script.stat().st_mode | stat.S_IEXEC)
-    return script
 
 
 def test_claude_headless_captures_session_id(fake_claude_bin, tmp_path):
+    claude = fake_claude_bin.as_posix()
     job = Job(
         prompt="do the thing",
         cwd=str(tmp_path),
         budget=Budget(timeout_minutes=1),
-        command=f"{fake_claude_bin} -p {{prompt_file}} --output-format json",
-        resume_command=f"{fake_claude_bin} --resume {{session_id}} -p {{prompt_file}} --output-format json",
+        command=f"{claude} -p {{prompt_file}} --output-format json",
+        resume_command=f"{claude} --resume {{session_id}} -p {{prompt_file}} --output-format json",
     )
     result = ClaudeHeadless().dispatch(job)
     assert result.returncode == 0
@@ -104,12 +107,13 @@ def test_claude_headless_captures_session_id(fake_claude_bin, tmp_path):
 
 
 def test_claude_headless_uses_resume_command_when_session_id_given(fake_claude_bin, tmp_path):
+    claude = fake_claude_bin.as_posix()
     job = Job(
         prompt="do the thing",
         cwd=str(tmp_path),
         budget=Budget(timeout_minutes=1),
-        command=f"{fake_claude_bin} -p {{prompt_file}} --output-format json",
-        resume_command=f"{fake_claude_bin} --resume {{session_id}} -p {{prompt_file}} --output-format json",
+        command=f"{claude} -p {{prompt_file}} --output-format json",
+        resume_command=f"{claude} --resume {{session_id}} -p {{prompt_file}} --output-format json",
         session_id="sess-prior",
     )
     result = ClaudeHeadless().dispatch(job)
@@ -128,8 +132,8 @@ def test_claude_headless_writes_prompt_to_a_tempfile_not_argv(tmp_path):
         prompt="SECRET-LOOKING-PROMPT-TEXT",
         cwd=str(tmp_path),
         budget=Budget(timeout_minutes=1),
-        command=f"{sys.executable} {script} -p {{prompt_file}}",
-        resume_command=f"{sys.executable} {script} --resume {{session_id}} -p {{prompt_file}}",
+        command=f"{_PY} {script.as_posix()} -p {{prompt_file}}",
+        resume_command=f"{_PY} {script.as_posix()} --resume {{session_id}} -p {{prompt_file}}",
     )
     result = ClaudeHeadless().dispatch(job)
     assert "SECRET-LOOKING-PROMPT-TEXT" not in result.stdout
@@ -151,8 +155,8 @@ def test_claude_headless_rejects_a_malformed_session_id(tmp_path):
         prompt="hi",
         cwd=str(tmp_path),
         budget=Budget(timeout_minutes=1),
-        command=f"{sys.executable} {script} -p {{prompt_file}}",
-        resume_command=f"{sys.executable} {script} --resume {{session_id}} -p {{prompt_file}}",
+        command=f"{_PY} {script.as_posix()} -p {{prompt_file}}",
+        resume_command=f"{_PY} {script.as_posix()} --resume {{session_id}} -p {{prompt_file}}",
     )
     result = ClaudeHeadless().dispatch(job)
     assert result.session_id is None
@@ -172,8 +176,8 @@ def test_claude_headless_timeout_returns_a_result_instead_of_raising(tmp_path):
         prompt="hi",
         cwd=str(tmp_path),
         budget=Budget(timeout_minutes=0),  # 0 seconds: expires immediately
-        command=f"{sys.executable} {script} -p {{prompt_file}}",
-        resume_command=f"{sys.executable} {script} --resume {{session_id}} -p {{prompt_file}}",
+        command=f"{_PY} {script.as_posix()} -p {{prompt_file}}",
+        resume_command=f"{_PY} {script.as_posix()} --resume {{session_id}} -p {{prompt_file}}",
     )
     result = ClaudeHeadless().dispatch(job)  # must not raise
     assert result.returncode != 0
