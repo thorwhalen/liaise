@@ -22,13 +22,31 @@ from liaise.intake import (
 )
 from liaise.state import STATE_LABELS, current_state, set_state, state_label
 from liaise.state import setup as setup_labels
+from liaise.dispatch import (
+    ClaudeHeadless,
+    DispatchOutcome,
+    DispatchResult,
+    Dispatcher,
+    EchoDispatcher,
+    Job,
+    daily_dispatch_count,
+    dispatch_issue,
+    stored_session_id,
+)
+from liaise.notify import notify
+from liaise.prompt import compose_prompt
 
 __all__ = [
     "Budget",
+    "ClaudeHeadless",
     "Comment",
     "Config",
     "ConfigError",
     "DispatchConfig",
+    "DispatchOutcome",
+    "DispatchResult",
+    "Dispatcher",
+    "EchoDispatcher",
     "EscalateConfig",
     "FakeGitHub",
     "GhCli",
@@ -36,18 +54,24 @@ __all__ = [
     "GitHubError",
     "GlobalConfig",
     "Issue",
+    "Job",
     "Markers",
     "NotifyConfig",
     "PartnerConfig",
     "Readiness",
     "STATE_LABELS",
+    "compose_prompt",
     "compute_readiness",
     "current_state",
+    "daily_dispatch_count",
+    "dispatch_issue",
     "find_partner_issues",
     "is_partner_issue",
     "last_partner_activity",
     "load_config",
+    "notify",
     "set_state",
     "setup_labels",
     "state_label",
+    "stored_session_id",
 ]
