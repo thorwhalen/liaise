@@ -302,14 +302,16 @@ def test_poll_prints_countdown_and_changes_nothing(tmp_path):
     (root / "partners").mkdir(parents=True)
     (root / "briefs").mkdir()
     (root / "briefs" / "pat.md").write_text("hi\n")
+    # .as_posix(): TOML treats "\" as an escape char, so a raw Windows path
+    # breaks parsing (tomllib.TOMLDecodeError, confirmed in CI).
     (root / "config.toml").write_text(
-        f'owner_login = "owner"\nstate_dir = "{tmp_path / "state"}"\n'
+        f'owner_login = "owner"\nstate_dir = "{(tmp_path / "state").as_posix()}"\n'
     )
     (root / "partners" / "pat.toml").write_text(
         f'display_name = "Pat"\n'
         f'github_logins = ["pat"]\n'
         f'repo = "{REPO}"\n'
-        f'brief = "{root / "briefs" / "pat.md"}"\n'
+        f'brief = "{(root / "briefs" / "pat.md").as_posix()}"\n'
         f'quiet_minutes = 10\n'
     )
 
