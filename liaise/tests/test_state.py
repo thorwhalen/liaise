@@ -149,14 +149,16 @@ def test_cli_setup_reports_what_it_created(tmp_path):
     (root / "partners").mkdir(parents=True)
     (root / "briefs").mkdir()
     (root / "briefs" / "pat.md").write_text("hi\n")
+    # .as_posix(): TOML treats "\" as an escape char, so a raw Windows path
+    # breaks parsing (tomllib.TOMLDecodeError, confirmed in CI).
     (root / "config.toml").write_text(
-        f'owner_login = "owner"\nstate_dir = "{tmp_path / "state"}"\n'
+        f'owner_login = "owner"\nstate_dir = "{(tmp_path / "state").as_posix()}"\n'
     )
     (root / "partners" / "pat.toml").write_text(
         f'display_name = "Pat"\n'
         f'github_logins = ["pat"]\n'
         f'repo = "{REPO}"\n'
-        f'brief = "{root / "briefs" / "pat.md"}"\n'
+        f'brief = "{(root / "briefs" / "pat.md").as_posix()}"\n'
     )
     fake = FakeGitHub()
     output = cli_setup("pat", root=str(root), gh=fake)
