@@ -4,6 +4,7 @@ works, and the skill file is well-formed.
 
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -40,13 +41,20 @@ def test_readme_quick_start_actually_builds_a_working_config(tmp_path):
 
     fake_home = tmp_path / "home"
     fake_home.mkdir()
-    subprocess.run(
+    # Override HOME on top of the real environment, not instead of it — a
+    # from-scratch {"HOME": ..., "PATH": ...} environment starved Windows'
+    # Git Bash of variables (SystemRoot, TEMP, ...) it needs just to start,
+    # confirmed in CI: bash exited 1 before running a single line.
+    env = {**os.environ, "HOME": str(fake_home)}
+    result = subprocess.run(
         ["bash", "-c", "\n".join(setup_lines)],
-        env={"HOME": str(fake_home), "PATH": __import__("os").environ["PATH"]},
-        check=True,
+        env=env,
         capture_output=True,
         text=True,
         timeout=20,
+    )
+    assert result.returncode == 0, (
+        f"README quick start block failed under bash:\n{result.stderr}"
     )
 
     config_root = fake_home / ".config" / "liaise"
