@@ -26,7 +26,14 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 #: appears here (``thorwhalen/liaise``, the author line) and is out of scope for
 #: this guard, which is about partner identities and hosts, not the package's own.
 _EXCLUDED_FILES = {"pyproject.toml", "LICENSE"}
-_SKIP_DIR_NAMES = {".git", "__pycache__", ".pytest_cache", ".ruff_cache", "dist", "build"}
+#: Not source: virtualenvs (CI's `uv sync` creates `.venv` INSIDE the repo
+#: checkout, full of third-party package METADATA files carrying real email
+#: addresses and repo-shaped strings — caught this the hard way, green
+#: locally with no .venv present, red in CI with one), caches, build output.
+_SKIP_DIR_NAMES = {
+    ".git", "__pycache__", ".pytest_cache", ".ruff_cache", ".mypy_cache",
+    "dist", "build", ".venv", "venv", ".tox", "node_modules",
+}
 
 #: Walks the filesystem directly (not `git ls-files`) so a newly-written,
 #: not-yet-committed file is covered too — the moment that matters most.
@@ -84,6 +91,14 @@ def _repo_text_files() -> list[Path]:
         if path.suffix not in _TEXT_SUFFIXES:
             continue
         if any(part in _SKIP_DIR_NAMES for part in path.parts):
+            continue
+        # Belt and suspenders on the .venv miss above: installed-package
+        # metadata (site-packages, *.dist-info, *.egg-info) is never source,
+        # regardless of what the virtualenv directory happens to be named.
+        if any(
+            part == "site-packages" or part.endswith((".dist-info", ".egg-info"))
+            for part in path.parts
+        ):
             continue
         files.append(path)
     return files
