@@ -1,0 +1,4 @@
+liaise.cli
+==========
+.. automodule:: liaise.cli
+   :members:

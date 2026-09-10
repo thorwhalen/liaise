@@ -1,0 +1,4 @@
+liaise.tests.test_no_personal_data
+==================================
+.. automodule:: liaise.tests.test_no_personal_data
+   :members:

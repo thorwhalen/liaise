@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.tests.test_no_personal_data &mdash; liaise 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+    <link rel="prev" title="liaise.tests.test_config" href="test_config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.tests.test_no_personal_data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.ALLOWED_LOGINS"><code class="docutils literal notranslate"><span class="pre">ALLOWED_LOGINS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.ALLOWED_OWNER"><code class="docutils literal notranslate"><span class="pre">ALLOWED_OWNER</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.GITHUB_LOGINS_ARRAY_RE"><code class="docutils literal notranslate"><span class="pre">GITHUB_LOGINS_ARRAY_RE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.OWNER_REPO_BARE_RE"><code class="docutils literal notranslate"><span class="pre">OWNER_REPO_BARE_RE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.OWNER_REPO_CONTEXT_RE"><code class="docutils literal notranslate"><span class="pre">OWNER_REPO_CONTEXT_RE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.OWNER_REPO_LITERAL_RE"><code class="docutils literal notranslate"><span class="pre">OWNER_REPO_LITERAL_RE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE"><code class="docutils literal notranslate"><span class="pre">WINDOWS_LOCAL_PATH_RE</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">liaise.tests.test_no_personal_data</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../../_sources/module_docs/liaise/tests/test_no_personal_data.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-liaise.tests.test_no_personal_data">
+<span id="liaise-tests-test-no-personal-data"></span><h1>liaise.tests.test_no_personal_data<a class="headerlink" href="#module-liaise.tests.test_no_personal_data" title="Link to this heading"></a></h1>
+<p>The no-personal-data guard (A.1 rule 1).</p>
+<p>Partner identities, repos, briefs, commands and hosts are configuration under
+<code class="docutils literal notranslate"><span class="pre">~/.config/liaise/</span></code>, never in this repository’s code, tests, docs, data or
+skill files. This scans the whole repository — deliberately excluding only
+<code class="docutils literal notranslate"><span class="pre">pyproject.toml</span></code> and <code class="docutils literal notranslate"><span class="pre">LICENSE</span></code> (project metadata, not partner data) — for
+four things: email addresses, absolute local filesystem paths, a real-looking
+<code class="docutils literal notranslate"><span class="pre">owner/repo</span></code> string, and a GitHub login not on the small fictional
+allowlist.</p>
+<p>Mutation check: comment out any <code class="docutils literal notranslate"><span class="pre">assert</span> <span class="pre">not</span></code> below and the corresponding
+test must fail — that is what proves the guard actually guards something.
+Verified against a matrix of six injection shapes (local path + email,
+GitHub login shape, owner/repo shape, hostname-with-&#64;) each in a file the
+guard actually reads.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.ALLOWED_LOGINS">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">ALLOWED_LOGINS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'octocat',</span> <span class="pre">'pat'}</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.ALLOWED_LOGINS" title="Link to this definition"></a></dt>
+<dd><p>The only GitHub logins allowed anywhere <cite>github_logins</cite> is set.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.ALLOWED_OWNER">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">ALLOWED_OWNER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'example'</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.ALLOWED_OWNER" title="Link to this definition"></a></dt>
+<dd><p>The only owner segment allowed in an owner/repo-shaped literal.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.GITHUB_LOGINS_ARRAY_RE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">GITHUB_LOGINS_ARRAY_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('github_logins\\s*=\\s*\\[([^\\]]*)\\]')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.GITHUB_LOGINS_ARRAY_RE" title="Link to this definition"></a></dt>
+<dd><p><cite>github_logins = […]</cite> TOML/Python array literals, whose quoted entries
+must all be fictional.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.OWNER_REPO_BARE_RE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">OWNER_REPO_BARE_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\b([a-zA-Z][a-zA-Z0-9]*-[a-zA-Z0-9-]{1,37})/([a-zA-Z0-9][a-zA-Z0-9._-]*)\\b')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.OWNER_REPO_BARE_RE" title="Link to this definition"></a></dt>
+<dd><p>Bare (unquoted) prose mentions — e.g. a repo named in a markdown sentence.
+Requiring a hyphen or digit in the owner segment is what keeps this from
+matching this package’s own plain-lowercase-word path fragments
+(<cite>liaise/tests</cite>, <cite>config/liaise</cite>, <cite>local/share</cite>, …): real org/repo slugs
+commonly carry a hyphen or digit, our own internal path words never do.
+A narrower net than the quoted/context checks above, on purpose.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.OWNER_REPO_CONTEXT_RE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">OWNER_REPO_CONTEXT_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('(?:--repo[=</span> <span class="pre">]|github\\.com/)([a-zA-Z0-9][a-zA-Z0-9-]{1,38})/([a-zA-Z0-9._-]+)')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.OWNER_REPO_CONTEXT_RE" title="Link to this definition"></a></dt>
+<dd><p>The same shape after <cite>–repo</cite> (a <cite>gh</cite>/README invocation) or in a
+<cite>github.com/</cite> URL.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.OWNER_REPO_LITERAL_RE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">OWNER_REPO_LITERAL_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('[&quot;\']([a-zA-Z0-9][a-zA-Z0-9-]{1,38})/([a-zA-Z0-9._-]+)[&quot;\']')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.OWNER_REPO_LITERAL_RE" title="Link to this definition"></a></dt>
+<dd><p>A quoted, EXACTLY-two-segment value shaped like a GitHub owner-slash-repo —
+anchored to the quote characters so a longer path (e.g. a quoted brief
+path under ~/.config/liaise/) can never satisfy it: there is nothing in
+the pattern between the two captured segments and the quotes but the “/”.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">WINDOWS_LOCAL_PATH_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\b[A-Za-z]:\\\\[^\\s\\&quot;\'&lt;&gt;]+')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE" title="Link to this definition"></a></dt>
+<dd><p>without it this matches the “t” in ordinary prose
+like “at least:nn” (a Python source file’s literal backslash-n), which
+is not a path at all — a drive letter is always its own token.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><cite>b</cite> is load-bearing</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="test_config.html" class="btn btn-neutral float-left" title="liaise.tests.test_config" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

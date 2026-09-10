@@ -1,0 +1,12 @@
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   module_docs/liaise
+   module_docs/liaise/__main__
+   module_docs/liaise/cli
+   module_docs/liaise/config
+   module_docs/liaise/tests
+   module_docs/liaise/tests/conftest
+   module_docs/liaise/tests/test_config
+   module_docs/liaise/tests/test_no_personal_data

@@ -1,0 +1,452 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.config &mdash; liaise 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.config</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.config</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Config model and loading for liaise.</span>
+
+<span class="sd">Everything partner-specific — identities, repos, briefs, commands, hosts — lives</span>
+<span class="sd">under ``~/.config/liaise/`` (see :func:`load_config`), never in this package's</span>
+<span class="sd">code, tests, docs, fixtures or examples. This module only knows the *shape* of</span>
+<span class="sd">that configuration and how to resolve it into frozen dataclasses with defaults</span>
+<span class="sd">applied; it never hardcodes a real partner.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">11</span><span class="p">):</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tomllib</span>
+<span class="k">else</span><span class="p">:</span>  <span class="c1"># pragma: no cover - liaise requires &gt;=3.11</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">tomli</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tomllib</span>
+
+<span class="n">DFLT_CONFIG_ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">".config"</span> <span class="o">/</span> <span class="s2">"liaise"</span>
+
+<span class="n">DFLT_QUIET_MINUTES</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">DFLT_GO_MINUTES</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">DFLT_GO_MARKER</span> <span class="o">=</span> <span class="s2">"#startwork#"</span>
+<span class="n">DFLT_WAIT_MARKER</span> <span class="o">=</span> <span class="s2">"#wait#"</span>
+<span class="n">DFLT_LABEL_PREFIX</span> <span class="o">=</span> <span class="s2">"liaise:"</span>
+<span class="n">DFLT_TIMEOUT_MINUTES</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">DFLT_MAX_TURNS</span> <span class="o">=</span> <span class="mi">200</span>
+<span class="n">DFLT_DAILY_DISPATCHES</span> <span class="o">=</span> <span class="mi">6</span>
+<span class="n">DFLT_DEPLOY_PER</span> <span class="o">=</span> <span class="s2">"batch"</span>
+<span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">DFLT_REPLY_MODE</span> <span class="o">=</span> <span class="s2">"draft"</span>
+<span class="n">DFLT_NTFY_TOPIC_ENV</span> <span class="o">=</span> <span class="s2">"LIAISE_NTFY_TOPIC"</span>
+<span class="c1">#: `-p`/`--print` takes the prompt as its next argument, not a file to open on</span>
+<span class="c1">#: its own — a bare path here IS the prompt (an agent seeing only a path has no</span>
+<span class="c1">#: instruction to read it), so the templates spell that out explicitly.</span>
+<span class="n">DFLT_DISPATCH_COMMAND</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">'claude -p "Read and follow the instructions in </span><span class="si">{prompt_file}</span><span class="s1">" '</span>
+    <span class="s2">"--permission-mode auto --output-format json"</span>
+<span class="p">)</span>
+<span class="n">DFLT_RESUME_COMMAND</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">'claude --resume </span><span class="si">{session_id}</span><span class="s1"> -p "Read and follow the instructions in '</span>
+    <span class="s1">'</span><span class="si">{prompt_file}</span><span class="s1">" --output-format json'</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="ConfigError">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.ConfigError">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConfigError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Raised when configuration is missing or malformed.</span>
+
+<span class="sd">    Always names the path involved and, for a missing file, the minimal content</span>
+<span class="sd">    that would fix it — an agent (or a human) reading the error should not have</span>
+<span class="sd">    to go spelunking in the design docs to recover.</span>
+<span class="sd">    """</span></div>
+
+
+
+<div class="viewcode-block" id="Markers">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.Markers">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Markers</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Literal, case-insensitive substrings a partner can drop in a comment."""</span>
+
+    <span class="n">go</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_GO_MARKER</span>
+    <span class="n">wait</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_WAIT_MARKER</span></div>
+
+
+
+<div class="viewcode-block" id="Budget">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.Budget">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Budget</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Per-dispatch and per-day limits. Mandatory, never unlimited."""</span>
+
+    <span class="n">timeout_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_TIMEOUT_MINUTES</span>
+    <span class="n">max_turns</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_MAX_TURNS</span>
+    <span class="n">daily_dispatches</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_DAILY_DISPATCHES</span></div>
+
+
+
+<div class="viewcode-block" id="NotifyConfig">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.NotifyConfig">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NotifyConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Where to send owner notifications. See :mod:`liaise.notify`."""</span>
+
+    <span class="n">ntfy_topic_env</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_NTFY_TOPIC_ENV</span></div>
+
+
+
+<div class="viewcode-block" id="DispatchConfig">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.DispatchConfig">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DispatchConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Command templates used to run (and resume) the coding agent."""</span>
+
+    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_DISPATCH_COMMAND</span>
+    <span class="n">cwd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"."</span>
+    <span class="n">resume_command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_RESUME_COMMAND</span></div>
+
+
+
+<div class="viewcode-block" id="EscalateConfig">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.EscalateConfig">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EscalateConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Thresholds beyond which the agent must route a decision to the owner."""</span>
+
+    <span class="n">money_usd</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">50.0</span>
+    <span class="n">max_scope</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"about a day of work"</span></div>
+
+
+
+<span class="c1">#: Fields every partner inherits from the global config unless overridden.</span>
+<span class="n">_INHERITABLE_DEFAULTS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"quiet_minutes"</span><span class="p">,</span>
+    <span class="s2">"go_minutes"</span><span class="p">,</span>
+    <span class="s2">"markers"</span><span class="p">,</span>
+    <span class="s2">"label_prefix"</span><span class="p">,</span>
+    <span class="s2">"budget"</span><span class="p">,</span>
+    <span class="s2">"deploy_per"</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="GlobalConfig">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.GlobalConfig">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GlobalConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``~/.config/liaise/config.toml`` — settings every partner inherits."""</span>
+
+    <span class="n">owner_login</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">state_dir</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">notify</span><span class="p">:</span> <span class="n">NotifyConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">NotifyConfig</span><span class="p">)</span>
+    <span class="n">quiet_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_QUIET_MINUTES</span>
+    <span class="n">go_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_GO_MINUTES</span>
+    <span class="n">markers</span><span class="p">:</span> <span class="n">Markers</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Markers</span><span class="p">)</span>
+    <span class="n">label_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_LABEL_PREFIX</span>
+    <span class="n">budget</span><span class="p">:</span> <span class="n">Budget</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Budget</span><span class="p">)</span>
+    <span class="n">deploy_per</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_DEPLOY_PER</span>
+    <span class="n">deployed_nudge_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span></div>
+
+
+
+<div class="viewcode-block" id="PartnerConfig">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.PartnerConfig">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PartnerConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A resolved partner: ``~/.config/liaise/partners/&lt;slug&gt;.toml`` plus defaults."""</span>
+
+    <span class="n">slug</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">display_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">github_logins</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">brief</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">reply_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_REPLY_MODE</span>
+    <span class="n">dispatch</span><span class="p">:</span> <span class="n">DispatchConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DispatchConfig</span><span class="p">)</span>
+    <span class="n">verify</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">deploy</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">escalate</span><span class="p">:</span> <span class="n">EscalateConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">EscalateConfig</span><span class="p">)</span>
+    <span class="n">quiet_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_QUIET_MINUTES</span>
+    <span class="n">go_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_GO_MINUTES</span>
+    <span class="n">markers</span><span class="p">:</span> <span class="n">Markers</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Markers</span><span class="p">)</span>
+    <span class="n">label_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_LABEL_PREFIX</span>
+    <span class="n">budget</span><span class="p">:</span> <span class="n">Budget</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Budget</span><span class="p">)</span>
+    <span class="n">deploy_per</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_DEPLOY_PER</span>
+    <span class="n">deployed_nudge_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span></div>
+
+
+
+<div class="viewcode-block" id="Config">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.Config">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Everything :func:`load_config` resolved: the global config and every partner."""</span>
+
+    <span class="n">global_</span><span class="p">:</span> <span class="n">GlobalConfig</span>
+    <span class="n">partners</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PartnerConfig</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Config.partner">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.Config.partner">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">partner</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">slug</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartnerConfig</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Return the resolved partner config for ``slug``, or raise :class:`ConfigError`."""</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">partners</span><span class="p">[</span><span class="n">slug</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">known</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">partners</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">"(none configured)"</span>
+            <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"No partner </span><span class="si">{</span><span class="n">slug</span><span class="si">!r}</span><span class="s2"> configured. Known partners: </span><span class="si">{</span><span class="n">known</span><span class="si">}</span><span class="s2">. "</span>
+                <span class="sa">f</span><span class="s2">"Add </span><span class="si">{</span><span class="n">DFLT_CONFIG_ROOT</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="s1">'partners'</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="p">(</span><span class="n">slug</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">'.toml'</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span></div>
+</div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_toml</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">tomllib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing config file: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_missing_global_config_error</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigError</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">ConfigError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"Missing global config at </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">. Create it with at least:</span><span class="se">\n\n</span><span class="s2">"</span>
+        <span class="s1">'  owner_login = "your-github-login"</span><span class="se">\n</span><span class="s1">'</span>
+        <span class="s1">'  state_dir = "~/.local/share/liaise"</span><span class="se">\n</span><span class="s1">'</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_missing_partner_field_error</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigError</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">ConfigError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> is missing required field </span><span class="si">{</span><span class="n">field_name</span><span class="si">!r}</span><span class="s2">. A minimal partner "</span>
+        <span class="sa">f</span><span class="s2">"file needs at least:</span><span class="se">\n\n</span><span class="s2">"</span>
+        <span class="s1">'  display_name = "Pat"</span><span class="se">\n</span><span class="s1">'</span>
+        <span class="s1">'  github_logins = ["pat"]</span><span class="se">\n</span><span class="s1">'</span>
+        <span class="s1">'  repo = "example/app"</span><span class="se">\n</span><span class="s1">'</span>
+        <span class="s1">'  brief = "~/.config/liaise/briefs/pat.md"</span><span class="se">\n</span><span class="s1">'</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_markers_from</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Markers</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Markers</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dflt</span>
+    <span class="k">return</span> <span class="n">Markers</span><span class="p">(</span><span class="n">go</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"go"</span><span class="p">,</span> <span class="n">dflt</span><span class="o">.</span><span class="n">go</span><span class="p">),</span> <span class="n">wait</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"wait"</span><span class="p">,</span> <span class="n">dflt</span><span class="o">.</span><span class="n">wait</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_budget_from</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Budget</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Budget</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dflt</span>
+    <span class="k">return</span> <span class="n">Budget</span><span class="p">(</span>
+        <span class="n">timeout_minutes</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"timeout_minutes"</span><span class="p">,</span> <span class="n">dflt</span><span class="o">.</span><span class="n">timeout_minutes</span><span class="p">),</span>
+        <span class="n">max_turns</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"max_turns"</span><span class="p">,</span> <span class="n">dflt</span><span class="o">.</span><span class="n">max_turns</span><span class="p">),</span>
+        <span class="n">daily_dispatches</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"daily_dispatches"</span><span class="p">,</span> <span class="n">dflt</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_escalate_from</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">EscalateConfig</span><span class="p">:</span>
+    <span class="n">dflt</span> <span class="o">=</span> <span class="n">EscalateConfig</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dflt</span>
+    <span class="k">return</span> <span class="n">EscalateConfig</span><span class="p">(</span>
+        <span class="n">money_usd</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"money_usd"</span><span class="p">,</span> <span class="n">dflt</span><span class="o">.</span><span class="n">money_usd</span><span class="p">),</span>
+        <span class="n">max_scope</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"max_scope"</span><span class="p">,</span> <span class="n">dflt</span><span class="o">.</span><span class="n">max_scope</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_global_config</span><span class="p">(</span><span class="n">root</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GlobalConfig</span><span class="p">:</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">"config.toml"</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">_missing_global_config_error</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">_load_toml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">required</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"owner_login"</span><span class="p">,</span> <span class="s2">"state_dir"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">required</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> is missing required field </span><span class="si">{</span><span class="n">required</span><span class="si">!r}</span><span class="s2">."</span>
+            <span class="p">)</span>
+    <span class="n">dflt_markers</span> <span class="o">=</span> <span class="n">Markers</span><span class="p">()</span>
+    <span class="n">dflt_budget</span> <span class="o">=</span> <span class="n">Budget</span><span class="p">()</span>
+    <span class="n">notify_raw</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"notify"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="k">return</span> <span class="n">GlobalConfig</span><span class="p">(</span>
+        <span class="n">owner_login</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"owner_login"</span><span class="p">],</span>
+        <span class="n">state_dir</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"state_dir"</span><span class="p">],</span>
+        <span class="n">notify</span><span class="o">=</span><span class="n">NotifyConfig</span><span class="p">(</span>
+            <span class="n">ntfy_topic_env</span><span class="o">=</span><span class="n">notify_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ntfy_topic_env"</span><span class="p">,</span> <span class="n">DFLT_NTFY_TOPIC_ENV</span><span class="p">)</span>
+        <span class="p">),</span>
+        <span class="n">quiet_minutes</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"quiet_minutes"</span><span class="p">,</span> <span class="n">DFLT_QUIET_MINUTES</span><span class="p">),</span>
+        <span class="n">go_minutes</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"go_minutes"</span><span class="p">,</span> <span class="n">DFLT_GO_MINUTES</span><span class="p">),</span>
+        <span class="n">markers</span><span class="o">=</span><span class="n">_markers_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"markers"</span><span class="p">),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">dflt_markers</span><span class="p">),</span>
+        <span class="n">label_prefix</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_prefix"</span><span class="p">,</span> <span class="n">DFLT_LABEL_PREFIX</span><span class="p">),</span>
+        <span class="n">budget</span><span class="o">=</span><span class="n">_budget_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"budget"</span><span class="p">),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">dflt_budget</span><span class="p">),</span>
+        <span class="n">deploy_per</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deploy_per"</span><span class="p">,</span> <span class="n">DFLT_DEPLOY_PER</span><span class="p">),</span>
+        <span class="n">deployed_nudge_days</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deployed_nudge_days"</span><span class="p">,</span> <span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_load_partner_config</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">glob</span><span class="p">:</span> <span class="n">GlobalConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PartnerConfig</span><span class="p">:</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">_load_toml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">slug</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">stem</span>
+    <span class="k">for</span> <span class="n">required</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"display_name"</span><span class="p">,</span> <span class="s2">"github_logins"</span><span class="p">,</span> <span class="s2">"repo"</span><span class="p">,</span> <span class="s2">"brief"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">required</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_missing_partner_field_error</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">required</span><span class="p">)</span>
+
+    <span class="n">dispatch_raw</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dispatch"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">dispatch</span> <span class="o">=</span> <span class="n">DispatchConfig</span><span class="p">(</span>
+        <span class="n">command</span><span class="o">=</span><span class="n">dispatch_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"command"</span><span class="p">,</span> <span class="n">DFLT_DISPATCH_COMMAND</span><span class="p">),</span>
+        <span class="n">cwd</span><span class="o">=</span><span class="n">dispatch_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"cwd"</span><span class="p">,</span> <span class="s2">"."</span><span class="p">),</span>
+        <span class="n">resume_command</span><span class="o">=</span><span class="n">dispatch_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"resume_command"</span><span class="p">,</span> <span class="n">DFLT_RESUME_COMMAND</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">escalate</span> <span class="o">=</span> <span class="n">_escalate_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"escalate"</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">PartnerConfig</span><span class="p">(</span>
+        <span class="n">slug</span><span class="o">=</span><span class="n">slug</span><span class="p">,</span>
+        <span class="n">display_name</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"display_name"</span><span class="p">],</span>
+        <span class="n">github_logins</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">"github_logins"</span><span class="p">]),</span>
+        <span class="n">repo</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"repo"</span><span class="p">],</span>
+        <span class="n">brief</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"brief"</span><span class="p">],</span>
+        <span class="n">label</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"partner:</span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">"</span><span class="p">),</span>
+        <span class="n">reply_mode</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reply_mode"</span><span class="p">,</span> <span class="n">DFLT_REPLY_MODE</span><span class="p">),</span>
+        <span class="n">dispatch</span><span class="o">=</span><span class="n">dispatch</span><span class="p">,</span>
+        <span class="n">verify</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"verify"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+        <span class="n">deploy</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deploy"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+        <span class="n">escalate</span><span class="o">=</span><span class="n">escalate</span><span class="p">,</span>
+        <span class="n">quiet_minutes</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"quiet_minutes"</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">quiet_minutes</span><span class="p">),</span>
+        <span class="n">go_minutes</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"go_minutes"</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">go_minutes</span><span class="p">),</span>
+        <span class="n">markers</span><span class="o">=</span><span class="n">_markers_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"markers"</span><span class="p">),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">markers</span><span class="p">),</span>
+        <span class="n">label_prefix</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_prefix"</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">label_prefix</span><span class="p">),</span>
+        <span class="n">budget</span><span class="o">=</span><span class="n">_budget_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"budget"</span><span class="p">),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">budget</span><span class="p">),</span>
+        <span class="n">deploy_per</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deploy_per"</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">deploy_per</span><span class="p">),</span>
+        <span class="n">deployed_nudge_days</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deployed_nudge_days"</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">deployed_nudge_days</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="load_config">
+<a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.load_config">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">load_config</span><span class="p">(</span><span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Config</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Load and resolve liaise's configuration into frozen dataclasses.</span>
+
+<span class="sd">    ``root`` defaults to ``~/.config/liaise``. A missing global config raises</span>
+<span class="sd">    :class:`ConfigError` naming the path and the minimal content needed. Every</span>
+<span class="sd">    partner under ``partners/*.toml`` is resolved with the global defaults</span>
+<span class="sd">    applied, then overridden by whatever the partner file sets explicitly.</span>
+<span class="sd">    """</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">DFLT_CONFIG_ROOT</span>
+    <span class="n">glob</span> <span class="o">=</span> <span class="n">_load_global_config</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+
+    <span class="n">partners</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">PartnerConfig</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">partners_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="s2">"partners"</span>
+    <span class="k">if</span> <span class="n">partners_dir</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">partners_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.toml"</span><span class="p">)):</span>
+            <span class="n">partner</span> <span class="o">=</span> <span class="n">_load_partner_config</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">glob</span><span class="o">=</span><span class="n">glob</span><span class="p">)</span>
+            <span class="n">partners</span><span class="p">[</span><span class="n">partner</span><span class="o">.</span><span class="n">slug</span><span class="p">]</span> <span class="o">=</span> <span class="n">partner</span>
+
+    <span class="k">return</span> <span class="n">Config</span><span class="p">(</span><span class="n">global_</span><span class="o">=</span><span class="n">glob</span><span class="p">,</span> <span class="n">partners</span><span class="o">=</span><span class="n">partners</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

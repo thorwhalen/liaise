@@ -1,0 +1,4 @@
+liaise.__main__
+===============
+.. automodule:: liaise.__main__
+   :members:
