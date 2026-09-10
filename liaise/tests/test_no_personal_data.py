@@ -46,8 +46,11 @@ EMAIL_RE = re.compile(r"[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+\.[A-Za-z0-9-.]+")
 ABS_LOCAL_PATH_RE = re.compile(r"/(?:Users|home|root)/[^\s\"'()]+")
 #: `\b` is load-bearing: without it this matches the "t" in ordinary prose
 #: like "at least:\n\n" (a Python source file's literal backslash-n), which
-#: is not a path at all — a drive letter is always its own token.
-WINDOWS_LOCAL_PATH_RE = re.compile(r"\b[A-Za-z]:\\[^\s\"'<>]+")
+#: is not a path at all — a drive letter is always its own token. Scoped to
+#: `\Users\` specifically (mirroring ABS_LOCAL_PATH_RE's POSIX scope) so a
+#: generic, non-personal system path like `C:\Program Files\Git\bin\bash.exe`
+#: — needed for real cross-platform test code — isn't a false positive.
+WINDOWS_LOCAL_PATH_RE = re.compile(r"\b[A-Za-z]:\\Users\\[^\s\"'<>]+")
 
 #: A quoted, EXACTLY-two-segment value shaped like a GitHub owner-slash-repo —
 #: anchored to the quote characters so a longer path (e.g. a quoted brief
