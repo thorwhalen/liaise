@@ -1,0 +1,4 @@
+liaise.tests.test_docs
+======================
+.. automodule:: liaise.tests.test_docs
+   :members:

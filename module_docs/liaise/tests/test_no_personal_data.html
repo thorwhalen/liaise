@@ -65,6 +65,7 @@
 <li class="toctree-l1"><a class="reference internal" href="conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_config.html">liaise.tests.test_config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_dispatch.html">liaise.tests.test_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_intake.html">liaise.tests.test_intake</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.tests.test_no_personal_data</a><ul>
@@ -171,10 +172,13 @@ the pattern between the two captured segments and the quotes but the “/”.</p
 
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE">
-<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">WINDOWS_LOCAL_PATH_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\b[A-Za-z]:\\\\[^\\s\\&quot;\'&lt;&gt;]+')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE" title="Link to this definition"></a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">WINDOWS_LOCAL_PATH_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\b[A-Za-z]:\\\\Users\\\\[^\\s\\&quot;\'&lt;&gt;]+')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE" title="Link to this definition"></a></dt>
 <dd><p>without it this matches the “t” in ordinary prose
 like “at least:nn” (a Python source file’s literal backslash-n), which
-is not a path at all — a drive letter is always its own token.</p>
+is not a path at all — a drive letter is always its own token. Scoped to
+<cite>Users` specifically (mirroring ABS_LOCAL_PATH_RE’s POSIX scope) so a
+generic, non-personal system path like `C:Program FilesGitbinbash.exe</cite>
+— needed for real cross-platform test code — isn’t a false positive.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><cite>b</cite> is load-bearing</p>

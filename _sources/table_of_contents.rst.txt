@@ -18,6 +18,7 @@
    module_docs/liaise/tests/conftest
    module_docs/liaise/tests/test_config
    module_docs/liaise/tests/test_dispatch
+   module_docs/liaise/tests/test_docs
    module_docs/liaise/tests/test_github
    module_docs/liaise/tests/test_intake
    module_docs/liaise/tests/test_no_personal_data

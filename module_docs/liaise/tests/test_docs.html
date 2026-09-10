@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.tests.test_intake &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.tests.test_docs &mdash; liaise 0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
@@ -24,8 +24,8 @@
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="liaise.tests.test_no_personal_data" href="test_no_personal_data.html" />
-    <link rel="prev" title="liaise.tests.test_github" href="test_github.html" /> 
+    <link rel="next" title="liaise.tests.test_github" href="test_github.html" />
+    <link rel="prev" title="liaise.tests.test_dispatch" href="test_dispatch.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -65,9 +65,13 @@
 <li class="toctree-l1"><a class="reference internal" href="conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_config.html">liaise.tests.test_config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_dispatch.html">liaise.tests.test_dispatch</a></li>
-<li class="toctree-l1"><a class="reference internal" href="test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.tests.test_docs</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_docs.test_readme_quick_start_actually_builds_a_working_config"><code class="docutils literal notranslate"><span class="pre">test_readme_quick_start_actually_builds_a_working_config()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_docs.test_readme_quick_start_does_not_end_by_installing_a_live_daemon"><code class="docutils literal notranslate"><span class="pre">test_readme_quick_start_does_not_end_by_installing_a_live_daemon()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="test_github.html">liaise.tests.test_github</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test_intake.html">liaise.tests.test_intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -90,9 +94,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">liaise.tests.test_intake</li>
+      <li class="breadcrumb-item active">liaise.tests.test_docs</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../../_sources/module_docs/liaise/tests/test_intake.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../../_sources/module_docs/liaise/tests/test_docs.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -100,16 +104,38 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="liaise-tests-test-intake">
-<h1>liaise.tests.test_intake<a class="headerlink" href="#liaise-tests-test-intake" title="Link to this heading"></a></h1>
+  <section id="module-liaise.tests.test_docs">
+<span id="liaise-tests-test-docs"></span><h1>liaise.tests.test_docs<a class="headerlink" href="#module-liaise.tests.test_docs" title="Link to this heading"></a></h1>
+<p>Tests for README.md and the shipped skill (A.9): the quick start actually
+works, and the skill file is well-formed.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tests.test_docs.test_readme_quick_start_actually_builds_a_working_config">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_docs.</span></span><span class="sig-name descname"><span class="pre">test_readme_quick_start_actually_builds_a_working_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tmp_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/liaise/tests/test_docs.html#test_readme_quick_start_actually_builds_a_working_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tests.test_docs.test_readme_quick_start_actually_builds_a_working_config" title="Link to this definition"></a></dt>
+<dd><p>M-9: drives the test from the README’s own fenced block — instead of a
+hand-typed config that could drift from it silently — up to the first
+line that needs a real <cite>gh</cite> (<cite>liaise setup pat</cite>). Runs it as real shell
+(the heredocs, <cite>~</cite> expansion, quoting — exactly as a reader would type
+it) against a fake $HOME, then confirms <cite>liaise partner show pat</cite>
+resolves the config it actually built.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tests.test_docs.test_readme_quick_start_does_not_end_by_installing_a_live_daemon">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_docs.</span></span><span class="sig-name descname"><span class="pre">test_readme_quick_start_does_not_end_by_installing_a_live_daemon</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/liaise/tests/test_docs.html#test_readme_quick_start_does_not_end_by_installing_a_live_daemon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tests.test_docs.test_readme_quick_start_does_not_end_by_installing_a_live_daemon" title="Link to this definition"></a></dt>
+<dd><p>M-9: read-only-by-default is non-negotiable (A.1 rule 4) — the quick
+start must not end on an acting command (<cite>liaise schedule install</cite>
+installs a recurring scheduled job). It should end at a read-only
+command (<cite>poll</cite>, or <cite>run –once –dry-run</cite>).</p>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="test_github.html" class="btn btn-neutral float-left" title="liaise.tests.test_github" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="test_no_personal_data.html" class="btn btn-neutral float-right" title="liaise.tests.test_no_personal_data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="test_dispatch.html" class="btn btn-neutral float-left" title="liaise.tests.test_dispatch" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="test_github.html" class="btn btn-neutral float-right" title="liaise.tests.test_github" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
