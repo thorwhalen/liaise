@@ -157,16 +157,29 @@ class EchoDispatcher:
 # ---- budgets: daily dispatch cap, session-id memory (dol-backed store, injectable) ----
 
 
+def default_store(state_dir: str) -> MutableMapping:
+    """The `dol`-backed store `liaise` uses by default: one JSON file per key,
+    under `state_dir`. Session ids, daily counters and the last-run stamp all
+    live here — never on GitHub (A.1 rule 3). Tests use a plain `dict` instead.
+    """
+    import dol
+
+    return dol.Jsons(str(Path(state_dir).expanduser()))
+
+
 def _today(now: Optional[datetime] = None) -> str:
     return (now or datetime.now(timezone.utc)).date().isoformat()
 
 
 def _daily_key(partner: PartnerConfig, day: str) -> str:
-    return f"daily/{partner.slug}/{day}"
+    # No "/" — the default store (dol.Jsons) treats it as a subdirectory
+    # separator and won't create missing parent directories on write.
+    return f"daily__{partner.slug}__{day}"
 
 
 def _session_key(issue: Issue) -> str:
-    return f"sessions/{issue.repo}#{issue.number}"
+    safe_repo = issue.repo.replace("/", "-")
+    return f"sessions__{safe_repo}__{issue.number}"
 
 
 def daily_dispatch_count(
@@ -179,6 +192,24 @@ def daily_dispatch_count(
 def stored_session_id(store: MutableMapping, issue: Issue) -> Optional[str]:
     """The session id stored for `issue`, if a previous dispatch left one."""
     return store.get(_session_key(issue))
+
+
+def _dispatched_at_key(issue: Issue) -> str:
+    safe_repo = issue.repo.replace("/", "-")
+    return f"dispatched_at__{safe_repo}__{issue.number}"
+
+
+def last_dispatch_at(store: MutableMapping, issue: Issue) -> Optional[datetime]:
+    """When `issue` was last actually dispatched, or None if never.
+
+    H-3: `run.py` uses this to refuse to re-dispatch a `liaise:needs-partner`
+    issue unless the partner has said something new *since* this — otherwise
+    readiness (satisfied by the partner's original message, which is what
+    triggered the first dispatch) lets the same unanswered question burn the
+    whole daily budget in minutes.
+    """
+    stamp = store.get(_dispatched_at_key(issue))
+    return datetime.fromisoformat(stamp) if stamp else None
 
 
 @dataclass(frozen=True)
@@ -227,7 +258,30 @@ def dispatch_issue(
     to `liaise:needs-owner` — the agent silently didn't do its job.
     """
     if daily_dispatch_count(store, partner, now=now) >= partner.budget.daily_dispatches:
+        # M-8: A.1 rule 5 — "a cap that trips is a visible label AND A SHORT
+        # COMMENT, never silence." The label alone was already there; nothing
+        # posted anything. Comment once per issue (skip if it was already
+        # `budget` — re-checked every pass since H-4, so this must not repost
+        # every tick); notify the owner once per partner per day, not once
+        # per capped issue, so N issues capped in one pass isn't N pushes.
+        was_already_capped = current_state(issue, partner) == "budget"
         set_state(gh, issue, partner, "budget")
+        if not was_already_capped:
+            if partner.reply_mode != "draft":
+                gh.post_comment(
+                    issue.repo,
+                    issue.number,
+                    "Today's limit on automatic work has been reached — this will "
+                    "pick back up tomorrow.",
+                )
+            notified_key = f"budget_notified__{partner.slug}__{_today(now)}"
+            if not store.get(notified_key):
+                notify_fn(
+                    "liaise: daily dispatch cap reached",
+                    f"{partner.slug} ({partner.repo}) hit its daily cap of "
+                    f"{partner.budget.daily_dispatches} dispatches. Resumes tomorrow.",
+                )
+                store[notified_key] = True
         return DispatchOutcome(dispatched=False, budget_capped=True, crashed=False)
 
     session_id = stored_session_id(store, issue)
@@ -244,6 +298,7 @@ def dispatch_issue(
 
     set_state(gh, issue, partner, "working")
     store[_daily_key(partner, _today(now))] = daily_dispatch_count(store, partner, now=now) + 1
+    store[_dispatched_at_key(issue)] = (now or datetime.now(timezone.utc)).isoformat()
 
     result = dispatcher.dispatch(job)
     if result.session_id:

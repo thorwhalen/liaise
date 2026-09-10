@@ -35,6 +35,8 @@ from liaise.dispatch import (
 )
 from liaise.notify import notify
 from liaise.prompt import compose_prompt
+from liaise.run import PlanItem, RunReport, last_run_age, run_once
+from liaise.schedule import install_schedule, schedule_status, uninstall_schedule
 
 __all__ = [
     "Budget",
@@ -58,7 +60,9 @@ __all__ = [
     "Markers",
     "NotifyConfig",
     "PartnerConfig",
+    "PlanItem",
     "Readiness",
+    "RunReport",
     "STATE_LABELS",
     "compose_prompt",
     "compute_readiness",
@@ -66,12 +70,17 @@ __all__ = [
     "daily_dispatch_count",
     "dispatch_issue",
     "find_partner_issues",
+    "install_schedule",
     "is_partner_issue",
     "last_partner_activity",
+    "last_run_age",
     "load_config",
     "notify",
+    "run_once",
+    "schedule_status",
     "set_state",
     "setup_labels",
     "state_label",
     "stored_session_id",
+    "uninstall_schedule",
 ]
