@@ -6,13 +6,19 @@
    module_docs/liaise/__main__
    module_docs/liaise/cli
    module_docs/liaise/config
+   module_docs/liaise/dispatch
    module_docs/liaise/github
    module_docs/liaise/intake
+   module_docs/liaise/notify
+   module_docs/liaise/prompt
    module_docs/liaise/state
    module_docs/liaise/tests
    module_docs/liaise/tests/conftest
    module_docs/liaise/tests/test_config
+   module_docs/liaise/tests/test_dispatch
    module_docs/liaise/tests/test_github
    module_docs/liaise/tests/test_intake
    module_docs/liaise/tests/test_no_personal_data
+   module_docs/liaise/tests/test_notify
+   module_docs/liaise/tests/test_prompt
    module_docs/liaise/tests/test_state

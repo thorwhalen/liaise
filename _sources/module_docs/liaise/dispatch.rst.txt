@@ -1,0 +1,4 @@
+liaise.dispatch
+===============
+.. automodule:: liaise.dispatch
+   :members:

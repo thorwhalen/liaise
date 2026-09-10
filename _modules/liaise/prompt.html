@@ -1,0 +1,251 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.prompt &mdash; liaise 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_dispatch.html">liaise.tests.test_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.prompt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.prompt</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The prompt composer (A.5).</span>
+
+<span class="sd">`compose_prompt` builds the whole prompt handed to the coding agent, in a</span>
+<span class="sd">fixed order: the packaged operating rules, the partner brief, the issue</span>
+<span class="sd">pointer, the state contract, the verify/deploy commands, and the budget</span>
+<span class="sd">lines. The prompt is written to a temp file and referenced by path by</span>
+<span class="sd">:mod:`liaise.dispatch` — never passed on the command line.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">PartnerConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">Issue</span>
+
+<span class="c1">#: fresh: a new dispatch. resume: continuing a stored session (A.3 — a new</span>
+<span class="c1">#: partner comment on a `liaise:needs-partner` issue re-arms readiness and</span>
+<span class="c1">#: dispatches a resume rather than a fresh run).</span>
+<span class="n">MODES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"fresh"</span><span class="p">,</span> <span class="s2">"resume"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_operating_rules</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">resources</span><span class="o">.</span><span class="n">files</span><span class="p">(</span><span class="s2">"liaise.data"</span><span class="p">)</span><span class="o">.</span><span class="n">joinpath</span><span class="p">(</span><span class="s2">"operating_rules.md"</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_partner_brief</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">partner</span><span class="o">.</span><span class="n">brief</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_issue_pointer</span><span class="p">(</span><span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"## Issue"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">url</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">"resume"</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="s2">""</span><span class="p">,</span>
+            <span class="s2">"This is a **resume** of a session already working on this issue "</span>
+            <span class="s2">"(the partner commented again after the agent asked a question)."</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span>
+        <span class="s2">""</span><span class="p">,</span>
+        <span class="s2">"Read the thread yourself with `gh` — this pointer is deliberately just "</span>
+        <span class="s2">"the URL, not a copy of the issue body or comments, which may have "</span>
+        <span class="s2">"changed since this prompt was composed."</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_state_contract</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">label_prefix</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">"## State contract"</span><span class="p">,</span>
+        <span class="s2">""</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"This partner's `reply_mode` is `</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">reply_mode</span><span class="si">}</span><span class="s2">`. "</span>
+        <span class="o">+</span> <span class="p">(</span>
+            <span class="s2">"Post nothing to the thread; write every partner-facing comment to "</span>
+            <span class="s2">"the dispatch log as a draft instead (see the operating rules above)."</span>
+            <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">reply_mode</span> <span class="o">==</span> <span class="s2">"draft"</span>
+            <span class="k">else</span> <span class="s2">"Post directly to the thread as the operating rules describe."</span>
+        <span class="p">),</span>
+        <span class="s2">""</span><span class="p">,</span>
+        <span class="s2">"Set exactly one of these labels before you stop, matching what actually happened:"</span><span class="p">,</span>
+        <span class="s2">""</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"- `</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">needs-partner` — you asked a question and are waiting on the partner."</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"- `</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">needs-owner` — you escalated, or are declining, or hit a stop condition."</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"- `</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">deployed` — the change is live and the partner has been told to try it "</span>
+        <span class="sa">f</span><span class="s2">"(only when you deploy yourself; see the deploy command below)."</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"- `</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">paused` — the partner asked you to wait."</span><span class="p">,</span>
+        <span class="s2">""</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"Escalation money threshold: $</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">escalate</span><span class="o">.</span><span class="n">money_usd</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">. "</span>
+        <span class="sa">f</span><span class="s2">"Scope beyond </span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">escalate</span><span class="o">.</span><span class="n">max_scope</span><span class="si">}</span><span class="s2"> needs the owner."</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_commands</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"## Commands"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">verify</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"Verify (run before landing):"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"    </span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">verify</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">deploy_per</span> <span class="o">==</span> <span class="s2">"issue"</span> <span class="ow">and</span> <span class="n">partner</span><span class="o">.</span><span class="n">deploy</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"Deploy (run yourself once landed, then post and set deployed):"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"    </span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">deploy</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">partner</span><span class="o">.</span><span class="n">deploy_per</span> <span class="o">==</span> <span class="s2">"batch"</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="s2">""</span><span class="p">,</span>
+            <span class="s2">"Deploy: do not deploy yourself. `liaise` deploys once after the whole "</span>
+            <span class="s2">"batch. Land the change and say in the dispatch log what to tell the "</span>
+            <span class="s2">"partner once it's live."</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_budget</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">budget</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+        <span class="p">[</span>
+            <span class="s2">"## Budget"</span><span class="p">,</span>
+            <span class="s2">""</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"- timeout: </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">timeout_minutes</span><span class="si">}</span><span class="s2"> minutes — enforced from outside: past this, "</span>
+            <span class="sa">f</span><span class="s2">"the dispatch is killed and reconciled as a crash, whatever you were doing."</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"- turn cap: </span><span class="si">{</span><span class="n">b</span><span class="o">.</span><span class="n">max_turns</span><span class="si">}</span><span class="s2"> turns — not enforced from outside; please self-monitor "</span>
+            <span class="sa">f</span><span class="s2">"and stop cleanly (right label, one-line comment saying why) before you'd exceed it."</span><span class="p">,</span>
+        <span class="p">]</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="compose_prompt">
+<a class="viewcode-back" href="../../module_docs/liaise/prompt.html#liaise.compose_prompt">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">compose_prompt</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Build the full prompt for `issue`, in the fixed section order (A.5).</span>
+
+<span class="sd">    `mode` is `"fresh"` for a new dispatch or `"resume"` for continuing a</span>
+<span class="sd">    stored session.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">MODES</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mode must be one of </span><span class="si">{</span><span class="n">MODES</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">sections</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">_operating_rules</span><span class="p">(),</span>
+        <span class="n">_partner_brief</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
+        <span class="n">_issue_pointer</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">),</span>
+        <span class="n">_state_contract</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
+        <span class="n">_commands</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
+        <span class="n">_budget</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">---</span><span class="se">\n\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sections</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

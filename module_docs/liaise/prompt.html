@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.__main__ &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.prompt &mdash; liaise 0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -24,8 +24,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="liaise.cli" href="cli.html" />
-    <link rel="prev" title="liaise" href="../liaise.html" /> 
+    <link rel="next" title="liaise.state" href="state.html" />
+    <link rel="prev" title="liaise.notify" href="notify.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,14 +50,18 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../liaise.html">liaise</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="__main__.html">liaise.__main__</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli.html">liaise.cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">liaise.config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notify.html">liaise.notify</a></li>
-<li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.prompt</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.prompt.MODES"><code class="docutils literal notranslate"><span class="pre">MODES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.prompt.compose_prompt"><code class="docutils literal notranslate"><span class="pre">compose_prompt()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/conftest.html">liaise.tests.conftest</a></li>
@@ -85,9 +89,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">liaise.__main__</li>
+      <li class="breadcrumb-item active">liaise.prompt</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/module_docs/liaise/__main__.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/module_docs/liaise/prompt.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -95,17 +99,46 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-liaise.__main__">
-<span id="liaise-main"></span><h1>liaise.__main__<a class="headerlink" href="#module-liaise.__main__" title="Link to this heading"></a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">liaise</span></code> — CLI entry point.</p>
+  <section id="module-liaise.prompt">
+<span id="liaise-prompt"></span><h1>liaise.prompt<a class="headerlink" href="#module-liaise.prompt" title="Link to this heading"></a></h1>
+<p>The prompt composer (A.5).</p>
+<p><cite>compose_prompt</cite> builds the whole prompt handed to the coding agent, in a
+fixed order: the packaged operating rules, the partner brief, the issue
+pointer, the state contract, the verify/deploy commands, and the budget
+lines. The prompt is written to a temp file and referenced by path by
+<a class="reference internal" href="dispatch.html#module-liaise.dispatch" title="liaise.dispatch"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.dispatch</span></code></a> — never passed on the command line.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.prompt.MODES">
+<span class="sig-prename descclassname"><span class="pre">liaise.prompt.</span></span><span class="sig-name descname"><span class="pre">MODES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('fresh',</span> <span class="pre">'resume')</span></span><a class="headerlink" href="#liaise.prompt.MODES" title="Link to this definition"></a></dt>
+<dd><p>continuing a stored session (A.3 — a new
+partner comment on a <cite>liaise:needs-partner</cite> issue re-arms readiness and
+dispatches a resume rather than a fresh run).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>fresh</p>
+</dd>
+<dt class="field-even">Type<span class="colon">:</span></dt>
+<dd class="field-even"><p>a new dispatch. resume</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.prompt.compose_prompt">
+<span class="sig-prename descclassname"><span class="pre">liaise.prompt.</span></span><span class="sig-name descname"><span class="pre">compose_prompt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">partner</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="config.html#liaise.config.PartnerConfig" title="liaise.config.PartnerConfig"><span class="pre">PartnerConfig</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">issue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="github.html#liaise.github.Issue" title="liaise.github.Issue"><span class="pre">Issue</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../_modules/liaise/prompt.html#compose_prompt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.prompt.compose_prompt" title="Link to this definition"></a></dt>
+<dd><p>Build the full prompt for <cite>issue</cite>, in the fixed section order (A.5).</p>
+<p><cite>mode</cite> is <cite>“fresh”</cite> for a new dispatch or <cite>“resume”</cite> for continuing a
+stored session.</p>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../liaise.html" class="btn btn-neutral float-left" title="liaise" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="cli.html" class="btn btn-neutral float-right" title="liaise.cli" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="notify.html" class="btn btn-neutral float-left" title="liaise.notify" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="state.html" class="btn btn-neutral float-right" title="liaise.state" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

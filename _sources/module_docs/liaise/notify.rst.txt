@@ -1,0 +1,4 @@
+liaise.notify
+=============
+.. automodule:: liaise.notify
+   :members:

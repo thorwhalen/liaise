@@ -50,15 +50,21 @@
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/__main__.html">liaise.__main__</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/cli.html">liaise.cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_dispatch.html">liaise.tests.test_dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 
@@ -97,6 +103,7 @@
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#I"><strong>I</strong></a>
+ | <a href="#J"><strong>J</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#N"><strong>N</strong></a>
@@ -141,10 +148,22 @@
 <h2 id="C">C</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.ClaudeHeadless">ClaudeHeadless (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.ClaudeHeadless">(class in liaise.dispatch)</a>
+</li>
+      </ul></li>
       <li><a href="module_docs/liaise.html#liaise.Comment">Comment (class in liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/github.html#liaise.github.Comment">(class in liaise.github)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.compose_prompt">compose_prompt() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/prompt.html#liaise.prompt.compose_prompt">(in module liaise.prompt)</a>
 </li>
       </ul></li>
       <li><a href="module_docs/liaise.html#liaise.compute_readiness">compute_readiness() (in module liaise)</a>
@@ -153,14 +172,14 @@
         <li><a href="module_docs/liaise/intake.html#liaise.intake.compute_readiness">(in module liaise.intake)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.Config">Config (class in liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/config.html#liaise.config.Config">(class in liaise.config)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.ConfigError">ConfigError</a>, <a href="module_docs/liaise/config.html#liaise.config.ConfigError">[1]</a>
 </li>
       <li><a href="module_docs/liaise.html#liaise.GitHub.create_label">create_label() (liaise.GitHub method)</a>
@@ -181,10 +200,30 @@
 <h2 id="D">D</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.daily_dispatch_count">daily_dispatch_count() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.daily_dispatch_count">(in module liaise.dispatch)</a>
+</li>
+      </ul></li>
       <li><a href="module_docs/liaise/config.html#liaise.config.DFLT_DISPATCH_COMMAND">DFLT_DISPATCH_COMMAND (in module liaise.config)</a>
+</li>
+      <li><a href="module_docs/liaise/notify.html#liaise.notify.DFLT_TOPIC_ENV">DFLT_TOPIC_ENV (in module liaise.notify)</a>
 </li>
       <li><a href="module_docs/liaise/state.html#liaise.state.DISCOVERED_LABEL">DISCOVERED_LABEL (in module liaise.state)</a>
 </li>
+      <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.Dispatcher.dispatch">dispatch() (liaise.dispatch.Dispatcher method)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise.html#liaise.Dispatcher.dispatch">(liaise.Dispatcher method)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.dispatch_issue">dispatch_issue() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.dispatch_issue">(in module liaise.dispatch)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.DispatchConfig">DispatchConfig (class in liaise)</a>
@@ -193,11 +232,37 @@
         <li><a href="module_docs/liaise/config.html#liaise.config.DispatchConfig">(class in liaise.config)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.Dispatcher">Dispatcher (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.Dispatcher">(class in liaise.dispatch)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.DispatchOutcome">DispatchOutcome (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.DispatchOutcome">(class in liaise.dispatch)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.DispatchResult">DispatchResult (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.DispatchResult">(class in liaise.dispatch)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="E">E</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.EchoDispatcher">EchoDispatcher (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.EchoDispatcher">(class in liaise.dispatch)</a>
+</li>
+      </ul></li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.EscalateConfig">EscalateConfig (class in liaise)</a>
 
@@ -284,6 +349,18 @@
   </ul></td>
 </tr></table>
 
+<h2 id="J">J</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.Job">Job (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.Job">(class in liaise.dispatch)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
 <h2 id="L">L</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -291,6 +368,12 @@
 
       <ul>
         <li><a href="module_docs/liaise/github.html#liaise.github.FakeGitHub.labels_created">(liaise.github.FakeGitHub method)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.DispatchOutcome.landed_awaiting_batch_deploy">landed_awaiting_batch_deploy (liaise.dispatch.DispatchOutcome attribute)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise.html#liaise.DispatchOutcome.landed_awaiting_batch_deploy">(liaise.DispatchOutcome attribute)</a>
 </li>
       </ul></li>
       <li><a href="module_docs/liaise.html#liaise.last_partner_activity">last_partner_activity() (in module liaise)</a>
@@ -328,6 +411,13 @@
 </li>
       </ul></li>
       <li>
+    liaise.dispatch
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#module-liaise.dispatch">module</a>
+</li>
+      </ul></li>
+      <li>
     liaise.github
 
       <ul>
@@ -341,6 +431,20 @@
 
       <ul>
         <li><a href="module_docs/liaise/intake.html#module-liaise.intake">module</a>
+</li>
+      </ul></li>
+      <li>
+    liaise.notify
+
+      <ul>
+        <li><a href="module_docs/liaise/notify.html#module-liaise.notify">module</a>
+</li>
+      </ul></li>
+      <li>
+    liaise.prompt
+
+      <ul>
+        <li><a href="module_docs/liaise/prompt.html#module-liaise.prompt">module</a>
 </li>
       </ul></li>
       <li>
@@ -362,6 +466,13 @@
 
       <ul>
         <li><a href="module_docs/liaise/tests/test_no_personal_data.html#module-liaise.tests.test_no_personal_data">module</a>
+</li>
+      </ul></li>
+      <li>
+    liaise.tests.test_notify
+
+      <ul>
+        <li><a href="module_docs/liaise/tests/test_notify.html#module-liaise.tests.test_notify">module</a>
 </li>
       </ul></li>
       <li><a href="module_docs/liaise.html#liaise.GitHub.list_issues">list_issues() (liaise.GitHub method)</a>
@@ -388,6 +499,8 @@
         <li><a href="module_docs/liaise/config.html#liaise.config.Markers">(class in liaise.config)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/prompt.html#liaise.prompt.MODES">MODES (in module liaise.prompt)</a>
+</li>
       <li>
     module
 
@@ -400,9 +513,15 @@
 </li>
         <li><a href="module_docs/liaise/config.html#module-liaise.config">liaise.config</a>
 </li>
+        <li><a href="module_docs/liaise/dispatch.html#module-liaise.dispatch">liaise.dispatch</a>
+</li>
         <li><a href="module_docs/liaise/github.html#module-liaise.github">liaise.github</a>
 </li>
         <li><a href="module_docs/liaise/intake.html#module-liaise.intake">liaise.intake</a>
+</li>
+        <li><a href="module_docs/liaise/notify.html#module-liaise.notify">liaise.notify</a>
+</li>
+        <li><a href="module_docs/liaise/prompt.html#module-liaise.prompt">liaise.prompt</a>
 </li>
         <li><a href="module_docs/liaise/state.html#module-liaise.state">liaise.state</a>
 </li>
@@ -410,12 +529,22 @@
 </li>
         <li><a href="module_docs/liaise/tests/test_no_personal_data.html#module-liaise.tests.test_no_personal_data">liaise.tests.test_no_personal_data</a>
 </li>
+        <li><a href="module_docs/liaise/tests/test_notify.html#module-liaise.tests.test_notify">liaise.tests.test_notify</a>
+</li>
       </ul></li>
   </ul></td>
 </tr></table>
 
 <h2 id="N">N</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.notify">notify() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/notify.html#liaise.notify.notify">(in module liaise.notify)</a>
+</li>
+      </ul></li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.NotifyConfig">NotifyConfig (class in liaise)</a>
 
@@ -525,6 +654,12 @@
       </ul></li>
       <li><a href="module_docs/liaise/state.html#liaise.state.STATE_LABELS">STATE_LABELS (in module liaise.state)</a>
 </li>
+      <li><a href="module_docs/liaise.html#liaise.stored_session_id">stored_session_id() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.stored_session_id">(in module liaise.dispatch)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 

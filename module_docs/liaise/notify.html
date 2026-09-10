@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.__main__ &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.notify &mdash; liaise 0.0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -24,8 +24,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="liaise.cli" href="cli.html" />
-    <link rel="prev" title="liaise" href="../liaise.html" /> 
+    <link rel="next" title="liaise.prompt" href="prompt.html" />
+    <link rel="prev" title="liaise.intake" href="intake.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,13 +50,17 @@
               <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../liaise.html">liaise</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="__main__.html">liaise.__main__</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli.html">liaise.cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">liaise.config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
-<li class="toctree-l1"><a class="reference internal" href="notify.html">liaise.notify</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.notify</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.notify.DFLT_TOPIC_ENV"><code class="docutils literal notranslate"><span class="pre">DFLT_TOPIC_ENV</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.notify.notify"><code class="docutils literal notranslate"><span class="pre">notify()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">liaise.tests</a></li>
@@ -85,9 +89,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">liaise.__main__</li>
+      <li class="breadcrumb-item active">liaise.notify</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../../_sources/module_docs/liaise/__main__.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../../_sources/module_docs/liaise/notify.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -95,17 +99,43 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="module-liaise.__main__">
-<span id="liaise-main"></span><h1>liaise.__main__<a class="headerlink" href="#module-liaise.__main__" title="Link to this heading"></a></h1>
-<p><code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">liaise</span></code> — CLI entry point.</p>
+  <section id="module-liaise.notify">
+<span id="liaise-notify"></span><h1>liaise.notify<a class="headerlink" href="#module-liaise.notify" title="Link to this heading"></a></h1>
+<p>Owner notification (A.7): one function, posting to ntfy, never raising.</p>
+<p><cite>liaise</cite> has no owner-facing UI; ntfy (a plain HTTP POST) is the whole channel.
+Silent when unconfigured, because a package should not require a notification
+service just to run its tests or a first <cite>liaise poll</cite>.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.notify.DFLT_TOPIC_ENV">
+<span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">DFLT_TOPIC_ENV</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LIAISE_NTFY_TOPIC'</span></span><a class="headerlink" href="#liaise.notify.DFLT_TOPIC_ENV" title="Link to this definition"></a></dt>
+<dd><p>this used to be a second, independent definition of the same default
+env var name as config.py’s — the two could drift silently. config.py is
+the SSOT (it’s what a partner/global config resolves against); this module
+just uses it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>M-4</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.notify.notify">
+<span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">notify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic_env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'LIAISE_NTFY_TOPIC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://ntfy.sh'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../_modules/liaise/notify.html#notify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.notify.notify" title="Link to this definition"></a></dt>
+<dd><p>POST <cite>body</cite> to the ntfy topic named by the <cite>topic_env</cite> environment variable.</p>
+<p>Returns whether it actually sent. No-ops (returns False) when <cite>topic_env</cite>
+is unset. Never raises — a notification failure must not take down a run
+that otherwise succeeded.</p>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="../liaise.html" class="btn btn-neutral float-left" title="liaise" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="cli.html" class="btn btn-neutral float-right" title="liaise.cli" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="intake.html" class="btn btn-neutral float-left" title="liaise.intake" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="prompt.html" class="btn btn-neutral float-right" title="liaise.prompt" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

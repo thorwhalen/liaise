@@ -1,0 +1,445 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.dispatch &mdash; liaise 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_dispatch.html">liaise.tests.test_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.dispatch</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.dispatch</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Dispatch (A.5): running the coding agent, budgets, and reconciliation.</span>
+
+<span class="sd">`Dispatcher` is the seam: :class:`ClaudeHeadless` runs the real `claude` CLI</span>
+<span class="sd">headless; :class:`EchoDispatcher` just records jobs, for tests. Local state</span>
+<span class="sd">(session ids to resume, daily dispatch counters) lives in whatever</span>
+<span class="sd">`MutableMapping` is passed in — a `dict` in tests, a `dol` store for real</span>
+<span class="sd">(A.1 rule 3: `liaise` never keeps this state on GitHub).</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shlex</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Protocol</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Budget</span><span class="p">,</span> <span class="n">PartnerConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">Issue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span> <span class="k">as</span> <span class="n">_default_notify</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.prompt</span><span class="w"> </span><span class="kn">import</span> <span class="n">compose_prompt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">current_state</span><span class="p">,</span> <span class="n">set_state</span>
+
+
+<div class="viewcode-block" id="Job">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.Job">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Job</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Everything a :class:`Dispatcher` needs to run one dispatch."""</span>
+
+    <span class="n">prompt</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">cwd</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">budget</span><span class="p">:</span> <span class="n">Budget</span>
+    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">resume_command</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="DispatchResult">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.DispatchResult">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DispatchResult</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What a :class:`Dispatcher` returns."""</span>
+
+    <span class="n">returncode</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">stdout</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">stderr</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span></div>
+
+
+
+<div class="viewcode-block" id="Dispatcher">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.Dispatcher">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Dispatcher</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""What `liaise` needs to run a coding agent."""</span>
+
+<div class="viewcode-block" id="Dispatcher.dispatch">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.Dispatcher.dispatch">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="n">Job</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Run `job` and return its result. Must not raise on a nonzero exit."""</span>
+        <span class="o">...</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ClaudeHeadless">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.ClaudeHeadless">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ClaudeHeadless</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The default :class:`Dispatcher`: runs the configured `claude` command headless.</span>
+
+<span class="sd">    The prompt is written to a temp file and referenced by path in the command</span>
+<span class="sd">    template — never passed on the command line. Never inherits an assumed</span>
+<span class="sd">    environment beyond what `subprocess.run` gives it by default; callers that</span>
+<span class="sd">    need specific variables (see `schedule.py`) pass them explicitly.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="n">Job</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchResult</span><span class="p">:</span>
+        <span class="n">fd</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkstemp</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">"liaise-prompt-"</span><span class="p">,</span> <span class="n">suffix</span><span class="o">=</span><span class="s2">".md"</span><span class="p">)</span>
+        <span class="n">prompt_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fd</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">job</span><span class="o">.</span><span class="n">prompt</span><span class="p">)</span>
+
+            <span class="n">template</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">resume_command</span> <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">session_id</span> <span class="k">else</span> <span class="n">job</span><span class="o">.</span><span class="n">command</span>
+            <span class="n">command</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">prompt_file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">prompt_file</span><span class="p">),</span> <span class="n">session_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">session_id</span> <span class="ow">or</span> <span class="s2">""</span>
+            <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+                    <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">command</span><span class="p">),</span>
+                    <span class="n">cwd</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">cwd</span><span class="p">,</span>
+                    <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">timeout</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">timeout_minutes</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="c1"># H-7: uncaught, this propagated out of dispatch_issue and left</span>
+                <span class="c1"># the daily counter incremented, the issue at liaise:working</span>
+                <span class="c1"># (excluded from every later pass's eligible states, so never</span>
+                <span class="c1"># reconsidered), no notification, and killed the rest of</span>
+                <span class="c1"># run_once's pass for every partner sorted after this one — a</span>
+                <span class="c1"># hung dispatch must reconcile exactly like a crash, not</span>
+                <span class="c1"># escape reconciliation by raising instead of returning.</span>
+                <span class="k">return</span> <span class="n">DispatchResult</span><span class="p">(</span>
+                    <span class="n">returncode</span><span class="o">=</span><span class="mi">124</span><span class="p">,</span>  <span class="c1"># the shell convention for "command timed out"</span>
+                    <span class="n">session_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">session_id</span><span class="p">,</span>
+                    <span class="n">stdout</span><span class="o">=</span><span class="n">_decode</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">stdout</span><span class="p">),</span>
+                    <span class="n">stderr</span><span class="o">=</span><span class="n">_decode</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">[liaise: dispatch timed out]"</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">session_id</span> <span class="o">=</span> <span class="n">_extract_session_id</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span> <span class="ow">or</span> <span class="n">job</span><span class="o">.</span><span class="n">session_id</span>
+            <span class="k">return</span> <span class="n">DispatchResult</span><span class="p">(</span>
+                <span class="n">returncode</span><span class="o">=</span><span class="n">proc</span><span class="o">.</span><span class="n">returncode</span><span class="p">,</span>
+                <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+                <span class="n">stdout</span><span class="o">=</span><span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span>
+                <span class="n">stderr</span><span class="o">=</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">prompt_file</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_decode</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""`TimeoutExpired.stdout`/`.stderr` may be `None`, `str`, or `bytes` —</span>
+<span class="sd">    `text=True` on the run that timed out still leaves the partially-captured</span>
+<span class="sd">    buffer's type up to the platform.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">""</span>
+    <span class="k">return</span> <span class="n">output</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">output</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">)</span>
+
+
+<span class="c1">#: A session id is `.format()`-ed into `resume_command` before `shlex.split`</span>
+<span class="c1">#: (L-1) — not a shell, but an unvalidated value containing whitespace would</span>
+<span class="c1">#: become extra argv elements on the next `claude` invocation. Real session</span>
+<span class="c1">#: ids are UUID-shaped; this is deliberately generous beyond that so a format</span>
+<span class="c1">#: change upstream doesn't silently break resume, while still rejecting</span>
+<span class="c1">#: anything that could split into more than one argv token.</span>
+<span class="n">_SESSION_ID_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^[A-Za-z0-9_-]{1,128}$"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_extract_session_id</span><span class="p">(</span><span class="n">stdout</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">session_id</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"session_id"</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">session_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_SESSION_ID_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">session_id</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">session_id</span>
+
+
+<div class="viewcode-block" id="EchoDispatcher">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.EchoDispatcher">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">EchoDispatcher</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Records every job it's given instead of running anything. For tests."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">returncode</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Job</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_returncode</span> <span class="o">=</span> <span class="n">returncode</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next_id</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">dispatch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">job</span><span class="p">:</span> <span class="n">Job</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchResult</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">jobs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_next_id</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">session_id</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">session_id</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"echo-session-</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_next_id</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">DispatchResult</span><span class="p">(</span><span class="n">returncode</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_returncode</span><span class="p">,</span> <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># ---- budgets: daily dispatch cap, session-id memory (dol-backed store, injectable) ----</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_today</span><span class="p">(</span><span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">now</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_daily_key</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"daily/</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_session_key</span><span class="p">(</span><span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"sessions/</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span>
+
+
+<div class="viewcode-block" id="daily_dispatch_count">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.daily_dispatch_count">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">daily_dispatch_count</span><span class="p">(</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""How many times `partner` has been dispatched to today."""</span>
+    <span class="k">return</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">_today</span><span class="p">(</span><span class="n">now</span><span class="p">)),</span> <span class="mi">0</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="stored_session_id">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.stored_session_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">stored_session_id</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The session id stored for `issue`, if a previous dispatch left one."""</span>
+    <span class="k">return</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_session_key</span><span class="p">(</span><span class="n">issue</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="DispatchOutcome">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.DispatchOutcome">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DispatchOutcome</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What :func:`dispatch_issue` did."""</span>
+
+    <span class="n">dispatched</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">budget_capped</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">crashed</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">result</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DispatchResult</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">log_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: True when the dispatch succeeded (exit 0) and left the issue at</span>
+    <span class="c1">#: `liaise:working` because `expect_working_on_success` was set — the</span>
+    <span class="c1">#: `deploy_per == "batch"` case, where the agent lands without deploying</span>
+    <span class="c1">#: and `run.py` deploys once after the batch. Not a crash.</span>
+    <span class="n">landed_awaiting_batch_deploy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+
+
+
+<div class="viewcode-block" id="dispatch_issue">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.dispatch_issue">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">dispatch_issue</span><span class="p">(</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span>
+    <span class="n">dispatcher</span><span class="p">:</span> <span class="n">Dispatcher</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span>
+    <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span>
+    <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_notify</span><span class="p">,</span>
+    <span class="n">log_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">expect_working_on_success</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchOutcome</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Dispatch `issue` to `partner`'s coding agent, honoring the daily cap.</span>
+
+<span class="sd">    Sets `liaise:working` before dispatching. If the dispatcher exits nonzero</span>
+<span class="sd">    and the issue is *still* `liaise:working`, that is a crash: reconciles to</span>
+<span class="sd">    `liaise:needs-owner` and notifies the owner with the exit code and the log</span>
+<span class="sd">    path (A.5 "Reconciliation"). A crashed run is not evidence of anything and</span>
+<span class="sd">    must not look like progress.</span>
+
+<span class="sd">    If the dispatcher exits **zero** and the issue is still `liaise:working`,</span>
+<span class="sd">    that is only excused when `expect_working_on_success` is set — the</span>
+<span class="sd">    `deploy_per == "batch"` path, where the agent lands the change but does</span>
+<span class="sd">    not deploy or set an exit label; `run.py` sets `landed_awaiting_batch_deploy`</span>
+<span class="sd">    and handles the batch deploy itself. Without that flag (the</span>
+<span class="sd">    `deploy_per == "issue"` path, where the agent owns deploying, posting and</span>
+<span class="sd">    setting its own exit label) a still-`working` success is *also* reconciled</span>
+<span class="sd">    to `liaise:needs-owner` — the agent silently didn't do its job.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">partner</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="p">:</span>
+        <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"budget"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">DispatchOutcome</span><span class="p">(</span><span class="n">dispatched</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">budget_capped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crashed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="n">session_id</span> <span class="o">=</span> <span class="n">stored_session_id</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">issue</span><span class="p">)</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="s2">"resume"</span> <span class="k">if</span> <span class="n">session_id</span> <span class="k">else</span> <span class="s2">"fresh"</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">compose_prompt</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    <span class="n">job</span> <span class="o">=</span> <span class="n">Job</span><span class="p">(</span>
+        <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
+        <span class="n">cwd</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">cwd</span><span class="p">,</span>
+        <span class="n">budget</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">budget</span><span class="p">,</span>
+        <span class="n">command</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">command</span><span class="p">,</span>
+        <span class="n">resume_command</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">resume_command</span><span class="p">,</span>
+        <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"working"</span><span class="p">)</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">_today</span><span class="p">(</span><span class="n">now</span><span class="p">))]</span> <span class="o">=</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">session_id</span><span class="p">:</span>
+        <span class="n">store</span><span class="p">[</span><span class="n">_session_key</span><span class="p">(</span><span class="n">issue</span><span class="p">)]</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">session_id</span>
+
+    <span class="n">log_path</span> <span class="o">=</span> <span class="n">_write_log</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span> <span class="k">if</span> <span class="n">log_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">refreshed</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+    <span class="n">still_working</span> <span class="o">=</span> <span class="n">current_state</span><span class="p">(</span><span class="n">refreshed</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"working"</span>
+    <span class="n">excused</span> <span class="o">=</span> <span class="n">still_working</span> <span class="ow">and</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">expect_working_on_success</span>
+
+    <span class="k">if</span> <span class="n">still_working</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">excused</span><span class="p">:</span>
+        <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">refreshed</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"needs-owner"</span><span class="p">)</span>
+        <span class="n">notify_fn</span><span class="p">(</span>
+            <span class="s2">"liaise: dispatch crashed"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2"> exited </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">returncode</span><span class="si">}</span><span class="s2"> without changing state. "</span>
+            <span class="sa">f</span><span class="s2">"Log: </span><span class="si">{</span><span class="n">log_path</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'(no log_dir configured)'</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">priority</span><span class="o">=</span><span class="s2">"high"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">DispatchOutcome</span><span class="p">(</span>
+            <span class="n">dispatched</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">budget_capped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">crashed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span> <span class="n">log_path</span><span class="o">=</span><span class="n">log_path</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">DispatchOutcome</span><span class="p">(</span>
+        <span class="n">dispatched</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">budget_capped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">crashed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+        <span class="n">log_path</span><span class="o">=</span><span class="n">log_path</span><span class="p">,</span>
+        <span class="n">landed_awaiting_batch_deploy</span><span class="o">=</span><span class="n">excused</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_write_log</span><span class="p">(</span><span class="n">log_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">DispatchResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">log_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_dir</span><span class="p">)</span>
+    <span class="n">log_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">stamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%SZ"</span><span class="p">)</span>
+    <span class="n">safe_repo</span> <span class="o">=</span> <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"/"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">log_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">safe_repo</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">stamp</span><span class="si">}</span><span class="s2">.log"</span>
+    <span class="n">path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"exit code: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">returncode</span><span class="si">}</span><span class="se">\n</span><span class="s2">session id: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">session_id</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"--- stdout ---</span><span class="se">\n</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">--- stderr ---</span><span class="se">\n</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
