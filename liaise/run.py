@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import contextlib
 import os
+import platform
 import shlex
 import subprocess
 from dataclasses import dataclass, field
@@ -325,6 +326,28 @@ def _run_lock(lock_path: Path) -> Iterator[None]:
 
 
 def _pid_is_alive(pid: int) -> bool:
+    """Whether `pid` names a live process. Never sends it a real signal.
+
+    `os.kill(pid, 0)` is the POSIX idiom for this — signal 0 delivers
+    nothing, it only validates the target. **On Windows it is not that
+    idiom**: `os.kill` there calls `TerminateProcess`, so `os.kill(pid, 0)`
+    actually kills whatever process holds `pid` (with exit code 0) rather
+    than just checking it. Caught before this ever ran in CI: the lock's own
+    test seeds the lock file with `os.getpid()` — on Windows the old code
+    would have terminated the pytest process running the test.
+    """
+    if platform.system() == "Windows":
+        import ctypes
+
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        handle = ctypes.windll.kernel32.OpenProcess(
+            PROCESS_QUERY_LIMITED_INFORMATION, False, pid
+        )
+        if not handle:
+            return False
+        ctypes.windll.kernel32.CloseHandle(handle)
+        return True
+
     try:
         os.kill(pid, 0)
     except ProcessLookupError:

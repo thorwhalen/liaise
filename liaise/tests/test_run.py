@@ -13,6 +13,7 @@ from liaise.dispatch import EchoDispatcher
 from liaise.github import FakeGitHub, Issue
 from liaise.run import last_run_age, run_once
 from liaise.state import current_state
+from liaise.tests.conftest import write_executable_script
 
 REPO = "example/app"
 T0 = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
@@ -171,12 +172,12 @@ def test_cli_run_uses_the_configured_ntfy_topic_env(tmp_path, monkeypatch):
 
 
 def test_run_once_dispatches_ready_issue_and_batch_deploys(tmp_path):
-    deploy_script = tmp_path / "deploy.sh"
-    deploy_script.write_text("#!/bin/sh\ntrue\n")
-    deploy_script.chmod(0o755)
+    deploy_script = write_executable_script(tmp_path / "deploy", "pass\n")
     # reply_mode="direct": the package default is "draft", which (H-5) posts
     # nothing to the thread — this test is about the direct-mode behavior.
-    config = _config(tmp_path, deploy_per="batch", deploy=str(deploy_script), reply_mode="direct")
+    config = _config(
+        tmp_path, deploy_per="batch", deploy=deploy_script.as_posix(), reply_mode="direct"
+    )
     partner = config.partner("pat")
     fake = FakeGitHub([_issue(labels=(partner.label, "liaise:intake"))])
 
@@ -329,10 +330,10 @@ def test_budget_capped_issue_stays_capped_same_day(tmp_path):
 
 
 def test_batch_deploy_in_draft_mode_posts_nothing(tmp_path):
-    deploy_script = tmp_path / "deploy.sh"
-    deploy_script.write_text("#!/bin/sh\ntrue\n")
-    deploy_script.chmod(0o755)
-    config = _config(tmp_path, deploy_per="batch", deploy=str(deploy_script), reply_mode="draft")
+    deploy_script = write_executable_script(tmp_path / "deploy", "pass\n")
+    config = _config(
+        tmp_path, deploy_per="batch", deploy=deploy_script.as_posix(), reply_mode="draft"
+    )
     partner = config.partner("pat")
     fake = FakeGitHub([_issue(labels=(partner.label, "liaise:intake"))])
 
@@ -360,10 +361,10 @@ def test_batch_deploy_in_draft_mode_posts_nothing(tmp_path):
 
 
 def test_failed_deploy_does_not_tell_the_partner_its_live(tmp_path):
-    deploy_script = tmp_path / "deploy.sh"
-    deploy_script.write_text("#!/bin/sh\nexit 1\n")
-    deploy_script.chmod(0o755)
-    config = _config(tmp_path, deploy_per="batch", deploy=str(deploy_script), reply_mode="direct")
+    deploy_script = write_executable_script(tmp_path / "deploy", "import sys\nsys.exit(1)\n")
+    config = _config(
+        tmp_path, deploy_per="batch", deploy=deploy_script.as_posix(), reply_mode="direct"
+    )
     partner = config.partner("pat")
     fake = FakeGitHub([_issue(labels=(partner.label, "liaise:intake"))])
 
