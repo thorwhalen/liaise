@@ -96,7 +96,12 @@ def _fmt_countdown(td) -> str:
     return f"{hours}h{minutes:02d}m" if hours else f"{minutes}m"
 
 
-def poll(*, root: Optional[str] = None, partner: Optional[str] = None, gh: Optional[GitHub] = None) -> str:
+def poll(
+    *,
+    root: Optional[str] = None,
+    partner: Optional[str] = None,
+    gh: Optional[GitHub] = None,
+) -> str:
     """Report each partner's open issues, their readiness, and a countdown. Changes nothing."""
     config = load_config(Path(root) if root else None)
     partners = [config.partner(partner)] if partner else list(config.partners.values())
@@ -153,17 +158,26 @@ def run(
     config = load_config(Path(root) if root else None)
     github = gh if gh is not None else GhCli()
     agent = dispatcher if dispatcher is not None else ClaudeHeadless()
-    state_store = store if store is not None else default_store(config.global_.state_dir)
+    state_store = (
+        store if store is not None else default_store(config.global_.state_dir)
+    )
     notify_fn = _notify_fn_for(config.global_)
 
     def one_pass() -> str:
         report = run_once(
-            github, agent, state_store, config,
-            partner=partner, dry_run=dry_run, notify_fn=notify_fn,
+            github,
+            agent,
+            state_store,
+            config,
+            partner=partner,
+            dry_run=dry_run,
+            notify_fn=notify_fn,
         )
         lines = [f"plan ({len(report.plan)} item(s)):"]
         for item in report.plan:
-            lines.append(f"  {item.partner_slug} #{item.issue_number:<5} {item.action:<18} {item.issue_title}")
+            lines.append(
+                f"  {item.partner_slug} #{item.issue_number:<5} {item.action:<18} {item.issue_title}"
+            )
         if report.dispatched:
             lines.append(f"dispatched: {len(report.dispatched)}")
         for slug, numbers in report.deployed.items():
@@ -185,20 +199,31 @@ def run(
         return "stopped"
 
 
-def status(*, root: Optional[str] = None, gh: Optional[GitHub] = None, store: Optional[MutableMapping] = None) -> str:
+def status(
+    *,
+    root: Optional[str] = None,
+    gh: Optional[GitHub] = None,
+    store: Optional[MutableMapping] = None,
+) -> str:
     """Last run stamp, today's dispatches per partner, and anything needing the owner."""
     config = load_config(Path(root) if root else None)
     github = gh if gh is not None else GhCli()
-    state_store = store if store is not None else default_store(config.global_.state_dir)
+    state_store = (
+        store if store is not None else default_store(config.global_.state_dir)
+    )
 
     age = last_run_age(state_store)
     lines = [f"last_run: {f'{int(age)}s ago' if age is not None else 'never'}"]
 
     for p in sorted(config.partners.values(), key=lambda p: p.slug):
         count = daily_dispatch_count(state_store, p)
-        lines.append(f"partner {p.slug}: {count}/{p.budget.daily_dispatches} dispatches today")
+        lines.append(
+            f"partner {p.slug}: {count}/{p.budget.daily_dispatches} dispatches today"
+        )
         needs_owner = [
-            i for i in find_partner_issues(github, p) if current_state(i, p) == "needs-owner"
+            i
+            for i in find_partner_issues(github, p)
+            if current_state(i, p) == "needs-owner"
         ]
         for issue in needs_owner:
             lines.append(f"  needs-owner: #{issue.number} {issue.title}")

@@ -16,9 +16,7 @@ from typing import Iterable, Optional, Protocol, Sequence
 
 #: JSON fields `gh issue list`/`gh issue view` are asked for. Kept as one SSOT
 #: so the parser and the `gh` invocation never drift apart.
-_ISSUE_FIELDS = (
-    "number,title,author,body,createdAt,updatedAt,state,labels,comments"
-)
+_ISSUE_FIELDS = "number,title,author,body,createdAt,updatedAt,state,labels,comments"
 
 
 class GitHubError(Exception):
@@ -118,7 +116,9 @@ def _issue_from_json(repo: str, raw: dict) -> Issue:
                 # `createdAt` and `includesCreatedEdit` (whether it was ever
                 # edited, not when). Fall back to `createdAt` rather than
                 # KeyError on every issue that has ever been commented on.
-                updated_at=_parse_dt(c["updatedAt"]) if c.get("updatedAt") else _parse_dt(c["createdAt"]),
+                updated_at=_parse_dt(c["updatedAt"])
+                if c.get("updatedAt")
+                else _parse_dt(c["createdAt"]),
             )
             for c in raw.get("comments", [])
         ),
@@ -136,9 +136,7 @@ class GhCli:
         self.gh_bin = gh_bin
 
     def _run(self, *args: str) -> str:
-        proc = subprocess.run(
-            [self.gh_bin, *args], capture_output=True, text=True
-        )
+        proc = subprocess.run([self.gh_bin, *args], capture_output=True, text=True)
         if proc.returncode != 0:
             raise GitHubError(proc.stderr.strip() or proc.stdout.strip())
         return proc.stdout
@@ -232,9 +230,7 @@ class GhCli:
             raise GitHubError(proc.stderr.strip() or proc.stdout.strip())
 
     def post_comment(self, repo: str, number: int, body: str) -> None:
-        self._run(
-            "issue", "comment", str(number), "--repo", repo, "--body", body
-        )
+        self._run("issue", "comment", str(number), "--repo", repo, "--body", body)
 
 
 class FakeGitHub:
@@ -298,7 +294,9 @@ class FakeGitHub:
     def post_comment(self, repo: str, number: int, body: str) -> None:
         issue = self.get_issue(repo, number)
         now = datetime.now(timezone.utc)
-        comment = Comment(author="liaise-bot", body=body, created_at=now, updated_at=now)
+        comment = Comment(
+            author="liaise-bot", body=body, created_at=now, updated_at=now
+        )
         self._issues[(repo, number)] = replace(
             issue, comments=(*issue.comments, comment)
         )

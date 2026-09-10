@@ -56,7 +56,9 @@ def _contains_marker(text: str, marker: str) -> bool:
     return marker.lower() in text.lower()
 
 
-def _marker_events(issue: Issue, partner: PartnerConfig) -> list[tuple[datetime, bool, bool]]:
+def _marker_events(
+    issue: Issue, partner: PartnerConfig
+) -> list[tuple[datetime, bool, bool]]:
     """(timestamp, has_go, has_wait) for the body and every partner comment, time-ordered."""
     events: list[tuple[datetime, bool, bool]] = []
 
@@ -135,7 +137,11 @@ def compute_readiness(
     ready_by_go = go_deadline is not None and now >= go_deadline
 
     if ready_by_quiet or ready_by_go:
-        reason = "go marker" if ready_by_go and not ready_by_quiet else "quiet window elapsed"
+        reason = (
+            "go marker"
+            if ready_by_go and not ready_by_quiet
+            else "quiet window elapsed"
+        )
         return Readiness(
             ready=True,
             paused=False,

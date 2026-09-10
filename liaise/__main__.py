@@ -7,7 +7,9 @@ from liaise.cli import _dispatch_config, _dispatch_funcs
 
 
 def main():
-    raise SystemExit(cw.dispatch(_dispatch_funcs, config=_dispatch_config, prog="liaise"))
+    raise SystemExit(
+        cw.dispatch(_dispatch_funcs, config=_dispatch_config, prog="liaise")
+    )
 
 
 if __name__ == "__main__":

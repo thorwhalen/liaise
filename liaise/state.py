@@ -58,9 +58,9 @@ def current_state(issue: Issue, partner: PartnerConfig) -> Optional[str]:
     """The issue's current state (a suffix from :data:`STATE_LABELS`), or None."""
     prefix = partner.label_prefix
     present = [
-        label[len(prefix):]
+        label[len(prefix) :]
         for label in issue.labels
-        if label.startswith(prefix) and label[len(prefix):] in STATE_LABELS
+        if label.startswith(prefix) and label[len(prefix) :] in STATE_LABELS
     ]
     if len(present) > 1:
         raise ValueError(
@@ -103,5 +103,8 @@ def setup(gh: GitHub, partner: PartnerConfig) -> None:
             description=spec.get("description", ""),
         )
     gh.create_label(
-        partner.repo, DISCOVERED_LABEL, color="c5def5", description=DISCOVERED_LABEL_DESCRIPTION
+        partner.repo,
+        DISCOVERED_LABEL,
+        color="c5def5",
+        description=DISCOVERED_LABEL_DESCRIPTION,
     )

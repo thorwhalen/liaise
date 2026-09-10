@@ -297,7 +297,9 @@ def dispatch_issue(
     )
 
     set_state(gh, issue, partner, "working")
-    store[_daily_key(partner, _today(now))] = daily_dispatch_count(store, partner, now=now) + 1
+    store[_daily_key(partner, _today(now))] = (
+        daily_dispatch_count(store, partner, now=now) + 1
+    )
     store[_dispatched_at_key(issue)] = (now or datetime.now(timezone.utc)).isoformat()
 
     result = dispatcher.dispatch(job)
@@ -319,7 +321,11 @@ def dispatch_issue(
             priority="high",
         )
         return DispatchOutcome(
-            dispatched=True, budget_capped=False, crashed=True, result=result, log_path=log_path
+            dispatched=True,
+            budget_capped=False,
+            crashed=True,
+            result=result,
+            log_path=log_path,
         )
 
     return DispatchOutcome(

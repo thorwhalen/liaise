@@ -18,7 +18,12 @@ from pathlib import Path
 from typing import Callable, Iterator, MutableMapping, Optional
 
 from liaise.config import Config, PartnerConfig
-from liaise.dispatch import Dispatcher, DispatchOutcome, dispatch_issue, last_dispatch_at
+from liaise.dispatch import (
+    Dispatcher,
+    DispatchOutcome,
+    dispatch_issue,
+    last_dispatch_at,
+)
 from liaise.github import GitHub, Issue
 from liaise.intake import compute_readiness, find_partner_issues, last_partner_activity
 from liaise.notify import notify as _default_notify
@@ -98,8 +103,15 @@ def run_once(
                 # chance to run.
                 try:
                     action, outcome = _handle_issue(
-                        gh, dispatcher, store, p, issue, now=now, dry_run=dry_run,
-                        notify_fn=notify_fn, log_dir=log_dir,
+                        gh,
+                        dispatcher,
+                        store,
+                        p,
+                        issue,
+                        now=now,
+                        dry_run=dry_run,
+                        notify_fn=notify_fn,
+                        log_dir=log_dir,
                     )
                 except Exception as e:  # noqa: BLE001 - deliberately broad, see above
                     action = f"error ({e})"
@@ -124,7 +136,9 @@ def run_once(
         if not dry_run:
             store["last_run"] = now.isoformat()
 
-    return RunReport(stamped_at=now, plan=plan, dispatched=dispatched, deployed=deployed)
+    return RunReport(
+        stamped_at=now, plan=plan, dispatched=dispatched, deployed=deployed
+    )
 
 
 def _handle_issue(
@@ -157,7 +171,10 @@ def _handle_issue(
         # unanswered question gets re-dispatched every tick until the whole
         # daily budget is gone, in minutes, on one issue.
         dispatched_at = last_dispatch_at(store, issue)
-        if dispatched_at is not None and last_partner_activity(issue, p) <= dispatched_at:
+        if (
+            dispatched_at is not None
+            and last_partner_activity(issue, p) <= dispatched_at
+        ):
             return "skip (awaiting partner reply)", None
 
     readiness = compute_readiness(issue, p, now=now)
@@ -176,8 +193,14 @@ def _handle_issue(
         return "dispatch", None
 
     outcome = dispatch_issue(
-        gh, dispatcher, store, p, issue,
-        notify_fn=notify_fn, log_dir=log_dir, now=now,
+        gh,
+        dispatcher,
+        store,
+        p,
+        issue,
+        notify_fn=notify_fn,
+        log_dir=log_dir,
+        now=now,
         expect_working_on_success=(p.deploy_per == "batch"),
     )
     return "dispatch", outcome
@@ -206,7 +229,10 @@ def _run_batch_deploy(
     """
     if not partner.deploy:
         _reconcile_landed_without_deploy(
-            gh, partner, issue_numbers, notify_fn=notify_fn,
+            gh,
+            partner,
+            issue_numbers,
+            notify_fn=notify_fn,
             reason="no deploy command is configured for this partner",
         )
         return []
@@ -227,7 +253,10 @@ def _run_batch_deploy(
 
     if failed:
         _reconcile_landed_without_deploy(
-            gh, partner, issue_numbers, notify_fn=notify_fn,
+            gh,
+            partner,
+            issue_numbers,
+            notify_fn=notify_fn,
             reason=f"the deploy command failed ({detail})",
         )
         return []
@@ -249,7 +278,7 @@ def _run_batch_deploy(
             "liaise: batch deployed (draft mode — nothing posted)",
             f"{partner.repo} issues {', '.join(f'#{n}' for n in told)} landed and were "
             f"deployed. Nothing was posted to the partner (draft mode) — tell them "
-            f"yourself: \"It's live — please have a look and let us know how it goes.\"",
+            f'yourself: "It\'s live — please have a look and let us know how it goes."',
         )
     return told
 
@@ -357,7 +386,9 @@ def _pid_is_alive(pid: int) -> bool:
     return True
 
 
-def last_run_age(store: MutableMapping, *, now: Optional[datetime] = None) -> Optional[float]:
+def last_run_age(
+    store: MutableMapping, *, now: Optional[datetime] = None
+) -> Optional[float]:
     """Seconds since the last non-dry-run `run_once`, or None if it never ran."""
     stamp = store.get("last_run")
     if not stamp:

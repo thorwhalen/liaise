@@ -226,9 +226,7 @@ def _load_global_config(root: Path) -> GlobalConfig:
     raw = _load_toml(path)
     for required in ("owner_login", "state_dir"):
         if required not in raw:
-            raise ConfigError(
-                f"{path} is missing required field {required!r}."
-            )
+            raise ConfigError(f"{path} is missing required field {required!r}.")
     dflt_markers = Markers()
     dflt_budget = Budget()
     notify_raw = raw.get("notify") or {}

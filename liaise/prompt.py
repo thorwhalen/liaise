@@ -78,7 +78,12 @@ def _commands(partner: PartnerConfig) -> str:
     if partner.verify:
         lines += ["", "Verify (run before landing):", "", f"    {partner.verify}"]
     if partner.deploy_per == "issue" and partner.deploy:
-        lines += ["", "Deploy (run yourself once landed, then post and set deployed):", "", f"    {partner.deploy}"]
+        lines += [
+            "",
+            "Deploy (run yourself once landed, then post and set deployed):",
+            "",
+            f"    {partner.deploy}",
+        ]
     elif partner.deploy_per == "batch":
         lines += [
             "",

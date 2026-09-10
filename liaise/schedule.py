@@ -71,12 +71,20 @@ def _liaise_command(*, root: Optional[str] = None) -> list[str]:
 
 
 def _plist_xml(
-    *, label: str, program_args: list[str], env: dict[str, str], interval_seconds: int, log_path: Path
+    *,
+    label: str,
+    program_args: list[str],
+    env: dict[str, str],
+    interval_seconds: int,
+    log_path: Path,
 ) -> str:
-    esc = lambda s: str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    esc = lambda s: (
+        str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    )
     args_xml = "\n".join(f"        <string>{esc(a)}</string>" for a in program_args)
     env_xml = "\n".join(
-        f"        <key>{esc(k)}</key>\n        <string>{esc(v)}</string>" for k, v in env.items()
+        f"        <key>{esc(k)}</key>\n        <string>{esc(v)}</string>"
+        for k, v in env.items()
     )
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -163,10 +171,18 @@ def install_schedule(
 
     if system == "Darwin":
         return _install_launchd(
-            program_args, env, interval_minutes, launchd_dir, launchd_log_dir, label, load
+            program_args,
+            env,
+            interval_minutes,
+            launchd_dir,
+            launchd_log_dir,
+            label,
+            load,
         )
     if system == "Linux":
-        return _install_systemd(program_args, env, interval_minutes, systemd_dir, unit, load)
+        return _install_systemd(
+            program_args, env, interval_minutes, systemd_dir, unit, load
+        )
     raise NotImplementedError(
         f"no scheduler support for {system!r} — liaise supports macOS (launchd) "
         f"and Linux (systemd user timers)."
@@ -200,7 +216,9 @@ def _install_launchd(
 
     if load:
         uid = os.getuid()
-        subprocess.run(["launchctl", "bootout", f"gui/{uid}/{label}"], capture_output=True)
+        subprocess.run(
+            ["launchctl", "bootout", f"gui/{uid}/{label}"], capture_output=True
+        )
         loaded = subprocess.run(
             ["launchctl", "bootstrap", f"gui/{uid}", str(plist_path)],
             capture_output=True,
@@ -228,7 +246,9 @@ def _install_systemd(
     service_path = systemd_dir / f"{unit}.service"
     timer_path = systemd_dir / f"{unit}.timer"
     service_path.write_text(_systemd_unit_text(program_args=program_args, env=env))
-    timer_path.write_text(_systemd_timer_text(unit=unit, interval_minutes=interval_minutes))
+    timer_path.write_text(
+        _systemd_timer_text(unit=unit, interval_minutes=interval_minutes)
+    )
 
     if load:
         subprocess.run(["systemctl", "--user", "daemon-reload"], capture_output=True)
@@ -261,7 +281,8 @@ def uninstall_schedule(
         plist_path = launchd_dir / f"{label}.plist"
         if load:
             subprocess.run(
-                ["launchctl", "bootout", f"gui/{os.getuid()}/{label}"], capture_output=True
+                ["launchctl", "bootout", f"gui/{os.getuid()}/{label}"],
+                capture_output=True,
             )
         plist_path.unlink(missing_ok=True)
         return f"removed {plist_path}"
@@ -270,7 +291,10 @@ def uninstall_schedule(
         service_path = systemd_dir / f"{unit}.service"
         timer_path = systemd_dir / f"{unit}.timer"
         if load:
-            subprocess.run(["systemctl", "--user", "disable", "--now", f"{unit}.timer"], capture_output=True)
+            subprocess.run(
+                ["systemctl", "--user", "disable", "--now", f"{unit}.timer"],
+                capture_output=True,
+            )
         service_path.unlink(missing_ok=True)
         timer_path.unlink(missing_ok=True)
         return f"removed {service_path}, {timer_path}"
@@ -288,9 +312,15 @@ def schedule_status(
     """Whether the scheduled job is installed, and where."""
     system = system or platform.system()
     if system == "Darwin":
-        path = (Path(launchd_dir) if launchd_dir else DFLT_LAUNCHD_DIR) / f"{label}.plist"
+        path = (
+            Path(launchd_dir) if launchd_dir else DFLT_LAUNCHD_DIR
+        ) / f"{label}.plist"
     elif system == "Linux":
-        path = (Path(systemd_dir) if systemd_dir else DFLT_SYSTEMD_DIR) / f"{unit}.timer"
+        path = (
+            Path(systemd_dir) if systemd_dir else DFLT_SYSTEMD_DIR
+        ) / f"{unit}.timer"
     else:
         raise NotImplementedError(f"no scheduler support for {system!r}")
-    return f"installed: {path}" if path.exists() else f"not installed (expected at {path})"
+    return (
+        f"installed: {path}" if path.exists() else f"not installed (expected at {path})"
+    )
