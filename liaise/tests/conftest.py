@@ -2,9 +2,38 @@
 
 from __future__ import annotations
 
+import platform
+import stat
+import sys
 from pathlib import Path
 
 import pytest
+
+
+def write_executable_script(path: Path, body: str) -> Path:
+    """Write `body` (Python source) as a script runnable via
+    `subprocess.run([returned_path, *args])` — no shell, no `sys.executable`
+    prefix needed by the caller. Returns the actual runnable path (which may
+    differ from `path` on Windows).
+
+    POSIX: a shebang line + the executable bit — the standard trick.
+    Windows: `subprocess.run(..., shell=False)` calls `CreateProcess`
+    directly, which does NOT consult the `.py` file-association registry
+    the way a real shell would — a bare shebang script fails with
+    `OSError: [WinError 193] %1 is not a valid Win32 application` (confirmed
+    in CI). So on Windows this writes the body to a companion `.py` file and
+    returns a tiny `.bat` wrapper that invokes `sys.executable` on it
+    explicitly and forwards all arguments.
+    """
+    if platform.system() == "Windows":
+        impl = path.with_name(path.name + "_impl.py")
+        impl.write_text(body)
+        bat = path.with_name(path.name + ".bat")
+        bat.write_text(f'@echo off\r\n"{sys.executable}" "{impl}" %*\r\n')
+        return bat
+    path.write_text(f"#!{sys.executable}\n{body}")
+    path.chmod(path.stat().st_mode | stat.S_IEXEC)
+    return path
 
 GLOBAL_CONFIG_TOML = """
 owner_login = "owner"
