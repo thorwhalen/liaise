@@ -17,6 +17,7 @@ import cw
 from liaise.config import ConfigError, PartnerConfig, load_config
 from liaise.github import GhCli, GitHub
 from liaise.intake import compute_readiness, find_partner_issues
+from liaise.state import STATE_LABELS, setup as _state_setup
 
 
 def _format_partner(p: PartnerConfig) -> str:
@@ -96,11 +97,27 @@ def poll(*, root: Optional[str] = None, partner: Optional[str] = None, gh: Optio
     return "\n".join(lines)
 
 
+def setup(slug: str, *, root: Optional[str] = None, gh: Optional[GitHub] = None) -> str:
+    """Create partner `slug`'s label and every state label in their repo. Idempotent."""
+    config = load_config(Path(root) if root else None)
+    partner = config.partner(slug)
+    github = gh if gh is not None else GhCli()
+    _state_setup(github, partner)
+    return (
+        f"created {partner.label!r}, {len(STATE_LABELS)} state labels, "
+        f"and 'discovered' in {partner.repo}"
+    )
+
+
 #: SSOT command tree consumed by both ``__main__.py`` and (later) MCP/HTTP surfaces.
 #: Named explicitly (not by function `__name__`) so `liaise partner show`, not
 #: `liaise partner partner-show`.
-_dispatch_funcs = {"partner": {"show": partner_show, "list": partner_list}, "poll": poll}
+_dispatch_funcs = {
+    "partner": {"show": partner_show, "list": partner_list},
+    "poll": poll,
+    "setup": setup,
+}
 
 #: `gh` is a dependency-injection seam (defaults to the real GhCli), not something
 #: to expose on the command line.
-_dispatch_config = {"poll": {"gh": cw.HIDE}}
+_dispatch_config = {"poll": {"gh": cw.HIDE}, "setup": {"gh": cw.HIDE}}

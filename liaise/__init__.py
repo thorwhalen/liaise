@@ -20,6 +20,8 @@ from liaise.intake import (
     is_partner_issue,
     last_partner_activity,
 )
+from liaise.state import STATE_LABELS, current_state, set_state, state_label
+from liaise.state import setup as setup_labels
 
 __all__ = [
     "Budget",
@@ -38,9 +40,14 @@ __all__ = [
     "NotifyConfig",
     "PartnerConfig",
     "Readiness",
+    "STATE_LABELS",
     "compute_readiness",
+    "current_state",
     "find_partner_issues",
     "is_partner_issue",
     "last_partner_activity",
     "load_config",
+    "set_state",
+    "setup_labels",
+    "state_label",
 ]

@@ -1,0 +1,30 @@
+{
+  "intake": {
+    "description": "Seen. The partner may still be writing, or the quiet window is running.",
+    "color": "ededed"
+  },
+  "paused": {
+    "description": "The partner asked to wait.",
+    "color": "fbca04"
+  },
+  "working": {
+    "description": "A coding agent is working on this right now.",
+    "color": "1d76db"
+  },
+  "needs-partner": {
+    "description": "The agent asked a question and is waiting for the partner to answer.",
+    "color": "d93f0b"
+  },
+  "needs-owner": {
+    "description": "Waiting on the repo owner: a decision, an escalation, or a crashed run.",
+    "color": "b60205"
+  },
+  "deployed": {
+    "description": "Live. The partner has been asked to try it.",
+    "color": "0e8a16"
+  },
+  "budget": {
+    "description": "Today's dispatch limit was reached. This will resume tomorrow.",
+    "color": "5319e7"
+  }
+}
