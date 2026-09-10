@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.github &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.github &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -57,6 +57,7 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.github</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.github.Comment"><code class="docutils literal notranslate"><span class="pre">Comment</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.github.FakeGitHub"><code class="docutils literal notranslate"><span class="pre">FakeGitHub</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.github.FakeGitHub.SELF_AUTHOR"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.SELF_AUTHOR</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.github.FakeGitHub.labels_created"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.labels_created()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.github.FakeGitHub.seed"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.seed()</span></code></a></li>
 </ul>
@@ -65,6 +66,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#liaise.github.GitHub"><code class="docutils literal notranslate"><span class="pre">GitHub</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.github.GitHub.add_labels"><code class="docutils literal notranslate"><span class="pre">GitHub.add_labels()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.github.GitHub.create_label"><code class="docutils literal notranslate"><span class="pre">GitHub.create_label()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.github.GitHub.ensure_last_comment_mentions"><code class="docutils literal notranslate"><span class="pre">GitHub.ensure_last_comment_mentions()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.github.GitHub.get_issue"><code class="docutils literal notranslate"><span class="pre">GitHub.get_issue()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.github.GitHub.list_issues"><code class="docutils literal notranslate"><span class="pre">GitHub.list_issues()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.github.GitHub.post_comment"><code class="docutils literal notranslate"><span class="pre">GitHub.post_comment()</span></code></a></li>
@@ -79,6 +81,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run.html">liaise.run</a></li>
@@ -91,6 +94,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -141,6 +145,14 @@ tests use <a class="reference internal" href="#liaise.github.FakeGitHub" title="
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.github.</span></span><span class="sig-name descname"><span class="pre">FakeGitHub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">issues</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#liaise.github.Issue" title="liaise.github.Issue"><span class="pre">Issue</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/liaise/github.html#FakeGitHub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.github.FakeGitHub" title="Link to this definition"></a></dt>
 <dd><p>In-memory <a class="reference internal" href="#liaise.github.GitHub" title="liaise.github.GitHub"><code class="xref py py-class docutils literal notranslate"><span class="pre">GitHub</span></code></a>, for tests. No network, no real repo, no token.</p>
 <p>Every other test in this package should use this rather than <a class="reference internal" href="#liaise.github.GhCli" title="liaise.github.GhCli"><code class="xref py py-class docutils literal notranslate"><span class="pre">GhCli</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="liaise.github.FakeGitHub.SELF_AUTHOR">
+<span class="sig-name descname"><span class="pre">SELF_AUTHOR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'liaise-bot'</span></span><a class="headerlink" href="#liaise.github.FakeGitHub.SELF_AUTHOR" title="Link to this definition"></a></dt>
+<dd><p>The fixed identity every comment posted through this fake carries —
+stands in for “whatever GitHub identity <cite>gh</cite> is authenticated as” in
+tests, so <code class="xref py py-meth docutils literal notranslate"><span class="pre">ensure_last_comment_mentions()</span></code> has something to match.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="liaise.github.FakeGitHub.labels_created">
 <span class="sig-name descname"><span class="pre">labels_created</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/liaise/github.html#FakeGitHub.labels_created"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.github.FakeGitHub.labels_created" title="Link to this definition"></a></dt>
@@ -177,6 +189,18 @@ reads, stores or passes a token.</p>
 <dt class="sig sig-object py" id="liaise.github.GitHub.create_label">
 <span class="sig-name descname"><span class="pre">create_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ededed'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/liaise/github.html#GitHub.create_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.github.GitHub.create_label" title="Link to this definition"></a></dt>
 <dd><p>Create a label if it does not already exist. Idempotent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.github.GitHub.ensure_last_comment_mentions">
+<span class="sig-name descname"><span class="pre">ensure_last_comment_mentions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mention</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../_modules/liaise/github.html#GitHub.ensure_last_comment_mentions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.github.GitHub.ensure_last_comment_mentions" title="Link to this definition"></a></dt>
+<dd><p>Repair this identity’s own last comment on <cite>number</cite> to carry <cite>mention</cite>.</p>
+<p>If the last comment posted by liaise’s own GitHub identity on this
+issue does not already contain <cite>mention</cite>, prepends it (body content
+otherwise untouched) and returns True. Returns False when the last
+such comment already contains <cite>mention</cite>, or when this identity has
+posted no comment on the issue at all. A rule the dispatched agent
+forgets must still hold (#20).</p>
 </dd></dl>
 
 <dl class="py method">

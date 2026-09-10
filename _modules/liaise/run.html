@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.run &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.run &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -118,9 +120,15 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">PartnerConfig</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dispatcher</span><span class="p">,</span> <span class="n">DispatchOutcome</span><span class="p">,</span> <span class="n">dispatch_issue</span><span class="p">,</span> <span class="n">last_dispatch_at</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Dispatcher</span><span class="p">,</span>
+    <span class="n">DispatchOutcome</span><span class="p">,</span>
+    <span class="n">dispatch_issue</span><span class="p">,</span>
+    <span class="n">last_dispatch_at</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">Issue</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.intake</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">find_partner_issues</span><span class="p">,</span> <span class="n">last_partner_activity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">deployed_message</span><span class="p">,</span> <span class="n">nudge_message</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span> <span class="k">as</span> <span class="n">_default_notify</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">current_state</span><span class="p">,</span> <span class="n">set_state</span>
 
@@ -206,8 +214,15 @@
                 <span class="c1"># chance to run.</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="n">action</span><span class="p">,</span> <span class="n">outcome</span> <span class="o">=</span> <span class="n">_handle_issue</span><span class="p">(</span>
-                        <span class="n">gh</span><span class="p">,</span> <span class="n">dispatcher</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
-                        <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span>
+                        <span class="n">gh</span><span class="p">,</span>
+                        <span class="n">dispatcher</span><span class="p">,</span>
+                        <span class="n">store</span><span class="p">,</span>
+                        <span class="n">p</span><span class="p">,</span>
+                        <span class="n">issue</span><span class="p">,</span>
+                        <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                        <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+                        <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+                        <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - deliberately broad, see above</span>
                     <span class="n">action</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"error (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">)"</span>
@@ -232,7 +247,9 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
             <span class="n">store</span><span class="p">[</span><span class="s2">"last_run"</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
-    <span class="k">return</span> <span class="n">RunReport</span><span class="p">(</span><span class="n">stamped_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span> <span class="n">dispatched</span><span class="o">=</span><span class="n">dispatched</span><span class="p">,</span> <span class="n">deployed</span><span class="o">=</span><span class="n">deployed</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">RunReport</span><span class="p">(</span>
+        <span class="n">stamped_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span> <span class="n">dispatched</span><span class="o">=</span><span class="n">dispatched</span><span class="p">,</span> <span class="n">deployed</span><span class="o">=</span><span class="n">deployed</span>
+    <span class="p">)</span></div>
 
 
 
@@ -266,7 +283,10 @@
         <span class="c1"># unanswered question gets re-dispatched every tick until the whole</span>
         <span class="c1"># daily budget is gone, in minutes, on one issue.</span>
         <span class="n">dispatched_at</span> <span class="o">=</span> <span class="n">last_dispatch_at</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">issue</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">dispatched_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">last_partner_activity</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">dispatched_at</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">dispatched_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">last_partner_activity</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">dispatched_at</span>
+        <span class="p">):</span>
             <span class="k">return</span> <span class="s2">"skip (awaiting partner reply)"</span><span class="p">,</span> <span class="kc">None</span>
 
     <span class="n">readiness</span> <span class="o">=</span> <span class="n">compute_readiness</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
@@ -285,8 +305,14 @@
         <span class="k">return</span> <span class="s2">"dispatch"</span><span class="p">,</span> <span class="kc">None</span>
 
     <span class="n">outcome</span> <span class="o">=</span> <span class="n">dispatch_issue</span><span class="p">(</span>
-        <span class="n">gh</span><span class="p">,</span> <span class="n">dispatcher</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span>
-        <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">gh</span><span class="p">,</span>
+        <span class="n">dispatcher</span><span class="p">,</span>
+        <span class="n">store</span><span class="p">,</span>
+        <span class="n">p</span><span class="p">,</span>
+        <span class="n">issue</span><span class="p">,</span>
+        <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+        <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
         <span class="n">expect_working_on_success</span><span class="o">=</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">deploy_per</span> <span class="o">==</span> <span class="s2">"batch"</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="s2">"dispatch"</span><span class="p">,</span> <span class="n">outcome</span>
@@ -315,7 +341,10 @@
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">partner</span><span class="o">.</span><span class="n">deploy</span><span class="p">:</span>
         <span class="n">_reconcile_landed_without_deploy</span><span class="p">(</span>
-            <span class="n">gh</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">issue_numbers</span><span class="p">,</span> <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+            <span class="n">gh</span><span class="p">,</span>
+            <span class="n">partner</span><span class="p">,</span>
+            <span class="n">issue_numbers</span><span class="p">,</span>
+            <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
             <span class="n">reason</span><span class="o">=</span><span class="s2">"no deploy command is configured for this partner"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">[]</span>
@@ -336,7 +365,10 @@
 
     <span class="k">if</span> <span class="n">failed</span><span class="p">:</span>
         <span class="n">_reconcile_landed_without_deploy</span><span class="p">(</span>
-            <span class="n">gh</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">issue_numbers</span><span class="p">,</span> <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+            <span class="n">gh</span><span class="p">,</span>
+            <span class="n">partner</span><span class="p">,</span>
+            <span class="n">issue_numbers</span><span class="p">,</span>
+            <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
             <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"the deploy command failed (</span><span class="si">{</span><span class="n">detail</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">[]</span>
@@ -347,7 +379,7 @@
             <span class="n">gh</span><span class="o">.</span><span class="n">post_comment</span><span class="p">(</span>
                 <span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
                 <span class="n">number</span><span class="p">,</span>
-                <span class="s2">"It's live — please have a look and let us know how it goes."</span><span class="p">,</span>
+                <span class="n">deployed_message</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="n">issue</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
         <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"deployed"</span><span class="p">)</span>
@@ -358,7 +390,7 @@
             <span class="s2">"liaise: batch deployed (draft mode — nothing posted)"</span><span class="p">,</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2"> issues </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">'#</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">'</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">told</span><span class="p">)</span><span class="si">}</span><span class="s2"> landed and were "</span>
             <span class="sa">f</span><span class="s2">"deployed. Nothing was posted to the partner (draft mode) — tell them "</span>
-            <span class="sa">f</span><span class="s2">"yourself: </span><span class="se">\"</span><span class="s2">It's live — please have a look and let us know how it goes.</span><span class="se">\"</span><span class="s2">"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s1">'yourself: "</span><span class="si">{</span><span class="n">deployed_message</span><span class="p">(</span><span class="n">partner</span><span class="p">)</span><span class="si">}</span><span class="s1">"'</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">told</span>
 
@@ -402,7 +434,7 @@
             <span class="n">gh</span><span class="o">.</span><span class="n">post_comment</span><span class="p">(</span>
                 <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
                 <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
-                <span class="s2">"Just checking in — did you get a chance to try this? Let us know how it goes."</span><span class="p">,</span>
+                <span class="n">nudge_message</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
             <span class="p">)</span>
         <span class="n">store</span><span class="p">[</span><span class="n">nudged_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
@@ -468,7 +500,9 @@
 
 <div class="viewcode-block" id="last_run_age">
 <a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.last_run_age">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">last_run_age</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">last_run_age</span><span class="p">(</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Seconds since the last non-dry-run `run_once`, or None if it never ran."""</span>
     <span class="n">stamp</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"last_run"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">stamp</span><span class="p">:</span>

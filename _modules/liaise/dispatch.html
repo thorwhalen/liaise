@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.dispatch &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.dispatch &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -121,6 +123,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Budget</span><span class="p">,</span> <span class="n">PartnerConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">Issue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">budget_capped_message</span><span class="p">,</span> <span class="n">mention</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span> <span class="k">as</span> <span class="n">_default_notify</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.prompt</span><span class="w"> </span><span class="kn">import</span> <span class="n">compose_prompt</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">current_state</span><span class="p">,</span> <span class="n">set_state</span>
@@ -391,6 +394,13 @@
 <span class="sd">    `deploy_per == "issue"` path, where the agent owns deploying, posting and</span>
 <span class="sd">    setting its own exit label) a still-`working` success is *also* reconciled</span>
 <span class="sd">    to `liaise:needs-owner` — the agent silently didn't do its job.</span>
+
+<span class="sd">    When the dispatch ends at `liaise:needs-partner` or `liaise:deployed`,</span>
+<span class="sd">    also reconciles the mention rule (#20): the dispatched agent is told in</span>
+<span class="sd">    its own prompt to start every partner-facing comment with `@notify_login`,</span>
+<span class="sd">    but a rule the agent forgets must still hold — the newest comment left by</span>
+<span class="sd">    this dispatch's own GitHub identity is repaired to carry it if missing,</span>
+<span class="sd">    and the repair is recorded in the dispatch log.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">partner</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="p">:</span>
         <span class="c1"># M-8: A.1 rule 5 — "a cap that trips is a visible label AND A SHORT</span>
@@ -406,8 +416,7 @@
                 <span class="n">gh</span><span class="o">.</span><span class="n">post_comment</span><span class="p">(</span>
                     <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
                     <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
-                    <span class="s2">"Today's limit on automatic work has been reached — this will "</span>
-                    <span class="s2">"pick back up tomorrow."</span><span class="p">,</span>
+                    <span class="n">budget_capped_message</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
                 <span class="p">)</span>
             <span class="n">notified_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"budget_notified__</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">_today</span><span class="p">(</span><span class="n">now</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">notified_key</span><span class="p">):</span>
@@ -432,7 +441,9 @@
     <span class="p">)</span>
 
     <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"working"</span><span class="p">)</span>
-    <span class="n">store</span><span class="p">[</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">_today</span><span class="p">(</span><span class="n">now</span><span class="p">))]</span> <span class="o">=</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">_today</span><span class="p">(</span><span class="n">now</span><span class="p">))]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="p">)</span>
     <span class="n">store</span><span class="p">[</span><span class="n">_dispatched_at_key</span><span class="p">(</span><span class="n">issue</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">now</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
@@ -454,8 +465,29 @@
             <span class="n">priority</span><span class="o">=</span><span class="s2">"high"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">DispatchOutcome</span><span class="p">(</span>
-            <span class="n">dispatched</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">budget_capped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">crashed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span> <span class="n">log_path</span><span class="o">=</span><span class="n">log_path</span>
+            <span class="n">dispatched</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">budget_capped</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">crashed</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
+            <span class="n">log_path</span><span class="o">=</span><span class="n">log_path</span><span class="p">,</span>
         <span class="p">)</span>
+
+    <span class="n">final_state</span> <span class="o">=</span> <span class="n">current_state</span><span class="p">(</span><span class="n">refreshed</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span>
+    <span class="n">posted_a_new_comment</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">refreshed</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">final_state</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"needs-partner"</span><span class="p">,</span> <span class="s2">"deployed"</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">partner</span><span class="o">.</span><span class="n">notify_login</span>
+        <span class="ow">and</span> <span class="n">posted_a_new_comment</span>
+    <span class="p">):</span>
+        <span class="c1"># A reconciliation failure (a transient `gh` error, a rate limit) must</span>
+        <span class="c1"># not discard an otherwise-successful `DispatchOutcome` — that would</span>
+        <span class="c1"># silently drop `landed_awaiting_batch_deploy` for a landed change.</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">_reconcile_mention</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">refreshed</span><span class="p">,</span> <span class="n">log_path</span><span class="o">=</span><span class="n">log_path</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - see comment above</span>
+            <span class="k">if</span> <span class="n">log_path</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[liaise: mention reconciliation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">DispatchOutcome</span><span class="p">(</span>
         <span class="n">dispatched</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -466,6 +498,31 @@
         <span class="n">landed_awaiting_batch_deploy</span><span class="o">=</span><span class="n">excused</span><span class="p">,</span>
     <span class="p">)</span></div>
 
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reconcile_mention</span><span class="p">(</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">log_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""#20: repair a partner-facing comment the agent forgot to `@mention`.</span>
+
+<span class="sd">    Only called when this dispatch actually posted a new comment (the</span>
+<span class="sd">    caller checks the before/after comment count) — otherwise "the last</span>
+<span class="sd">    comment by this identity" could be a stale comment from an unrelated,</span>
+<span class="sd">    much earlier dispatch (e.g. an old owner-facing escalation note), which</span>
+<span class="sd">    must never be mutated or mislogged as a fresh repair. No-op when that</span>
+<span class="sd">    new comment already carries the mention, or when it wasn't posted by</span>
+<span class="sd">    this dispatch's own GitHub identity (`ensure_last_comment_mentions`</span>
+<span class="sd">    itself only ever touches its own identity's comments).</span>
+<span class="sd">    """</span>
+    <span class="n">repaired</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">ensure_last_comment_mentions</span><span class="p">(</span>
+        <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">mention</span><span class="p">(</span><span class="n">partner</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">repaired</span> <span class="ow">and</span> <span class="n">log_path</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[liaise: repaired a partner-facing comment missing "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mention</span><span class="p">(</span><span class="n">partner</span><span class="p">)</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_write_log</span><span class="p">(</span><span class="n">log_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">DispatchResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>

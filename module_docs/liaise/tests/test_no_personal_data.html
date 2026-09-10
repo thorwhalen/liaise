@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.tests.test_no_personal_data &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.tests.test_no_personal_data &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -25,7 +25,7 @@
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
     <link rel="next" title="liaise.tests.test_notify" href="test_notify.html" />
-    <link rel="prev" title="liaise.tests.test_intake" href="test_intake.html" /> 
+    <link rel="prev" title="liaise.tests.test_messages" href="test_messages.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -56,6 +56,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../run.html">liaise.run</a></li>
@@ -68,14 +69,17 @@
 <li class="toctree-l1"><a class="reference internal" href="test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.tests.test_no_personal_data</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.ALLOWED_LOGINS"><code class="docutils literal notranslate"><span class="pre">ALLOWED_LOGINS</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.ALLOWED_OWNER"><code class="docutils literal notranslate"><span class="pre">ALLOWED_OWNER</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.GITHUB_LOGINS_ARRAY_RE"><code class="docutils literal notranslate"><span class="pre">GITHUB_LOGINS_ARRAY_RE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.NOTIFY_LOGIN_RE"><code class="docutils literal notranslate"><span class="pre">NOTIFY_LOGIN_RE</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.OWNER_REPO_BARE_RE"><code class="docutils literal notranslate"><span class="pre">OWNER_REPO_BARE_RE</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.OWNER_REPO_CONTEXT_RE"><code class="docutils literal notranslate"><span class="pre">OWNER_REPO_CONTEXT_RE</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.OWNER_REPO_LITERAL_RE"><code class="docutils literal notranslate"><span class="pre">OWNER_REPO_LITERAL_RE</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.WINDOWS_LOCAL_PATH_RE"><code class="docutils literal notranslate"><span class="pre">WINDOWS_LOCAL_PATH_RE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.tests.test_no_personal_data.test_login_offenders_catches_a_standalone_notify_login"><code class="docutils literal notranslate"><span class="pre">test_login_offenders_catches_a_standalone_notify_login()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="test_notify.html">liaise.tests.test_notify</a></li>
@@ -144,6 +148,14 @@ must all be fictional.</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.NOTIFY_LOGIN_RE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">NOTIFY_LOGIN_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('notify_login\\s*=\\s*[&quot;\']([a-zA-Z0-9][a-zA-Z0-9-]{0,38})[&quot;\']')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.NOTIFY_LOGIN_RE" title="Link to this definition"></a></dt>
+<dd><p><cite>notify_login = “…”</cite> — the other place a bare GitHub login can appear
+(#20): a partner identified by label only sets this directly, outside
+any <cite>github_logins</cite> array, so it needs its own scan.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.OWNER_REPO_BARE_RE">
 <span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">OWNER_REPO_BARE_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\b([a-zA-Z][a-zA-Z0-9]*-[a-zA-Z0-9-]{1,37})/([a-zA-Z0-9][a-zA-Z0-9._-]*)\\b')</span></span><a class="headerlink" href="#liaise.tests.test_no_personal_data.OWNER_REPO_BARE_RE" title="Link to this definition"></a></dt>
 <dd><p>Bare (unquoted) prose mentions — e.g. a repo named in a markdown sentence.
@@ -186,13 +198,22 @@ generic, non-personal system path like `C:Program FilesGitbinbash.exe</cite>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tests.test_no_personal_data.test_login_offenders_catches_a_standalone_notify_login">
+<span class="sig-prename descclassname"><span class="pre">liaise.tests.test_no_personal_data.</span></span><span class="sig-name descname"><span class="pre">test_login_offenders_catches_a_standalone_notify_login</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../../../_modules/liaise/tests/test_no_personal_data.html#test_login_offenders_catches_a_standalone_notify_login"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tests.test_no_personal_data.test_login_offenders_catches_a_standalone_notify_login" title="Link to this definition"></a></dt>
+<dd><p>#20: <cite>notify_login = “…”</cite> is a second place a bare GitHub login can
+appear, outside any <cite>github_logins</cite> array — must not be a blind spot.</p>
+<p>Built by concatenation, not as a literal <cite>notify_login = “…”</cite> string —
+a literal here would trip this very guard against this very file.</p>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="test_intake.html" class="btn btn-neutral float-left" title="liaise.tests.test_intake" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="test_messages.html" class="btn btn-neutral float-left" title="liaise.tests.test_messages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="test_notify.html" class="btn btn-neutral float-right" title="liaise.tests.test_notify" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

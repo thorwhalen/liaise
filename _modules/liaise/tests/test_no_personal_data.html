@@ -1,0 +1,312 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.tests.test_no_personal_data &mdash; liaise 0.0.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/messages.html">liaise.messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/run.html">liaise.run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/state.html">liaise.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_dispatch.html">liaise.tests.test_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_run.html">liaise.tests.test_run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.tests.test_no_personal_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.tests.test_no_personal_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The no-personal-data guard (A.1 rule 1).</span>
+
+<span class="sd">Partner identities, repos, briefs, commands and hosts are configuration under</span>
+<span class="sd">``~/.config/liaise/``, never in this repository's code, tests, docs, data or</span>
+<span class="sd">skill files. This scans the whole repository — deliberately excluding only</span>
+<span class="sd">``pyproject.toml`` and ``LICENSE`` (project metadata, not partner data) — for</span>
+<span class="sd">four things: email addresses, absolute local filesystem paths, a real-looking</span>
+<span class="sd">``owner/repo`` string, and a GitHub login not on the small fictional</span>
+<span class="sd">allowlist.</span>
+
+<span class="sd">Mutation check: comment out any ``assert not`` below and the corresponding</span>
+<span class="sd">test must fail — that is what proves the guard actually guards something.</span>
+<span class="sd">Verified against a matrix of six injection shapes (local path + email,</span>
+<span class="sd">GitHub login shape, owner/repo shape, hostname-with-@) each in a file the</span>
+<span class="sd">guard actually reads.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">REPO_ROOT</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+
+<span class="c1">#: Project metadata, not partner data — the package's own name/URL legitimately</span>
+<span class="c1">#: appears here (``thorwhalen/liaise``, the author line) and is out of scope for</span>
+<span class="c1">#: this guard, which is about partner identities and hosts, not the package's own.</span>
+<span class="n">_EXCLUDED_FILES</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"pyproject.toml"</span><span class="p">,</span> <span class="s2">"LICENSE"</span><span class="p">}</span>
+<span class="c1">#: Not source: virtualenvs (CI's `uv sync` creates `.venv` INSIDE the repo</span>
+<span class="c1">#: checkout, full of third-party package METADATA files carrying real email</span>
+<span class="c1">#: addresses and repo-shaped strings — caught this the hard way, green</span>
+<span class="c1">#: locally with no .venv present, red in CI with one), caches, build output.</span>
+<span class="n">_SKIP_DIR_NAMES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">".git"</span><span class="p">,</span> <span class="s2">"__pycache__"</span><span class="p">,</span> <span class="s2">".pytest_cache"</span><span class="p">,</span> <span class="s2">".ruff_cache"</span><span class="p">,</span> <span class="s2">".mypy_cache"</span><span class="p">,</span>
+    <span class="s2">"dist"</span><span class="p">,</span> <span class="s2">"build"</span><span class="p">,</span> <span class="s2">".venv"</span><span class="p">,</span> <span class="s2">"venv"</span><span class="p">,</span> <span class="s2">".tox"</span><span class="p">,</span> <span class="s2">"node_modules"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="c1">#: Walks the filesystem directly (not `git ls-files`) so a newly-written,</span>
+<span class="c1">#: not-yet-committed file is covered too — the moment that matters most.</span>
+<span class="n">_TEXT_SUFFIXES</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">".py"</span><span class="p">,</span> <span class="s2">".md"</span><span class="p">,</span> <span class="s2">".toml"</span><span class="p">,</span> <span class="s2">".json"</span><span class="p">,</span> <span class="s2">".txt"</span><span class="p">,</span>
+    <span class="s2">".yml"</span><span class="p">,</span> <span class="s2">".yaml"</span><span class="p">,</span> <span class="s2">".sh"</span><span class="p">,</span> <span class="s2">".cfg"</span><span class="p">,</span> <span class="s2">".plist"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">EMAIL_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[A-Za-z0-9_.+-]+@[A-Za-z0-9-]+\.[A-Za-z0-9-.]+"</span><span class="p">)</span>
+<span class="n">ABS_LOCAL_PATH_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"/(?:Users|home|root)/[^\s</span><span class="se">\"</span><span class="s2">'()]+"</span><span class="p">)</span>
+<span class="c1">#: `\b` is load-bearing: without it this matches the "t" in ordinary prose</span>
+<span class="c1">#: like "at least:\n\n" (a Python source file's literal backslash-n), which</span>
+<span class="c1">#: is not a path at all — a drive letter is always its own token. Scoped to</span>
+<span class="c1">#: `\Users\` specifically (mirroring ABS_LOCAL_PATH_RE's POSIX scope) so a</span>
+<span class="c1">#: generic, non-personal system path like `C:\Program Files\Git\bin\bash.exe`</span>
+<span class="c1">#: — needed for real cross-platform test code — isn't a false positive.</span>
+<span class="n">WINDOWS_LOCAL_PATH_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\b[A-Za-z]:</span><span class="se">\\</span><span class="s2">Users</span><span class="se">\\</span><span class="s2">[^\s</span><span class="se">\"</span><span class="s2">'&lt;&gt;]+"</span><span class="p">)</span>
+
+<span class="c1">#: A quoted, EXACTLY-two-segment value shaped like a GitHub owner-slash-repo —</span>
+<span class="c1">#: anchored to the quote characters so a longer path (e.g. a quoted brief</span>
+<span class="c1">#: path under ~/.config/liaise/) can never satisfy it: there is nothing in</span>
+<span class="c1">#: the pattern between the two captured segments and the quotes but the "/".</span>
+<span class="n">OWNER_REPO_LITERAL_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">"""["']([a-zA-Z0-9][a-zA-Z0-9-]{1,38})/([a-zA-Z0-9._-]+)["']"""</span>
+<span class="p">)</span>
+<span class="c1">#: The same shape after `--repo` (a `gh`/README invocation) or in a</span>
+<span class="c1">#: `github.com/` URL.</span>
+<span class="n">OWNER_REPO_CONTEXT_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"(?:--repo[= ]|github\.com/)([a-zA-Z0-9][a-zA-Z0-9-]{1,38})/([a-zA-Z0-9._-]+)"</span>
+<span class="p">)</span>
+<span class="c1">#: Bare (unquoted) prose mentions — e.g. a repo named in a markdown sentence.</span>
+<span class="c1">#: Requiring a hyphen or digit in the owner segment is what keeps this from</span>
+<span class="c1">#: matching this package's own plain-lowercase-word path fragments</span>
+<span class="c1">#: (`liaise/tests`, `config/liaise`, `local/share`, ...): real org/repo slugs</span>
+<span class="c1">#: commonly carry a hyphen or digit, our own internal path words never do.</span>
+<span class="c1">#: A narrower net than the quoted/context checks above, on purpose.</span>
+<span class="n">OWNER_REPO_BARE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"\b([a-zA-Z][a-zA-Z0-9]*-[a-zA-Z0-9-]{1,37})/([a-zA-Z0-9][a-zA-Z0-9._-]*)\b"</span>
+<span class="p">)</span>
+<span class="c1">#: `github_logins = [...]` TOML/Python array literals, whose quoted entries</span>
+<span class="c1">#: must all be fictional.</span>
+<span class="n">GITHUB_LOGINS_ARRAY_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"github_logins\s*=\s*\[([^\]]*)\]"</span><span class="p">)</span>
+<span class="n">LOGIN_LITERAL_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"""["']([a-zA-Z0-9][a-zA-Z0-9-]{0,38})["']"""</span><span class="p">)</span>
+<span class="c1">#: `notify_login = "..."` — the other place a bare GitHub login can appear</span>
+<span class="c1">#: (#20): a partner identified by label only sets this directly, outside</span>
+<span class="c1">#: any `github_logins` array, so it needs its own scan.</span>
+<span class="n">NOTIFY_LOGIN_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"""notify_login\s*=\s*["']([a-zA-Z0-9][a-zA-Z0-9-]{0,38})["']"""</span><span class="p">)</span>
+
+<span class="c1">#: The only owner segment allowed in an owner/repo-shaped literal.</span>
+<span class="n">ALLOWED_OWNER</span> <span class="o">=</span> <span class="s2">"example"</span>
+<span class="c1">#: The only GitHub logins allowed anywhere `github_logins` is set.</span>
+<span class="n">ALLOWED_LOGINS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"pat"</span><span class="p">,</span> <span class="s2">"octocat"</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_repo_text_files</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Path</span><span class="p">]:</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">REPO_ROOT</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">name</span> <span class="ow">in</span> <span class="n">_EXCLUDED_FILES</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_TEXT_SUFFIXES</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">part</span> <span class="ow">in</span> <span class="n">_SKIP_DIR_NAMES</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">parts</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="c1"># Belt and suspenders on the .venv miss above: installed-package</span>
+        <span class="c1"># metadata (site-packages, *.dist-info, *.egg-info) is never source,</span>
+        <span class="c1"># regardless of what the virtualenv directory happens to be named.</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+            <span class="n">part</span> <span class="o">==</span> <span class="s2">"site-packages"</span> <span class="ow">or</span> <span class="n">part</span><span class="o">.</span><span class="n">endswith</span><span class="p">((</span><span class="s2">".dist-info"</span><span class="p">,</span> <span class="s2">".egg-info"</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">parts</span>
+        <span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">files</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_owner_repo_offenders</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">offenders</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">regex</span> <span class="ow">in</span> <span class="p">(</span><span class="n">OWNER_REPO_LITERAL_RE</span><span class="p">,</span> <span class="n">OWNER_REPO_CONTEXT_RE</span><span class="p">,</span> <span class="n">OWNER_REPO_BARE_RE</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">owner</span><span class="p">,</span> <span class="n">repo</span> <span class="ow">in</span> <span class="n">regex</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">owner</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">ALLOWED_OWNER</span><span class="p">:</span>
+                <span class="n">offenders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">owner</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">offenders</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_login_offenders</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">offenders</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">array_body</span> <span class="ow">in</span> <span class="n">GITHUB_LOGINS_ARRAY_RE</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">login</span> <span class="ow">in</span> <span class="n">LOGIN_LITERAL_RE</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">array_body</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">login</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALLOWED_LOGINS</span><span class="p">:</span>
+                <span class="n">offenders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">login</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">login</span> <span class="ow">in</span> <span class="n">NOTIFY_LOGIN_RE</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">login</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ALLOWED_LOGINS</span><span class="p">:</span>
+            <span class="n">offenders</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">login</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">offenders</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_repo_has_no_email_addresses_or_local_paths</span><span class="p">():</span>
+    <span class="n">offenders_email</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">offenders_path</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">_repo_text_files</span><span class="p">():</span>
+        <span class="n">text</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">EMAIL_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="n">offenders_email</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">ABS_LOCAL_PATH_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="ow">or</span> <span class="n">WINDOWS_LOCAL_PATH_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+            <span class="n">offenders_path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
+
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">offenders_email</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"email address(es) found in: </span><span class="si">{</span><span class="n">offenders_email</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">offenders_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"absolute local path(s) found in: </span><span class="si">{</span><span class="n">offenders_path</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_repo_has_no_real_owner_repo_strings</span><span class="p">():</span>
+    <span class="n">offenders</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">_repo_text_files</span><span class="p">():</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">_owner_repo_offenders</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+            <span class="n">offenders</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span> <span class="o">=</span> <span class="n">found</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">offenders</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"non-fictional owner/repo string(s): </span><span class="si">{</span><span class="n">offenders</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">test_repo_has_no_real_github_logins</span><span class="p">():</span>
+    <span class="n">offenders</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">_repo_text_files</span><span class="p">():</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">_login_offenders</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+            <span class="n">offenders</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span> <span class="o">=</span> <span class="n">found</span>
+    <span class="k">assert</span> <span class="ow">not</span> <span class="n">offenders</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"non-fictional github login(s): </span><span class="si">{</span><span class="n">offenders</span><span class="si">}</span><span class="s2">"</span>
+
+
+<div class="viewcode-block" id="test_login_offenders_catches_a_standalone_notify_login">
+<a class="viewcode-back" href="../../../module_docs/liaise/tests/test_no_personal_data.html#liaise.tests.test_no_personal_data.test_login_offenders_catches_a_standalone_notify_login">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">test_login_offenders_catches_a_standalone_notify_login</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""#20: `notify_login = "..."` is a second place a bare GitHub login can</span>
+<span class="sd">    appear, outside any `github_logins` array — must not be a blind spot.</span>
+
+<span class="sd">    Built by concatenation, not as a literal `notify_login = "..."` string —</span>
+<span class="sd">    a literal here would trip this very guard against this very file.</span>
+<span class="sd">    """</span>
+    <span class="n">fake_login</span> <span class="o">=</span> <span class="s2">"not"</span> <span class="o">+</span> <span class="s2">"-fictional"</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">"notify_login"</span> <span class="o">+</span> <span class="s2">" = "</span> <span class="o">+</span> <span class="s1">'"'</span> <span class="o">+</span> <span class="n">fake_login</span> <span class="o">+</span> <span class="s1">'"'</span>
+    <span class="k">assert</span> <span class="n">_login_offenders</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="p">[</span><span class="n">fake_login</span><span class="p">]</span>
+    <span class="k">assert</span> <span class="n">_login_offenders</span><span class="p">(</span><span class="s1">'notify_login = "pat"'</span><span class="p">)</span> <span class="o">==</span> <span class="p">[]</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

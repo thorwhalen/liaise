@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../_static/jquery.js?v=5d32c60e"></script>
       <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -71,6 +71,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#liaise.EchoDispatcher"><code class="docutils literal notranslate"><span class="pre">EchoDispatcher</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.EscalateConfig"><code class="docutils literal notranslate"><span class="pre">EscalateConfig</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.FakeGitHub"><code class="docutils literal notranslate"><span class="pre">FakeGitHub</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.FakeGitHub.SELF_AUTHOR"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.SELF_AUTHOR</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.FakeGitHub.labels_created"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.labels_created()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.FakeGitHub.seed"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.seed()</span></code></a></li>
 </ul>
@@ -79,6 +80,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#liaise.GitHub"><code class="docutils literal notranslate"><span class="pre">GitHub</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.GitHub.add_labels"><code class="docutils literal notranslate"><span class="pre">GitHub.add_labels()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.GitHub.create_label"><code class="docutils literal notranslate"><span class="pre">GitHub.create_label()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.GitHub.ensure_last_comment_mentions"><code class="docutils literal notranslate"><span class="pre">GitHub.ensure_last_comment_mentions()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.GitHub.get_issue"><code class="docutils literal notranslate"><span class="pre">GitHub.get_issue()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.GitHub.list_issues"><code class="docutils literal notranslate"><span class="pre">GitHub.list_issues()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="#liaise.GitHub.post_comment"><code class="docutils literal notranslate"><span class="pre">GitHub.post_comment()</span></code></a></li>
@@ -94,7 +96,10 @@
 <li class="toctree-l2"><a class="reference internal" href="#liaise.Job"><code class="docutils literal notranslate"><span class="pre">Job</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.Markers"><code class="docutils literal notranslate"><span class="pre">Markers</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.NotifyConfig"><code class="docutils literal notranslate"><span class="pre">NotifyConfig</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#liaise.PartnerConfig"><code class="docutils literal notranslate"><span class="pre">PartnerConfig</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.PartnerConfig"><code class="docutils literal notranslate"><span class="pre">PartnerConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.PartnerConfig.notify_login"><code class="docutils literal notranslate"><span class="pre">PartnerConfig.notify_login</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.PlanItem"><code class="docutils literal notranslate"><span class="pre">PlanItem</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.Readiness"><code class="docutils literal notranslate"><span class="pre">Readiness</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.RunReport"><code class="docutils literal notranslate"><span class="pre">RunReport</span></code></a><ul>
@@ -128,6 +133,7 @@
 <li class="toctree-l1"><a class="reference internal" href="liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/run.html">liaise.run</a></li>
@@ -140,6 +146,7 @@
 <li class="toctree-l1"><a class="reference internal" href="liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -274,6 +281,14 @@ and <cite>run.py</cite> deploys once after the batch. Not a crash.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">FakeGitHub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">issues</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="liaise/github.html#liaise.github.Issue" title="liaise.github.Issue"><span class="pre">Issue</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/github.html#FakeGitHub"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.FakeGitHub" title="Link to this definition"></a></dt>
 <dd><p>In-memory <a class="reference internal" href="#liaise.GitHub" title="liaise.GitHub"><code class="xref py py-class docutils literal notranslate"><span class="pre">GitHub</span></code></a>, for tests. No network, no real repo, no token.</p>
 <p>Every other test in this package should use this rather than <a class="reference internal" href="#liaise.GhCli" title="liaise.GhCli"><code class="xref py py-class docutils literal notranslate"><span class="pre">GhCli</span></code></a>.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="liaise.FakeGitHub.SELF_AUTHOR">
+<span class="sig-name descname"><span class="pre">SELF_AUTHOR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'liaise-bot'</span></span><a class="headerlink" href="#liaise.FakeGitHub.SELF_AUTHOR" title="Link to this definition"></a></dt>
+<dd><p>The fixed identity every comment posted through this fake carries —
+stands in for “whatever GitHub identity <cite>gh</cite> is authenticated as” in
+tests, so <code class="xref py py-meth docutils literal notranslate"><span class="pre">ensure_last_comment_mentions()</span></code> has something to match.</p>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="liaise.FakeGitHub.labels_created">
 <span class="sig-name descname"><span class="pre">labels_created</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../_modules/liaise/github.html#FakeGitHub.labels_created"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.FakeGitHub.labels_created" title="Link to this definition"></a></dt>
@@ -310,6 +325,18 @@ reads, stores or passes a token.</p>
 <dt class="sig sig-object py" id="liaise.GitHub.create_label">
 <span class="sig-name descname"><span class="pre">create_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'ededed'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="../_modules/liaise/github.html#GitHub.create_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.GitHub.create_label" title="Link to this definition"></a></dt>
 <dd><p>Create a label if it does not already exist. Idempotent.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.GitHub.ensure_last_comment_mentions">
+<span class="sig-name descname"><span class="pre">ensure_last_comment_mentions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mention</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../_modules/liaise/github.html#GitHub.ensure_last_comment_mentions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.GitHub.ensure_last_comment_mentions" title="Link to this definition"></a></dt>
+<dd><p>Repair this identity’s own last comment on <cite>number</cite> to carry <cite>mention</cite>.</p>
+<p>If the last comment posted by liaise’s own GitHub identity on this
+issue does not already contain <cite>mention</cite>, prepends it (body content
+otherwise untouched) and returns True. Returns False when the last
+such comment already contains <cite>mention</cite>, or when this identity has
+posted no comment on the issue at all. A rule the dispatched agent
+forgets must still hold (#20).</p>
 </dd></dl>
 
 <dl class="py method">
@@ -382,8 +409,19 @@ reads, stores or passes a token.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.PartnerConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">PartnerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">slug:</span> <span class="pre">str,</span> <span class="pre">display_name:</span> <span class="pre">str,</span> <span class="pre">github_logins:</span> <span class="pre">tuple[str,</span> <span class="pre">...],</span> <span class="pre">repo:</span> <span class="pre">str,</span> <span class="pre">brief:</span> <span class="pre">str,</span> <span class="pre">label:</span> <span class="pre">str,</span> <span class="pre">reply_mode:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'draft',</span> <span class="pre">dispatch:</span> <span class="pre">~liaise.config.DispatchConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">verify:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">deploy:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">escalate:</span> <span class="pre">~liaise.config.EscalateConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">quiet_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10,</span> <span class="pre">go_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">2,</span> <span class="pre">markers:</span> <span class="pre">~liaise.config.Markers</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">label_prefix:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'liaise:',</span> <span class="pre">budget:</span> <span class="pre">~liaise.config.Budget</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">deploy_per:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'batch',</span> <span class="pre">deployed_nudge_days:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/config.html#PartnerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.PartnerConfig" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">PartnerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">slug:</span> <span class="pre">str,</span> <span class="pre">display_name:</span> <span class="pre">str,</span> <span class="pre">github_logins:</span> <span class="pre">tuple[str,</span> <span class="pre">...],</span> <span class="pre">repo:</span> <span class="pre">str,</span> <span class="pre">brief:</span> <span class="pre">str,</span> <span class="pre">label:</span> <span class="pre">str,</span> <span class="pre">notify_login:</span> <span class="pre">str,</span> <span class="pre">reply_mode:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'draft',</span> <span class="pre">dispatch:</span> <span class="pre">~liaise.config.DispatchConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">verify:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">deploy:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">escalate:</span> <span class="pre">~liaise.config.EscalateConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">quiet_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10,</span> <span class="pre">go_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">2,</span> <span class="pre">markers:</span> <span class="pre">~liaise.config.Markers</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">label_prefix:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'liaise:',</span> <span class="pre">budget:</span> <span class="pre">~liaise.config.Budget</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">deploy_per:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'batch',</span> <span class="pre">deployed_nudge_days:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/config.html#PartnerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.PartnerConfig" title="Link to this definition"></a></dt>
 <dd><p>A resolved partner: <code class="docutils literal notranslate"><span class="pre">~/.config/liaise/partners/&lt;slug&gt;.toml</span></code> plus defaults.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="liaise.PartnerConfig.notify_login">
+<span class="sig-name descname"><span class="pre">notify_login</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#liaise.PartnerConfig.notify_login" title="Link to this definition"></a></dt>
+<dd><p>The GitHub login <cite>&#64;mentioned</cite> at the start of every partner-facing
+comment — an issue filed through the app is authored by the app’s own
+credentials, so GitHub sends the partner no email otherwise (#20).
+Computed by the loader (default: the first <cite>github_logins</cite> entry); a
+partner identified by label only (no <cite>github_logins</cite>) must set it
+explicitly.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -456,6 +494,12 @@ and handles the batch deploy itself. Without that flag (the
 <cite>deploy_per == “issue”</cite> path, where the agent owns deploying, posting and
 setting its own exit label) a still-<cite>working</cite> success is <em>also</em> reconciled
 to <cite>liaise:needs-owner</cite> — the agent silently didn’t do its job.</p>
+<p>When the dispatch ends at <cite>liaise:needs-partner</cite> or <cite>liaise:deployed</cite>,
+also reconciles the mention rule (#20): the dispatched agent is told in
+its own prompt to start every partner-facing comment with <cite>&#64;notify_login</cite>,
+but a rule the agent forgets must still hold — the newest comment left by
+this dispatch’s own GitHub identity is repaired to carry it if missing,
+and the repair is recorded in the dispatch log.</p>
 </dd></dl>
 
 <dl class="py function">

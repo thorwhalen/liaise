@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.cli &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.cli &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -151,6 +153,7 @@
         <span class="sa">f</span><span class="s2">"  github_logins:  </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">github_logins</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="sa">f</span><span class="s2">"  repo:           </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="sa">f</span><span class="s2">"  label:          </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  notify_login:   </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">notify_login</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'(none)'</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="sa">f</span><span class="s2">"  brief:          </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">brief</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="sa">f</span><span class="s2">"  reply_mode:     </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">reply_mode</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="sa">f</span><span class="s2">"  quiet_minutes:  </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">quiet_minutes</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
@@ -204,7 +207,12 @@
 
 <div class="viewcode-block" id="poll">
 <a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.poll">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">poll</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">poll</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">partner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Report each partner's open issues, their readiness, and a countdown. Changes nothing."""</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">partners</span> <span class="o">=</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">partner</span><span class="p">(</span><span class="n">partner</span><span class="p">)]</span> <span class="k">if</span> <span class="n">partner</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">partners</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
@@ -267,17 +275,26 @@
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">github</span> <span class="o">=</span> <span class="n">gh</span> <span class="k">if</span> <span class="n">gh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
     <span class="n">agent</span> <span class="o">=</span> <span class="n">dispatcher</span> <span class="k">if</span> <span class="n">dispatcher</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ClaudeHeadless</span><span class="p">()</span>
-    <span class="n">state_store</span> <span class="o">=</span> <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
+    <span class="n">state_store</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
+    <span class="p">)</span>
     <span class="n">notify_fn</span> <span class="o">=</span> <span class="n">_notify_fn_for</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">one_pass</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">report</span> <span class="o">=</span> <span class="n">run_once</span><span class="p">(</span>
-            <span class="n">github</span><span class="p">,</span> <span class="n">agent</span><span class="p">,</span> <span class="n">state_store</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
-            <span class="n">partner</span><span class="o">=</span><span class="n">partner</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span> <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+            <span class="n">github</span><span class="p">,</span>
+            <span class="n">agent</span><span class="p">,</span>
+            <span class="n">state_store</span><span class="p">,</span>
+            <span class="n">config</span><span class="p">,</span>
+            <span class="n">partner</span><span class="o">=</span><span class="n">partner</span><span class="p">,</span>
+            <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+            <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"plan (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">plan</span><span class="p">)</span><span class="si">}</span><span class="s2"> item(s)):"</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">plan</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">partner_slug</span><span class="si">}</span><span class="s2"> #</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_number</span><span class="si">:</span><span class="s2">&lt;5</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">action</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_title</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">partner_slug</span><span class="si">}</span><span class="s2"> #</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_number</span><span class="si">:</span><span class="s2">&lt;5</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">action</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_title</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">report</span><span class="o">.</span><span class="n">dispatched</span><span class="p">:</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dispatched: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">dispatched</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">slug</span><span class="p">,</span> <span class="n">numbers</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">deployed</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -302,20 +319,31 @@
 
 <div class="viewcode-block" id="status">
 <a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.status">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Last run stamp, today's dispatches per partner, and anything needing the owner."""</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">github</span> <span class="o">=</span> <span class="n">gh</span> <span class="k">if</span> <span class="n">gh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
-    <span class="n">state_store</span> <span class="o">=</span> <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
+    <span class="n">state_store</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
+    <span class="p">)</span>
 
     <span class="n">age</span> <span class="o">=</span> <span class="n">last_run_age</span><span class="p">(</span><span class="n">state_store</span><span class="p">)</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"last_run: </span><span class="si">{</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">age</span><span class="p">)</span><span class="si">}</span><span class="s1">s ago'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">age</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'never'</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
 
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">partners</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">):</span>
         <span class="n">count</span> <span class="o">=</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">state_store</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"partner </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="si">}</span><span class="s2"> dispatches today"</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"partner </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="si">}</span><span class="s2"> dispatches today"</span>
+        <span class="p">)</span>
         <span class="n">needs_owner</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">find_partner_issues</span><span class="p">(</span><span class="n">github</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">if</span> <span class="n">current_state</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"needs-owner"</span>
+            <span class="n">i</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">find_partner_issues</span><span class="p">(</span><span class="n">github</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_state</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"needs-owner"</span>
         <span class="p">]</span>
         <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">needs_owner</span><span class="p">:</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  needs-owner: #</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>

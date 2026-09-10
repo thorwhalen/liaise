@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.config &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.config &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -256,6 +258,13 @@
     <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">brief</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The GitHub login `@mentioned` at the start of every partner-facing</span>
+    <span class="c1">#: comment — an issue filed through the app is authored by the app's own</span>
+    <span class="c1">#: credentials, so GitHub sends the partner no email otherwise (#20).</span>
+    <span class="c1">#: Computed by the loader (default: the first `github_logins` entry); a</span>
+    <span class="c1">#: partner identified by label only (no `github_logins`) must set it</span>
+    <span class="c1">#: explicitly.</span>
+    <span class="n">notify_login</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">reply_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_REPLY_MODE</span>
     <span class="n">dispatch</span><span class="p">:</span> <span class="n">DispatchConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">DispatchConfig</span><span class="p">)</span>
     <span class="n">verify</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
@@ -323,6 +332,16 @@
     <span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_direct_mode_without_notify_login_error</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">reply_mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConfigError</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">ConfigError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1"> sets reply_mode = </span><span class="si">{</span><span class="n">reply_mode</span><span class="si">!r}</span><span class="s1"> (anything but "draft" posts '</span>
+        <span class="sa">f</span><span class="s2">"directly to the thread) but has no login to @mention: github_logins is "</span>
+        <span class="sa">f</span><span class="s2">"empty and notify_login is not set. A direct reply that cannot notify "</span>
+        <span class="sa">f</span><span class="s2">"the partner is a misconfiguration — add e.g.</span><span class="se">\n\n</span><span class="s2">"</span>
+        <span class="s1">'  notify_login = "pat"</span><span class="se">\n</span><span class="s1">'</span>
+    <span class="p">)</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_markers_from</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">dflt</span><span class="p">:</span> <span class="n">Markers</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Markers</span><span class="p">:</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dflt</span>
@@ -356,9 +375,7 @@
     <span class="n">raw</span> <span class="o">=</span> <span class="n">_load_toml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">required</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"owner_login"</span><span class="p">,</span> <span class="s2">"state_dir"</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">required</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> is missing required field </span><span class="si">{</span><span class="n">required</span><span class="si">!r}</span><span class="s2">."</span>
-            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> is missing required field </span><span class="si">{</span><span class="n">required</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
     <span class="n">dflt_markers</span> <span class="o">=</span> <span class="n">Markers</span><span class="p">()</span>
     <span class="n">dflt_budget</span> <span class="o">=</span> <span class="n">Budget</span><span class="p">()</span>
     <span class="n">notify_raw</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"notify"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
@@ -393,14 +410,27 @@
     <span class="p">)</span>
     <span class="n">escalate</span> <span class="o">=</span> <span class="n">_escalate_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"escalate"</span><span class="p">))</span>
 
+    <span class="n">github_logins</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">"github_logins"</span><span class="p">])</span>
+    <span class="n">notify_login</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"notify_login"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
+        <span class="n">github_logins</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">github_logins</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="p">)</span>
+    <span class="n">reply_mode</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reply_mode"</span><span class="p">,</span> <span class="n">DFLT_REPLY_MODE</span><span class="p">)</span>
+    <span class="c1"># Every posting site in the codebase gates on `!= "draft"` (draft is the</span>
+    <span class="c1"># only mode that stays silent), so a typo'd `reply_mode` (e.g. "direkt")</span>
+    <span class="c1"># is treated as "post directly" at runtime — it must not slip past this</span>
+    <span class="c1"># check just because it isn't the literal string "direct".</span>
+    <span class="k">if</span> <span class="n">reply_mode</span> <span class="o">!=</span> <span class="n">DFLT_REPLY_MODE</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">notify_login</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">_direct_mode_without_notify_login_error</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">reply_mode</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">PartnerConfig</span><span class="p">(</span>
         <span class="n">slug</span><span class="o">=</span><span class="n">slug</span><span class="p">,</span>
         <span class="n">display_name</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"display_name"</span><span class="p">],</span>
-        <span class="n">github_logins</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">"github_logins"</span><span class="p">]),</span>
+        <span class="n">github_logins</span><span class="o">=</span><span class="n">github_logins</span><span class="p">,</span>
         <span class="n">repo</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"repo"</span><span class="p">],</span>
         <span class="n">brief</span><span class="o">=</span><span class="n">raw</span><span class="p">[</span><span class="s2">"brief"</span><span class="p">],</span>
         <span class="n">label</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"partner:</span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">"</span><span class="p">),</span>
-        <span class="n">reply_mode</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reply_mode"</span><span class="p">,</span> <span class="n">DFLT_REPLY_MODE</span><span class="p">),</span>
+        <span class="n">notify_login</span><span class="o">=</span><span class="n">notify_login</span><span class="p">,</span>
+        <span class="n">reply_mode</span><span class="o">=</span><span class="n">reply_mode</span><span class="p">,</span>
         <span class="n">dispatch</span><span class="o">=</span><span class="n">dispatch</span><span class="p">,</span>
         <span class="n">verify</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"verify"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
         <span class="n">deploy</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deploy"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>

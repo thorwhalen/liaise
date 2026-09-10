@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.state &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.state &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -163,9 +165,9 @@
 <span class="w">    </span><span class="sd">"""The issue's current state (a suffix from :data:`STATE_LABELS`), or None."""</span>
     <span class="n">prefix</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">label_prefix</span>
     <span class="n">present</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">label</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span>
+        <span class="n">label</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="p">:]</span>
         <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">issue</span><span class="o">.</span><span class="n">labels</span>
-        <span class="k">if</span> <span class="n">label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="ow">and</span> <span class="n">label</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">):]</span> <span class="ow">in</span> <span class="n">STATE_LABELS</span>
+        <span class="k">if</span> <span class="n">label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="ow">and</span> <span class="n">label</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span> <span class="p">:]</span> <span class="ow">in</span> <span class="n">STATE_LABELS</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">present</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
@@ -214,7 +216,10 @@
             <span class="n">description</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"description"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="n">gh</span><span class="o">.</span><span class="n">create_label</span><span class="p">(</span>
-        <span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">DISCOVERED_LABEL</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"c5def5"</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">DISCOVERED_LABEL_DESCRIPTION</span>
+        <span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
+        <span class="n">DISCOVERED_LABEL</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">"c5def5"</span><span class="p">,</span>
+        <span class="n">description</span><span class="o">=</span><span class="n">DISCOVERED_LABEL_DESCRIPTION</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 </pre></div>

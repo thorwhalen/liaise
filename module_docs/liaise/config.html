@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.config &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.config &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -65,13 +65,17 @@
 <li class="toctree-l2"><a class="reference internal" href="#liaise.config.GlobalConfig"><code class="docutils literal notranslate"><span class="pre">GlobalConfig</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.config.Markers"><code class="docutils literal notranslate"><span class="pre">Markers</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.config.NotifyConfig"><code class="docutils literal notranslate"><span class="pre">NotifyConfig</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="#liaise.config.PartnerConfig"><code class="docutils literal notranslate"><span class="pre">PartnerConfig</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.config.PartnerConfig"><code class="docutils literal notranslate"><span class="pre">PartnerConfig</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.config.PartnerConfig.notify_login"><code class="docutils literal notranslate"><span class="pre">PartnerConfig.notify_login</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.config.load_config"><code class="docutils literal notranslate"><span class="pre">load_config()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="run.html">liaise.run</a></li>
@@ -84,6 +88,7 @@
 <li class="toctree-l1"><a class="reference internal" href="tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -191,8 +196,19 @@ instruction to read it), so the templates spell that out explicitly.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.config.PartnerConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.config.</span></span><span class="sig-name descname"><span class="pre">PartnerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">slug:</span> <span class="pre">str,</span> <span class="pre">display_name:</span> <span class="pre">str,</span> <span class="pre">github_logins:</span> <span class="pre">tuple[str,</span> <span class="pre">...],</span> <span class="pre">repo:</span> <span class="pre">str,</span> <span class="pre">brief:</span> <span class="pre">str,</span> <span class="pre">label:</span> <span class="pre">str,</span> <span class="pre">reply_mode:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'draft',</span> <span class="pre">dispatch:</span> <span class="pre">~liaise.config.DispatchConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">verify:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">deploy:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">escalate:</span> <span class="pre">~liaise.config.EscalateConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">quiet_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10,</span> <span class="pre">go_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">2,</span> <span class="pre">markers:</span> <span class="pre">~liaise.config.Markers</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">label_prefix:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'liaise:',</span> <span class="pre">budget:</span> <span class="pre">~liaise.config.Budget</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">deploy_per:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'batch',</span> <span class="pre">deployed_nudge_days:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/liaise/config.html#PartnerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.config.PartnerConfig" title="Link to this definition"></a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.config.</span></span><span class="sig-name descname"><span class="pre">PartnerConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">slug:</span> <span class="pre">str,</span> <span class="pre">display_name:</span> <span class="pre">str,</span> <span class="pre">github_logins:</span> <span class="pre">tuple[str,</span> <span class="pre">...],</span> <span class="pre">repo:</span> <span class="pre">str,</span> <span class="pre">brief:</span> <span class="pre">str,</span> <span class="pre">label:</span> <span class="pre">str,</span> <span class="pre">notify_login:</span> <span class="pre">str,</span> <span class="pre">reply_mode:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'draft',</span> <span class="pre">dispatch:</span> <span class="pre">~liaise.config.DispatchConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">verify:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">deploy:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'',</span> <span class="pre">escalate:</span> <span class="pre">~liaise.config.EscalateConfig</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">quiet_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">10,</span> <span class="pre">go_minutes:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">2,</span> <span class="pre">markers:</span> <span class="pre">~liaise.config.Markers</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">label_prefix:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'liaise:',</span> <span class="pre">budget:</span> <span class="pre">~liaise.config.Budget</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">deploy_per:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">'batch',</span> <span class="pre">deployed_nudge_days:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3</span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/liaise/config.html#PartnerConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.config.PartnerConfig" title="Link to this definition"></a></dt>
 <dd><p>A resolved partner: <code class="docutils literal notranslate"><span class="pre">~/.config/liaise/partners/&lt;slug&gt;.toml</span></code> plus defaults.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="liaise.config.PartnerConfig.notify_login">
+<span class="sig-name descname"><span class="pre">notify_login</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></span><a class="headerlink" href="#liaise.config.PartnerConfig.notify_login" title="Link to this definition"></a></dt>
+<dd><p>The GitHub login <cite>&#64;mentioned</cite> at the start of every partner-facing
+comment — an issue filed through the app is authored by the app’s own
+credentials, so GitHub sends the partner no email otherwise (#20).
+Computed by the loader (default: the first <cite>github_logins</cite> entry); a
+partner identified by label only (no <cite>github_logins</cite>) must set it
+explicitly.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">

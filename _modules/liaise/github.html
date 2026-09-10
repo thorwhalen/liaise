@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.github &mdash; liaise 0.0.1 documentation</title>
+  <title>liaise.github &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -116,9 +118,7 @@
 
 <span class="c1">#: JSON fields `gh issue list`/`gh issue view` are asked for. Kept as one SSOT</span>
 <span class="c1">#: so the parser and the `gh` invocation never drift apart.</span>
-<span class="n">_ISSUE_FIELDS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"number,title,author,body,createdAt,updatedAt,state,labels,comments"</span>
-<span class="p">)</span>
+<span class="n">_ISSUE_FIELDS</span> <span class="o">=</span> <span class="s2">"number,title,author,body,createdAt,updatedAt,state,labels,comments"</span>
 
 
 <div class="viewcode-block" id="GitHubError">
@@ -219,6 +219,23 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">post_comment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Post a comment on an issue."""</span>
         <span class="o">...</span></div>
+
+
+<div class="viewcode-block" id="GitHub.ensure_last_comment_mentions">
+<a class="viewcode-back" href="../../module_docs/liaise/github.html#liaise.GitHub.ensure_last_comment_mentions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_last_comment_mentions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mention</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Repair this identity's own last comment on `number` to carry `mention`.</span>
+
+<span class="sd">        If the last comment posted by liaise's own GitHub identity on this</span>
+<span class="sd">        issue does not already contain `mention`, prepends it (body content</span>
+<span class="sd">        otherwise untouched) and returns True. Returns False when the last</span>
+<span class="sd">        such comment already contains `mention`, or when this identity has</span>
+<span class="sd">        posted no comment on the issue at all. A rule the dispatched agent</span>
+<span class="sd">        forgets must still hold (#20).</span>
+<span class="sd">        """</span>
+        <span class="o">...</span></div>
 </div>
 
 
@@ -248,7 +265,9 @@
                 <span class="c1"># `createdAt` and `includesCreatedEdit` (whether it was ever</span>
                 <span class="c1"># edited, not when). Fall back to `createdAt` rather than</span>
                 <span class="c1"># KeyError on every issue that has ever been commented on.</span>
-                <span class="n">updated_at</span><span class="o">=</span><span class="n">_parse_dt</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">"updatedAt"</span><span class="p">])</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"updatedAt"</span><span class="p">)</span> <span class="k">else</span> <span class="n">_parse_dt</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">"createdAt"</span><span class="p">]),</span>
+                <span class="n">updated_at</span><span class="o">=</span><span class="n">_parse_dt</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">"updatedAt"</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"updatedAt"</span><span class="p">)</span>
+                <span class="k">else</span> <span class="n">_parse_dt</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s2">"createdAt"</span><span class="p">]),</span>
             <span class="p">)</span>
             <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"comments"</span><span class="p">,</span> <span class="p">[])</span>
         <span class="p">),</span>
@@ -268,9 +287,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">gh_bin</span> <span class="o">=</span> <span class="n">gh_bin</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">gh_bin</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span>
-        <span class="p">)</span>
+        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">gh_bin</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">],</span> <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">proc</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">GitHubError</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span>
@@ -364,9 +381,33 @@
             <span class="k">raise</span> <span class="n">GitHubError</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="n">proc</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">post_comment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="s2">"issue"</span><span class="p">,</span> <span class="s2">"comment"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">),</span> <span class="s2">"--repo"</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="s2">"--body"</span><span class="p">,</span> <span class="n">body</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_whoami</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="s2">"api"</span><span class="p">,</span> <span class="s2">"user"</span><span class="p">,</span> <span class="s2">"--jq"</span><span class="p">,</span> <span class="s2">".login"</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_last_comment_mentions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mention</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">issue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="n">me</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_whoami</span><span class="p">()</span>
+        <span class="n">mine</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">issue</span><span class="o">.</span><span class="n">comments</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">author</span> <span class="o">==</span> <span class="n">me</span><span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">mine</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">last</span> <span class="o">=</span> <span class="n">mine</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">mention</span> <span class="ow">in</span> <span class="n">last</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span>
-            <span class="s2">"issue"</span><span class="p">,</span> <span class="s2">"comment"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">),</span> <span class="s2">"--repo"</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="s2">"--body"</span><span class="p">,</span> <span class="n">body</span>
-        <span class="p">)</span></div>
+            <span class="s2">"issue"</span><span class="p">,</span>
+            <span class="s2">"comment"</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">number</span><span class="p">),</span>
+            <span class="s2">"--repo"</span><span class="p">,</span>
+            <span class="n">repo</span><span class="p">,</span>
+            <span class="s2">"--edit-last"</span><span class="p">,</span>
+            <span class="s2">"--body"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mention</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">last</span><span class="o">.</span><span class="n">body</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
 
 
 
@@ -377,6 +418,11 @@
 
 <span class="sd">    Every other test in this package should use this rather than :class:`GhCli`.</span>
 <span class="sd">    """</span>
+
+    <span class="c1">#: The fixed identity every comment posted through this fake carries —</span>
+    <span class="c1">#: stands in for "whatever GitHub identity `gh` is authenticated as" in</span>
+    <span class="c1">#: tests, so :meth:`ensure_last_comment_mentions` has something to match.</span>
+    <span class="n">SELF_AUTHOR</span> <span class="o">=</span> <span class="s2">"liaise-bot"</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">issues</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Issue</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_issues</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Issue</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
@@ -439,10 +485,31 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">post_comment</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">issue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
         <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
-        <span class="n">comment</span> <span class="o">=</span> <span class="n">Comment</span><span class="p">(</span><span class="n">author</span><span class="o">=</span><span class="s2">"liaise-bot"</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">,</span> <span class="n">created_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">updated_at</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+        <span class="n">comment</span> <span class="o">=</span> <span class="n">Comment</span><span class="p">(</span>
+            <span class="n">author</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">SELF_AUTHOR</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">,</span> <span class="n">created_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">updated_at</span><span class="o">=</span><span class="n">now</span>
+        <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_issues</span><span class="p">[(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)]</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span>
             <span class="n">issue</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">issue</span><span class="o">.</span><span class="n">comments</span><span class="p">,</span> <span class="n">comment</span><span class="p">)</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ensure_last_comment_mentions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">mention</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <span class="n">issue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="n">comments</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">comments</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">comments</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">comments</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">author</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">SELF_AUTHOR</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">mention</span> <span class="ow">in</span> <span class="n">comments</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">body</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="n">comments</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span>
+                <span class="n">comments</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                <span class="n">body</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mention</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">comments</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">body</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                <span class="n">updated_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_issues</span><span class="p">[(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)]</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">comments</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">comments</span><span class="p">))</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
 
 </pre></div>
 

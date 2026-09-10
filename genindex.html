@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; liaise 0.0.1 documentation</title>
+  <title>Index &mdash; liaise 0.0.2 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="_static/documentation_options.js?v=e3a6060d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -53,6 +53,7 @@
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/github.html">liaise.github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/messages.html">liaise.messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/prompt.html">liaise.prompt</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/run.html">liaise.run</a></li>
@@ -65,6 +66,7 @@
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
@@ -149,6 +151,10 @@
 </li>
       </ul></li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise/messages.html#liaise.messages.budget_capped_message">budget_capped_message() (in module liaise.messages)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="C">C</h2>
@@ -220,6 +226,8 @@
         <li><a href="module_docs/liaise.html#liaise.RunReport.deployed">(liaise.RunReport attribute)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/messages.html#liaise.messages.deployed_message">deployed_message() (in module liaise.messages)</a>
+</li>
       <li><a href="module_docs/liaise/config.html#liaise.config.DFLT_DISPATCH_COMMAND">DFLT_DISPATCH_COMMAND (in module liaise.config)</a>
 </li>
       <li><a href="module_docs/liaise/notify.html#liaise.notify.DFLT_TOPIC_ENV">DFLT_TOPIC_ENV (in module liaise.notify)</a>
@@ -274,6 +282,12 @@
 
       <ul>
         <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.EchoDispatcher">(class in liaise.dispatch)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.GitHub.ensure_last_comment_mentions">ensure_last_comment_mentions() (liaise.GitHub method)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/github.html#liaise.github.GitHub.ensure_last_comment_mentions">(liaise.github.GitHub method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -466,6 +480,13 @@
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li>
+    liaise.messages
+
+      <ul>
+        <li><a href="module_docs/liaise/messages.html#module-liaise.messages">module</a>
+</li>
+      </ul></li>
+      <li>
     liaise.notify
 
       <ul>
@@ -552,6 +573,8 @@
         <li><a href="module_docs/liaise/config.html#liaise.config.Markers">(class in liaise.config)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/messages.html#liaise.messages.mention">mention() (in module liaise.messages)</a>
+</li>
       <li><a href="module_docs/liaise/prompt.html#liaise.prompt.MODES">MODES (in module liaise.prompt)</a>
 </li>
       <li>
@@ -571,6 +594,8 @@
         <li><a href="module_docs/liaise/github.html#module-liaise.github">liaise.github</a>
 </li>
         <li><a href="module_docs/liaise/intake.html#module-liaise.intake">liaise.intake</a>
+</li>
+        <li><a href="module_docs/liaise/messages.html#module-liaise.messages">liaise.messages</a>
 </li>
         <li><a href="module_docs/liaise/notify.html#module-liaise.notify">liaise.notify</a>
 </li>
@@ -603,14 +628,24 @@
         <li><a href="module_docs/liaise/notify.html#liaise.notify.notify">(in module liaise.notify)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/config.html#liaise.config.PartnerConfig.notify_login">notify_login (liaise.config.PartnerConfig attribute)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise.html#liaise.PartnerConfig.notify_login">(liaise.PartnerConfig attribute)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise/tests/test_no_personal_data.html#liaise.tests.test_no_personal_data.NOTIFY_LOGIN_RE">NOTIFY_LOGIN_RE (in module liaise.tests.test_no_personal_data)</a>
+</li>
       <li><a href="module_docs/liaise.html#liaise.NotifyConfig">NotifyConfig (class in liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/config.html#liaise.config.NotifyConfig">(class in liaise.config)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/messages.html#liaise.messages.nudge_message">nudge_message() (in module liaise.messages)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -721,6 +756,12 @@
         <li><a href="module_docs/liaise/github.html#liaise.github.FakeGitHub.seed">(liaise.github.FakeGitHub method)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.FakeGitHub.SELF_AUTHOR">SELF_AUTHOR (liaise.FakeGitHub attribute)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/github.html#liaise.github.FakeGitHub.SELF_AUTHOR">(liaise.github.FakeGitHub attribute)</a>
+</li>
+      </ul></li>
       <li><a href="module_docs/liaise.html#liaise.set_state">set_state() (in module liaise)</a>
 
       <ul>
@@ -759,10 +800,12 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="module_docs/liaise/tests/test_docs.html#liaise.tests.test_docs.test_readme_quick_start_actually_builds_a_working_config">test_readme_quick_start_actually_builds_a_working_config() (in module liaise.tests.test_docs)</a>
+      <li><a href="module_docs/liaise/tests/test_no_personal_data.html#liaise.tests.test_no_personal_data.test_login_offenders_catches_a_standalone_notify_login">test_login_offenders_catches_a_standalone_notify_login() (in module liaise.tests.test_no_personal_data)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise/tests/test_docs.html#liaise.tests.test_docs.test_readme_quick_start_actually_builds_a_working_config">test_readme_quick_start_actually_builds_a_working_config() (in module liaise.tests.test_docs)</a>
+</li>
       <li><a href="module_docs/liaise/tests/test_docs.html#liaise.tests.test_docs.test_readme_quick_start_does_not_end_by_installing_a_live_daemon">test_readme_quick_start_does_not_end_by_installing_a_live_daemon() (in module liaise.tests.test_docs)</a>
 </li>
   </ul></td>
