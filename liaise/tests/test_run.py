@@ -122,13 +122,13 @@ def test_cli_run_once_dry_run_prints_the_plan(tmp_path):
     (root / "briefs").mkdir()
     (root / "briefs" / "pat.md").write_text("hi\n")
     (root / "config.toml").write_text(
-        f'owner_login = "owner"\nstate_dir = "{tmp_path / "state"}"\n'
+        f'owner_login = "owner"\nstate_dir = "{(tmp_path / "state").as_posix()}"\n'
     )
     (root / "partners" / "pat.toml").write_text(
         f'display_name = "Pat"\n'
         f'github_logins = ["pat"]\n'
         f'repo = "{REPO}"\n'
-        f'brief = "{root / "briefs" / "pat.md"}"\n'
+        f'brief = "{(root / "briefs" / "pat.md").as_posix()}"\n'
     )
     fake = FakeGitHub([_issue(labels=())])
     output = cli_run(root=str(root), once=True, dry_run=True, gh=fake, dispatcher=EchoDispatcher(), store={})
@@ -147,14 +147,14 @@ def test_cli_run_uses_the_configured_ntfy_topic_env(tmp_path, monkeypatch):
     (root / "briefs").mkdir()
     (root / "briefs" / "pat.md").write_text("hi\n")
     (root / "config.toml").write_text(
-        f'owner_login = "owner"\nstate_dir = "{tmp_path / "state"}"\n'
+        f'owner_login = "owner"\nstate_dir = "{(tmp_path / "state").as_posix()}"\n'
         f'[notify]\nntfy_topic_env = "MY_CUSTOM_NTFY_VAR"\n'
     )
     (root / "partners" / "pat.toml").write_text(
         f'display_name = "Pat"\n'
         f'github_logins = ["pat"]\n'
         f'repo = "{REPO}"\n'
-        f'brief = "{root / "briefs" / "pat.md"}"\n'
+        f'brief = "{(root / "briefs" / "pat.md").as_posix()}"\n'
         f'budget = {{daily_dispatches = 0}}\n'  # forces an immediate budget-cap notification
     )
     monkeypatch.delenv("LIAISE_NTFY_TOPIC", raising=False)
@@ -491,13 +491,13 @@ def _write_config_root(tmp_path):
     (root / "briefs").mkdir()
     (root / "briefs" / "pat.md").write_text("hi\n")
     (root / "config.toml").write_text(
-        f'owner_login = "owner"\nstate_dir = "{tmp_path / "state"}"\n'
+        f'owner_login = "owner"\nstate_dir = "{(tmp_path / "state").as_posix()}"\n'
     )
     (root / "partners" / "pat.toml").write_text(
         f'display_name = "Pat"\n'
         f'github_logins = ["pat"]\n'
         f'repo = "{REPO}"\n'
-        f'brief = "{root / "briefs" / "pat.md"}"\n'
+        f'brief = "{(root / "briefs" / "pat.md").as_posix()}"\n'
     )
     return root
 
