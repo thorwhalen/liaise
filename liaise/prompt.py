@@ -14,6 +14,7 @@ from pathlib import Path
 
 from liaise.config import PartnerConfig
 from liaise.github import Issue
+from liaise.messages import mention
 
 #: fresh: a new dispatch. resume: continuing a stored session (A.3 — a new
 #: partner comment on a `liaise:needs-partner` issue re-arms readiness and
@@ -62,7 +63,7 @@ def _state_contract(partner: PartnerConfig) -> str:
     if partner.notify_login:
         lines += [
             "",
-            f"Every comment meant for the partner starts with `@{partner.notify_login}` "
+            f"Every comment meant for the partner starts with `{mention(partner)}` "
             '— questions, progress notes, pushback, and the "it\'s live" note alike. '
             "This applies even in draft mode: write the mention into the draft itself.",
         ]

@@ -336,8 +336,21 @@ def dispatch_issue(
         )
 
     final_state = current_state(refreshed, partner)
-    if final_state in ("needs-partner", "deployed") and partner.notify_login:
-        _reconcile_mention(gh, partner, refreshed, log_path=log_path)
+    posted_a_new_comment = len(refreshed.comments) > len(issue.comments)
+    if (
+        final_state in ("needs-partner", "deployed")
+        and partner.notify_login
+        and posted_a_new_comment
+    ):
+        # A reconciliation failure (a transient `gh` error, a rate limit) must
+        # not discard an otherwise-successful `DispatchOutcome` — that would
+        # silently drop `landed_awaiting_batch_deploy` for a landed change.
+        try:
+            _reconcile_mention(gh, partner, refreshed, log_path=log_path)
+        except Exception as e:  # noqa: BLE001 - see comment above
+            if log_path:
+                with open(log_path, "a") as f:
+                    f.write(f"\n[liaise: mention reconciliation failed: {e}]\n")
 
     return DispatchOutcome(
         dispatched=True,
@@ -354,8 +367,14 @@ def _reconcile_mention(
 ) -> None:
     """#20: repair a partner-facing comment the agent forgot to `@mention`.
 
-    No-op when the last comment already carries the mention, or when this
-    dispatch's own GitHub identity has posted no comment on the issue.
+    Only called when this dispatch actually posted a new comment (the
+    caller checks the before/after comment count) — otherwise "the last
+    comment by this identity" could be a stale comment from an unrelated,
+    much earlier dispatch (e.g. an old owner-facing escalation note), which
+    must never be mutated or mislogged as a fresh repair. No-op when that
+    new comment already carries the mention, or when it wasn't posted by
+    this dispatch's own GitHub identity (`ensure_last_comment_mentions`
+    itself only ever touches its own identity's comments).
     """
     repaired = gh.ensure_last_comment_mentions(
         issue.repo, issue.number, mention(partner)

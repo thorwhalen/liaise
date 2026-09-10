@@ -500,6 +500,64 @@ class SelfTransitioningDispatcherFor:
         return DispatchResult(returncode=0, session_id="sess-1")
 
 
+def test_reconciliation_leaves_a_stale_unrelated_comment_untouched(tmp_path):
+    """A comment left by this identity on a PRIOR, unrelated dispatch (e.g. an
+    old owner-facing escalation note) must not be mistaken for something this
+    dispatch just posted — reconciliation gates on the comment count actually
+    having grown during this dispatch, not merely on "my last comment exists".
+    """
+    partner = _partner(tmp_path, notify_login="pat")
+    fake = FakeGitHub([_issue()])
+    fake.post_comment(REPO, 1, "Escalating: needs owner approval for $500")
+
+    outcome = dispatch_issue(
+        fake, SelfTransitioningDispatcherFor(fake, partner), {}, partner,
+        fake.get_issue(REPO, 1), now=T0,
+    )
+
+    assert not outcome.crashed
+    comments = fake.get_issue(REPO, 1).comments
+    assert len(comments) == 1
+    assert comments[0].body == "Escalating: needs owner approval for $500"  # untouched
+
+
+def test_reconciliation_failure_does_not_discard_the_dispatch_outcome(tmp_path):
+    """A transient `gh` error (rate limit, network blip) during reconciliation
+    must not propagate out of `dispatch_issue` — that would discard an
+    otherwise-successful outcome (e.g. `landed_awaiting_batch_deploy`) via the
+    broad `except Exception` in `run.py`'s per-issue loop.
+    """
+    from liaise.github import GitHubError
+
+    partner = _partner(tmp_path, notify_login="pat")
+
+    class FlakyGitHub(FakeGitHub):
+        def ensure_last_comment_mentions(self, repo, number, mention):
+            raise GitHubError("rate limited")
+
+    fake = FlakyGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+
+    class ForgetfulDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            issue = fake.get_issue(REPO, 1)
+            fake.post_comment(REPO, 1, "Quick question: what color?")
+            set_state(fake, issue, partner, "needs-partner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    outcome = dispatch_issue(  # must not raise
+        fake, ForgetfulDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=log_dir,
+    )
+
+    assert not outcome.crashed
+    assert outcome.dispatched
+    [log_file] = list(log_dir.iterdir())
+    assert "reconciliation failed" in log_file.read_text().lower()
+
+
 # ---- session id memory (resume) ----
 
 

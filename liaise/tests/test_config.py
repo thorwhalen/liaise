@@ -94,6 +94,19 @@ def test_direct_reply_mode_without_a_login_to_mention_raises(config_root):
     assert "direct" in message
 
 
+def test_non_draft_reply_mode_typo_without_notify_login_also_raises(config_root):
+    """Every posting site in the codebase gates on `!= "draft"`, not on the
+    literal string "direct" — a typo'd `reply_mode` must not silently bypass
+    the notify_login requirement and post directly with no mention.
+    """
+    path = config_root / "partners" / "pat.toml"
+    text = path.read_text().replace('github_logins = ["pat"]', "github_logins = []")
+    path.write_text('reply_mode = "direkt"\n' + text)
+    with pytest.raises(ConfigError) as exc_info:
+        load_config(config_root)
+    assert "notify_login" in str(exc_info.value)
+
+
 def test_direct_reply_mode_with_notify_login_set_on_its_own_loads_fine(config_root):
     path = config_root / "partners" / "pat.toml"
     text = path.read_text().replace('github_logins = ["pat"]', "github_logins = []")

@@ -200,11 +200,12 @@ def _missing_partner_field_error(path: Path, field_name: str) -> ConfigError:
     )
 
 
-def _direct_mode_without_notify_login_error(path: Path) -> ConfigError:
+def _direct_mode_without_notify_login_error(path: Path, reply_mode: str) -> ConfigError:
     return ConfigError(
-        f'{path} sets reply_mode = "direct" but has no login to @mention: '
-        f"github_logins is empty and notify_login is not set. A direct reply "
-        f"that cannot notify the partner is a misconfiguration — add e.g.\n\n"
+        f'{path} sets reply_mode = {reply_mode!r} (anything but "draft" posts '
+        f"directly to the thread) but has no login to @mention: github_logins is "
+        f"empty and notify_login is not set. A direct reply that cannot notify "
+        f"the partner is a misconfiguration — add e.g.\n\n"
         '  notify_login = "pat"\n'
     )
 
@@ -282,8 +283,12 @@ def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
         github_logins[0] if github_logins else ""
     )
     reply_mode = raw.get("reply_mode", DFLT_REPLY_MODE)
-    if reply_mode == "direct" and not notify_login:
-        raise _direct_mode_without_notify_login_error(path)
+    # Every posting site in the codebase gates on `!= "draft"` (draft is the
+    # only mode that stays silent), so a typo'd `reply_mode` (e.g. "direkt")
+    # is treated as "post directly" at runtime — it must not slip past this
+    # check just because it isn't the literal string "direct".
+    if reply_mode != DFLT_REPLY_MODE and not notify_login:
+        raise _direct_mode_without_notify_login_error(path, reply_mode)
 
     return PartnerConfig(
         slug=slug,
