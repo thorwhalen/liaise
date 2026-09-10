@@ -6,14 +6,13 @@ JSON the same way. No network, no real repo: GhCli here shells out to a fake
 from __future__ import annotations
 
 import json
-import stat
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
 from liaise.github import Comment, FakeGitHub, GhCli, GitHubError, Issue
+from liaise.tests.conftest import write_executable_script
 
 REPO = "example/app"
 
@@ -134,19 +133,11 @@ _FAKE_GH_ISSUE_VIEW = {
 @pytest.fixture
 def fake_gh_bin(tmp_path: Path) -> Path:
     """A fake `gh` executable script that returns canned JSON for `issue view`."""
-    script = tmp_path / "gh"
     payload = json.dumps(_FAKE_GH_ISSUE_VIEW)
-    script.write_text(
-        f"""#!{sys.executable}
-import sys
-if "view" in sys.argv:
-    print({payload!r})
-    sys.exit(0)
-sys.exit(1)
-"""
+    return write_executable_script(
+        tmp_path / "gh",
+        f'import sys\nif "view" in sys.argv:\n    print({payload!r})\n    sys.exit(0)\nsys.exit(1)\n',
     )
-    script.chmod(script.stat().st_mode | stat.S_IEXEC)
-    return script
 
 
 def test_ghcli_parses_issue_view_json(fake_gh_bin: Path):
@@ -174,12 +165,10 @@ def test_ghcli_parses_a_comment_with_no_updated_at_key_at_all(tmp_path: Path):
     ]
     assert "updatedAt" not in payload["comments"][0]
 
-    script = tmp_path / "gh"
-    script.write_text(
-        f"#!{sys.executable}\nimport sys\n"
-        f"if 'view' in sys.argv:\n    print({json.dumps(payload)!r})\n    sys.exit(0)\nsys.exit(1)\n"
+    script = write_executable_script(
+        tmp_path / "gh",
+        f"import sys\nif 'view' in sys.argv:\n    print({json.dumps(payload)!r})\n    sys.exit(0)\nsys.exit(1)\n",
     )
-    script.chmod(script.stat().st_mode | stat.S_IEXEC)
 
     gh = GhCli(gh_bin=str(script))
     issue = gh.get_issue(REPO, 7)  # must not raise
@@ -187,9 +176,9 @@ def test_ghcli_parses_a_comment_with_no_updated_at_key_at_all(tmp_path: Path):
 
 
 def test_ghcli_raises_githuberror_on_failure(tmp_path: Path):
-    script = tmp_path / "gh"
-    script.write_text(f"#!{sys.executable}\nimport sys\nsys.stderr.write('boom')\nsys.exit(1)\n")
-    script.chmod(script.stat().st_mode | stat.S_IEXEC)
+    script = write_executable_script(
+        tmp_path / "gh", "import sys\nsys.stderr.write('boom')\nsys.exit(1)\n"
+    )
     gh = GhCli(gh_bin=str(script))
     with pytest.raises(GitHubError, match="boom"):
         gh.get_issue(REPO, 1)
