@@ -51,10 +51,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 </ul>
 
@@ -97,7 +99,11 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">cw</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigError</span><span class="p">,</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">load_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GhCli</span><span class="p">,</span> <span class="n">GitHub</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.intake</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">find_partner_issues</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_format_partner</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -149,10 +155,51 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_fmt_countdown</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">total_seconds</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">td</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">total_seconds</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"0m"</span>
+    <span class="n">hours</span><span class="p">,</span> <span class="n">remainder</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">total_seconds</span><span class="p">,</span> <span class="mi">3600</span><span class="p">)</span>
+    <span class="n">minutes</span> <span class="o">=</span> <span class="n">remainder</span> <span class="o">//</span> <span class="mi">60</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s2">h</span><span class="si">{</span><span class="n">minutes</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">m"</span> <span class="k">if</span> <span class="n">hours</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">minutes</span><span class="si">}</span><span class="s2">m"</span>
+
+
+<div class="viewcode-block" id="poll">
+<a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.poll">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">poll</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Report each partner's open issues, their readiness, and a countdown. Changes nothing."""</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">partners</span> <span class="o">=</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">partner</span><span class="p">(</span><span class="n">partner</span><span class="p">)]</span> <span class="k">if</span> <span class="n">partner</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">partners</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">github</span> <span class="o">=</span> <span class="n">gh</span> <span class="k">if</span> <span class="n">gh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">partners</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"(no partners configured)"</span>
+
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">partners</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">):</span>
+        <span class="n">issues</span> <span class="o">=</span> <span class="n">find_partner_issues</span><span class="p">(</span><span class="n">github</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"partner: </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">issues</span><span class="p">)</span><span class="si">}</span><span class="s2"> open)"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">issues</span><span class="p">:</span>
+            <span class="n">readiness</span> <span class="o">=</span> <span class="n">compute_readiness</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">readiness</span><span class="o">.</span><span class="n">paused</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s2">"PAUSED"</span>
+            <span class="k">elif</span> <span class="n">readiness</span><span class="o">.</span><span class="n">ready</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s2">"READY"</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"in </span><span class="si">{</span><span class="n">_fmt_countdown</span><span class="p">(</span><span class="n">readiness</span><span class="o">.</span><span class="n">countdown</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  #</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">:</span><span class="s2">&lt;5</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">status</span><span class="si">:</span><span class="s2">&lt;10</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+
+
+
 <span class="c1">#: SSOT command tree consumed by both ``__main__.py`` and (later) MCP/HTTP surfaces.</span>
 <span class="c1">#: Named explicitly (not by function `__name__`) so `liaise partner show`, not</span>
 <span class="c1">#: `liaise partner partner-show`.</span>
-<span class="n">_dispatch_funcs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"partner"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"show"</span><span class="p">:</span> <span class="n">partner_show</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">:</span> <span class="n">partner_list</span><span class="p">}}</span>
+<span class="n">_dispatch_funcs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"partner"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"show"</span><span class="p">:</span> <span class="n">partner_show</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">:</span> <span class="n">partner_list</span><span class="p">},</span> <span class="s2">"poll"</span><span class="p">:</span> <span class="n">poll</span><span class="p">}</span>
+
+<span class="c1">#: `gh` is a dependency-injection seam (defaults to the real GhCli), not something</span>
+<span class="c1">#: to expose on the command line.</span>
+<span class="n">_dispatch_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"poll"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">}}</span>
 </pre></div>
 
            </div>
