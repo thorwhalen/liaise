@@ -11,6 +11,8 @@
    module_docs/liaise/intake
    module_docs/liaise/notify
    module_docs/liaise/prompt
+   module_docs/liaise/run
+   module_docs/liaise/schedule
    module_docs/liaise/state
    module_docs/liaise/tests
    module_docs/liaise/tests/conftest
@@ -21,4 +23,6 @@
    module_docs/liaise/tests/test_no_personal_data
    module_docs/liaise/tests/test_notify
    module_docs/liaise/tests/test_prompt
+   module_docs/liaise/tests/test_run
+   module_docs/liaise/tests/test_schedule
    module_docs/liaise/tests/test_state

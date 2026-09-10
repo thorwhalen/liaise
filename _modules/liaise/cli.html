@@ -55,6 +55,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
@@ -65,6 +67,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_run.html">liaise.tests.test_run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 
@@ -104,15 +108,39 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">cw</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigError</span><span class="p">,</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">load_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigError</span><span class="p">,</span> <span class="n">GlobalConfig</span><span class="p">,</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">load_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ClaudeHeadless</span><span class="p">,</span>
+    <span class="n">Dispatcher</span><span class="p">,</span>
+    <span class="n">daily_dispatch_count</span><span class="p">,</span>
+    <span class="n">default_store</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GhCli</span><span class="p">,</span> <span class="n">GitHub</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.intake</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">find_partner_issues</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">STATE_LABELS</span><span class="p">,</span> <span class="n">setup</span> <span class="k">as</span> <span class="n">_state_setup</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span> <span class="k">as</span> <span class="n">_notify</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.run</span><span class="w"> </span><span class="kn">import</span> <span class="n">last_run_age</span><span class="p">,</span> <span class="n">run_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.schedule</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">install_schedule</span><span class="p">,</span>
+    <span class="n">schedule_status</span><span class="p">,</span>
+    <span class="n">uninstall_schedule</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">STATE_LABELS</span><span class="p">,</span> <span class="n">current_state</span><span class="p">,</span> <span class="n">setup</span> <span class="k">as</span> <span class="n">_state_setup</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_notify_fn_for</span><span class="p">(</span><span class="n">glob</span><span class="p">:</span> <span class="n">GlobalConfig</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""M-4: bind `notify()` to this installation's configured</span>
+<span class="sd">    `notify.ntfy_topic_env`, rather than every caller silently falling back</span>
+<span class="sd">    to `notify()`'s own hardcoded default — a custom variable name would</span>
+<span class="sd">    otherwise mean every notification silently disappears.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">_notify</span><span class="p">,</span> <span class="n">topic_env</span><span class="o">=</span><span class="n">glob</span><span class="o">.</span><span class="n">notify</span><span class="o">.</span><span class="n">ntfy_topic_env</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_format_partner</span><span class="p">(</span><span class="n">p</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -216,6 +244,127 @@
 
 
 
+<div class="viewcode-block" id="run">
+<a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.run">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">once</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">partner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dispatcher</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dispatcher</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Intake, label, dispatch ready issues, batch-deploy, reconcile.</span>
+
+<span class="sd">    `--dry-run` prints the plan and changes nothing. Without `--once`, keeps</span>
+<span class="sd">    running one pass after another — the scheduled job always passes</span>
+<span class="sd">    `--once` (see `liaise schedule install`); this is for a foreground,</span>
+<span class="sd">    manual "keep watching" run.</span>
+<span class="sd">    """</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">github</span> <span class="o">=</span> <span class="n">gh</span> <span class="k">if</span> <span class="n">gh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
+    <span class="n">agent</span> <span class="o">=</span> <span class="n">dispatcher</span> <span class="k">if</span> <span class="n">dispatcher</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ClaudeHeadless</span><span class="p">()</span>
+    <span class="n">state_store</span> <span class="o">=</span> <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
+    <span class="n">notify_fn</span> <span class="o">=</span> <span class="n">_notify_fn_for</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">one_pass</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">report</span> <span class="o">=</span> <span class="n">run_once</span><span class="p">(</span>
+            <span class="n">github</span><span class="p">,</span> <span class="n">agent</span><span class="p">,</span> <span class="n">state_store</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+            <span class="n">partner</span><span class="o">=</span><span class="n">partner</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span> <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"plan (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">plan</span><span class="p">)</span><span class="si">}</span><span class="s2"> item(s)):"</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">plan</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">partner_slug</span><span class="si">}</span><span class="s2"> #</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_number</span><span class="si">:</span><span class="s2">&lt;5</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">action</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_title</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">report</span><span class="o">.</span><span class="n">dispatched</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"dispatched: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">dispatched</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">slug</span><span class="p">,</span> <span class="n">numbers</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">deployed</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"deployed for </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">'#</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">'</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">numbers</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">once</span> <span class="ow">or</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">one_pass</span><span class="p">()</span>
+
+    <span class="c1"># L-4: without --once, this runs indefinitely — printing each pass as it</span>
+    <span class="c1"># happens (rather than accumulating every pass's output into a list</span>
+    <span class="c1"># returned only at the end) is what makes a long foreground run usable</span>
+    <span class="c1"># rather than silent and unbounded in memory.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">one_pass</span><span class="p">())</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">60</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyboardInterrupt</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"stopped"</span></div>
+
+
+
+<div class="viewcode-block" id="status">
+<a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.status">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Last run stamp, today's dispatches per partner, and anything needing the owner."""</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">github</span> <span class="o">=</span> <span class="n">gh</span> <span class="k">if</span> <span class="n">gh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
+    <span class="n">state_store</span> <span class="o">=</span> <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
+
+    <span class="n">age</span> <span class="o">=</span> <span class="n">last_run_age</span><span class="p">(</span><span class="n">state_store</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"last_run: </span><span class="si">{</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">age</span><span class="p">)</span><span class="si">}</span><span class="s1">s ago'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">age</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'never'</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">partners</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">):</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">state_store</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"partner </span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">p</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="si">}</span><span class="s2"> dispatches today"</span><span class="p">)</span>
+        <span class="n">needs_owner</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">find_partner_issues</span><span class="p">(</span><span class="n">github</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">if</span> <span class="n">current_state</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"needs-owner"</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">needs_owner</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  needs-owner: #</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="schedule_install">
+<a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.schedule_install">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">schedule_install</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">interval_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
+    <span class="n">extra_env_vars</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux).</span>
+
+<span class="sd">    `extra_env_vars`: names of additional environment variables (beyond</span>
+<span class="sd">    `PATH`, `HOME`, and the configured ntfy topic variable) a partner's</span>
+<span class="sd">    dispatch command needs snapshotted into the job's environment — A.7</span>
+<span class="sd">    ("whatever the dispatch command needs"), which had no way to reach the</span>
+<span class="sd">    scheduler from the CLI (M-4).</span>
+<span class="sd">    """</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">install_schedule</span><span class="p">(</span>
+        <span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span>
+        <span class="n">interval_minutes</span><span class="o">=</span><span class="n">interval_minutes</span><span class="p">,</span>
+        <span class="n">ntfy_topic_env</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">notify</span><span class="o">.</span><span class="n">ntfy_topic_env</span><span class="p">,</span>
+        <span class="n">extra_env_vars</span><span class="o">=</span><span class="n">extra_env_vars</span> <span class="ow">or</span> <span class="p">(),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"installed: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="schedule_uninstall">
+<a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.schedule_uninstall">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">schedule_uninstall</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Remove the scheduled job. Idempotent."""</span>
+    <span class="k">return</span> <span class="n">uninstall_schedule</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="schedule_status_cmd">
+<a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.schedule_status_cmd">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">schedule_status_cmd</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether the scheduled job is installed."""</span>
+    <span class="k">return</span> <span class="n">schedule_status</span><span class="p">()</span></div>
+
+
+
 <span class="c1">#: SSOT command tree consumed by both ``__main__.py`` and (later) MCP/HTTP surfaces.</span>
 <span class="c1">#: Named explicitly (not by function `__name__`) so `liaise partner show`, not</span>
 <span class="c1">#: `liaise partner partner-show`.</span>
@@ -223,11 +372,23 @@
     <span class="s2">"partner"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"show"</span><span class="p">:</span> <span class="n">partner_show</span><span class="p">,</span> <span class="s2">"list"</span><span class="p">:</span> <span class="n">partner_list</span><span class="p">},</span>
     <span class="s2">"poll"</span><span class="p">:</span> <span class="n">poll</span><span class="p">,</span>
     <span class="s2">"setup"</span><span class="p">:</span> <span class="n">setup</span><span class="p">,</span>
+    <span class="s2">"run"</span><span class="p">:</span> <span class="n">run</span><span class="p">,</span>
+    <span class="s2">"status"</span><span class="p">:</span> <span class="n">status</span><span class="p">,</span>
+    <span class="s2">"schedule"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"install"</span><span class="p">:</span> <span class="n">schedule_install</span><span class="p">,</span>
+        <span class="s2">"uninstall"</span><span class="p">:</span> <span class="n">schedule_uninstall</span><span class="p">,</span>
+        <span class="s2">"status"</span><span class="p">:</span> <span class="n">schedule_status_cmd</span><span class="p">,</span>
+    <span class="p">},</span>
 <span class="p">}</span>
 
-<span class="c1">#: `gh` is a dependency-injection seam (defaults to the real GhCli), not something</span>
-<span class="c1">#: to expose on the command line.</span>
-<span class="n">_dispatch_config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"poll"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">},</span> <span class="s2">"setup"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">}}</span>
+<span class="c1">#: DI seams (real `GitHub`/`Dispatcher`/store by default) — not CLI-serializable,</span>
+<span class="c1">#: so hidden from the command line.</span>
+<span class="n">_dispatch_config</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"poll"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">},</span>
+    <span class="s2">"setup"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">},</span>
+    <span class="s2">"run"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">,</span> <span class="s2">"dispatcher"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">},</span>
+    <span class="s2">"status"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"gh"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">:</span> <span class="n">cw</span><span class="o">.</span><span class="n">HIDE</span><span class="p">},</span>
+<span class="p">}</span>
 </pre></div>
 
            </div>

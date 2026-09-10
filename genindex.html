@@ -55,6 +55,8 @@
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/intake.html">liaise.intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/run.html">liaise.run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/schedule.html">liaise.schedule</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
@@ -65,6 +67,8 @@
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_run.html">liaise.tests.test_run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
 <li class="toctree-l1"><a class="reference internal" href="module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 
@@ -206,6 +210,14 @@
         <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.daily_dispatch_count">(in module liaise.dispatch)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.default_store">default_store() (in module liaise.dispatch)</a>
+</li>
+      <li><a href="module_docs/liaise/run.html#liaise.run.RunReport.deployed">deployed (liaise.run.RunReport attribute)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise.html#liaise.RunReport.deployed">(liaise.RunReport attribute)</a>
+</li>
+      </ul></li>
       <li><a href="module_docs/liaise/config.html#liaise.config.DFLT_DISPATCH_COMMAND">DFLT_DISPATCH_COMMAND (in module liaise.config)</a>
 </li>
       <li><a href="module_docs/liaise/notify.html#liaise.notify.DFLT_TOPIC_ENV">DFLT_TOPIC_ENV (in module liaise.notify)</a>
@@ -218,14 +230,14 @@
         <li><a href="module_docs/liaise.html#liaise.Dispatcher.dispatch">(liaise.Dispatcher method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.dispatch_issue">dispatch_issue() (in module liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.dispatch_issue">(in module liaise.dispatch)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.DispatchConfig">DispatchConfig (class in liaise)</a>
 
       <ul>
@@ -332,6 +344,12 @@
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.install_schedule">install_schedule() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/schedule.html#liaise.schedule.install_schedule">(in module liaise.schedule)</a>
+</li>
+      </ul></li>
       <li><a href="module_docs/liaise.html#liaise.is_partner_issue">is_partner_issue() (in module liaise)</a>
 
       <ul>
@@ -359,6 +377,10 @@
 </li>
       </ul></li>
   </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise/schedule.html#liaise.schedule.job_environment">job_environment() (in module liaise.schedule)</a>
+</li>
+  </ul></td>
 </tr></table>
 
 <h2 id="L">L</h2>
@@ -376,10 +398,18 @@
         <li><a href="module_docs/liaise.html#liaise.DispatchOutcome.landed_awaiting_batch_deploy">(liaise.DispatchOutcome attribute)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/dispatch.html#liaise.dispatch.last_dispatch_at">last_dispatch_at() (in module liaise.dispatch)</a>
+</li>
       <li><a href="module_docs/liaise.html#liaise.last_partner_activity">last_partner_activity() (in module liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/intake.html#liaise.intake.last_partner_activity">(in module liaise.intake)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.last_run_age">last_run_age() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/run.html#liaise.run.last_run_age">(in module liaise.run)</a>
 </li>
       </ul></li>
       <li>
@@ -445,6 +475,20 @@
 
       <ul>
         <li><a href="module_docs/liaise/prompt.html#module-liaise.prompt">module</a>
+</li>
+      </ul></li>
+      <li>
+    liaise.run
+
+      <ul>
+        <li><a href="module_docs/liaise/run.html#module-liaise.run">module</a>
+</li>
+      </ul></li>
+      <li>
+    liaise.schedule
+
+      <ul>
+        <li><a href="module_docs/liaise/schedule.html#module-liaise.schedule">module</a>
 </li>
       </ul></li>
       <li>
@@ -523,6 +567,10 @@
 </li>
         <li><a href="module_docs/liaise/prompt.html#module-liaise.prompt">liaise.prompt</a>
 </li>
+        <li><a href="module_docs/liaise/run.html#module-liaise.run">liaise.run</a>
+</li>
+        <li><a href="module_docs/liaise/schedule.html#module-liaise.schedule">liaise.schedule</a>
+</li>
         <li><a href="module_docs/liaise/state.html#module-liaise.state">liaise.state</a>
 </li>
         <li><a href="module_docs/liaise/tests.html#module-liaise.tests">liaise.tests</a>
@@ -582,12 +630,18 @@
 </li>
       <li><a href="module_docs/liaise/cli.html#liaise.cli.partner_show">partner_show() (in module liaise.cli)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.PartnerConfig">PartnerConfig (class in liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/config.html#liaise.config.PartnerConfig">(class in liaise.config)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.PlanItem">PlanItem (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/run.html#liaise.run.PlanItem">(class in liaise.run)</a>
 </li>
       </ul></li>
       <li><a href="module_docs/liaise/cli.html#liaise.cli.poll">poll() (in module liaise.cli)</a>
@@ -610,12 +664,26 @@
         <li><a href="module_docs/liaise/intake.html#liaise.intake.Readiness">(class in liaise.intake)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.GitHub.remove_labels">remove_labels() (liaise.GitHub method)</a>
 
       <ul>
         <li><a href="module_docs/liaise/github.html#liaise.github.GitHub.remove_labels">(liaise.github.GitHub method)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise/cli.html#liaise.cli.run">run() (in module liaise.cli)</a>
+</li>
+      <li><a href="module_docs/liaise.html#liaise.run_once">run_once() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/run.html#liaise.run.run_once">(in module liaise.run)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise.html#liaise.RunReport">RunReport (class in liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/run.html#liaise.run.RunReport">(class in liaise.run)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -624,6 +692,18 @@
 <h2 id="S">S</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise/cli.html#liaise.cli.schedule_install">schedule_install() (in module liaise.cli)</a>
+</li>
+      <li><a href="module_docs/liaise.html#liaise.schedule_status">schedule_status() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/schedule.html#liaise.schedule.schedule_status">(in module liaise.schedule)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise/cli.html#liaise.cli.schedule_status_cmd">schedule_status_cmd() (in module liaise.cli)</a>
+</li>
+      <li><a href="module_docs/liaise/cli.html#liaise.cli.schedule_uninstall">schedule_uninstall() (in module liaise.cli)</a>
+</li>
       <li><a href="module_docs/liaise.html#liaise.FakeGitHub.seed">seed() (liaise.FakeGitHub method)</a>
 
       <ul>
@@ -636,14 +716,14 @@
         <li><a href="module_docs/liaise/state.html#liaise.state.set_state">(in module liaise.state)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise/cli.html#liaise.cli.setup">setup() (in module liaise.cli)</a>
 
       <ul>
         <li><a href="module_docs/liaise/state.html#liaise.state.setup">(in module liaise.state)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.setup_labels">setup_labels() (in module liaise)</a>
 </li>
       <li><a href="module_docs/liaise.html#liaise.state_label">state_label() (in module liaise)</a>
@@ -653,6 +733,8 @@
 </li>
       </ul></li>
       <li><a href="module_docs/liaise/state.html#liaise.state.STATE_LABELS">STATE_LABELS (in module liaise.state)</a>
+</li>
+      <li><a href="module_docs/liaise/cli.html#liaise.cli.status">status() (in module liaise.cli)</a>
 </li>
       <li><a href="module_docs/liaise.html#liaise.stored_session_id">stored_session_id() (in module liaise)</a>
 
@@ -665,6 +747,14 @@
 
 <h2 id="U">U</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="module_docs/liaise.html#liaise.uninstall_schedule">uninstall_schedule() (in module liaise)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise/schedule.html#liaise.schedule.uninstall_schedule">(in module liaise.schedule)</a>
+</li>
+      </ul></li>
+  </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise/github.html#liaise.github.Issue.url">url (liaise.github.Issue property)</a>
 

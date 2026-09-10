@@ -55,6 +55,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
@@ -65,6 +67,8 @@
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_run.html">liaise.tests.test_run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
 </ul>
 
@@ -270,16 +274,32 @@
 <span class="c1"># ---- budgets: daily dispatch cap, session-id memory (dol-backed store, injectable) ----</span>
 
 
+<div class="viewcode-block" id="default_store">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.default_store">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_store</span><span class="p">(</span><span class="n">state_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The `dol`-backed store `liaise` uses by default: one JSON file per key,</span>
+<span class="sd">    under `state_dir`. Session ids, daily counters and the last-run stamp all</span>
+<span class="sd">    live here — never on GitHub (A.1 rule 3). Tests use a plain `dict` instead.</span>
+<span class="sd">    """</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">dol</span>
+
+    <span class="k">return</span> <span class="n">dol</span><span class="o">.</span><span class="n">Jsons</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()))</span></div>
+
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_today</span><span class="p">(</span><span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">now</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_daily_key</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">"daily/</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2">"</span>
+    <span class="c1"># No "/" — the default store (dol.Jsons) treats it as a subdirectory</span>
+    <span class="c1"># separator and won't create missing parent directories on write.</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"daily__</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">day</span><span class="si">}</span><span class="s2">"</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_session_key</span><span class="p">(</span><span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">"sessions/</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">safe_repo</span> <span class="o">=</span> <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"/"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"sessions__</span><span class="si">{</span><span class="n">safe_repo</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span>
 
 
 <div class="viewcode-block" id="daily_dispatch_count">
@@ -297,6 +317,27 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">stored_session_id</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""The session id stored for `issue`, if a previous dispatch left one."""</span>
     <span class="k">return</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_session_key</span><span class="p">(</span><span class="n">issue</span><span class="p">))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dispatched_at_key</span><span class="p">(</span><span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">safe_repo</span> <span class="o">=</span> <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"/"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"dispatched_at__</span><span class="si">{</span><span class="n">safe_repo</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span>
+
+
+<div class="viewcode-block" id="last_dispatch_at">
+<a class="viewcode-back" href="../../module_docs/liaise/dispatch.html#liaise.last_dispatch_at">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">last_dispatch_at</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""When `issue` was last actually dispatched, or None if never.</span>
+
+<span class="sd">    H-3: `run.py` uses this to refuse to re-dispatch a `liaise:needs-partner`</span>
+<span class="sd">    issue unless the partner has said something new *since* this — otherwise</span>
+<span class="sd">    readiness (satisfied by the partner's original message, which is what</span>
+<span class="sd">    triggered the first dispatch) lets the same unanswered question burn the</span>
+<span class="sd">    whole daily budget in minutes.</span>
+<span class="sd">    """</span>
+    <span class="n">stamp</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_dispatched_at_key</span><span class="p">(</span><span class="n">issue</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">stamp</span><span class="p">)</span> <span class="k">if</span> <span class="n">stamp</span> <span class="k">else</span> <span class="kc">None</span></div>
 
 
 
@@ -351,7 +392,30 @@
 <span class="sd">    to `liaise:needs-owner` — the agent silently didn't do its job.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">partner</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="p">:</span>
+        <span class="c1"># M-8: A.1 rule 5 — "a cap that trips is a visible label AND A SHORT</span>
+        <span class="c1"># COMMENT, never silence." The label alone was already there; nothing</span>
+        <span class="c1"># posted anything. Comment once per issue (skip if it was already</span>
+        <span class="c1"># `budget` — re-checked every pass since H-4, so this must not repost</span>
+        <span class="c1"># every tick); notify the owner once per partner per day, not once</span>
+        <span class="c1"># per capped issue, so N issues capped in one pass isn't N pushes.</span>
+        <span class="n">was_already_capped</span> <span class="o">=</span> <span class="n">current_state</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"budget"</span>
         <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"budget"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">was_already_capped</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">reply_mode</span> <span class="o">!=</span> <span class="s2">"draft"</span><span class="p">:</span>
+                <span class="n">gh</span><span class="o">.</span><span class="n">post_comment</span><span class="p">(</span>
+                    <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
+                    <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
+                    <span class="s2">"Today's limit on automatic work has been reached — this will "</span>
+                    <span class="s2">"pick back up tomorrow."</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="n">notified_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"budget_notified__</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">_today</span><span class="p">(</span><span class="n">now</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">notified_key</span><span class="p">):</span>
+                <span class="n">notify_fn</span><span class="p">(</span>
+                    <span class="s2">"liaise: daily dispatch cap reached"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">slug</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2">) hit its daily cap of "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span><span class="si">}</span><span class="s2"> dispatches. Resumes tomorrow."</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">store</span><span class="p">[</span><span class="n">notified_key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">return</span> <span class="n">DispatchOutcome</span><span class="p">(</span><span class="n">dispatched</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">budget_capped</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">crashed</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="n">session_id</span> <span class="o">=</span> <span class="n">stored_session_id</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">issue</span><span class="p">)</span>
@@ -368,6 +432,7 @@
 
     <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"working"</span><span class="p">)</span>
     <span class="n">store</span><span class="p">[</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">_today</span><span class="p">(</span><span class="n">now</span><span class="p">))]</span> <span class="o">=</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">_dispatched_at_key</span><span class="p">(</span><span class="n">issue</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">now</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">session_id</span><span class="p">:</span>

@@ -1,0 +1,507 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.run &mdash; liaise 0.0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=d45e8c67"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_dispatch.html">liaise.tests.test_dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_run.html">liaise.tests.test_run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.run</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.run</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The run loop (A.5 batching, A.7): intake, label, dispatch, batch-deploy, reconcile.</span>
+
+<span class="sd">`liaise poll` (intake.py + cli.py) only *reports*. This module is where liaise</span>
+<span class="sd">*acts* — always behind `--dry-run`, which prints the same plan without calling</span>
+<span class="sd">any mutating `GitHub` method.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">contextlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shlex</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Config</span><span class="p">,</span> <span class="n">PartnerConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.dispatch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dispatcher</span><span class="p">,</span> <span class="n">DispatchOutcome</span><span class="p">,</span> <span class="n">dispatch_issue</span><span class="p">,</span> <span class="n">last_dispatch_at</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">Issue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.intake</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">find_partner_issues</span><span class="p">,</span> <span class="n">last_partner_activity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span> <span class="k">as</span> <span class="n">_default_notify</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.state</span><span class="w"> </span><span class="kn">import</span> <span class="n">current_state</span><span class="p">,</span> <span class="n">set_state</span>
+
+<span class="c1">#: States from which an issue is eligible to be (re-)considered this pass.</span>
+<span class="c1">#: `working`, `needs-owner` and `deployed` are not — mid-flight, or waiting on</span>
+<span class="c1">#: someone other than the partner's clock. `budget` IS eligible (H-4): the cap</span>
+<span class="c1">#: is per-day, and `dispatch_issue` re-checks it itself, so a still-capped</span>
+<span class="c1">#: issue simply returns to `budget` — leaving it out is what stranded a</span>
+<span class="c1">#: budget-capped issue there forever, "resume tomorrow" or not.</span>
+<span class="n">_ELIGIBLE_STATES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"intake"</span><span class="p">,</span> <span class="s2">"needs-partner"</span><span class="p">,</span> <span class="s2">"paused"</span><span class="p">,</span> <span class="s2">"budget"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="PlanItem">
+<a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.PlanItem">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">PlanItem</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""One line of what `run_once` did (or, in `--dry-run`, would do)."""</span>
+
+    <span class="n">partner_slug</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">issue_number</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">issue_title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">action</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># "intake" | "pause" | "skip (not ready)" | "dispatch"</span></div>
+
+
+
+<div class="viewcode-block" id="RunReport">
+<a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.RunReport">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RunReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Everything one `run_once` pass did."""</span>
+
+    <span class="n">stamped_at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">plan</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PlanItem</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="n">dispatched</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DispatchOutcome</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">list</span><span class="p">)</span>
+    <span class="c1">#: partner slug -&gt; issue numbers deployed (posted "it's live", set deployed)</span>
+    <span class="n">deployed</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="run_once">
+<a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.run_once">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_once</span><span class="p">(</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span>
+    <span class="n">dispatcher</span><span class="p">:</span> <span class="n">Dispatcher</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span>
+    <span class="n">config</span><span class="p">:</span> <span class="n">Config</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">partner</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="n">_default_notify</span><span class="p">,</span>
+    <span class="n">log_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""One pass: intake new issues, dispatch ready ones, batch-deploy landed ones,</span>
+<span class="sd">    nudge stale `deployed` issues.</span>
+
+<span class="sd">    `dry_run` prints the same plan without calling any mutating `GitHub`</span>
+<span class="sd">    method and without stamping `last_run` — it changes nothing, the same</span>
+<span class="sd">    promise `liaise poll` makes. Not re-entrant with itself (L-3): a real</span>
+<span class="sd">    scheduled invocation takes a lock in `config.global_.state_dir` so a</span>
+<span class="sd">    manual `liaise run` alongside the timer can't double-dispatch.</span>
+<span class="sd">    """</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="n">partners</span> <span class="o">=</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">partner</span><span class="p">(</span><span class="n">partner</span><span class="p">)]</span> <span class="k">if</span> <span class="n">partner</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">partners</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+    <span class="n">plan</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PlanItem</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">dispatched</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DispatchOutcome</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">deployed</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">lock</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">contextlib</span><span class="o">.</span><span class="n">nullcontext</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">dry_run</span>
+        <span class="k">else</span> <span class="n">_run_lock</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="o">/</span> <span class="s2">"run.lock"</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">with</span> <span class="n">lock</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">partners</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">):</span>
+            <span class="n">landed_this_pass</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">find_partner_issues</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+                <span class="c1"># H-7 (extended): one issue's own bug or transient GitHub error</span>
+                <span class="c1"># must not take the rest of the pass down with it — every other</span>
+                <span class="c1"># partner, and every other issue for THIS partner, still gets a</span>
+                <span class="c1"># chance to run.</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">action</span><span class="p">,</span> <span class="n">outcome</span> <span class="o">=</span> <span class="n">_handle_issue</span><span class="p">(</span>
+                        <span class="n">gh</span><span class="p">,</span> <span class="n">dispatcher</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+                        <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - deliberately broad, see above</span>
+                    <span class="n">action</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"error (</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">)"</span>
+                    <span class="n">outcome</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="k">if</span> <span class="n">action</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">plan</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">PlanItem</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">title</span><span class="p">,</span> <span class="n">action</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">outcome</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">dispatched</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outcome</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">landed_awaiting_batch_deploy</span><span class="p">:</span>
+                        <span class="n">landed_this_pass</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">landed_this_pass</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+                <span class="n">deployed_numbers</span> <span class="o">=</span> <span class="n">_run_batch_deploy</span><span class="p">(</span>
+                    <span class="n">gh</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">landed_this_pass</span><span class="p">,</span> <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">deployed_numbers</span><span class="p">:</span>
+                    <span class="n">deployed</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">]</span> <span class="o">=</span> <span class="n">deployed_numbers</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+                <span class="n">_nudge_stale_deployed</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="n">store</span><span class="p">[</span><span class="s2">"last_run"</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">RunReport</span><span class="p">(</span><span class="n">stamped_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span> <span class="n">dispatched</span><span class="o">=</span><span class="n">dispatched</span><span class="p">,</span> <span class="n">deployed</span><span class="o">=</span><span class="n">deployed</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_handle_issue</span><span class="p">(</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span>
+    <span class="n">dispatcher</span><span class="p">:</span> <span class="n">Dispatcher</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span>
+    <span class="n">p</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span>
+    <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span>
+    <span class="n">log_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DispatchOutcome</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""One issue's worth of `run_once`'s body. Returns (plan action, dispatch outcome)."""</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">current_state</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="n">gh</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">label</span><span class="p">])</span>
+            <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="s2">"intake"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="s2">"intake"</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_ELIGIBLE_STATES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>  <span class="c1"># working / needs-owner / deployed: not this pass</span>
+
+    <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="s2">"needs-partner"</span><span class="p">:</span>
+        <span class="c1"># H-3: readiness alone is satisfied by the partner's ORIGINAL message</span>
+        <span class="c1"># — that's what triggered the first dispatch. Without this check, an</span>
+        <span class="c1"># unanswered question gets re-dispatched every tick until the whole</span>
+        <span class="c1"># daily budget is gone, in minutes, on one issue.</span>
+        <span class="n">dispatched_at</span> <span class="o">=</span> <span class="n">last_dispatch_at</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">issue</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">dispatched_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">last_partner_activity</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">dispatched_at</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"skip (awaiting partner reply)"</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">readiness</span> <span class="o">=</span> <span class="n">compute_readiness</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">readiness</span><span class="o">.</span><span class="n">paused</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">!=</span> <span class="s2">"paused"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+                <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="s2">"paused"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">"pause"</span><span class="p">,</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">readiness</span><span class="o">.</span><span class="n">ready</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"skip (not ready)"</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">"dispatch"</span><span class="p">,</span> <span class="kc">None</span>
+
+    <span class="n">outcome</span> <span class="o">=</span> <span class="n">dispatch_issue</span><span class="p">(</span>
+        <span class="n">gh</span><span class="p">,</span> <span class="n">dispatcher</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span>
+        <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span> <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">expect_working_on_success</span><span class="o">=</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">deploy_per</span> <span class="o">==</span> <span class="s2">"batch"</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"dispatch"</span><span class="p">,</span> <span class="n">outcome</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_batch_deploy</span><span class="p">(</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span>
+    <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span>
+    <span class="n">issue_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Run the partner's deploy command once, then post + set deployed per issue.</span>
+
+<span class="sd">    Returns the issue numbers actually told "it's live". M-2: with no deploy</span>
+<span class="sd">    command configured (the out-of-the-box `deploy_per = "batch"` default),</span>
+<span class="sd">    there is nothing to run — reconciles every landed issue to `needs-owner`</span>
+<span class="sd">    with one notification rather than stranding them at `liaise:working`</span>
+<span class="sd">    forever. M-1: a deploy command that fails (nonzero exit, or simply</span>
+<span class="sd">    missing) does the same rather than telling the partner it's live when it</span>
+<span class="sd">    isn't; the command runs from `partner.dispatch.cwd` with a timeout rather</span>
+<span class="sd">    than the scheduler's default `cwd=/`, under which any relative deploy</span>
+<span class="sd">    command would fail every single time. H-5: in `draft` reply mode, posts</span>
+<span class="sd">    nothing to the thread — the owner is notified instead, same as every</span>
+<span class="sd">    other partner-facing message in that mode.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">partner</span><span class="o">.</span><span class="n">deploy</span><span class="p">:</span>
+        <span class="n">_reconcile_landed_without_deploy</span><span class="p">(</span>
+            <span class="n">gh</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">issue_numbers</span><span class="p">,</span> <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+            <span class="n">reason</span><span class="o">=</span><span class="s2">"no deploy command is configured for this partner"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">partner</span><span class="o">.</span><span class="n">deploy</span><span class="p">),</span>
+            <span class="n">cwd</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">cwd</span><span class="p">,</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">timeout_minutes</span> <span class="o">*</span> <span class="mi">60</span><span class="p">,</span>
+            <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">failed</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">returncode</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="n">detail</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"exit </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">returncode</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">)[:</span><span class="mi">300</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">failed</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">detail</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">failed</span><span class="p">:</span>
+        <span class="n">_reconcile_landed_without_deploy</span><span class="p">(</span>
+            <span class="n">gh</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">issue_numbers</span><span class="p">,</span> <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+            <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"the deploy command failed (</span><span class="si">{</span><span class="n">detail</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="n">told</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">issue_numbers</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">reply_mode</span> <span class="o">!=</span> <span class="s2">"draft"</span><span class="p">:</span>
+            <span class="n">gh</span><span class="o">.</span><span class="n">post_comment</span><span class="p">(</span>
+                <span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
+                <span class="n">number</span><span class="p">,</span>
+                <span class="s2">"It's live — please have a look and let us know how it goes."</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">issue</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"deployed"</span><span class="p">)</span>
+        <span class="n">told</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">reply_mode</span> <span class="o">==</span> <span class="s2">"draft"</span> <span class="ow">and</span> <span class="n">told</span><span class="p">:</span>
+        <span class="n">notify_fn</span><span class="p">(</span>
+            <span class="s2">"liaise: batch deployed (draft mode — nothing posted)"</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2"> issues </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">'#</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">'</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">told</span><span class="p">)</span><span class="si">}</span><span class="s2"> landed and were "</span>
+            <span class="sa">f</span><span class="s2">"deployed. Nothing was posted to the partner (draft mode) — tell them "</span>
+            <span class="sa">f</span><span class="s2">"yourself: </span><span class="se">\"</span><span class="s2">It's live — please have a look and let us know how it goes.</span><span class="se">\"</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">told</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_reconcile_landed_without_deploy</span><span class="p">(</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span>
+    <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span>
+    <span class="n">issue_numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">bool</span><span class="p">],</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">number</span> <span class="ow">in</span> <span class="n">issue_numbers</span><span class="p">:</span>
+        <span class="n">issue</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"needs-owner"</span><span class="p">)</span>
+    <span class="n">notify_fn</span><span class="p">(</span>
+        <span class="s2">"liaise: batch landed but did not deploy"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2"> issues </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">'#</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">'</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">issue_numbers</span><span class="p">)</span><span class="si">}</span><span class="s2"> landed but "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">. Nothing was posted to the partner."</span><span class="p">,</span>
+        <span class="n">priority</span><span class="o">=</span><span class="s2">"high"</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_nudge_stale_deployed</span><span class="p">(</span>
+    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A.4: an issue in `deployed` with no partner activity for</span>
+<span class="sd">    `deployed_nudge_days` gets one plain-language nudge comment, once (M-10 —</span>
+<span class="sd">    previously unimplemented; the label and the skill both promised it).</span>
+<span class="sd">    """</span>
+    <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">find_partner_issues</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">current_state</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">"deployed"</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">nudged_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"nudged__</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">'/'</span><span class="p">,</span><span class="w"> </span><span class="s1">'-'</span><span class="p">)</span><span class="si">}</span><span class="s2">__</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">nudged_key</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">activity</span> <span class="o">=</span> <span class="n">last_partner_activity</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">now</span> <span class="o">-</span> <span class="n">activity</span> <span class="o">&lt;</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">deployed_nudge_days</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">reply_mode</span> <span class="o">!=</span> <span class="s2">"draft"</span><span class="p">:</span>
+            <span class="n">gh</span><span class="o">.</span><span class="n">post_comment</span><span class="p">(</span>
+                <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
+                <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
+                <span class="s2">"Just checking in — did you get a chance to try this? Let us know how it goes."</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">store</span><span class="p">[</span><span class="n">nudged_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+
+<span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_run_lock</span><span class="p">(</span><span class="n">lock_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""L-3: concurrency of one (A.1 rule 5), enforced rather than assumed.</span>
+
+<span class="sd">    A plain PID file: stale locks (the owning process is gone) are reclaimed</span>
+<span class="sd">    automatically. This is advisory, not atomic across a networked</span>
+<span class="sd">    filesystem — good enough for "don't let a manual `liaise run` collide</span>
+<span class="sd">    with the scheduled one on the same machine", which is the actual risk.</span>
+<span class="sd">    """</span>
+    <span class="n">lock_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">lock_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">other_pid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lock_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+            <span class="n">other_pid</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">other_pid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_pid_is_alive</span><span class="p">(</span><span class="n">other_pid</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"another liaise run (pid </span><span class="si">{</span><span class="n">other_pid</span><span class="si">}</span><span class="s2">) is already in progress "</span>
+                <span class="sa">f</span><span class="s2">"(lock: </span><span class="si">{</span><span class="n">lock_path</span><span class="si">}</span><span class="s2">)"</span>
+            <span class="p">)</span>
+    <span class="n">lock_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">lock_path</span><span class="o">.</span><span class="n">unlink</span><span class="p">(</span><span class="n">missing_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_pid_is_alive</span><span class="p">(</span><span class="n">pid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether `pid` names a live process. Never sends it a real signal.</span>
+
+<span class="sd">    `os.kill(pid, 0)` is the POSIX idiom for this — signal 0 delivers</span>
+<span class="sd">    nothing, it only validates the target. **On Windows it is not that</span>
+<span class="sd">    idiom**: `os.kill` there calls `TerminateProcess`, so `os.kill(pid, 0)`</span>
+<span class="sd">    actually kills whatever process holds `pid` (with exit code 0) rather</span>
+<span class="sd">    than just checking it. Caught before this ever ran in CI: the lock's own</span>
+<span class="sd">    test seeds the lock file with `os.getpid()` — on Windows the old code</span>
+<span class="sd">    would have terminated the pytest process running the test.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
+
+        <span class="n">PROCESS_QUERY_LIMITED_INFORMATION</span> <span class="o">=</span> <span class="mh">0x1000</span>
+        <span class="n">handle</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">kernel32</span><span class="o">.</span><span class="n">OpenProcess</span><span class="p">(</span>
+            <span class="n">PROCESS_QUERY_LIMITED_INFORMATION</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">pid</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">handle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">ctypes</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">kernel32</span><span class="o">.</span><span class="n">CloseHandle</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ProcessLookupError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># exists, just not signalable by us — still alive</span>
+    <span class="k">return</span> <span class="kc">True</span>
+
+
+<div class="viewcode-block" id="last_run_age">
+<a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.last_run_age">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">last_run_age</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Seconds since the last non-dry-run `run_once`, or None if it never ran."""</span>
+    <span class="n">stamp</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"last_run"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stamp</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">stamp</span><span class="p">))</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
