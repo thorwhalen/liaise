@@ -6,6 +6,7 @@ JSON the same way. No network, no real repo: GhCli here shells out to a fake
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -97,6 +98,54 @@ def test_fake_post_comment_appends():
     assert comments[0].body == "hello"
 
 
+def test_fake_ensure_last_comment_mentions_repairs_own_missing_mention():
+    fake = FakeGitHub([_issue(1)])
+    fake.post_comment(REPO, 1, "what color?")
+    assert fake.ensure_last_comment_mentions(REPO, 1, "@pat") is True
+    assert fake.get_issue(REPO, 1).comments[-1].body == "@pat what color?"
+
+
+def test_fake_ensure_last_comment_mentions_no_op_when_already_present():
+    fake = FakeGitHub([_issue(1)])
+    fake.post_comment(REPO, 1, "@pat what color?")
+    assert fake.ensure_last_comment_mentions(REPO, 1, "@pat") is False
+    assert fake.get_issue(REPO, 1).comments[-1].body == "@pat what color?"
+
+
+def test_fake_ensure_last_comment_mentions_no_op_with_no_self_comment():
+    """A comment from someone else (the partner) is never repaired — only
+    the identity that posts through :meth:`post_comment` is "self".
+    """
+    comment = Comment(
+        author="pat", body="also this",
+        created_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
+        updated_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
+    )
+    fake = FakeGitHub([_issue(1, comments=(comment,))])
+    assert fake.ensure_last_comment_mentions(REPO, 1, "@pat") is False
+    assert fake.get_issue(REPO, 1).comments == (comment,)
+
+
+def test_fake_ensure_last_comment_mentions_targets_own_last_comment_even_if_not_newest():
+    """Mirrors `gh issue comment --edit-last`: it finds the last comment
+    authored by *this* identity, skipping a newer one from someone else.
+    """
+    fake = FakeGitHub([_issue(1)])
+    fake.post_comment(REPO, 1, "what color?")
+    partner_reply = Comment(
+        author="pat", body="blue please",
+        created_at=datetime(2026, 1, 3, tzinfo=timezone.utc),
+        updated_at=datetime(2026, 1, 3, tzinfo=timezone.utc),
+    )
+    issue = fake.get_issue(REPO, 1)
+    fake.seed(replace(issue, comments=(*issue.comments, partner_reply)))
+
+    assert fake.ensure_last_comment_mentions(REPO, 1, "@pat") is True
+    comments = fake.get_issue(REPO, 1).comments
+    assert comments[0].body == "@pat what color?"  # our own comment, repaired
+    assert comments[1].body == "blue please"  # the partner's, untouched
+
+
 # ---- GhCli: parses `gh`'s JSON shape the same way FakeGitHub's model expects ----
 
 _FAKE_GH_ISSUE_VIEW = {
@@ -182,3 +231,80 @@ def test_ghcli_raises_githuberror_on_failure(tmp_path: Path):
     gh = GhCli(gh_bin=str(script))
     with pytest.raises(GitHubError, match="boom"):
         gh.get_issue(REPO, 1)
+
+
+# ---- GhCli.ensure_last_comment_mentions: `gh api user` + `--edit-last` (#20) ----
+
+
+def _fake_gh_edit_last_script(tmp_path: Path, *, comments: list[dict], me: str) -> Path:
+    """A fake `gh` that answers `api user`, `issue view` (with `comments`),
+    and records any `issue comment ... --edit-last --body ...` invocation to
+    `tmp_path / "edit_calls.json"` so the test can inspect it.
+    """
+    payload = dict(_FAKE_GH_ISSUE_VIEW)
+    payload["comments"] = comments
+    calls_path = (tmp_path / "edit_calls.json").as_posix()
+    script = f"""
+import json, sys
+
+if "user" in sys.argv:
+    print({me!r})
+    sys.exit(0)
+if "view" in sys.argv:
+    print({json.dumps(payload)!r})
+    sys.exit(0)
+if "--edit-last" in sys.argv:
+    body = sys.argv[sys.argv.index("--body") + 1]
+    with open({calls_path!r}, "w") as f:
+        json.dump({{"body": body}}, f)
+    sys.exit(0)
+sys.exit(1)
+"""
+    return write_executable_script(tmp_path / "gh", script)
+
+
+def test_ghcli_ensure_last_comment_mentions_repairs_its_own_last_comment(tmp_path: Path):
+    comments = [
+        {
+            "author": {"login": "pat"}, "body": "blue please",
+            "createdAt": "2026-01-01T12:00:00Z",
+        },
+        {
+            "author": {"login": "liaise-bot"}, "body": "what color?",
+            "createdAt": "2026-01-01T13:00:00Z",
+        },
+    ]
+    script = _fake_gh_edit_last_script(tmp_path, comments=comments, me="liaise-bot")
+    gh = GhCli(gh_bin=str(script))
+
+    assert gh.ensure_last_comment_mentions(REPO, 7, "@pat") is True
+    recorded = json.loads((tmp_path / "edit_calls.json").read_text())
+    assert recorded["body"] == "@pat what color?"
+
+
+def test_ghcli_ensure_last_comment_mentions_no_op_when_already_present(tmp_path: Path):
+    comments = [
+        {
+            "author": {"login": "liaise-bot"}, "body": "@pat what color?",
+            "createdAt": "2026-01-01T13:00:00Z",
+        },
+    ]
+    script = _fake_gh_edit_last_script(tmp_path, comments=comments, me="liaise-bot")
+    gh = GhCli(gh_bin=str(script))
+
+    assert gh.ensure_last_comment_mentions(REPO, 7, "@pat") is False
+    assert not (tmp_path / "edit_calls.json").exists()
+
+
+def test_ghcli_ensure_last_comment_mentions_no_op_with_no_self_comment(tmp_path: Path):
+    comments = [
+        {
+            "author": {"login": "pat"}, "body": "blue please",
+            "createdAt": "2026-01-01T12:00:00Z",
+        },
+    ]
+    script = _fake_gh_edit_last_script(tmp_path, comments=comments, me="liaise-bot")
+    gh = GhCli(gh_bin=str(script))
+
+    assert gh.ensure_last_comment_mentions(REPO, 7, "@pat") is False
+    assert not (tmp_path / "edit_calls.json").exists()

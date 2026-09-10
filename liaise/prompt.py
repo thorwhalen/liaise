@@ -58,6 +58,15 @@ def _state_contract(partner: PartnerConfig) -> str:
             if partner.reply_mode == "draft"
             else "Post directly to the thread as the operating rules describe."
         ),
+    ]
+    if partner.notify_login:
+        lines += [
+            "",
+            f"Every comment meant for the partner starts with `@{partner.notify_login}` "
+            '— questions, progress notes, pushback, and the "it\'s live" note alike. '
+            "This applies even in draft mode: write the mention into the draft itself.",
+        ]
+    lines += [
         "",
         "Set exactly one of these labels before you stop, matching what actually happened:",
         "",

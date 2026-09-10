@@ -29,6 +29,7 @@ def _partner(tmp_path, **overrides) -> PartnerConfig:
         repo=REPO,
         brief=str(brief),
         label="partner:pat",
+        notify_login="pat",
         quiet_minutes=10,
         dispatch=DispatchConfig(cwd=str(tmp_path)),
         budget=Budget(timeout_minutes=1, daily_dispatches=5),

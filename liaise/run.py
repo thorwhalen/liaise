@@ -26,6 +26,7 @@ from liaise.dispatch import (
 )
 from liaise.github import GitHub, Issue
 from liaise.intake import compute_readiness, find_partner_issues, last_partner_activity
+from liaise.messages import deployed_message, nudge_message
 from liaise.notify import notify as _default_notify
 from liaise.state import current_state, set_state
 
@@ -267,7 +268,7 @@ def _run_batch_deploy(
             gh.post_comment(
                 partner.repo,
                 number,
-                "It's live — please have a look and let us know how it goes.",
+                deployed_message(partner),
             )
         issue = gh.get_issue(partner.repo, number)
         set_state(gh, issue, partner, "deployed")
@@ -278,7 +279,7 @@ def _run_batch_deploy(
             "liaise: batch deployed (draft mode — nothing posted)",
             f"{partner.repo} issues {', '.join(f'#{n}' for n in told)} landed and were "
             f"deployed. Nothing was posted to the partner (draft mode) — tell them "
-            f'yourself: "It\'s live — please have a look and let us know how it goes."',
+            f'yourself: "{deployed_message(partner)}"',
         )
     return told
 
@@ -322,7 +323,7 @@ def _nudge_stale_deployed(
             gh.post_comment(
                 issue.repo,
                 issue.number,
-                "Just checking in — did you get a chance to try this? Let us know how it goes.",
+                nudge_message(partner),
             )
         store[nudged_key] = now.isoformat()
 

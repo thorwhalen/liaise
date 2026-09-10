@@ -42,6 +42,7 @@ def _partner(tmp_path, **overrides) -> PartnerConfig:
         repo=REPO,
         brief=str(brief),
         label="partner:pat",
+        notify_login="pat",
         dispatch=DispatchConfig(cwd=str(tmp_path)),
         budget=Budget(timeout_minutes=1, max_turns=10, daily_dispatches=2),
     )
@@ -398,6 +399,105 @@ def test_nonzero_exit_is_always_a_crash_even_with_the_flag_set(tmp_path):
     assert outcome.crashed
     assert not outcome.landed_awaiting_batch_deploy
     assert current_state(fake.get_issue(REPO, 1), partner) == "needs-owner"
+
+
+# ---- reconciliation: a partner-facing comment missing the mention (#20) ----
+
+
+def test_agent_comment_missing_the_mention_is_repaired(tmp_path):
+    partner = _partner(tmp_path, notify_login="pat")
+    fake = FakeGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+
+    class ForgetfulDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            issue = fake.get_issue(REPO, 1)
+            fake.post_comment(REPO, 1, "Quick question: what color?")  # no mention
+            set_state(fake, issue, partner, "needs-partner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    dispatch_issue(
+        fake, ForgetfulDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=log_dir,
+    )
+
+    comment = fake.get_issue(REPO, 1).comments[-1]
+    assert comment.body == "@pat Quick question: what color?"
+
+    [log_file] = list(log_dir.iterdir())
+    assert "repaired" in log_file.read_text().lower()
+    assert "@pat" in log_file.read_text()
+
+
+def test_agent_comment_already_mentioning_the_partner_is_left_byte_identical(tmp_path):
+    partner = _partner(tmp_path, notify_login="pat")
+    fake = FakeGitHub([_issue()])
+
+    class DiligentDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            issue = fake.get_issue(REPO, 1)
+            fake.post_comment(REPO, 1, "@pat Quick question: what color?")
+            set_state(fake, issue, partner, "needs-partner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    dispatch_issue(fake, DiligentDispatcher(), {}, partner, fake.get_issue(REPO, 1), now=T0)
+
+    comment = fake.get_issue(REPO, 1).comments[-1]
+    assert comment.body == "@pat Quick question: what color?"
+    assert comment.updated_at == comment.created_at  # untouched
+
+
+def test_reconciliation_skipped_when_dispatch_ends_at_needs_owner(tmp_path):
+    """Only `needs-partner` and `deployed` are partner-facing exit states — a
+    `needs-owner` escalation posts nothing to the partner at all (the
+    operating rules), so there is nothing to repair.
+    """
+    partner = _partner(tmp_path, notify_login="pat")
+    fake = FakeGitHub([_issue()])
+
+    class EscalatingDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            issue = fake.get_issue(REPO, 1)
+            set_state(fake, issue, partner, "needs-owner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    dispatch_issue(fake, EscalatingDispatcher(), {}, partner, fake.get_issue(REPO, 1), now=T0)
+    assert fake.get_issue(REPO, 1).comments == ()
+
+
+def test_reconciliation_no_op_when_the_agent_posted_nothing(tmp_path):
+    partner = _partner(tmp_path, notify_login="pat")
+    fake = FakeGitHub([_issue()])
+
+    outcome = dispatch_issue(
+        fake, SelfTransitioningDispatcherFor(fake, partner), {}, partner,
+        fake.get_issue(REPO, 1), now=T0,
+    )
+    assert not outcome.crashed
+    assert fake.get_issue(REPO, 1).comments == ()
+
+
+class SelfTransitioningDispatcherFor:
+    """Sets `needs-partner` without posting a comment — reconciliation must
+    not invent a mention out of nothing.
+    """
+
+    def __init__(self, fake, partner):
+        self._fake = fake
+        self._partner = partner
+
+    def dispatch(self, job: Job):
+        from liaise.dispatch import DispatchResult
+
+        issue = self._fake.get_issue(REPO, 1)
+        set_state(self._fake, issue, self._partner, "needs-partner")
+        return DispatchResult(returncode=0, session_id="sess-1")
 
 
 # ---- session id memory (resume) ----

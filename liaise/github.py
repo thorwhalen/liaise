@@ -90,6 +90,20 @@ class GitHub(Protocol):
         """Post a comment on an issue."""
         ...
 
+    def ensure_last_comment_mentions(
+        self, repo: str, number: int, mention: str
+    ) -> bool:
+        """Repair this identity's own last comment on `number` to carry `mention`.
+
+        If the last comment posted by liaise's own GitHub identity on this
+        issue does not already contain `mention`, prepends it (body content
+        otherwise untouched) and returns True. Returns False when the last
+        such comment already contains `mention`, or when this identity has
+        posted no comment on the issue at all. A rule the dispatched agent
+        forgets must still hold (#20).
+        """
+        ...
+
 
 def _parse_dt(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
@@ -232,12 +246,43 @@ class GhCli:
     def post_comment(self, repo: str, number: int, body: str) -> None:
         self._run("issue", "comment", str(number), "--repo", repo, "--body", body)
 
+    def _whoami(self) -> str:
+        return self._run("api", "user", "--jq", ".login").strip()
+
+    def ensure_last_comment_mentions(
+        self, repo: str, number: int, mention: str
+    ) -> bool:
+        issue = self.get_issue(repo, number)
+        me = self._whoami()
+        mine = [c for c in issue.comments if c.author == me]
+        if not mine:
+            return False
+        last = mine[-1]
+        if mention in last.body:
+            return False
+        self._run(
+            "issue",
+            "comment",
+            str(number),
+            "--repo",
+            repo,
+            "--edit-last",
+            "--body",
+            f"{mention} {last.body}",
+        )
+        return True
+
 
 class FakeGitHub:
     """In-memory :class:`GitHub`, for tests. No network, no real repo, no token.
 
     Every other test in this package should use this rather than :class:`GhCli`.
     """
+
+    #: The fixed identity every comment posted through this fake carries —
+    #: stands in for "whatever GitHub identity `gh` is authenticated as" in
+    #: tests, so :meth:`ensure_last_comment_mentions` has something to match.
+    SELF_AUTHOR = "liaise-bot"
 
     def __init__(self, issues: Optional[Iterable[Issue]] = None):
         self._issues: dict[tuple[str, int], Issue] = {
@@ -295,8 +340,27 @@ class FakeGitHub:
         issue = self.get_issue(repo, number)
         now = datetime.now(timezone.utc)
         comment = Comment(
-            author="liaise-bot", body=body, created_at=now, updated_at=now
+            author=self.SELF_AUTHOR, body=body, created_at=now, updated_at=now
         )
         self._issues[(repo, number)] = replace(
             issue, comments=(*issue.comments, comment)
         )
+
+    def ensure_last_comment_mentions(
+        self, repo: str, number: int, mention: str
+    ) -> bool:
+        issue = self.get_issue(repo, number)
+        comments = list(issue.comments)
+        for i in range(len(comments) - 1, -1, -1):
+            if comments[i].author != self.SELF_AUTHOR:
+                continue
+            if mention in comments[i].body:
+                return False
+            comments[i] = replace(
+                comments[i],
+                body=f"{mention} {comments[i].body}",
+                updated_at=datetime.now(timezone.utc),
+            )
+            self._issues[(repo, number)] = replace(issue, comments=tuple(comments))
+            return True
+        return False

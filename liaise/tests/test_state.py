@@ -28,6 +28,7 @@ def _partner(**overrides) -> PartnerConfig:
         repo=REPO,
         brief="brief.md",
         label="partner:pat",
+        notify_login="pat",
     )
     fields.update(overrides)
     return PartnerConfig(**fields)

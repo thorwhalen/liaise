@@ -133,6 +133,13 @@ class PartnerConfig:
     repo: str
     brief: str
     label: str
+    #: The GitHub login `@mentioned` at the start of every partner-facing
+    #: comment — an issue filed through the app is authored by the app's own
+    #: credentials, so GitHub sends the partner no email otherwise (#20).
+    #: Computed by the loader (default: the first `github_logins` entry); a
+    #: partner identified by label only (no `github_logins`) must set it
+    #: explicitly.
+    notify_login: str
     reply_mode: str = DFLT_REPLY_MODE
     dispatch: DispatchConfig = field(default_factory=DispatchConfig)
     verify: str = ""
@@ -190,6 +197,15 @@ def _missing_partner_field_error(path: Path, field_name: str) -> ConfigError:
         '  github_logins = ["pat"]\n'
         '  repo = "example/app"\n'
         '  brief = "~/.config/liaise/briefs/pat.md"\n'
+    )
+
+
+def _direct_mode_without_notify_login_error(path: Path) -> ConfigError:
+    return ConfigError(
+        f'{path} sets reply_mode = "direct" but has no login to @mention: '
+        f"github_logins is empty and notify_login is not set. A direct reply "
+        f"that cannot notify the partner is a misconfiguration — add e.g.\n\n"
+        '  notify_login = "pat"\n'
     )
 
 
@@ -261,14 +277,23 @@ def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
     )
     escalate = _escalate_from(raw.get("escalate"))
 
+    github_logins = tuple(raw["github_logins"])
+    notify_login = raw.get("notify_login") or (
+        github_logins[0] if github_logins else ""
+    )
+    reply_mode = raw.get("reply_mode", DFLT_REPLY_MODE)
+    if reply_mode == "direct" and not notify_login:
+        raise _direct_mode_without_notify_login_error(path)
+
     return PartnerConfig(
         slug=slug,
         display_name=raw["display_name"],
-        github_logins=tuple(raw["github_logins"]),
+        github_logins=github_logins,
         repo=raw["repo"],
         brief=raw["brief"],
         label=raw.get("label", f"partner:{slug}"),
-        reply_mode=raw.get("reply_mode", DFLT_REPLY_MODE),
+        notify_login=notify_login,
+        reply_mode=reply_mode,
         dispatch=dispatch,
         verify=raw.get("verify", ""),
         deploy=raw.get("deploy", ""),

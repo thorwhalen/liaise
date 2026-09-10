@@ -21,6 +21,7 @@ from typing import Callable, MutableMapping, Optional, Protocol
 
 from liaise.config import Budget, PartnerConfig
 from liaise.github import GitHub, Issue
+from liaise.messages import budget_capped_message, mention
 from liaise.notify import notify as _default_notify
 from liaise.prompt import compose_prompt
 from liaise.state import current_state, set_state
@@ -256,6 +257,13 @@ def dispatch_issue(
     `deploy_per == "issue"` path, where the agent owns deploying, posting and
     setting its own exit label) a still-`working` success is *also* reconciled
     to `liaise:needs-owner` — the agent silently didn't do its job.
+
+    When the dispatch ends at `liaise:needs-partner` or `liaise:deployed`,
+    also reconciles the mention rule (#20): the dispatched agent is told in
+    its own prompt to start every partner-facing comment with `@notify_login`,
+    but a rule the agent forgets must still hold — the newest comment left by
+    this dispatch's own GitHub identity is repaired to carry it if missing,
+    and the repair is recorded in the dispatch log.
     """
     if daily_dispatch_count(store, partner, now=now) >= partner.budget.daily_dispatches:
         # M-8: A.1 rule 5 — "a cap that trips is a visible label AND A SHORT
@@ -271,8 +279,7 @@ def dispatch_issue(
                 gh.post_comment(
                     issue.repo,
                     issue.number,
-                    "Today's limit on automatic work has been reached — this will "
-                    "pick back up tomorrow.",
+                    budget_capped_message(partner),
                 )
             notified_key = f"budget_notified__{partner.slug}__{_today(now)}"
             if not store.get(notified_key):
@@ -328,6 +335,10 @@ def dispatch_issue(
             log_path=log_path,
         )
 
+    final_state = current_state(refreshed, partner)
+    if final_state in ("needs-partner", "deployed") and partner.notify_login:
+        _reconcile_mention(gh, partner, refreshed, log_path=log_path)
+
     return DispatchOutcome(
         dispatched=True,
         budget_capped=False,
@@ -336,6 +347,25 @@ def dispatch_issue(
         log_path=log_path,
         landed_awaiting_batch_deploy=excused,
     )
+
+
+def _reconcile_mention(
+    gh: GitHub, partner: PartnerConfig, issue: Issue, *, log_path: Optional[str]
+) -> None:
+    """#20: repair a partner-facing comment the agent forgot to `@mention`.
+
+    No-op when the last comment already carries the mention, or when this
+    dispatch's own GitHub identity has posted no comment on the issue.
+    """
+    repaired = gh.ensure_last_comment_mentions(
+        issue.repo, issue.number, mention(partner)
+    )
+    if repaired and log_path:
+        with open(log_path, "a") as f:
+            f.write(
+                f"\n[liaise: repaired a partner-facing comment missing "
+                f"{mention(partner)}]\n"
+            )
 
 
 def _write_log(log_dir: Path, issue: Issue, result: DispatchResult) -> str:

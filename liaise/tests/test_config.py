@@ -33,6 +33,7 @@ def test_load_config_returns_frozen_dataclasses_with_defaults(config_root):
     assert pat.budget.daily_dispatches == 6
     assert pat.reply_mode == "draft"
     assert pat.label == "partner:pat"
+    assert pat.notify_login == "pat"  # default: first github_logins entry
     with pytest.raises(AttributeError):
         pat.repo = "example/other"  # frozen
 
@@ -70,6 +71,39 @@ def test_missing_partner_field_names_the_path(config_root):
     assert "github_logins" in message
 
 
+def test_notify_login_explicit_override_beats_the_default(config_root):
+    path = config_root / "partners" / "pat.toml"
+    path.write_text('notify_login = "octocat"\n' + path.read_text())
+    config = load_config(config_root)
+    assert config.partner("pat").notify_login == "octocat"
+
+
+def test_direct_reply_mode_without_a_login_to_mention_raises(config_root):
+    path = config_root / "partners" / "pat.toml"
+    # a partner identified by label only — filed through the app, no
+    # `github_logins` of their own — and no `notify_login` set explicitly.
+    # Prepend, not append: TOML keys after a [table] header (`[dispatch]`)
+    # belong to that table.
+    text = path.read_text().replace('github_logins = ["pat"]', "github_logins = []")
+    path.write_text('reply_mode = "direct"\n' + text)
+    with pytest.raises(ConfigError) as exc_info:
+        load_config(config_root)
+    message = str(exc_info.value)
+    assert str(path) in message
+    assert "notify_login" in message
+    assert "direct" in message
+
+
+def test_direct_reply_mode_with_notify_login_set_on_its_own_loads_fine(config_root):
+    path = config_root / "partners" / "pat.toml"
+    text = path.read_text().replace('github_logins = ["pat"]', "github_logins = []")
+    path.write_text('reply_mode = "direct"\nnotify_login = "octocat"\n' + text)
+    config = load_config(config_root)
+    pat = config.partner("pat")
+    assert pat.github_logins == ()
+    assert pat.notify_login == "octocat"
+
+
 def test_unknown_partner_names_slug_and_known_partners(config_root):
     config = load_config(config_root)
     with pytest.raises(ConfigError) as exc_info:
@@ -85,3 +119,4 @@ def test_partner_show_prints_resolved_partner(config_root):
     assert "display_name:   Pat" in output
     assert "repo:           example/app" in output
     assert "github_logins:  pat" in output
+    assert "notify_login:   pat" in output
