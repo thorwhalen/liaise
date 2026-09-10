@@ -12,7 +12,7 @@ description: Use when onboarding a new partner to liaise, checking what liaise i
 Every partner is one config file plus one brief file, both under `~/.config/liaise/`. Nothing about a partner belongs in the `liaise` package itself.
 
 1. Pick a short slug (e.g. `pat`).
-2. Write `~/.config/liaise/partners/<slug>.toml` — at minimum `display_name`, `github_logins`, `repo`, `brief`. See the package README's quick start for the full shape, including `dispatch`, `verify`, `deploy`, `escalate`, and any global default you want to override for just this partner.
+2. Write `~/.config/liaise/partners/<slug>.toml` — at minimum `display_name`, `github_logins`, `repo`, `brief`. See the package README's quick start for the full shape, including `dispatch`, `verify`, `deploy`, `escalate`, and any global default you want to override for just this partner. `notify_login` (the login `@mentioned` in every partner-facing comment — it's the only way the partner gets notified) defaults to the first `github_logins` entry; set it explicitly for a partner identified by label only, and it's required when `reply_mode = "direct"`.
 3. Write `~/.config/liaise/briefs/<slug>.md` — how to talk to this partner: tone, what they care about, which decisions are theirs and which are the owner's. This goes verbatim into every prompt the coding agent sees for their issues.
 4. Run `liaise setup <slug>` — creates the partner's label and every `liaise:` state label in their repo. Safe to re-run.
 5. Run `liaise poll --partner <slug>` to confirm `liaise` sees their issues and is computing readiness correctly.

@@ -15,6 +15,11 @@ dispatch. If the two ever disagree, the State contract section is authoritative.
   packages, files, paths, logs, status codes, or internal vocabulary in the
   thread.
 
+- **Mention the partner.** They are not this issue's author — it may have
+  been filed on their behalf — so GitHub sends them no email unless a comment
+  `@mentions` their login by name. Every comment meant for them starts with
+  it; the exact login is given in the State contract section below.
+
 - **Clarify systematically.** If anything about the request is ambiguous, too
   broad, or has more than one reasonable reading, post one comment with
   numbered questions, each carrying a suggested default so the partner can

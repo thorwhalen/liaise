@@ -77,6 +77,10 @@ OWNER_REPO_BARE_RE = re.compile(
 #: must all be fictional.
 GITHUB_LOGINS_ARRAY_RE = re.compile(r"github_logins\s*=\s*\[([^\]]*)\]")
 LOGIN_LITERAL_RE = re.compile(r"""["']([a-zA-Z0-9][a-zA-Z0-9-]{0,38})["']""")
+#: `notify_login = "..."` — the other place a bare GitHub login can appear
+#: (#20): a partner identified by label only sets this directly, outside
+#: any `github_logins` array, so it needs its own scan.
+NOTIFY_LOGIN_RE = re.compile(r"""notify_login\s*=\s*["']([a-zA-Z0-9][a-zA-Z0-9-]{0,38})["']""")
 
 #: The only owner segment allowed in an owner/repo-shaped literal.
 ALLOWED_OWNER = "example"
@@ -122,6 +126,9 @@ def _login_offenders(text: str) -> list[str]:
         for login in LOGIN_LITERAL_RE.findall(array_body):
             if login not in ALLOWED_LOGINS:
                 offenders.append(login)
+    for login in NOTIFY_LOGIN_RE.findall(text):
+        if login not in ALLOWED_LOGINS:
+            offenders.append(login)
     return offenders
 
 
@@ -155,3 +162,16 @@ def test_repo_has_no_real_github_logins():
         if found:
             offenders[str(path)] = found
     assert not offenders, f"non-fictional github login(s): {offenders}"
+
+
+def test_login_offenders_catches_a_standalone_notify_login():
+    """#20: `notify_login = "..."` is a second place a bare GitHub login can
+    appear, outside any `github_logins` array — must not be a blind spot.
+
+    Built by concatenation, not as a literal `notify_login = "..."` string —
+    a literal here would trip this very guard against this very file.
+    """
+    fake_login = "not" + "-fictional"
+    text = "notify_login" + " = " + '"' + fake_login + '"'
+    assert _login_offenders(text) == [fake_login]
+    assert _login_offenders('notify_login = "pat"') == []

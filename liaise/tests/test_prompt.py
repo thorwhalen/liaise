@@ -24,6 +24,7 @@ def _partner(tmp_path, **overrides) -> PartnerConfig:
         repo=REPO,
         brief=str(brief),
         label="partner:pat",
+        notify_login="pat",
         reply_mode="draft",
         dispatch=DispatchConfig(),
         verify="run the checks",
@@ -119,11 +120,43 @@ def test_deploy_command_not_included_when_deploy_per_batch(tmp_path):
     assert "do not deploy yourself" in prompt
 
 
+def test_state_contract_states_the_exact_mention_string(tmp_path):
+    """#20: the agent must be told the exact `@login` to use, not just the rule."""
+    partner = _partner(tmp_path, notify_login="pat")
+    prompt = compose_prompt(partner, _issue(), "fresh")
+    assert "@pat" in prompt
+    assert "starts with `@pat`" in prompt
+
+
+def test_state_contract_mention_rule_applies_in_draft_mode_too(tmp_path):
+    partner = _partner(tmp_path, notify_login="pat", reply_mode="draft")
+    prompt = compose_prompt(partner, _issue(), "fresh")
+    assert "starts with `@pat`" in prompt
+    assert "write the mention into the draft itself" in prompt
+
+
+def test_state_contract_omits_mention_rule_when_no_login_configured(tmp_path):
+    partner = _partner(tmp_path, notify_login="", github_logins=())
+    prompt = compose_prompt(partner, _issue(), "fresh")
+    assert "starts with `@" not in prompt
+
+
+def test_operating_rules_carry_the_mention_reason(tmp_path):
+    """#20: the packaged (partner-agnostic) rules explain *why* in one line —
+    the exact login lives only in the State contract section.
+    """
+    partner = _partner(tmp_path)
+    prompt = compose_prompt(partner, _issue(), "fresh")
+    assert "Mention the partner" in prompt
+    assert "sends them no email" in prompt
+
+
 def test_operating_rules_written_in_full_includes_every_bullet(tmp_path):
     partner = _partner(tmp_path)
     prompt = compose_prompt(partner, _issue(), "fresh")
     for phrase in [
         "Speak plainly",
+        "Mention the partner",
         "Clarify systematically",
         "Push back with a reason and an alternative",
         "Escalate to the owner",

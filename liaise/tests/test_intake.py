@@ -28,6 +28,7 @@ def _partner(**overrides) -> PartnerConfig:
         repo=REPO,
         brief="brief.md",
         label="partner:pat",
+        notify_login="pat",
         quiet_minutes=10,
         go_minutes=2,
         markers=Markers(go="#startwork#", wait="#wait#"),

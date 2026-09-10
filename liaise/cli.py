@@ -51,6 +51,7 @@ def _format_partner(p: PartnerConfig) -> str:
         f"  github_logins:  {', '.join(p.github_logins)}",
         f"  repo:           {p.repo}",
         f"  label:          {p.label}",
+        f"  notify_login:   {p.notify_login or '(none)'}",
         f"  brief:          {p.brief}",
         f"  reply_mode:     {p.reply_mode}",
         f"  quiet_minutes:  {p.quiet_minutes}",
