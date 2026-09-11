@@ -55,8 +55,8 @@ def _state_contract(partner: PartnerConfig, log_path: Optional[str]) -> str:
         "",
         f"This partner's `reply_mode` is `{partner.reply_mode}`. "
         + (
-            "Post nothing to the thread; put every partner-facing comment in your "
-            "final message as a draft instead (see the operating rules above)."
+            "Post nothing to the thread; write every partner-facing comment to "
+            "the dispatch log as a draft instead (see the operating rules above)."
             if partner.reply_mode == "draft"
             else "Post directly to the thread as the operating rules describe."
         ),
@@ -64,11 +64,12 @@ def _state_contract(partner: PartnerConfig, log_path: Optional[str]) -> str:
     if log_path:
         lines += [
             "",
-            f"The dispatch log for this run is `{log_path}`. You don't write it: "
-            "`liaise` records your final message there, with the exit code, once "
-            "you stop. So every draft, escalation, and note for the owner that the "
-            "operating rules send to the dispatch log goes in your final message, "
-            "in full.",
+            f"The dispatch log for this run is `{log_path}`. Append to it, never "
+            "overwrite it: every draft, escalation, and note for the owner that "
+            "the operating rules send to the dispatch log goes there. `liaise` "
+            "adds the exit code and output after you stop. If you can't write to "
+            "it, put that text at the end of your final message instead; the log "
+            "records your output too.",
         ]
     if partner.notify_login:
         lines += [
@@ -108,8 +109,8 @@ def _commands(partner: PartnerConfig) -> str:
         lines += [
             "",
             "Deploy: do not deploy yourself. `liaise` deploys once after the whole "
-            "batch. Land the change and say in your final message what to tell "
-            "the partner once it's live.",
+            "batch. Land the change and say in the dispatch log what to tell the "
+            "partner once it's live.",
         ]
     return "\n".join(lines)
 

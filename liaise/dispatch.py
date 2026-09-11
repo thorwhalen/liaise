@@ -298,9 +298,8 @@ def dispatch_issue(
 
     session_id = stored_session_id(store, issue)
     mode = "resume" if session_id else "fresh"
-    # Named in the prompt, so decided before it is composed: `liaise` records
-    # the agent's final message there, and the operating rules put drafts and
-    # escalations in that message (#22).
+    # Named in the prompt, so decided before it is composed: the operating
+    # rules send drafts and escalations "to the dispatch log" (#22).
     log_path = _log_path(log_dir, issue) if log_dir is not None else None
     prompt = compose_prompt(partner, issue, mode, log_path=log_path)
     job = Job(
@@ -319,18 +318,14 @@ def dispatch_issue(
     )
     store[_dispatched_at_key(issue)] = (now or datetime.now(timezone.utc)).isoformat()
 
+    # Created only now, for the agent to append to, so a dispatch that fails
+    # before it runs leaves no log behind.
+    _append_to_log(log_path, f"liaise dispatch log: {issue.url} ({mode})\n")
     result = dispatcher.dispatch(job)
     if result.session_id:
         store[_session_key(issue)] = result.session_id
 
-    if log_path:
-        # A log that can't be written (an unwritable `log_dir`, a full disk)
-        # must not raise past the reconciliation below — that would strand
-        # the issue at `liaise:working`, the H-7 failure mode.
-        try:
-            _append_result(log_path, result)
-        except OSError:
-            pass
+    _append_to_log(log_path, _result_record(result))
 
     refreshed = gh.get_issue(issue.repo, issue.number)
     still_working = current_state(refreshed, partner) == "working"
@@ -365,9 +360,9 @@ def dispatch_issue(
         try:
             _reconcile_mention(gh, partner, refreshed, log_path=log_path)
         except Exception as e:  # noqa: BLE001 - see comment above
-            if log_path:
-                with open(log_path, "a") as f:
-                    f.write(f"\n[liaise: mention reconciliation failed: {e}]\n")
+            _append_to_log(
+                log_path, f"\n[liaise: mention reconciliation failed: {e}]\n"
+            )
 
     return DispatchOutcome(
         dispatched=True,
@@ -396,20 +391,18 @@ def _reconcile_mention(
     repaired = gh.ensure_last_comment_mentions(
         issue.repo, issue.number, mention(partner)
     )
-    if repaired and log_path:
-        with open(log_path, "a") as f:
-            f.write(
-                f"\n[liaise: repaired a partner-facing comment missing "
-                f"{mention(partner)}]\n"
-            )
+    if repaired:
+        _append_to_log(
+            log_path,
+            f"\n[liaise: repaired a partner-facing comment missing {mention(partner)}]\n",
+        )
 
 
 def _log_path(log_dir: Path, issue: Issue) -> str:
     """This dispatch's log file, as an absolute path. Nothing is created yet.
 
     Absolute because the path is named in a prompt read by an agent running
-    from `partner.dispatch.cwd`. :func:`_append_result` creates the file once
-    the agent stops, so a dispatch that fails before it runs leaves nothing.
+    from `partner.dispatch.cwd`, where a relative path would name another file.
     """
     log_dir = Path(log_dir).expanduser().absolute()
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -417,27 +410,28 @@ def _log_path(log_dir: Path, issue: Issue) -> str:
     return str(log_dir / f"{safe_repo}-{issue.number}-{stamp}.log")
 
 
-def _append_result(log_path: str, result: DispatchResult) -> None:
-    """Record how the dispatch ended: the agent's final message first — the
-    operating rules put drafts and escalations there, for the owner to send as
-    is — then the exit code and the raw output.
+def _append_to_log(log_path: Optional[str], text: str) -> None:
+    """Append `text` to the dispatch log, creating it if needed; no-op without one.
+
+    Never raises: a log that can't be written (an unwritable `log_dir`, a full
+    disk, text that won't encode) must not skip reconciliation — stranding the
+    issue at `liaise:working`, the H-7 failure mode — or discard an outcome.
     """
+    if not log_path:
+        return
     path = Path(log_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "a") as f:
-        f.write(
-            f"--- final message ---\n{_final_message(result.stdout)}\n\n"
-            f"--- liaise: dispatch ended ---\n"
-            f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
-            f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
-        )
-
-
-def _final_message(stdout: str) -> str:
-    """The `result` text of `claude --output-format json`'s output, unescaped."""
     try:
-        raw = json.loads(stdout)
-    except (json.JSONDecodeError, TypeError):
-        raw = None
-    message = raw.get("result") if isinstance(raw, dict) else None
-    return message if isinstance(message, str) else "(none recorded)"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8", errors="replace") as f:
+            f.write(text)
+    except OSError:
+        pass
+
+
+def _result_record(result: DispatchResult) -> str:
+    """How the dispatch ended, appended after whatever the agent wrote."""
+    return (
+        f"\n--- liaise: dispatch ended ---\n"
+        f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
+        f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
+    )

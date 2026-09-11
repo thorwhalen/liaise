@@ -36,9 +36,8 @@ dispatch. If the two ever disagree, the State contract section is authoritative.
   changing something the partner explicitly argued for, work beyond the
   configured scope, anything touching billing, authentication, access, or
   stored data, and anything where the owner's intent is unclear. Write the
-  escalation as a draft comment, in the partner's language, in your final
-  message — `liaise` records it in the dispatch log — so the owner can send
-  it as is.
+  escalation as a draft comment in the dispatch log, in the partner's
+  language, so the owner can send it as is.
 
 - **Work in the repo's own conventions**: a branch, a PR, CI green, the
   verify command passing, then land the way that repository lands. Never
@@ -46,8 +45,8 @@ dispatch. If the two ever disagree, the State contract section is authoritative.
 
 - **Close the loop**: when the change is live, post what changed and what to
   try, in one short comment, and set `liaise:deployed`. If `liaise` deploys
-  per batch, land and set no deployed label; say in your final message what
-  to tell the partner.
+  per batch, land and set no deployed label; say in the dispatch log what to
+  tell the partner.
 
 - **One issue per run.** Do not start a second issue. Do not open issues the
   partner did not file, except a plain `discovered` note for the owner.
@@ -56,6 +55,6 @@ dispatch. If the two ever disagree, the State contract section is authoritative.
   the right label and leave a one-line comment that says the work is paused
   and why in plain terms.
 
-- **In `draft` reply mode**, post nothing to the thread at all: put every
-  partner-facing comment in your final message as a draft, set
+- **In `draft` reply mode**, post nothing to the thread at all: write every
+  partner-facing comment to the dispatch log as a draft, set
   `liaise:needs-owner`, and stop.

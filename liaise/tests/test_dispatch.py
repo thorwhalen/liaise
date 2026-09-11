@@ -656,32 +656,34 @@ def test_dispatch_issue_hands_the_partner_permission_mode_to_every_job(tmp_path)
     assert fresh.permission_mode == resumed.permission_mode == "acceptEdits"
 
 
-# ---- #22: the dispatch log is named in the prompt, and records the final message ----
+# ---- #22: the dispatch log is named in the prompt, and keeps what the agent wrote ----
 
 
 def _log_path_named_in(prompt: str) -> str:
     return re.search(r"The dispatch log for this run is `([^`]+)`", prompt).group(1)
 
 
-def test_dispatch_log_is_named_in_the_prompt_and_records_the_final_message(tmp_path):
-    """#22: the operating rules put drafts and escalations in the agent's final
-    message, which `liaise` records in the dispatch log the prompt names — as
-    readable text, not escaped JSON, so the owner can send a draft as is.
+def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_path):
+    """#22: the operating rules send drafts and escalations "to the dispatch
+    log", so the file the prompt names must exist when the agent runs, and
+    `liaise`'s own record must follow the agent's drafts, not overwrite them.
     """
     partner = _partner(tmp_path)
     fake = FakeGitHub([_issue()])
     log_dir = tmp_path / "logs"
     named = []
-    draft = "Draft for the partner:\n\n@pat It's fixed, try again."
 
     class DraftingDispatcher:
         def dispatch(self, job: Job):
             from liaise.dispatch import DispatchResult
 
-            named.append(_log_path_named_in(job.prompt))
+            log_path = Path(_log_path_named_in(job.prompt))
+            named.append(str(log_path))
+            assert log_path.is_file()
+            with open(log_path, "a") as f:
+                f.write("Draft for the partner: it's fixed, try again\n")
             set_state(fake, fake.get_issue(REPO, 1), partner, "needs-owner")
-            stdout = json.dumps({"result": draft, "session_id": "sess-1"})
-            return DispatchResult(returncode=0, session_id="sess-1", stdout=stdout)
+            return DispatchResult(returncode=0, session_id="sess-1")
 
     outcome = dispatch_issue(
         fake, DraftingDispatcher(), {}, partner, fake.get_issue(REPO, 1),
@@ -691,8 +693,7 @@ def test_dispatch_log_is_named_in_the_prompt_and_records_the_final_message(tmp_p
     assert named == [outcome.log_path]
     assert Path(outcome.log_path).parent == log_dir
     text = Path(outcome.log_path).read_text()
-    assert draft in text  # real newlines, not "\n" escapes
-    assert text.index(draft) < text.index("exit code: 0")
+    assert text.index("Draft for the partner") < text.index("exit code: 0")
 
 
 def test_a_relative_log_dir_is_named_as_an_absolute_path(tmp_path, monkeypatch):
@@ -753,3 +754,58 @@ def test_a_log_that_cannot_be_written_does_not_skip_crash_reconciliation(tmp_pat
     assert outcome.crashed
     assert current_state(fake.get_issue(REPO, 1), partner) == "needs-owner"
     assert len(notifications) == 1
+
+
+def test_mention_reconciliation_with_an_unwritable_log_keeps_the_outcome(tmp_path):
+    """#22 review: with the log unwritable, noting a failed mention repair in
+    it must not raise either — that would discard the dispatch outcome.
+    """
+    from liaise.github import GitHubError
+
+    partner = _partner(tmp_path, notify_login="pat")
+
+    class FlakyGitHub(FakeGitHub):
+        def ensure_last_comment_mentions(self, repo, number, mention):
+            raise GitHubError("rate limited")
+
+    fake = FlakyGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+    log_dir.write_text("not a directory")
+
+    class ForgetfulDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            fake.post_comment(REPO, 1, "Quick question: what color?")
+            set_state(fake, fake.get_issue(REPO, 1), partner, "needs-partner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    outcome = dispatch_issue(  # must not raise
+        fake, ForgetfulDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=log_dir,
+    )
+
+    assert outcome.dispatched and not outcome.crashed
+
+
+def test_output_that_does_not_encode_does_not_break_the_log(tmp_path):
+    """#22 review: a lone surrogate in the agent's output (or anything the
+    platform's default encoding can't take) must not raise out of the log
+    write and strand the issue at `liaise:working`.
+    """
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+
+    class SurrogateDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            return DispatchResult(returncode=1, session_id=None, stdout="bad \ud800 text")
+
+    outcome = dispatch_issue(  # must not raise
+        fake, SurrogateDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        notify_fn=lambda *a, **k: True, now=T0, log_dir=tmp_path / "logs",
+    )
+
+    assert outcome.crashed
+    assert Path(outcome.log_path).is_file()

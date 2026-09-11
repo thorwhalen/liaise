@@ -9,6 +9,7 @@ applied; it never hardcodes a real partner.
 
 from __future__ import annotations
 
+import shlex
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -47,6 +48,12 @@ DFLT_DISPATCH_COMMAND = (
 DFLT_RESUME_COMMAND = (
     'claude --resume {session_id} -p "Read and follow the instructions in '
     '{prompt_file}" --permission-mode {permission_mode} --output-format json'
+)
+#: The 0.0.3 resume template, which passes no permission mode: kept for an
+#: overridden `command` that passes none either, so its resume still matches.
+_RESUME_COMMAND_WITHOUT_PERMISSION_MODE = (
+    'claude --resume {session_id} -p "Read and follow the instructions in '
+    '{prompt_file}" --output-format json'
 )
 #: `log_dir`'s default, relative to `state_dir`.
 DFLT_LOG_SUBDIR = "logs"
@@ -91,8 +98,9 @@ class DispatchConfig:
 
     Both templates are formatted with ``prompt_file``, ``session_id`` and
     ``permission_mode`` — the last from this one field, so a fresh and a
-    resumed dispatch run under the same permission mode. An override should
-    use ``{permission_mode}`` in both templates, or the two can drift apart.
+    resumed dispatch run under the same permission mode. For an overridden
+    ``command`` that hardcodes its mode instead, the loader resumes under that
+    mode (see ``_dispatch_from``).
     """
 
     command: str = DFLT_DISPATCH_COMMAND
@@ -293,6 +301,53 @@ def _load_global_config(root: Path) -> GlobalConfig:
     )
 
 
+def _hardcoded_permission_mode(command: str) -> Optional[str]:
+    """The mode a template passes literally (`--permission-mode X` or
+    `--permission-mode=X`), or None when it passes none or can't be parsed.
+    """
+    try:
+        tokens = shlex.split(command)
+    except ValueError:
+        return None
+    for i, token in enumerate(tokens):
+        if token == "--permission-mode" and i + 1 < len(tokens):
+            return tokens[i + 1]
+        if token.startswith("--permission-mode="):
+            return token.split("=", 1)[1]
+    return None
+
+
+def _dispatch_from(raw: dict) -> DispatchConfig:
+    """`[dispatch]`, resolved so a resume runs under the fresh run's mode (#22).
+
+    The default templates take `{permission_mode}` from `permission_mode`. An
+    overridden `command` that doesn't use the placeholder (the only way to set
+    a mode in 0.0.3) is itself where the mode comes from: unless
+    `resume_command` or `permission_mode` is set too, the default resume takes
+    the mode that `command` hardcodes, or passes none if it passes none —
+    never a quiet switch to `auto`.
+    """
+    command = raw.get("command", DFLT_DISPATCH_COMMAND)
+    permission_mode = raw.get("permission_mode", DFLT_PERMISSION_MODE)
+    resume_command = raw.get("resume_command", DFLT_RESUME_COMMAND)
+    if (
+        "{permission_mode}" not in command
+        and "resume_command" not in raw
+        and "permission_mode" not in raw
+    ):
+        hardcoded = _hardcoded_permission_mode(command)
+        if hardcoded is None:
+            resume_command = _RESUME_COMMAND_WITHOUT_PERMISSION_MODE
+        else:
+            permission_mode = hardcoded
+    return DispatchConfig(
+        command=command,
+        cwd=raw.get("cwd", "."),
+        resume_command=resume_command,
+        permission_mode=permission_mode,
+    )
+
+
 def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
     raw = _load_toml(path)
     slug = path.stem
@@ -300,13 +355,7 @@ def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
         if required not in raw:
             raise _missing_partner_field_error(path, required)
 
-    dispatch_raw = raw.get("dispatch") or {}
-    dispatch = DispatchConfig(
-        command=dispatch_raw.get("command", DFLT_DISPATCH_COMMAND),
-        cwd=dispatch_raw.get("cwd", "."),
-        resume_command=dispatch_raw.get("resume_command", DFLT_RESUME_COMMAND),
-        permission_mode=dispatch_raw.get("permission_mode", DFLT_PERMISSION_MODE),
-    )
+    dispatch = _dispatch_from(raw.get("dispatch") or {})
     escalate = _escalate_from(raw.get("escalate"))
 
     github_logins = tuple(raw["github_logins"])

@@ -175,17 +175,37 @@ def test_permission_mode_defaults_to_auto_and_is_set_under_dispatch(config_root)
     assert pat.dispatch.permission_mode == "acceptEdits"
 
 
-def test_a_0_0_3_style_template_override_still_loads(config_root):
-    """#22 review: refusing an override that hardcodes the mode also refused
-    consistent configs (a copied default plus one flag) — and with them every
-    command, the scheduled run included. Keeping custom templates consistent
-    is the owner's call; loading must not fail over it.
-    """
+def _with_dispatch_command(config_root, command: str) -> None:
     path = config_root / "partners" / "pat.toml"
     # the fixture's file ends inside its [dispatch] table
-    path.write_text(
-        path.read_text()
-        + 'command = "claude -p {prompt_file} --permission-mode auto --verbose"\n'
+    path.write_text(path.read_text() + f'command = "{command}"\n')
+
+
+def test_a_0_0_3_style_template_override_still_loads(config_root):
+    """#22 review: refusing overrides at load broke consistent configs (a
+    copied default plus one flag), and every command with them.
+    """
+    _with_dispatch_command(
+        config_root, "claude -p {prompt_file} --permission-mode auto --model sonnet"
     )
-    pat = load_config(config_root).partner("pat")
-    assert "--permission-mode auto --verbose" in pat.dispatch.command
+    assert load_config(config_root).partner("pat").dispatch.permission_mode == "auto"
+
+
+@pytest.mark.parametrize(
+    "flag", ["--permission-mode acceptEdits", "--permission-mode=acceptEdits"]
+)
+def test_an_override_hardcoding_its_permission_mode_resumes_under_it(config_root, flag):
+    """#22 review: a 0.0.3 `command` hardcoding its mode, with the default
+    `resume_command`, must not quietly resume under `auto` instead. The
+    override is where the mode comes from, so the resume takes it from there.
+    """
+    _with_dispatch_command(config_root, f"claude -p {{prompt_file}} {flag}")
+    dispatch = load_config(config_root).partner("pat").dispatch
+    assert dispatch.permission_mode == "acceptEdits"
+    assert "--permission-mode {permission_mode}" in dispatch.resume_command
+
+
+def test_an_override_passing_no_permission_mode_resumes_without_one(config_root):
+    _with_dispatch_command(config_root, "claude -p {prompt_file} --output-format json")
+    dispatch = load_config(config_root).partner("pat").dispatch
+    assert "--permission-mode" not in dispatch.resume_command
