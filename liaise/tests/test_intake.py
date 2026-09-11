@@ -315,9 +315,11 @@ def test_an_issue_with_a_legacy_state_label_is_adopted_in_that_state(github, reg
     (case,) = _intake(ledger, registry).new_cases
 
     assert case.state == "needs-partner"
-    message, transition = case.entries
+    message, transition, adopted = case.entries
     assert message.kind == "message"
     assert (transition.kind, transition.actor, transition.at) == ("transition", "liaise", NOW)
+    # S7 #3: taken over from 0.0.x, it waits for the partner to write after this
+    assert (adopted.kind, adopted.at, adopted.detail) == ("run", NOW, {"event": "adopted", "adopted": True})
     assert transition.detail == {
         "from": "intake",
         "to": "needs-partner",
@@ -435,7 +437,7 @@ def test_an_adopted_issue_is_neither_taken_again_by_the_poll_nor_adopted_again(g
     (case,) = first.new_cases
     assert len(case.entries) == 1
     assert (second.events, second.new_cases, second.updated_cases) == ((), (), ())
-    assert reads == [REPO_REF]
+    assert reads == [REPO_REF, ISSUE_12]  # its open issues, then the adopted one's comments
     assert [c.id for c in ledger.cases()] == ["pat-1"]
 
 
@@ -445,8 +447,9 @@ def test_an_old_issue_with_a_legacy_state_label_is_adopted_in_that_state(webinbo
     (case,) = _intake(ledger, registry).new_cases
 
     assert case.state == "needs-partner"
-    message, transition = case.entries
+    message, transition, adopted = case.entries
     assert message.delivery_id == "github:example/app:issue-7@2026-09-08T10:00:00Z"
+    assert adopted.detail == {"event": "adopted", "adopted": True}
     assert transition.detail == {
         "from": "intake",
         "to": "needs-partner",
@@ -497,3 +500,65 @@ def test_a_repository_with_more_open_issues_than_one_read_takes_says_so(github, 
     _issue(github, 13, minutes=1)
     (problem,) = _intake(ledger, registry).problems
     assert "github:example/app has 1 or more open issues" in problem
+
+
+# ---- an adopted issue's comments (S7 #3) ----
+
+
+def test_an_adopted_issues_comments_are_taken_in_once_under_the_polls_delivery_ids(webinbox, ledger):
+    github, registry = _looking_back(webinbox)
+    _issue(github, 7, labels=("partner:pat", "liaise:needs-partner"), at=OLD)
+    github.add_comment(REPO, 7, author="pat", body="#wait# until Friday.", created_at=OLD + timedelta(hours=1))
+    github.add_comment(
+        REPO,
+        7,
+        author=SELF_LOGIN,
+        body="Which page?",
+        created_at=OLD + timedelta(hours=2),
+        edited_at=NOW - timedelta(minutes=30),  # within the first poll's lookback, edited
+        is_self=True,
+    )
+    github.add_comment(REPO, 7, author="pat", body="The export page.", created_at=NOW - timedelta(hours=1))
+
+    report = _intake(ledger, registry)
+
+    (case,) = report.new_cases
+    assert case.state == "needs-partner"
+    messages = [e for e in case.entries if e.kind == "message"]
+    # the poll hears the two recent comments too, under the same delivery ids: no second entry
+    assert [(e.actor, e.text) for e in messages] == [
+        ("pat", "The export drops the last row."),
+        ("pat", "#wait# until Friday."),
+        ("self", "Which page?"),
+        ("pat", "The export page."),
+    ]
+    assert messages[2].delivery_id == "github:example/app:issuecomment-2@2026-09-11T09:30:00Z"
+    assert all(ledger.seen(e.delivery_id) for e in messages)
+    assert last_partner_activity(case, partner_persons=("pat",)) == NOW - timedelta(hours=1)
+    (adopted,) = [e for e in case.entries if e.kind == "run"]
+    assert (adopted.at, adopted.actor, adopted.detail) == (NOW, "liaise", {"event": "adopted", "adopted": True})
+
+    del ledger.cursors[REPO_REF]  # adopted again, as after a lost cursor: nothing is taken twice
+    again = _intake(ledger, registry)
+    assert (again.new_cases, again.updated_cases) == ((), ())
+    assert ledger.get_case(case.id).entries == case.entries
+
+
+def test_a_failed_read_of_an_adopted_issues_comments_retries_the_adoption_next_time(webinbox, ledger):
+    github, registry = _looking_back(webinbox)
+    _issue(github, 7, at=OLD)
+    github.add_comment(REPO, 7, author="pat", body="#wait# until Friday.", created_at=OLD + timedelta(hours=1))
+    read = github.read
+
+    def no_comments(ref, **kwargs):
+        if "#" in ref.id:
+            raise ChannelError("gh is not logged in", kind="auth")
+        return read(ref, **kwargs)
+
+    github.read = no_comments
+    (problem,) = _intake(ledger, registry).problems
+    assert "gh is not logged in" in problem and REPO_REF not in ledger.cursors
+    del github.read
+    _intake(ledger, registry)
+    (case,) = ledger.cases()
+    assert [e.text for e in case.entries if e.kind == "message"] == ["The export drops the last row.", "#wait# until Friday."]

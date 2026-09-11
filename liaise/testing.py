@@ -28,7 +28,7 @@ from __future__ import annotations
 import hashlib
 import itertools
 from collections.abc import Callable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Union
 
@@ -63,6 +63,8 @@ SELF_LOGIN = FakeGitHub.SELF_AUTHOR
 DFLT_SITE_SECRET = "example-site-secret"
 #: The ``native`` fields an issue opening carries. Comments carry none.
 NATIVE_FIELDS = ("number", "title", "labels", "state")
+#: The states an issue is in, as GitHub names them (see :meth:`FakeGitHubChannel.set_state`).
+ISSUE_STATES = ("open", "closed")
 
 _URL_ROOT = "https://github.com"
 _OPENING, _COMMENT = "issue", "issuecomment"
@@ -222,11 +224,14 @@ class FakeGitHubChannel:
         author: str,
         body: str,
         created_at: Union[datetime, str],
+        edited_at: Optional[Union[datetime, str]] = None,
         is_self: bool = False,
     ) -> Message:
         """Seed a comment on the seeded issue ``repo#number``; the next poll yields it.
 
-        Raises ``ValueError`` when that issue was never seeded.
+        ``edited_at``, when the comment was edited, becomes its ``edited_at``, and its
+        delivery id ends with it, as correspond's GitHub adapter ends one with the
+        comment's ``updated_at``. Raises ``ValueError`` when that issue was never seeded.
         """
         repository = self._repository(repo)
         opening = self._openings.get((repository.id, number))
@@ -237,6 +242,7 @@ class FakeGitHubChannel:
             )
         comment_id = next(self._comment_ids)
         created = parse_time(created_at)
+        edited = parse_time(edited_at) if edited_at is not None else None
         message = Message(
             id=f"{_COMMENT}-{comment_id}",
             conversation=ConversationRef(
@@ -245,13 +251,43 @@ class FakeGitHubChannel:
             author=self._identity(author, is_self=is_self),
             authenticity=Authenticity(grade=Grade.PLATFORM, evidence=_EVIDENCE),
             sent_at=created,
+            edited_at=edited,
             text=body,
             body=body,
             body_format="markdown",
             url=f"{opening.url}#{_COMMENT}-{comment_id}",
         )
-        self._post(repository.id, number, message, changed_at=created)
+        self._post(repository.id, number, message, changed_at=edited or created)
         return message
+
+    def set_state(self, repo: str, number: int, state: str) -> Message:
+        """Close or reopen the seeded issue ``repo#number``, as someone on GitHub would.
+
+        ``state`` is one of :data:`ISSUE_STATES`. The opening's ``native["state"]``
+        changes, so a read of the issue, or of the repository's open issues, sees it. A
+        poll yields nothing for it, as correspond's GitHub adapter hears an older issue's
+        changes only through its comments. Returns the opening as it is now; raises
+        ``ValueError`` for an unknown state or an issue never seeded.
+        """
+        if state not in ISSUE_STATES:
+            raise ValueError(
+                f"issue state {state!r} is not one of: {', '.join(ISSUE_STATES)}"
+            )
+        repository = self._repository(repo)
+        key = (repository.id, number)
+        opening = self._openings.get(key)
+        if opening is None:
+            raise ValueError(
+                f"no issue {self.name}:{repository.id}#{number} to set the state of; "
+                f"seed it with add_issue first"
+            )
+        changed = replace(opening, native={**opening.native, "state": state})
+        self._openings[key] = changed
+        self._posts = [
+            replace(post, message=changed) if post.message is opening else post
+            for post in self._posts
+        ]
+        return changed
 
     # ---- reading and listening ----
 

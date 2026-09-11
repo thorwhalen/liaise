@@ -70,6 +70,9 @@ CANCEL_MODES = ("graceful", "now")
 DFLT_CLAUDE_BIN = "claude"
 #: Seconds between a graceful cancel's interrupt and the terminate that may follow it.
 DFLT_GRACE_S = 15.0
+#: Seconds a run may go on after a cancel sent it SIGTERM before a later cancel kills it
+#: with SIGKILL (POSIX only: on Windows every cancel already ends the run outright).
+KILL_GRACE_S = 60.0
 #: Variables a run must not inherit: with either set, claude bills that key instead of
 #: the subscription the operator logged in with.
 SCRUBBED_ENV_VARS = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")
@@ -96,6 +99,8 @@ _AUTH_EXPIRED = "auth_expired"
 #: record.json keys beyond the RunRecord's own fields.
 _CANCEL_REQUESTED_AT = "cancel_requested_at"
 _CANCEL_SIGNAL = "cancel_signal"
+#: When the signal in ``cancel_signal`` was first sent: the kill grace counts from it.
+_CANCEL_SIGNAL_AT = "cancel_signal_at"
 
 
 @dataclass(frozen=True)
@@ -180,10 +185,12 @@ class ClaudeHeadless:
     ``runs_dir`` is where each run's directory goes; the tick passes
     ``<state_dir>/runs``, and nothing but :meth:`preflight` works without it.
     ``claude_bin`` is the command, found on ``PATH`` or given as a path. ``grace_s`` is
-    how long a graceful cancel waits after its interrupt before it may terminate.
-    ``auth_check`` is the arguments that ask ``claude`` whether its login still works
-    (:data:`DFLT_AUTH_CHECK`), which :meth:`preflight` gives ``auth_timeout_s`` seconds
-    to answer; None skips that check, for a ``claude`` without the command.
+    how long a graceful cancel waits after its interrupt before it may terminate, and
+    ``kill_grace_s`` how long a run that was sent SIGTERM may go on before a cancel kills
+    it (POSIX). ``auth_check`` is the arguments that ask ``claude`` whether its login
+    still works (:data:`DFLT_AUTH_CHECK`), which :meth:`preflight` gives
+    ``auth_timeout_s`` seconds to answer; None skips that check, for a ``claude`` without
+    the command.
 
     A run is spawned in its own process group (a new session on POSIX), so it outlives
     the tick that started it and a cancel reaches everything it started. Its environment
@@ -196,6 +203,7 @@ class ClaudeHeadless:
         claude_bin: Union[str, os.PathLike] = DFLT_CLAUDE_BIN,
         runs_dir: Optional[Union[str, os.PathLike]] = None,
         grace_s: float = DFLT_GRACE_S,
+        kill_grace_s: float = KILL_GRACE_S,
         auth_check: Optional[Sequence[str]] = DFLT_AUTH_CHECK,
         auth_timeout_s: float = DFLT_AUTH_TIMEOUT_S,
     ):
@@ -204,6 +212,7 @@ class ClaudeHeadless:
             Path(runs_dir).expanduser().absolute() if runs_dir is not None else None
         )
         self.grace_s = grace_s
+        self.kill_grace_s = kill_grace_s
         self.auth_check = tuple(auth_check or ())
         self.auth_timeout_s = auth_timeout_s
         # The processes this instance spawned. A child that exits stays a zombie until
@@ -257,10 +266,12 @@ class ClaudeHeadless:
     def start(self, job: Job) -> RunRecord:
         """Spawn ``job`` in a new session (``--session-id``) and return its record at once.
 
-        Idempotent: when ``job.run_id`` already has a record, that record is returned and
-        nothing is spawned. Never raises for a command that cannot be spawned: the run is
-        recorded as finished with the reason in its ``stderr.log``, which :meth:`collect`
-        classifies as ``config_error``.
+        Idempotent: when ``job.run_id`` already has a record of ``job.case_id``, that record
+        is returned and nothing is spawned. A record another case's run wrote under that id
+        is neither returned nor touched: the run returned is finished at once, spawned
+        nothing, and :meth:`collect` classifies it as ``config_error``. Never raises for a
+        command that cannot be spawned: the run is recorded as finished with the reason in
+        its ``stderr.log``, which :meth:`collect` classifies as ``config_error``.
         """
         return self._launch(job, mode=FRESH, session_id=str(uuid.uuid4()))
 
@@ -274,8 +285,11 @@ class ClaudeHeadless:
         ``heartbeat_at`` is the stream's mtime. The run is finished once its stream holds
         a ``result`` event or its process has exited; ``ended_at`` is then the stream's
         mtime. Reads files only, so it never blocks. With ``persist=False``, as in a dry
-        run, ``record.json`` is left as it was.
+        run, ``record.json`` is left as it was. A run whose id names another case's record
+        is finished, and nothing is written.
         """
+        if self._names_another_case(run):
+            return replace(run, status=FINISHED, ended_at=run.ended_at or _utcnow())
         stream_path = self._stream_path(run)
         heartbeat = _mtime(stream_path)
         finished = (
@@ -296,25 +310,47 @@ class ClaudeHeadless:
             self._save(updated)
         return updated
 
-    def cancel(self, run: RunRecord, *, mode: str = "graceful") -> RunRecord:
+    def cancel(
+        self,
+        run: RunRecord,
+        *,
+        mode: str = "graceful",
+        now: Optional[datetime] = None,
+    ) -> RunRecord:
         """Ask ``run`` to stop, and return its refreshed record (usually still running).
 
         On POSIX, ``graceful`` sends SIGINT to the run's process group the first time, and
         SIGTERM on a later call once ``grace_s`` has passed since that first request;
-        ``now`` sends SIGTERM. On Windows both terminate the run and its children. When
-        the cancel was first requested is kept in ``record.json``, so the next tick's
-        call continues the same cancel. A finished run is returned as it is.
+        ``now`` sends SIGTERM. A run still alive ``kill_grace_s`` after its SIGTERM is sent
+        SIGKILL by the next call, whatever the mode. On Windows every call terminates the
+        run and its children outright, so there is nothing to escalate to. When the cancel
+        was first requested, the last signal, and when that signal was first sent are kept
+        in ``record.json``, so the next tick's call continues the same cancel. ``now`` is
+        the cancel's clock (the current UTC time when None). A finished run is returned as
+        it is.
         """
         require_one_of(mode, CANCEL_MODES, what="cancel mode")
         current = self.status(run)
         if current.status == FINISHED:
             return current
-        now = _utcnow()
-        requested = _parse_time(self._raw_record(run.run_id).get(_CANCEL_REQUESTED_AT))
+        now = now if now is not None else _utcnow()
+        raw = self._raw_record(run.run_id)
+        requested = _parse_time(raw.get(_CANCEL_REQUESTED_AT))
+        previous = raw.get(_CANCEL_SIGNAL)
+        previous_at = _parse_time(raw.get(_CANCEL_SIGNAL_AT)) or requested
         extras = {_CANCEL_REQUESTED_AT: (requested or now).isoformat()}
-        sent = self._send_cancel(current, mode=mode, requested=requested, now=now)
+        sent = self._send_cancel(
+            current,
+            mode=mode,
+            requested=requested,
+            previous=previous,
+            previous_at=previous_at,
+            now=now,
+        )
         if sent:
+            first_sent = previous_at if sent == previous and previous_at else now
             extras[_CANCEL_SIGNAL] = sent
+            extras[_CANCEL_SIGNAL_AT] = first_sent.isoformat()
         self._save(current, extras=extras)
         return current
 
@@ -327,8 +363,11 @@ class ClaudeHeadless:
         any of them is malformed the run has no outcomes. The error class comes from
         :func:`liaise.errors.classify`, given ``stderr.log`` and ``timed_out`` (which the
         tick sets for a run it cancelled for passing its wall clock). ``persist`` is as
-        for :meth:`status`.
+        for :meth:`status`. A run whose id names another case's record is ``config_error``,
+        and that record's files are not read.
         """
+        if self._names_another_case(run):
+            return RunResult(run_id=run.run_id, error=_CONFIG_ERROR)
         current = self.status(run, persist=persist)
         if current.status != FINISHED:
             return None
@@ -375,6 +414,15 @@ class ClaudeHeadless:
         except (ValueError, TypeError):
             return None
 
+    def _names_another_case(self, run: RunRecord) -> bool:
+        """Whether ``run``'s id names a ``record.json`` another case's run wrote.
+
+        Such a run is never started, and its files are never touched: it is finished at
+        once, and collects as ``config_error``.
+        """
+        recorded = self._raw_record(run.run_id).get("case_id")
+        return recorded is not None and recorded != run.case_id
+
     def _save(
         self, record: RunRecord, *, extras: Optional[Mapping[str, Any]] = None
     ) -> None:
@@ -388,6 +436,18 @@ class ClaudeHeadless:
 
     def _launch(self, job: Job, *, mode: str, session_id: str) -> RunRecord:
         existing = self._load(job.run_id)
+        if existing is not None and existing.case_id != job.case_id:
+            # Another case's run has this id: spawn nothing, and leave its files alone.
+            now = _utcnow()
+            return RunRecord(
+                run_id=job.run_id,
+                case_id=job.case_id,
+                subject=job.subject,
+                mode=mode,
+                status=FINISHED,
+                started_at=now,
+                ended_at=now,
+            )
         if existing is not None:
             return existing
         run_dir = self.run_dir(job.run_id)
@@ -467,23 +527,45 @@ class ClaudeHeadless:
         *,
         mode: str,
         requested: Optional[datetime],
+        previous: Optional[str],
+        previous_at: Optional[datetime],
         now: datetime,
     ) -> Optional[str]:
-        """Signal ``run`` as ``mode`` asks. Returns what was sent, or None if nothing was."""
+        """Signal ``run`` as ``mode`` and the cancel so far ask. Returns what was sent, or None.
+
+        ``requested`` is when the cancel was first asked for, ``previous`` the last signal
+        it sent and ``previous_at`` when that signal was first sent (all None before any).
+        """
+
+        def posix_signal() -> Optional[signal.Signals]:
+            """Interrupt, then terminate, then kill; None to wait.
+
+            SIGINT on a graceful cancel's first call. SIGTERM for ``now``, or once
+            ``grace_s`` has passed since the first request. SIGKILL once ``kill_grace_s``
+            has passed since SIGTERM was first sent. A signal already sent is sent again,
+            except an interrupt within its grace period.
+            """
+            if previous == signal.SIGKILL.name:
+                return signal.SIGKILL
+            if previous == signal.SIGTERM.name:
+                kill_grace = timedelta(seconds=self.kill_grace_s)
+                kill_due = previous_at is not None and now - previous_at >= kill_grace
+                return signal.SIGKILL if kill_due else signal.SIGTERM
+            grace = timedelta(seconds=self.grace_s)
+            if mode == "now" or (requested is not None and now - requested >= grace):
+                return signal.SIGTERM
+            if requested is None:
+                return signal.SIGINT
+            return None  # interrupted already, and still within the grace period
+
         if run.pid is None:
             return None
         if sys.platform == "win32":
-            self._terminate_tree(run)
+            self._terminate_tree(run)  # already a hard kill: nothing to escalate to
             return "terminate"
-        grace_over = requested is not None and now - requested >= timedelta(
-            seconds=self.grace_s
-        )
-        if mode == "now" or grace_over:
-            sig = signal.SIGTERM
-        elif requested is None:
-            sig = signal.SIGINT
-        else:
-            return None  # interrupted already, and still within the grace period
+        sig = posix_signal()
+        if sig is None:
+            return None
         try:
             # The run was spawned as a session leader, so its process group id is its
             # pid. os.getpgid(pid) is avoided on purpose: for a pid since reused by an

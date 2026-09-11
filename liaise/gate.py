@@ -6,8 +6,9 @@ hands to :func:`run_gate` before anything reaches a channel. The gate runs
 :data:`DFLT_OUTBOUND_FILTERS`, in this order:
 
 1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode.
-2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, an
-   email address, a token or one of ``policy.leak_terms``. It never redacts.
+2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, a
+   ``.env`` path, an email address, a private key, a token (wrapped across lines or not)
+   or one of ``policy.leak_terms``. It never redacts.
 3. :func:`writing_card`: a note with the recipient's acquaint writing card.
 4. :func:`deslop`: nothing acquaint's style lint finds machine-sounding.
 5. :func:`notify_recipient`: on GitHub, the message starts with ``@<login>``, since
@@ -41,18 +42,41 @@ DRAFT_REPLY_MODE = "draft"
 #: The channel whose messages must @mention their recipient to reach them.
 MENTION_CHANNEL = "github"
 
+#: The token shapes :func:`leak_scan` diverts on, each without the word boundary it starts
+#: at: the GitHub (``ghp_`` and its siblings, ``github_pat_``), ``sk-`` API key, AWS access
+#: key, Hugging Face (``hf_``) and Slack (``xoxb-`` and its siblings) shapes.
+_TOKEN_SHAPES = (
+    r"gh[pousr]_[A-Za-z0-9]{20,}",
+    r"github_pat_\w{20,}",
+    r"sk-[\w-]{20,}",
+    r"AKIA[0-9A-Z]{16}\b",
+    r"hf_[A-Za-z0-9]{30,}",
+    r"xox[baprs]-[A-Za-z0-9-]{10,}",
+)
 #: What :func:`leak_scan` diverts on, as (kind, pattern). Local paths are home
-#: directories on macOS, Linux and Windows. Tokens are the GitHub (``ghp_`` and its
-#: siblings, ``github_pat_``), ``sk-`` API key and AWS access key shapes.
+#: directories on macOS, Linux and Windows (its backslashes single, or doubled as JSON
+#: writes them), a Windows home through a WSL mount, and macOS's temporary directories.
+#: An env file is a path ending in ``.env``.
 _LEAK_PATTERNS = (
     ("local path", re.compile(r"(?<![\w.~-])/(?:Users|home|root)/")),
-    ("local path", re.compile(r"\b[A-Za-z]:[\\/]Users[\\/]", re.IGNORECASE)),
+    (
+        "local path",
+        re.compile(r"\b[A-Za-z]:(?:\\{1,2}|/)Users(?:\\{1,2}|/)", re.IGNORECASE),
+    ),
+    ("local path", re.compile(r"(?<![\w.~-])/mnt/[A-Za-z]/Users/", re.IGNORECASE)),
+    ("local path", re.compile(r"(?<![\w.~-])/(?:private/var|var/folders)/")),
+    ("env file", re.compile(r"(?<=[\\/])\.env(?![\w-]|\.\w)")),
     ("email", re.compile(r"[\w.%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")),
-    ("token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}")),
-    ("token", re.compile(r"\bgithub_pat_\w{20,}")),
-    ("token", re.compile(r"\bsk-[\w-]{20,}")),
-    ("token", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
+    ("private key", re.compile(r"-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----")),
+    *(("token", re.compile(rf"\b{shape}")) for shape in _TOKEN_SHAPES),
 )
+#: The token shapes as :func:`leak_scan` looks for them in the text with its line breaks
+#: removed, so a token wrapped across lines is still found. Their word boundary is checked
+#: against the message itself, since removing a line break can glue a word to a token.
+_UNWRAPPED_TOKEN_PATTERNS = tuple(re.compile(shape) for shape in _TOKEN_SHAPES)
+#: The characters that break a line, and one that continues a word.
+_LINE_BREAKS = frozenset("\r\n")
+_WORD_CHAR = re.compile(r"\w")
 #: A GitHub login: letters, digits and hyphens, at most 39 characters.
 _GITHUB_LOGIN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}")
 
@@ -139,22 +163,44 @@ def reply_mode(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
 def leak_scan(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
     """On a public channel, divert a message holding what must not be made public.
 
-    That is an absolute local path (a home directory on macOS, Linux or Windows), an
-    email address, a token shape (``ghp_``, ``github_pat_``, ``sk-``, ``AKIA``), or one
-    of ``policy.leak_terms`` as a whole word in any case. The reason names each kind
-    found and the notes say where, never what. It never redacts: a leak is for the
-    operator to fix. A channel outside ``policy.public_channels`` passes unscanned.
+    That is an absolute local path (a home directory on macOS, Linux or Windows, written
+    with single or JSON-doubled backslashes, a Windows home through a WSL mount, or a
+    macOS temporary directory), a path ending in ``.env``, an email address, a private
+    key's ``-----BEGIN ... PRIVATE KEY-----`` line, a token shape (``ghp_``,
+    ``github_pat_``, ``sk-``, ``AKIA``, ``hf_``, ``xoxb-``), or one of
+    ``policy.leak_terms`` as a whole word in any case. Tokens are also looked for with the
+    text's line breaks removed, so a token wrapped across lines is found. The reason
+    names each kind found and the notes say where, never what. It never redacts: a leak
+    is for the operator to fix. A channel outside ``policy.public_channels`` passes
+    unscanned.
     """
+
+    def without_line_breaks(text: str) -> tuple[str, list[int]]:
+        """``text`` without its line breaks, and where each character left was in ``text``."""
+        kept = [index for index, char in enumerate(text) if char not in _LINE_BREAKS]
+        return "".join(text[index] for index in kept), kept
+
     policy = ctx.subject.policy
     if outbound.channel not in policy.public_channels:
         return Pass(outbound)
     text = outbound.text
-    hits = [
+    unwrapped, positions = without_line_breaks(text)
+    found = [
         (kind, match.start())
         for kind, pattern in _LEAK_PATTERNS
         for match in pattern.finditer(text)
     ]
-    hits += [
+    unwrapped_starts = (
+        positions[match.start()]
+        for pattern in _UNWRAPPED_TOKEN_PATTERNS
+        for match in pattern.finditer(unwrapped)
+    )
+    found += [
+        ("token", start)
+        for start in unwrapped_starts
+        if start == 0 or not _WORD_CHAR.fullmatch(text[start - 1])
+    ]
+    found += [
         ("leak term", match.start())
         for term in policy.leak_terms
         if term
@@ -162,6 +208,7 @@ def leak_scan(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
             rf"(?<!\w){re.escape(term)}(?!\w)", text, flags=re.IGNORECASE
         )
     ]
+    hits = list(dict.fromkeys(found))  # a token on one line is found by both scans
     if not hits:
         return Pass(outbound)
     kinds = dict.fromkeys(kind for kind, _ in hits)

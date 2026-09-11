@@ -6,6 +6,8 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise status
     liaise hold SCOPE [--mode MODE] [--reason TEXT]
     liaise unhold SCOPE
+    liaise case list [--state STATE]
+    liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
     liaise subject list
     liaise subject show SLUG
     liaise setup SUBJECT
@@ -32,6 +34,7 @@ from __future__ import annotations
 import dataclasses
 import functools
 import time
+from collections import ChainMap
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from datetime import datetime
 from pathlib import Path
@@ -39,7 +42,8 @@ from typing import Any, Optional
 
 import cw
 
-from liaise import holds, migrate
+from liaise import cases, holds, migrate
+from liaise.access import Resolver
 from liaise.config import (
     DFLT_CONFIG_ROOT,
     ConfigError,
@@ -58,7 +62,14 @@ from liaise.schedule import (
     uninstall_schedule,
 )
 from liaise.subjects import DFLT_SUBJECTS_SUBDIR, Subject, check_bindings, load_subjects
-from liaise.tick import DFLT_RUNS_SUBDIR, RunLockHeld, run_once, status_lines
+from liaise.tick import (
+    DFLT_RUNS_SUBDIR,
+    RunLockHeld,
+    Triage,
+    WorkspaceFactory,
+    run_once,
+    status_lines,
+)
 
 #: Seconds between two ticks of ``liaise run`` without ``--once``. The scheduled job
 #: passes ``--once`` and leaves the interval to the scheduler.
@@ -139,6 +150,9 @@ def run(
     notify_fn: Optional[Callable[..., Any]] = None,
     sessions_dir: Optional[str] = None,
     now: Optional[datetime] = None,
+    resolver: Optional[Resolver] = None,
+    workspace: Optional[WorkspaceFactory] = None,
+    triage: Optional[Triage] = None,
 ) -> str:
     """One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.
 
@@ -147,7 +161,15 @@ def run(
     deployed, locked or written. ``--subject`` ticks one subject alone. Without ``--once``
     or ``--dry-run``, it ticks every minute, printing each plan, until interrupted; the
     scheduled job (``liaise schedule install``) passes ``--once``.
+
+    ``resolver``, ``workspace`` and ``triage`` are the tick's seams of those names (see
+    :func:`liaise.tick.run_once`); None keeps the tick's own default.
     """
+    seams = {
+        name: value
+        for name, value in (("resolver", resolver), ("workspace", workspace))
+        if value is not None
+    }
     config_root = _root(root)
     global_config = load_global_config(config_root)
     subjects = load_subjects(config_root)
@@ -180,6 +202,8 @@ def run(
             now=now,
             dry_run=dry_run,
             only=subject,
+            triage=triage,
+            **seams,
         )
         return "\n".join((*hint, *report.plan_lines))
 
@@ -379,6 +403,59 @@ def schedule_status_cmd() -> str:
     return schedule_status()
 
 
+# ---- cases ----
+
+
+@_expected_errors(ConfigError, ValueError)
+def case_list(
+    *,
+    state: Optional[str] = None,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """Every case in the ledger, a line each: its id, its state and its conversations.
+
+    ``--state`` lists only the cases in that state, such as ``needs-owner``, what waits
+    on you. It changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=False)
+    return "\n".join(cases.case_lines(ledger_store, state=state))
+
+
+@_expected_errors(ConfigError, ValueError)
+def case_set_state(
+    case_id: str,
+    state: str,
+    *,
+    reason: str = "",
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+) -> str:
+    """Move CASE_ID to STATE, as you: how a case in needs-owner, or deployed, moves on.
+
+    STATE is a case state other than ``working``, which only a run makes true. ``intake``
+    has the tick start the case again once it is ready, resuming its session. The move is
+    recorded on the case, with ``--reason``. The case's GitHub label follows on the next
+    tick: a label is a projection of the ledger, so relabelling the issue by hand is
+    overwritten. ``--dry-run`` says what would change, and changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
+    before = ledger.get_case(case_id)
+    moved = cases.set_case_state(ledger, case_id, state, reason=reason, now=now)
+    if before is not None and before.state == moved.state:
+        return f"{case_id} is already {moved.state}"
+    verb = "would move" if dry_run else "moved"
+    return (
+        f"{verb} {case_id} from {before.state} to {moved.state}; its labels follow on "
+        f"the next tick"
+    )
+
+
 #: SSOT command tree consumed by ``__main__.py`` and any later surface (MCP, HTTP). Named
 #: explicitly, so the commands read ``liaise subject show`` and ``liaise migrate-config``.
 _dispatch_funcs = {
@@ -386,6 +463,7 @@ _dispatch_funcs = {
     "status": status,
     "hold": hold,
     "unhold": unhold,
+    "case": {"list": case_list, "set-state": case_set_state},
     "subject": {"list": subject_list, "show": subject_show},
     "setup": setup,
     "migrate-config": migrate_config,
@@ -397,7 +475,7 @@ _dispatch_funcs = {
 }
 
 #: Each command's seams: keyword arguments with working defaults that no command line can
-#: spell (a registry, a processor, a store, a clock).
+#: spell (a registry, a processor, a store, a clock). A group's are nested once more.
 _SEAMS = {
     "run": (
         "registry",
@@ -407,13 +485,29 @@ _SEAMS = {
         "notify_fn",
         "sessions_dir",
         "now",
+        "resolver",
+        "workspace",
+        "triage",
     ),
     "status": ("store", "now"),
     "hold": ("store",),
     "unhold": ("store",),
+    "case": {"list": ("store",), "set-state": ("store", "now")},
     "setup": ("labeler",),
 }
+
+
+def _hidden(seams: Mapping[str, Any]) -> dict[str, Any]:
+    """``seams`` as ``cw`` config: every seam hidden, keeping its default; a group's nested."""
+    return {
+        name: (
+            _hidden(params)
+            if isinstance(params, Mapping)
+            else dict.fromkeys(params, cw.HIDE)
+        )
+        for name, params in seams.items()
+    }
+
+
 #: The seams, hidden from the command line; each keeps its default.
-_dispatch_config = {
-    command: dict.fromkeys(params, cw.HIDE) for command, params in _SEAMS.items()
-}
+_dispatch_config = _hidden(_SEAMS)

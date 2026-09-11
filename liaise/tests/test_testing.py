@@ -144,6 +144,30 @@ def test_commenting_on_an_issue_that_was_never_seeded_raises():
         FakeGitHubChannel().add_comment(REPO, 12, author="pat", body="Hello.", created_at=T0)
 
 
+def test_set_state_closes_and_reopens_an_issue_as_a_read_sees_it_and_no_poll_hears(github):
+    registry, cursors = demo_registry(github=github), {}
+    _listen(REPO_REF, registry, cursors)
+    closed = github.set_state(REPO, 12, "closed")
+
+    assert closed.native["state"] == "closed"
+    (opening,) = correspond.read(ISSUE_REF, registry=registry)
+    assert opening.native["state"] == "closed"
+    assert correspond.read(REPO_REF, registry=registry) == []  # no longer an open issue
+    assert _listen(REPO_REF, registry, cursors) == []
+    github.set_state(REPO, 12, "open")
+    assert [m.native["state"] for m in correspond.read(REPO_REF, registry=registry)] == ["open"]
+    with pytest.raises(ValueError, match="not one of"):
+        github.set_state(REPO, 12, "merged")
+
+
+def test_an_edited_comment_ends_its_delivery_id_with_its_edit_time(github):
+    edited = T0 + timedelta(minutes=3)
+    github.add_comment(REPO, 12, author="pat", body="Also on Safari.", created_at=T0, edited_at=edited)
+    _, event = _listen(REPO_REF, demo_registry(github=github))
+    assert event.delivery_id == "github:example/app:issuecomment-1@2026-09-11T09:03:00Z"
+    assert (event.message.sent_at, event.message.edited_at) == (T0, edited)
+
+
 def test_bindings_on_the_fakes_check_clean():
     subject = Subject(
         slug="pat",

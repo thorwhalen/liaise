@@ -70,7 +70,7 @@ def _full_pat() -> dict:
         reply_mode="direct",
         verify="npm test",
         label_prefix="helper:",
-        deploy_per="case",
+        deploy_per="issue",
         quiet_minutes=15,
         go_minutes=3,
         deployed_nudge_days=5,
@@ -129,7 +129,7 @@ def test_one_partner_becomes_one_subject_with_every_mapped_field(tmp_path):
         "workspace": {"kind": "shared", "path": CHECKOUT},
         "brief": "~/.config/liaise/briefs/pat.md",
         "verify": "npm test",
-        "delivery": {"kind": "deploy", "per": "case", "command": "./deploy.sh"},
+        "delivery": {"kind": "deploy", "per": "issue", "command": "./deploy.sh"},
         "label_prefix": "helper:",
         "policy": {
             "default_reply_mode": "direct",
@@ -167,6 +167,21 @@ def test_values_0_0_x_only_defaulted_are_left_to_the_0_1_defaults(tmp_path):
     assert doc["policy"]["budget"] == {"concurrent": 1}
     for unset in ("readiness", "escalate", "deployed_nudge_days", "reply_modes"):
         assert unset not in doc["policy"]
+
+
+@pytest.mark.parametrize(
+    "deploy_per, per, warned",
+    [("batch", "batch", False), ("issue", "issue", False), ("case", "issue", True)],
+)
+def test_deploy_per_becomes_batch_or_issue_and_any_other_value_is_a_warning(tmp_path, deploy_per, per, warned):
+    """S7 #4: a 0.1 subject takes only batch or issue, and 0.0.x deployed each issue on its
+    own for any deploy_per but batch."""
+    plan = migrate_config(_config(tmp_path, {"pat": _partner("pat", deploy_per=deploy_per)}), apply=True)
+    (subject,) = plan.subjects
+    assert _doc(plan)["delivery"]["per"] == per
+    assert load_subject(plan.written[0]).delivery.per == per
+    warnings = [*subject.warnings, *plan.warnings]
+    assert any("deploy_per 'case'" in w and "delivery.per becomes issue" in w for w in warnings) is warned
 
 
 def test_a_value_set_in_config_toml_is_carried(tmp_path):
@@ -338,7 +353,7 @@ def test_the_emitted_subject_round_trips_through_load_subject(tmp_path):
     assert (subject.brief, subject.verify) == ("~/.config/liaise/briefs/pat.md", "npm test")
     assert subject.policy.briefs == {"pat": "~/.config/liaise/briefs/pat.md"}
     assert subject.brief_for("pat") == "~/.config/liaise/briefs/pat.md"
-    assert subject.delivery == Delivery(kind="deploy", per="case", command="./deploy.sh")
+    assert subject.delivery == Delivery(kind="deploy", per="issue", command="./deploy.sh")
     assert subject.label_prefix == "helper:"
     assert subject.processor == ProcessorConfig(permission_mode="acceptEdits")
 

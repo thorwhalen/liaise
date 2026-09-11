@@ -49,7 +49,7 @@ Two dependencies were found during the build and are not seams yet. The label pr
 
 ### The ledger is the source of truth, and labels are a projection
 
-A label anyone can change cannot be a state machine anyone can trust, and it keeps no history. The ledger holds each case with an append-only list of entries, dedupes channel events on their delivery id, and keeps runs, holds, the unrouted queue and cursors beside them. A dry run is the same code over an empty overlay in front of the store. The labels stay, in the 0.0.x vocabulary, because the partner and the owner read a case's state on the issue; `liaise` sets them after each tick for the cases that changed.
+A label anyone can change cannot be a state machine anyone can trust, and it keeps no history. The ledger holds each case with an append-only list of entries, dedupes channel events on their delivery id, and keeps runs, holds, the unrouted queue and cursors beside them. A dry run is the same code over an empty overlay in front of the store. The labels stay, in the 0.0.x vocabulary, because the partner and the owner read a case's state on the issue; `liaise` sets them after each tick for the cases that changed, and for any case whose state is not the one it last projected. A label changed by hand is overwritten, so the owner moves a case with `liaise case set-state`, recorded on the case like any other transition.
 
 ### A label is a claim, judged by the issue's author
 
@@ -116,17 +116,18 @@ Runs are unattended, so a mode that waits for approval would stall them. `auto` 
 - A label claim is judged by the issue's author, pending who-applied-the-label support in correspond (thorwhalen/correspond#23).
 - GitHub binding refs are lower-cased when a subject loads, a workaround for correspond comparing them case-sensitively (thorwhalen/correspond#24).
 - On Windows, a `.cmd` shim for `claude` can mangle the quoting of `--json-schema`.
-- A case in `needs-owner` or `deployed` never starts again on its own, and there is no command yet to move it on; relabelling the issue no longer changes its state.
+- A case in `needs-owner` or `deployed` never starts again on its own: the owner moves it on with `liaise case set-state`. Relabelling the issue changes nothing, and the next tick overwrites the label, since labels are projections of the ledger.
+- A case whose GitHub issue is closed, but which is otherwise ready to start, has its issue read again on every tick, so that a reopening is noticed.
 
 ## Next steps
 
 These were named when 0.1 was scoped. They are not cuts from it.
 
 - **A fresh-session reviewer:** an independent session reviews a run's outcomes before they go out.
-- **Retry and dead-letter handling:** a `stuck` state, and `liaise retry`, for cases that keep failing.
+- **Retry and dead-letter handling:** a `stuck` state, and `liaise retry`, for cases that keep failing. A `stuck` state would change the label vocabulary, which 0.1 keeps as 0.0.x had it, so it brings a new label that every subject's repositories must be set up with.
 - **A watcher process, or Claude Code's `SessionEnd` and `StopFailure` hooks:** these would collect a run the moment it ends, not on the next tick.
-- **Triage** (issue #19).
+- **Triage** (issue #19). The seam is in 0.1, `run_once(..., triage=)`, which groups and orders a subject's ready cases before they start; nothing implements it yet.
 - **A webhook listener:** a GitHub event would start a tick, instead of the schedule.
-- **Candidate delivery:** a preview the partner approves (`approve_candidate`) before it ships.
+- **Candidate delivery:** a preview the partner approves (`approve_candidate`) before it ships. It needs a branch of its own in the tick's `_execute`, which knows only `pr_only` and a deploy, per batch or per issue.
 - **An MCP surface** over the same command tree.
 - **Upstream in correspond:** who applied a label (thorwhalen/correspond#23), and case-insensitive binding refs (thorwhalen/correspond#24).

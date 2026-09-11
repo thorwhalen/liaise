@@ -97,7 +97,7 @@ daily_dispatches = 6
 permission_mode = "auto"
 ```
 
-With `per = "batch"`, the agent lands each change and `liaise` runs the deploy command once per tick, after every finished run is collected. With any other `per`, the agent deploys each case itself. `pr_only` stops at a pull request.
+A deploy's `per` is `batch` or `issue`; a subject file with any other value does not load. With `per = "batch"`, the agent lands each change and `liaise` runs the deploy command once per tick, after every finished run is collected. With `per = "issue"`, `liaise` runs it for each case as soon as that case's outcomes are carried out. Either way the agent never deploys, and the partner hears "it's live" only once the command has run and succeeded: a failed or empty command sends the case to `needs-owner` and tells you. `pr_only` runs no command and stops at a pull request.
 
 ### The case ledger
 
@@ -115,9 +115,9 @@ A conversation a binding takes in becomes a case (`example-app-1`), kept in the 
 | `liaise:deployed` | is delivered, and the partner was asked to try it |
 | `liaise:budget` | is ready, but today's dispatch cap is used up |
 
-Exactly one state label is on an issue. A label changed by hand changes nothing in the ledger, and it is set right the next time the case changes. `liaise` never closes an issue.
+Exactly one state label is on an issue. Labels are projections of the ledger: relabelling an issue by hand changes nothing, and the next tick overwrites the label. To move a case, use `liaise case set-state`, and its label follows on the next tick. `liaise` never closes an issue. A case whose issue someone closed is neither started nor nudged, and starts again if the issue is reopened.
 
-**Readiness.** A case is ready once its reporter has been quiet for `quiet_minutes` (10), so a request written across three comments is not picked up mid-sentence. `#startwork#` in their text makes it ready `go_minutes` (2) later, and `#wait#` pauses it until their next `#startwork#`. Only the reporter's own messages move this clock: not yours, not a relay's, not `liaise`'s.
+**Readiness.** A case is ready once its reporter has been quiet for `quiet_minutes` (10), so a request written across three comments is not picked up mid-sentence. `#startwork#` in their text makes it ready `go_minutes` (2) later, and `#wait#` pauses it until their next `#startwork#`. Only the reporter's own messages move this clock: not yours, not a relay's, not `liaise`'s. A case in `needs-partner` starts again only once its reporter writes after its last run; one adopted from 0.0.x in `needs-partner` waits the same way, for them to write after the adoption.
 
 ### Identity and access
 
@@ -159,7 +159,7 @@ When a run plans no state of its own, its case moves to `needs-partner` if a mes
 **The gate.** Every message passes five filters, always in this order, before it is sent:
 
 1. **Reply mode.** In `draft` mode (the default, or one person's `policy.reply_modes`), nothing goes out without you.
-2. **Leak scan.** On a public channel (`policy.public_channels`, GitHub by default), a message holding an absolute local path, an email address, a token shape (`ghp_`, `github_pat_`, `sk-`, `AKIA`) or one of `policy.leak_terms` is diverted. It never redacts, and its notes say where the leak is, never what it is.
+2. **Leak scan.** On a public channel (`policy.public_channels`, GitHub by default), a message holding any of these is diverted: an absolute local path (a home directory on macOS, Linux or Windows, its backslashes single or doubled as JSON writes them, a Windows home through a WSL mount, or a macOS temporary directory), a path ending in `.env`, an email address, a private key, a token shape (`ghp_`, `github_pat_`, `sk-`, `AKIA`, `hf_`, or `xoxb-` and its siblings, found even when wrapped across lines), or one of `policy.leak_terms`. It never redacts, and its notes say where the leak is, never what it is.
 3. **Writing card.** A note with the recipient's acquaint writing card, kept in the ledger for the next run.
 4. **Deslop.** acquaint's style lint diverts a message that reads as machine-written to its recipient.
 5. **Notification guarantee.** On GitHub, the message starts with `@<login>`, added when missing: GitHub notifies only the people a comment mentions, and an issue an app filed subscribes its partner to nothing. A recipient with no GitHub handle is diverted.
@@ -185,13 +185,15 @@ The first filter that diverts ends the gate: the message is not sent, it is kept
 | `unavailable` | the API is overloaded or failing | back to `intake` for 5 minutes | none | no | no |
 | `policy_refusal` | a usage-policy refusal | `needs-owner` | none | yes | yes |
 | `budget_exceeded` | the run's turn or spend limit | `needs-owner` | none | yes | yes |
-| `timed_out` | past `timeout_minutes` | `needs-owner` | none | yes | yes |
-| `crashed` | no result, an error result, or a processor method that raised | `needs-owner` | none | yes | yes |
+| `timed_out` | past `timeout_minutes`; a run that ignores the stop is killed a minute later (macOS and Linux), and given up 10 minutes past its wall clock | `needs-owner` | none | yes | yes |
+| `crashed` | no result, an error result, a processor method that raised, or a checkout lock that could not be released | `needs-owner` | none | yes | yes |
 | `needs_human` | no valid outcomes, or denied permissions | `needs-owner` | none | yes | yes |
 | `workspace_conflict` | before a start: the checkout is busy | unchanged, deferred 10 minutes | none | no | no |
 | `effect_blocked` | a deploy refused for CI minutes, billing or a 403 | `needs-owner` | `effect:deploy` | yes | the run already counted |
 
-**A crash never ends the tick** (issue #24). Any exception a processor method raises is a `crashed` run: its case goes to `needs-owner`, you are told, and the tick goes on with the other cases.
+**A crash never ends the tick** (issue #24). Any exception a processor method raises is a `crashed` run: its case goes to `needs-owner`, you are told, and the tick goes on with the other cases. A deploy that raises hands its cases to `needs-owner` the same way. A case left `working` with no run in flight has lost its run, to a tick that died after collecting it or to a 0.0.x `working` label it was adopted with: it goes to `needs-owner` too, and you hear `run lost` once.
+
+**Run ids.** A run id is `<case>-r<n>-<suffix>`: the case's n-th start and eight hex digits of a fresh uuid, so no run ever reuses an earlier run's directory. A run id that names another case's run directory is refused and classified `config_error`.
 
 ### Holds
 
@@ -224,19 +226,21 @@ A subject's runs share its checkout (`workspace.path`, behind the `workspace=` s
 
 **Budgets** are mandatory, per subject under `[policy.budget]`: `concurrent` runs (1), `timeout_minutes` per run (60, enforced), `max_turns` (200, stated in the prompt) and `daily_dispatches` (6). A case that is ready once the daily cap is used up moves to `budget`: the partner is told once, as any reply would be (a draft in draft mode), you are told once per subject per day, and the case starts again the next day. Runs that end in `auth_expired`, `quota_exhausted`, `rate_limited` or `unavailable` do not count.
 
-**Notifications.** `liaise` has no dashboard. When something needs you (an escalation, a diverted or failed message, a run that failed, held effects, a refused start, a failed deploy, the daily cap), it pushes to the [ntfy](https://ntfy.sh) topic in `LIAISE_NTFY_TOPIC`, or in the variable `notify.ntfy_topic_env` names in `config.toml`. Unset, it is silent, never an error. `liaise status` shows the rest.
+**Notifications.** `liaise` has no dashboard. When something needs you (an escalation, a diverted or failed message, a run that failed or was lost, held effects, a refused start, a failed deploy, the daily cap), it pushes to the [ntfy](https://ntfy.sh) topic in `LIAISE_NTFY_TOPIC`, or in the variable `notify.ntfy_topic_env` names in `config.toml`. Unset, it is silent, never an error. A notification about a diverted or failed message names the case, the recipient and the reason, and never carries the message, which may hold what the gate kept back: the draft is on the case, and `liaise status` shows the rest.
 
-**Scheduling.** `liaise schedule install` sets up a launchd agent on macOS, or a systemd user timer on Linux, that runs `liaise run --once` every 2 minutes (`--interval-minutes` to change it). Both schedulers hand a job a nearly empty environment, so it snapshots `PATH`, `HOME` and the ntfy variable from your shell; install again after moving `gh` or `claude`. The job leaves detached runs alive when its tick exits (launchd's `AbandonProcessGroup`, systemd's `KillMode=process`). One tick runs at a time: a tick that finds another holding the run lock does not start.
+**Scheduling.** `liaise schedule install` sets up a launchd agent on macOS, or a systemd user timer on Linux, that runs `liaise run --once` every 2 minutes (`--interval-minutes` to change it). Both schedulers hand a job a nearly empty environment, so it snapshots `PATH`, `HOME` and the ntfy variable from your shell; install again after moving `gh` or `claude`. The job leaves detached runs alive when its tick exits (launchd's `AbandonProcessGroup`, systemd's `KillMode=process`). One tick runs at a time: the run lock is created exclusively, a tick that finds another holding it does not start, and a lock left by a process that is gone is reclaimed. `liaise schedule status` says `installed (outdated: re-run liaise schedule install)` for a job installed before 0.1, which lacks those settings.
 
 ## Commands
 
 - `liaise run [--once] [--dry-run] [--subject SLUG]`: one tick: take in what arrived, collect finished runs and carry out their outcomes through the gate, deploy, start ready cases, nudge quiet deliveries once, and set labels. `--dry-run` prints the plan and changes nothing. Without `--once` or `--dry-run`, it ticks every minute until interrupted.
 - `liaise status`: the last tick (`running`, `interrupted` if its process died first, or `finished`), the holds, the runs in flight, each subject's cases by state and dispatches today, the unrouted queue, the drafts waiting for you, and the latest digest notes. It changes nothing.
 - `liaise hold SCOPE [--mode block|drain|cancel] [--reason TEXT]` and `liaise unhold SCOPE`: stop and resume work in a scope.
+- `liaise case list [--state STATE]`: every case, or those in one state, with its conversations. It changes nothing.
+- `liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]`: move a case as you, recorded on the case; this is how a case in `needs-owner` or `deployed` moves on. `intake` has the tick start it again once it is ready, resuming its session. Any state but `working` is allowed, and a case with a run in flight is refused. Its label follows on the next tick; `--dry-run` writes nothing.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
 - `liaise setup SUBJECT`: create the subject's claim labels and every state label in each repository it binds. Safe to run again.
 - `liaise migrate-config [--apply]`: derive subject files from a 0.0.x configuration; a dry run unless `--apply`.
-- `liaise schedule install`, `liaise schedule uninstall` and `liaise schedule status`: manage the scheduled job.
+- `liaise schedule install`, `liaise schedule uninstall` and `liaise schedule status`: manage the scheduled job. `status` says `installed (outdated: re-run liaise schedule install)` for a job installed by 0.0.x, which kills the runs its ticks start.
 
 Every command takes `--root` for a config root other than `~/.config/liaise`.
 
@@ -263,7 +267,7 @@ What the migration does:
 - **Per-person briefs.** Each partner's brief goes to `policy.briefs`, so partners sharing a repository keep their own; the subject's `brief` is set only when they all share one.
 - **Author bindings are opt-in.** 0.0.x also took any issue a partner's login opened, labelled or not, which picked up issues never meant for `liaise`. 0.1 binds by label, and a note on each subject names the `?author=` binding that opts back in.
 - **Not carried over.** Custom `dispatch.command` and `dispatch.resume_command` templates (0.1 builds the `claude` command itself, and a warning shows what each one passed, to carry by hand), a partner's `display_name`, and `log_dir`.
-- **Open issues are adopted.** On a repository's first poll, `liaise` reads its open issues and adopts each one a binding matches. One that already carries a `liaise:` state label opens its case in that state, so nothing the partner sees changes; one carrying several opens in `needs-owner`. 0.0.x session ids are not carried over, so an adopted case's next run starts a new session. A dry run commits no cursor, so every dry run before the first real tick adopts again.
+- **Open issues are adopted.** On a repository's first poll, `liaise` reads its open issues and adopts each one a binding matches, with its comments, so readiness sees the partner's markers and messages from before the upgrade. One that already carries a `liaise:` state label opens its case in that state, so nothing the partner sees changes; one carrying several opens in `needs-owner`. A case adopted in `needs-partner` waits for the partner to write after the adoption, and one adopted in `working`, with no run `liaise` could collect, goes to `needs-owner`. 0.0.x session ids are not carried over, so an adopted case's next run starts a new session. A dry run commits no cursor, so every dry run before the first real tick adopts again.
 
 ## Breaking changes in 0.1
 
@@ -281,7 +285,9 @@ What the migration does:
 - A label claim is judged by the issue's author, not by who applied the label, pending who-applied-the-label support upstream in correspond (thorwhalen/correspond#23).
 - GitHub binding refs are lower-cased when a subject loads, a workaround for correspond comparing them case-sensitively (thorwhalen/correspond#24).
 - On Windows, a `.cmd` shim for `claude` can mangle the quoting of `--json-schema`, whose value holds characters `cmd.exe` treats specially.
-- A case in `needs-owner` or `deployed` never starts again on its own, and 0.1 has no command to move it on; a label changed by hand, 0.0.x's way to do it, no longer changes the state.
+- A case in `needs-owner` or `deployed` never starts again on its own: move it on with `liaise case set-state`. A label changed by hand, 0.0.x's way to do it, changes nothing, and the next tick overwrites it.
+- A case whose GitHub issue is closed, but which is otherwise ready to start, has its issue read again on every tick, so that a reopening is noticed.
+- The notification for an escalation, and for a message with no channel to reach its reporter, still carries the draft's text; only a diverted or failed message's notification leaves it out.
 
 ## Design
 

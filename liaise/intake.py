@@ -77,6 +77,9 @@ OPENING_ID_PREFIX = "issue-"
 CREATED_EVENT_KIND = "message.created"
 #: What the ``opened`` event of an adopted issue adds to its reason.
 ADOPTED_REASON = "open before the first poll, adopted"
+#: The ``detail["event"]`` of the ``run`` entry an adopted case gets, stamped when liaise
+#: adopted it: a case adopted waiting on its partner waits for them to write after it.
+ADOPTED_EVENT = "adopted"
 
 
 @dataclass(frozen=True)
@@ -221,15 +224,20 @@ def _message_entry(
     )
 
 
-def _opening_delivery_id(message: Message) -> str:
-    """The delivery id correspond's GitHub listen gives the opening post ``message``.
+def _listen_delivery_id(message: Message) -> str:
+    """The delivery id correspond's GitHub listen gives ``message``, an issue's opening or a comment.
 
-    ``github:owner/repo:issue-<N>@<created_at>``, built as the adapter builds it (GitHub's
-    ``created_at`` is whole seconds in UTC, as ``format_time`` writes it), so an opening
-    adopted from a read is the very delivery a poll would hear.
+    ``github:owner/repo:issue-<N>@<created_at>`` for an opening, and
+    ``github:owner/repo:issuecomment-<id>@<updated_at>`` for a comment, built as the
+    adapter builds them: GitHub's times are whole seconds in UTC, as ``format_time`` writes
+    them, and a comment never edited has no ``edited_at`` and an ``updated_at`` equal to
+    its ``created_at``. So a message adopted from a read is the very delivery a poll would
+    hear.
     """
     repository = message.conversation.parent or message.conversation
-    return f"{repository.encoded}:{message.id}@{format_time(message.sent_at)}"
+    is_opening = message.id.startswith(OPENING_ID_PREFIX)
+    changed = message.sent_at if is_opening else (message.edited_at or message.sent_at)
+    return f"{repository.encoded}:{message.id}@{format_time(changed)}"
 
 
 def intake(
@@ -259,8 +267,11 @@ def intake(
     :data:`ADOPTION_READ_LIMIT` most recent) and takes in each opening post a binding
     matches, exactly as the poll would: the same routing, authorization and legacy
     adoption, marked seen under the delivery id listen gives that post, so no poll takes
-    it in again. When the read fails, that is a problem and the repository is not polled,
-    so its cursor stays unset and the next intake tries the adoption again.
+    it in again. It then reads each such issue's comments (``correspond.read`` on
+    ``github:owner/repo#N``) and takes them in the same way, each under the delivery id a
+    poll would give it, so readiness sees the partner's markers and activity from before
+    the adoption. When a read fails, that is a problem and the repository is not polled, so its cursor
+    stays unset and the next intake tries the adoption again.
 
     **Routing.** An event with no message is passed over, as is a delivery this intake
     already dealt with (a poll hearing an issue adopted moments before). So is one whose
@@ -282,8 +293,11 @@ def intake(
     **Legacy adoption.** An issue opening that already carries a
     ``<label_prefix><state>`` label opens its case in that state rather than ``intake``,
     recorded as a transition. One carrying several state labels opens in
-    ``needs-owner``, with a problem saying why. The 0.0.x session id (the
-    ``sessions__<repo>__<n>`` key) is not carried over: that is out of scope here.
+    ``needs-owner``, with a problem saying why. Either way the case also gets a ``run``
+    entry, ``{"event": "adopted", "adopted": True}``, stamped ``now``: one adopted in
+    ``needs-partner`` waits for its partner to write after it (see :mod:`liaise.tick`).
+    The 0.0.x session id (the ``sessions__<repo>__<n>`` key) is not carried over: that is
+    out of scope here.
 
     **Dry run.** Cursors are not committed, and nothing reaches the ledger's store,
     adoptions included: unless the store is already a ``ChainMap`` overlay (as the tick
@@ -372,6 +386,7 @@ def intake(
         opened[case.id] = None
         states = _label_states(message, subject.label_prefix)
         labels = ", ".join(subject.label_prefix + state for state in states)
+        legacy = len(states) > 1 or bool(states and states[0] != INITIAL_CASE_STATE)
         if len(states) > 1:
             ledger.transition(
                 case.id,
@@ -384,7 +399,7 @@ def intake(
                 f"{conversation} carries several state labels ({labels}); case "
                 f"{case.id} opened in {AMBIGUOUS_ADOPTION_STATE} for the operator"
             )
-        elif states and states[0] != INITIAL_CASE_STATE:
+        elif legacy:
             ledger.transition(
                 case.id,
                 states[0],
@@ -392,6 +407,16 @@ def intake(
                 actor=LIAISE_ACTOR,
                 reason=f"adopted from the label {labels}",
             )
+        if legacy:
+            # 0.0.x was running this issue: a case taken over waiting on its partner waits
+            # for them to write after this, whatever they wrote before.
+            adoption = LedgerEntry(
+                at=now,
+                kind="run",
+                actor=LIAISE_ACTOR,
+                detail={"event": ADOPTED_EVENT, "adopted": True},
+            )
+            ledger.append(case.id, adoption)
         reason = f"{pattern} matched; {decision.person} via {decision.via}"
         if adopted:
             reason += f"; {ADOPTED_REASON}"
@@ -428,6 +453,27 @@ def intake(
         else:
             open_case(pattern, event, adopted=adopted)
 
+    def adopt_comments(opening: Message) -> None:
+        """Take in the comments on an adopted issue, as the polls since it opened would have.
+
+        Only while its case is this subject's. Each comment is taken in under the delivery
+        id a poll gives it, so a poll that hears one later passes it over as a duplicate.
+        """
+        case = ledger.case_for_conversation(case_conversation(opening))
+        if case is None or case.subject != subject.slug:
+            return
+        channel = opening.conversation.channel
+        for message in read(opening.conversation.encoded, registry=registry):
+            if message.id.startswith(OPENING_ID_PREFIX):
+                continue
+            event = Event(
+                kind=CREATED_EVENT_KIND,
+                channel=channel,
+                delivery_id=_listen_delivery_id(message),
+                message=message,
+            )
+            take(event)
+
     def adopt(ref: str) -> None:
         conversation = parse_ref(ref, registry=registry)
         if (
@@ -450,10 +496,11 @@ def intake(
                 event = Event(
                     kind=CREATED_EVENT_KIND,
                     channel=conversation.channel,
-                    delivery_id=_opening_delivery_id(message),
+                    delivery_id=_listen_delivery_id(message),
                     message=message,
                 )
                 take(event, adopted=True)
+                adopt_comments(message)
 
     for ref in refs:
         try:

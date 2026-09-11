@@ -31,17 +31,20 @@ import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from correspond.channels.webinbox import WebInbox
 
 from liaise import cli
+from liaise import tick as tick_module
 from liaise.gate import DFLT_OUTBOUND_FILTERS
 from liaise.github import FakeGitHub, Issue
 from liaise.ledger import Ledger
 from liaise.model import LedgerEntry, Outcome, RunRecord, RunResult
-from liaise.processor import EchoProcessor
+from liaise.processor import ClaudeHeadless, EchoProcessor
 from liaise.testing import FakeGitHubChannel, add_webinbox_report, demo_registry
+from liaise.tests._fake_claude import argv_log, fake_claude
 from liaise.tick import run_once
 
 NOW = datetime(2026, 9, 11, 12, 0, tzinfo=timezone.utc)
@@ -52,6 +55,8 @@ SITE = "example-site"
 SEEDED_CASE = "example-app-1"
 SEEDED_RUN = "example-app-1-r1"
 SEEDED_ISSUE = "github:example/app#2"
+#: How a run id the tick hands out ends here, in place of a uuid4's hex.
+RUN_SUFFIX = "0a1b2c3d"
 #: A local path the reply must not publish, built by concatenation so this file holds none.
 LEAKED_PATH = "/" + "Users" + "/pat/search-notes.md"
 REPLY = Outcome(kind="reply", text=f"Accents match now. My notes: {LEAKED_PATH}")
@@ -78,6 +83,12 @@ claim_labels = {{ "partner:pat" = "pat" }}
 @pytest.fixture(autouse=True)
 def no_real_acquaint(monkeypatch):
     monkeypatch.setitem(sys.modules, "acquaint", None)
+
+
+@pytest.fixture(autouse=True)
+def fixed_run_suffix(monkeypatch):
+    """Run ids end with a uuid4's hex; here with RUN_SUFFIX, so the plan's lines are known."""
+    monkeypatch.setattr(tick_module, "uuid4", lambda: SimpleNamespace(hex=RUN_SUFFIX.ljust(32, "0")))
 
 
 @dataclass
@@ -237,11 +248,12 @@ def test_run_once_dry_run_plans_intake_the_gate_and_a_dispatch_and_changes_nothi
     assert "    note: added the mention @pat" in lines[passed + 1 : passed + 4]
     assert f"  case {SEEDED_CASE}: working -> needs-partner (ask)" in lines
 
-    # 3. the planned dispatch, past every check
+    # 3. the planned dispatch, past every check; a dry run never runs preflight
     planned = lines[_starting_with(lines, f"  case {SLUG}-2 (intake): ready")]
-    for check in ("no hold", "pat may request_work", "within budget", "preflight ok", "workspace free"):
+    checks = ("no hold", "pat may request_work", "within budget", "issue open", "preflight skipped (dry run)")
+    for check in (*checks, "workspace free"):
         assert check in planned
-    dispatch = lines.index(f"  would dispatch {SLUG}-2 as run {SLUG}-2-r1 (fresh)")
+    dispatch = lines.index(f"  would dispatch {SLUG}-2 as run {SLUG}-2-r1-{RUN_SUFFIX} (fresh)")
     assert f"  case {SLUG}-3 (intake): ready, but 1 run(s) in flight (concurrent cap 1)" in lines
 
     assert intake < collected < diverted < passed < dispatch
@@ -253,7 +265,7 @@ def test_run_once_dry_run_plans_intake_the_gate_and_a_dispatch_and_changes_nothi
     assert smoke.github.sent == []
     assert [smoke.labeler.get_issue(REPO, number) for number in (1, 2)] == issues_before
     assert smoke.labeler.labels_created(REPO) == {}
-    assert smoke.processor.jobs == []
+    assert (smoke.processor.jobs, smoke.processor.preflights) == ([], [])
     assert smoke.notified == []
     assert _files(tmp_path) == files_before
     assert not list(tmp_path.rglob("record.json"))
@@ -271,3 +283,22 @@ def test_the_diversion_and_the_mention_come_from_the_gate(smoke, monkeypatch):
     _starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: would send: Accents match now. My notes: {LEAKED_PATH}")
     _starting_with(lines, f"  gate ask to {SEEDED_ISSUE}: would send: One question first.")
     assert smoke.github.sent == []
+
+
+def test_a_dry_run_over_the_real_processor_runs_no_process(smoke, tmp_path):
+    """S7 #9: a dry run never calls preflight, whose `claude auth status` is a process. Over
+    ClaudeHeadless and a fake `claude`, the plan still reaches the dispatch, and the fake
+    never ran: had it run at all, it would have written its argv log."""
+    path = tmp_path / "bin" / "claude"
+    path.parent.mkdir()
+    claude = fake_claude(path)
+    smoke.processor = ClaudeHeadless(claude_bin=claude, runs_dir=tmp_path / "state" / "runs")
+    files_before = _files(tmp_path)
+
+    lines = smoke.run().splitlines()
+
+    planned = lines[_starting_with(lines, f"  case {SLUG}-2 (intake): ready")]
+    assert "preflight skipped (dry run)" in planned
+    assert f"  would dispatch {SLUG}-2 as run {SLUG}-2-r1-{RUN_SUFFIX} (fresh)" in lines
+    assert not argv_log(path).exists()
+    assert _files(tmp_path) == files_before

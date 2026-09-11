@@ -93,16 +93,16 @@ liaise unhold subject:example-app
 
 ## What each `liaise:` label means
 
-The label is a projection of the case's state in the ledger: `liaise` sets it, the agent never does, and a label changed by hand is set right the next time the case changes. Exactly one is on an issue, and `liaise` never closes an issue.
+The label is a projection of the case's state in the ledger: `liaise` sets it, the agent never does. Relabelling an issue by hand changes nothing, and the next tick overwrites it; to move a case, use `liaise case set-state` (see "Moving a case on"). Exactly one is on an issue, and `liaise` never closes an issue.
 
 | Label | What it means | What moves it on |
 |---|---|---|
 | `liaise:intake` | Taken in. The partner may still be writing: the quiet window (10 minutes by default) is running, or the case was deferred. | The window closing, or `#startwork#` from the partner. A run starts, and the case is `working`. |
 | `liaise:paused` | The partner wrote `#wait#`. | The partner writing `#startwork#`. |
-| `liaise:working` | A run is in flight. | The run ending: its outcomes, or its error class, decide the next state. |
-| `liaise:needs-partner` | A question or a proposal went to the partner. | The partner writing again. No run starts before they do. |
-| `liaise:needs-owner` | Waiting on the owner: an escalation or decline, a run that failed, a start refused for the reporter's role or grade, a failed deploy, held effects. | Nothing automatic in 0.1 (see below). |
-| `liaise:deployed` | Delivered, and the partner was asked to try it. A quiet partner is nudged once, after 3 days. | Nothing: the case is done. A follow-up comment is recorded but starts nothing. |
+| `liaise:working` | A run is in flight. | The run ending: its outcomes, or its error class, decide the next state. A case left `working` with no run in flight, its run lost, goes to `needs-owner`, and the owner is told once. |
+| `liaise:needs-partner` | A question or a proposal went to the partner. | The partner writing again. No run starts before they do; a case adopted from 0.0.x in this state waits for them to write after the adoption. |
+| `liaise:needs-owner` | Waiting on the owner: an escalation or decline, a run that failed or was lost, a start refused for the reporter's role or grade, a deploy that failed or has no command, held effects. | The owner, with `liaise case set-state <case> intake`: the case starts again once it is ready, resuming its session. |
+| `liaise:deployed` | Delivered: the deploy command ran and succeeded, and the partner was asked to try it. A quiet partner is nudged once, after 3 days, unless the issue was closed. | Nothing: the case is done. A follow-up comment is recorded but starts nothing; `liaise case set-state <case> intake` reopens the work. |
 | `liaise:budget` | Ready, but the subject's daily dispatch cap is used up. The partner was told once, and the owner once that day. | The next day: it starts again. |
 
 ## Why an issue isn't moving
@@ -123,8 +123,21 @@ Start with `liaise run --once --dry-run --subject <slug>`: its plan has a line p
 - **The budget.** `still over the daily cap (6/6)`: it starts again the next day. `ready, but 1 run(s) in flight (concurrent cap 1)`: it waits for the subject's running run.
 - **A workspace conflict.** `workspace_conflict: live session <name> in <path>`: a Claude Code session, probably the owner's, is working in the checkout; the case tries again in 10 minutes. `the checkout is locked by run <id>`: another run of the subject holds it.
 - **Not ready yet.** `not ready (waiting, 4m to go)` is the quiet window; `paused (partner asked to wait)` is a `#wait#`.
-- **`needs-owner`.** It waits on the owner, and 0.1 has no command to move a case on: relabelling the issue, the 0.0.x way, no longer changes its state. Read the case's drafts and entries in its file under `state_dir/ledger`, and act on the issue by hand.
-- **Nothing happens at all.** An old `run_started_at` in `liaise status` means the scheduled job stopped (`liaise schedule status`); `interrupted` means its last tick died.
+- **`needs-owner`.** It waits on the owner. Read the case's drafts and entries in its file under `state_dir/ledger`, act on what it needs, then move it on with `liaise case set-state <case> intake` (see "Moving a case on"). Relabelling the issue, the 0.0.x way, changes nothing: the next tick overwrites the label. A case found `working` with no run in flight lands here too, and the owner hears `run lost`.
+- **Its issue is closed.** `its issue is closed`: a case whose issue was closed is neither started nor nudged. Reopening the issue starts it again.
+- **Nothing happens at all.** An old `run_started_at` in `liaise status` means the scheduled job stopped (`liaise schedule status`); `interrupted` means its last tick died. `liaise schedule status` saying `installed (outdated: re-run liaise schedule install)` means the job was installed by 0.0.x and kills the runs its ticks start: install it again.
+
+## Moving a case on
+
+```
+liaise case list --state needs-owner
+liaise case set-state example-app-2 intake --reason "brief fixed" --dry-run
+liaise case set-state example-app-2 intake --reason "brief fixed"
+```
+
+- `liaise case list [--state STATE]` lists every case, or those in one state, with its conversations. It changes nothing.
+- `liaise case set-state CASE STATE [--reason TEXT] [--dry-run]` moves a case as the owner, recorded on the case with the reason. `intake` has the tick start the case again once it is ready, resuming its session. Any state is allowed but `working`, which only a run makes true, and a case with a run in flight is refused until that run is collected.
+- The case's label follows on the next tick. `--dry-run` says what would change and writes nothing.
 
 ## Migrating from 0.0.x
 
@@ -137,7 +150,7 @@ liaise schedule install          # required after migrating
 ```
 
 - `migrate-config` is a dry run by default. `--apply` creates each missing `subjects/<slug>.toml`, never overwrites one, and never touches `config.toml`, `partners/` or `briefs/`.
-- **Install the schedule again after migrating.** The 0.1 launchd agent sets `AbandonProcessGroup` (the systemd unit, `KillMode=process`) so detached runs survive the tick; a job installed by 0.0.x lacks it, and launchd would kill every run when its tick exits.
+- **Install the schedule again after migrating.** The 0.1 launchd agent sets `AbandonProcessGroup` (the systemd unit, `KillMode=process`) so detached runs survive the tick; a job installed by 0.0.x lacks it, and launchd would kill every run when its tick exits. Until it is installed again, `liaise schedule status` says `installed (outdated: re-run liaise schedule install)`.
 - Partners sharing a repository become one subject; read every `conflict:` line, since the first partner's value was kept.
 - Each partner's brief moves to `policy.briefs`, so it stays theirs.
 - 0.0.x also took issues a partner's login opened without the label. 0.1 does not; each `note:` line names the `?author=` binding that opts back in.

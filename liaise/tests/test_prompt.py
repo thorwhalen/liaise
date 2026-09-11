@@ -165,11 +165,14 @@ def test_batch_delivery_tells_the_agent_not_to_deploy(tmp_path):
     assert "./deploy.sh" not in prompt
 
 
-def test_per_case_delivery_names_the_deploy_command(tmp_path):
+def test_per_issue_delivery_tells_the_agent_not_to_deploy(tmp_path):
+    """S7 #4: the tick runs a per-issue deploy itself, right after the run, so the agent
+    must not run it too."""
     delivery = Delivery(kind="deploy", per="issue", command="./deploy.sh")
     prompt = _prompt(tmp_path, delivery=delivery)
-    assert "./deploy.sh" in prompt
-    assert "do not deploy yourself" not in prompt
+    assert "do not deploy yourself" in prompt
+    assert "as soon as your run has ended" in prompt
+    assert "./deploy.sh" not in prompt
 
 
 def test_pr_only_delivery_stops_at_a_pull_request(tmp_path):

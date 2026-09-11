@@ -40,7 +40,7 @@ bindings = ["github:example/app?labels=partner:pat", "webinbox:example-site"]
 workspace = { kind = "shared", path = "~/code/example-app" }
 brief = "~/.config/liaise/briefs/pat.md"
 verify = "npm test"
-delivery = { kind = "pr_only", per = "case", command = "./deploy.sh" }
+delivery = { kind = "pr_only", per = "issue", command = "./deploy.sh" }
 label_prefix = "helper:"
 
 [policy]
@@ -150,7 +150,7 @@ def test_full_subject_file_reads_every_value(tmp_path):
     assert subject.workspace == Workspace(kind="shared", path="~/code/example-app")
     assert subject.brief == "~/.config/liaise/briefs/pat.md"
     assert subject.verify == "npm test"
-    assert subject.delivery == Delivery(kind="pr_only", per="case", command="./deploy.sh")
+    assert subject.delivery == Delivery(kind="pr_only", per="issue", command="./deploy.sh")
     assert subject.label_prefix == "helper:"
     assert subject.processor == ProcessorConfig(permission_mode="acceptEdits")
 
@@ -268,6 +268,7 @@ def test_role_missing_from_permissions_names_the_known_roles(tmp_path):
     "top, expected",
     [
         ('delivery = { kind = "ftp" }', "delivery.kind has 'ftp'"),
+        ('delivery = { per = "case" }', "delivery.per has 'case', which is not one of: batch, issue"),
         ('workspace = { kind = "worktree" }', "workspace.kind has 'worktree'"),
         ('delivery = "deploy"', "delivery must be a table"),
     ],

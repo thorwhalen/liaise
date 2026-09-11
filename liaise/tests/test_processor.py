@@ -9,12 +9,13 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import subprocess
 import sys
 import time
 import uuid
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -22,6 +23,7 @@ import pytest
 from liaise.model import Health, Outcome, RunRecord, RunResult
 from liaise.processor import (
     CHILD_ENV_OVERRIDES,
+    KILL_GRACE_S,
     PROMPT_FILE,
     RECORD_FILE,
     STREAM_FILE,
@@ -338,6 +340,68 @@ def test_start_is_idempotent_on_the_run_id(tmp_path):
     assert processor.start(job).pid == first.pid
     assert _processor(tmp_path, claude).start(job).pid == first.pid  # the next tick
     assert count.read_text().splitlines() == ["run"]
+
+
+def test_start_refuses_a_run_id_whose_record_belongs_to_another_case(tmp_path):
+    """S7 #6: a run id reused for another case never returns, collects, cancels or
+    overwrites the first case's run: that run is finished at once, as config_error."""
+    count = tmp_path / "spawns.txt"
+    processor = _processor(tmp_path, _script(tmp_path, _counting_body(count)))
+    first = _wait_finished(processor, processor.start(_job(tmp_path)))
+    record_path = processor.run_dir("r1") / RECORD_FILE
+    before = record_path.read_bytes()
+
+    other = processor.start(_job(tmp_path, case_id="pat-2"))
+
+    assert (other.run_id, other.case_id, other.status, other.pid) == ("r1", "pat-2", "finished", None)
+    assert processor.status(other).status == "finished"
+    assert processor.collect(other).error == "config_error"
+    assert processor.cancel(other, mode="now").status == "finished"
+    assert record_path.read_bytes() == before
+    assert count.read_text().splitlines() == ["run"]
+    assert processor.collect(first).error is None  # the first case's run is still its own
+
+
+_IGNORES_SIGINT_AND_SIGTERM = """
+import json, signal, sys, time
+signal.signal(signal.SIGINT, signal.SIG_IGN)
+signal.signal(signal.SIGTERM, signal.SIG_IGN)
+sys.stdout.write(json.dumps({"type": "system", "subtype": "init"}) + "\\n")
+sys.stdout.flush()
+time.sleep(60)
+"""
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX signals; on Windows a cancel already kills")
+def test_a_run_that_ignores_sigterm_is_killed_once_the_kill_grace_is_over(tmp_path):
+    """S7 #2: a cancel escalates SIGTERM to SIGKILL KILL_GRACE_S after the SIGTERM, on the
+    cancel's own clock, so the test waits no grace out."""
+    processor = _processor(tmp_path, _script(tmp_path, _IGNORES_SIGINT_AND_SIGTERM))
+    assert processor.kill_grace_s == KILL_GRACE_S == 60.0
+    record = processor.start(_job(tmp_path))
+    stream = Path(record.stream_path)
+    _wait_until(lambda: stream.stat().st_size > 0, what="the run to ignore its signals")
+    began = datetime.now(timezone.utc)
+    grace = timedelta(seconds=KILL_GRACE_S)
+    try:
+        processor.cancel(record, mode="now", now=began)
+        first = _raw_record(processor)
+        assert (first["cancel_signal"], first["cancel_signal_at"]) == ("SIGTERM", began.isoformat())
+        time.sleep(0.3)
+        assert processor.status(record).status == "running"  # it ignored the terminate
+
+        processor.cancel(record, mode="now", now=began + grace / 2)
+        assert _raw_record(processor)["cancel_signal"] == "SIGTERM"  # still within the grace
+        assert processor.status(record).status == "running"
+
+        processor.cancel(record, mode="now", now=began + grace)
+        killed = _raw_record(processor)
+        assert (killed["cancel_signal"], killed["cancel_signal_at"]) == ("SIGKILL", (began + grace).isoformat())
+        assert killed["cancel_requested_at"] == first["cancel_requested_at"]
+        _wait_finished(processor, record)
+    finally:
+        if processor.status(record).status == "running":
+            os.killpg(record.pid, signal.SIGKILL)
 
 
 def test_a_run_started_by_another_process_is_checked_by_its_pid(tmp_path):

@@ -6,27 +6,36 @@ labels::
 
     1. intake     each subject's bindings, through correspond (liaise.intake)
     2. reconcile  each run the tick has not collected: cancelled for a cancel hold or its
-                  wall clock, refreshed, and collected once finished. An error takes its
+                  wall clock, refreshed, and collected once finished, or given up as
+                  timed_out LOST_RUN_DEADLINE past its wall clock. An error takes its
                   action from liaise.errors; a success's outcomes are planned
                   (liaise.outcomes) and carried out, every message through the gate
-                  (liaise.gate). Batch deploys run last, once per subject.
-    3. start      each ready case that passes holds, authorization, budget, preflight and
-                  the workspace check, as a detached processor run
-    4. nudge      each deployed case its partner has gone quiet on, once
-    5. project    each touched case's state label (liaise.projection)
+                  (liaise.gate). A deploy per issue runs right after its case's outcomes
+                  and batch deploys run last, once per subject; nothing tells a partner a
+                  change is live before its deploy succeeded. Last, each case left working
+                  with no run in flight, its run lost, goes to needs-owner.
+    3. start      each ready case, in the order the triage seam gives, that passes holds,
+                  authorization, budget, an open GitHub issue, preflight and the workspace
+                  check, as a detached processor run
+    4. nudge      each deployed case its partner has gone quiet on, once, unless its issue
+                  is closed
+    5. project    the state label of each case this tick touched, and of each whose state
+                  is not the one last projected (liaise.projection)
 
 The tick keeps its own clock: ``now`` stamps every entry, and a run's wall clock counts
 from the tick that started it. The ledger's record of a run says ``running`` until the
 tick collects it, whatever the processor says, so a run that ended at once (a spawn that
 failed, an ``EchoProcessor`` run) is still collected, on the next tick. Any exception a
-processor verb raises is a ``crashed`` run, never the tick's end (#24), and one case's
-failure is a problem line, never the other cases' end.
+processor verb raises is a ``crashed`` run, never the tick's end (#24). One case's failure
+is a problem line, never the other cases' end: a checkout release or a deploy that raises
+hands its cases to the owner. A notification about a message kept from the partner never
+carries that message.
 
 **Dry run.** The ledger is ``Ledger(ChainMap({}, store))``: every step runs on real state,
 and every write vanishes with the overlay. Nothing is sent (``correspond.send`` gets
 ``dry_run=True``), labelled, started, cancelled, deployed, locked, stamped, notified or
-written (the processor is asked with ``persist=False``). The report's plan lines say what
-would be.
+written (the processor is asked with ``persist=False``), and preflight, which runs a
+process, is skipped. The report's plan lines say what would be.
 
 **One tick at a time.** A tick holds the run lock in ``state_dir`` (:func:`run_lock_path`)
 and stamps its start and end in the store (:func:`run_stamps`), so ``liaise status`` can
@@ -55,6 +64,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional, Union
+from uuid import uuid4
 
 import correspond
 
@@ -77,7 +87,13 @@ from liaise.holds import (
     release_auto_holds,
     scopes_for,
 )
-from liaise.intake import LIAISE_ACTOR, intake
+from liaise.intake import (
+    ADOPTED_EVENT,
+    CLOSED_STATE,
+    LIAISE_ACTOR,
+    OPENING_ID_PREFIX,
+    intake,
+)
 from liaise.ledger import Ledger
 from liaise.model import (
     CASE_STATES,
@@ -107,7 +123,7 @@ from liaise.processor import FINISHED, FRESH, RESUME, RUNNING, ClaudeHeadless, J
 from liaise.projection import github_issue, project_labels
 from liaise.prompt import compose_case_prompt
 from liaise.readiness import compute_readiness, last_partner_activity
-from liaise.subjects import DELIVERY_KINDS, Subject
+from liaise.subjects import DELIVERY_KINDS, DELIVERY_PERS, Subject
 from liaise.workspace import (
     DFLT_LOCKS_SUBDIR,
     SharedCheckout,
@@ -136,10 +152,17 @@ PROCESSOR_SCOPE = "processor"
 #: preflight, lifting it if preflight passes. A login that has expired where preflight
 #: cannot see it then costs one failed run, and one notification, per interval, not a tick.
 AUTH_PROBE_INTERVAL = timedelta(minutes=30)
+#: How long past its wall clock the tick waits for a run it cancelled to stop. Past that,
+#: the run is finished as ``timed_out`` whether or not its pid is alive, since by then
+#: the pid may be another process's, and its case goes to the owner.
+LOST_RUN_DEADLINE = timedelta(minutes=10)
 #: A deploy that runs the subject's command, and a delivery that stops at a pull request.
 DEPLOY_DELIVERY, PR_ONLY_DELIVERY = DELIVERY_KINDS
-#: A deploy that runs once per tick, after every case of the subject has been collected.
-BATCH_DELIVERY_PER = "batch"
+#: A deploy that runs once per tick, after every case of the subject has been collected,
+#: and one that runs for each case right after its outcomes.
+BATCH_DELIVERY_PER, ISSUE_DELIVERY_PER = DELIVERY_PERS
+#: How many hex digits of a uuid4 end a run id, so that no two runs share one.
+RUN_ID_SUFFIX_DIGITS = 8
 
 #: The messages the tick sends to a partner on its own, through the gate, which adds the
 #: mention: when the daily cap trips, when a batch deploy is live, and on a quiet delivery.
@@ -155,11 +178,20 @@ BUDGET_PURPOSE = "budget"
 NUDGE_PURPOSE = "nudge"
 #: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.
 DAILY_CAP_PRIORITY = "default"
+#: Where a notification about a message kept from the partner points the operator. It
+#: never carries the message, which may hold what the gate kept back.
+SEE_STATUS = "see liaise status"
 
-#: What a ``run`` entry records: a start, a start that failed, a collection.
+#: What a ``run`` entry records: a start, a start that failed, a collection...
 RUN_STARTED = "started"
 RUN_START_FAILED = "start_failed"
 RUN_COLLECTED = "collected"
+#: ...a case found ``working`` with no run in flight, its run lost...
+RUN_LOST = "lost"
+#: ...and the case's GitHub issue found closed, then open again, each once per change. A
+#: case whose issue is closed is neither started nor nudged.
+RUN_ISSUE_CLOSED = "issue_closed"
+RUN_ISSUE_REOPENED = "issue_reopened"
 
 #: How many characters of a message a plan line shows.
 PLAN_TEXT_CHARS = 72
@@ -171,12 +203,17 @@ _SECONDS_PER_HOUR = 3600
 _CRASHED = "crashed"
 _NEEDS_HUMAN = "needs_human"
 _QUOTA_EXHAUSTED = "quota_exhausted"
+_TIMED_OUT = "timed_out"
 _WORKSPACE_CONFLICT = "workspace_conflict"
 _REPLY_KIND = "reply"
 
 #: ``(subject, *, lock_dir, sessions_dir, own_pids) -> SharedCheckout | None``: the
 #: workspace seam (see :func:`liaise.workspace.workspace_for`).
 WorkspaceFactory = Callable[..., Optional[SharedCheckout]]
+#: ``(the ready cases, in the tick's order) -> groups of them, in the order to start``: the
+#: triage seam (#19). The tick starts the cases group by group, each group in its order,
+#: and a case left out is not started this tick. None keeps the tick's own order.
+Triage = Callable[[Sequence[Case]], Iterable[Iterable[Case]]]
 
 
 @dataclass(frozen=True)
@@ -277,6 +314,48 @@ def _github_repo(case: Case) -> Optional[str]:
     return next((issue[0] for issue in issues if issue is not None), None)
 
 
+def _github_issue_ref(case: Case) -> Optional[str]:
+    """The case's first GitHub issue conversation, as ``github:owner/repo#N``, or None."""
+    return next((ref for ref in case.conversations if github_issue(ref)), None)
+
+
+def _last_handover(case: Case) -> Optional[LedgerEntry]:
+    """The case's latest ``run`` entry that handed the turn to the partner, or None.
+
+    That is a run's start, or the case's adoption: a case adopted in ``needs-partner``
+    waits for its partner to write after the adoption (see :mod:`liaise.intake`).
+    """
+    handovers = [
+        entry
+        for entry in case.entries
+        if entry.kind == "run"
+        and (entry.detail.get("event") == RUN_STARTED or entry.detail.get("adopted"))
+    ]
+    return max(handovers, key=lambda entry: entry.at, default=None)
+
+
+def _issue_seen_closed(case: Case) -> Optional[bool]:
+    """True when the case's issue was last seen closed, False when since reopened, else None.
+
+    Read off the case's ``run`` entries that record the issue's state, the latest last.
+    """
+    marks = [entry for entry in case.entries if entry.kind == "run"]
+    states = [entry.detail["closed"] for entry in marks if "closed" in entry.detail]
+    return states[-1] if states else None
+
+
+def _kept_message_body(case_id: str, outbound: Outbound, *, reason: str) -> str:
+    """What the operator is told of a message kept from the partner: never its text.
+
+    The text may hold what the gate diverted it for, such as a token or a local path, and
+    a notification goes out through a service the operator does not control.
+    """
+    return (
+        f"case: {case_id}\nto: {outbound.recipient} at {outbound.ref}\nwhy: {reason}\n"
+        f"The message is kept on the case as a draft; {SEE_STATUS}."
+    )
+
+
 def _is_auto(found: Optional[Hold]) -> bool:
     return found is not None and (found.set_by or "").startswith(AUTO_SET_BY_PREFIX)
 
@@ -349,6 +428,8 @@ def run_once(
     dry_run: bool = False,
     only: Optional[Union[str, Collection[str]]] = None,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
+    triage: Optional[Triage] = None,
+    lost_run_deadline: timedelta = LOST_RUN_DEADLINE,
 ) -> TickReport:
     """One tick over ``subjects`` (slug to :class:`~liaise.subjects.Subject`), on the ledger ``store``.
 
@@ -363,13 +444,16 @@ def run_once(
       ``sessions_dir`` (``~/.claude/sessions`` when None);
     - ``labeler``: the GitHub labels (``GhCli()``);
     - ``notify_fn``: ``(title, body, *, priority)``, by default :func:`liaise.notify.notify`
-      on ``global_config.notify.ntfy_topic_env``.
+      on ``global_config.notify.ntfy_topic_env``;
+    - ``triage``: a :data:`Triage` that groups and orders each subject's ready cases
+      before they start; None keeps the tick's own order, oldest first.
 
     ``only`` is a slug or slugs to run alone; an unknown one raises
     :class:`~liaise.config.ConfigError`. ``now`` is the tick's clock (the current UTC
-    time when None). Unless ``dry_run``, the tick holds the run lock in ``state_dir``
-    (raising :class:`RunLockHeld` while another tick holds it) and stamps its start and
-    end in ``store``.
+    time when None). ``lost_run_deadline`` is how long past its wall clock a run that will
+    not stop is waited on (:data:`LOST_RUN_DEADLINE`). Unless ``dry_run``, the tick holds
+    the run lock in ``state_dir`` (raising :class:`RunLockHeld` while another tick holds
+    it) and stamps its start and end in ``store``.
     """
     now = now if now is not None else datetime.now(timezone.utc)
     state_dir = Path(global_config.state_dir).expanduser()
@@ -398,6 +482,8 @@ def run_once(
         now=now,
         dry_run=dry_run,
         outbound_filters=tuple(outbound_filters),
+        triage=triage,
+        lost_run_deadline=lost_run_deadline,
     )
     lock = nullcontext() if dry_run else _run_lock(run_lock_path(state_dir))
     stamps = nullcontext() if dry_run else _stamp_run(store, now=now)
@@ -451,22 +537,52 @@ def _lock_owner(lock_path: Path) -> Optional[int]:
 def _run_lock(lock_path: Path) -> Iterator[None]:
     """Hold the run lock for one tick, so one tick runs at a time (0.0.x L-3).
 
-    A plain pid file, and a lock whose process is gone is reclaimed. It is advisory, which
-    is enough to keep a manual ``liaise run`` from colliding with the scheduled one on the
-    same machine. Raises :class:`RunLockHeld` while a live process holds it.
+    A plain pid file, created with ``O_CREAT | O_EXCL``, so finding the lock free and
+    taking it are one step: two ticks starting together cannot both take it. A lock whose
+    process is gone is reclaimed, removed and then created exclusively again, so of two
+    ticks reclaiming it at once only one gets it. On exit the lock is removed only while
+    it still holds this process's pid. It is advisory, which is enough to keep a manual
+    ``liaise run`` from colliding with the scheduled one on the same machine. Raises
+    :class:`RunLockHeld` while a live process holds it.
     """
+
+    def create() -> bool:
+        """Create the lock holding this process's pid where no file is; False when one is."""
+        try:
+            descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            return False
+        with os.fdopen(descriptor, "w", encoding="utf-8") as lock:
+            lock.write(str(os.getpid()))
+        return True
+
+    def release() -> None:
+        """Remove the lock, unless it holds another pid: a process that took it over since."""
+        try:
+            holder = int(lock_path.read_text(encoding="utf-8").strip())
+        except (OSError, ValueError):
+            return
+        if holder == os.getpid():
+            lock_path.unlink(missing_ok=True)
+
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    other = _lock_owner(lock_path)
-    if other is not None:
-        raise RunLockHeld(
-            f"another liaise run (pid {other}) is already in progress "
-            f"(lock: {lock_path})"
-        )
-    lock_path.write_text(str(os.getpid()))
+    if not create():
+        other = _lock_owner(lock_path)
+        if other is not None:
+            raise RunLockHeld(
+                f"another liaise run (pid {other}) is already in progress "
+                f"(lock: {lock_path})"
+            )
+        lock_path.unlink(missing_ok=True)  # left by a process that is gone
+        if not create():
+            raise RunLockHeld(
+                f"another liaise run took over the stale run lock first "
+                f"(lock: {lock_path})"
+            )
     try:
         yield
     finally:
-        lock_path.unlink(missing_ok=True)
+        release()
 
 
 @dataclass(frozen=True)
@@ -677,6 +793,8 @@ class _Tick:
         now: datetime,
         dry_run: bool,
         outbound_filters: tuple[OutboundFilter, ...],
+        triage: Optional[Triage],
+        lost_run_deadline: timedelta,
     ):
         self.subjects = subjects
         self.ledger = ledger
@@ -692,6 +810,10 @@ class _Tick:
         self.now = now
         self.dry_run = dry_run
         self.outbound_filters = outbound_filters
+        self.triage = triage
+        self.lost_run_deadline = lost_run_deadline
+        #: Per case, whether its GitHub issue was read closed this tick (None: unreadable).
+        self.issue_closed: dict[str, Optional[bool]] = {}
         self.lines: list[str] = []
         self.problems: list[str] = []
         self.dispatched: list[str] = []
@@ -859,15 +981,74 @@ class _Tick:
                     f"reconciling run {run.run_id} failed: {_error_text(error)}"
                 )
         self._run_batches()
+        self._watch_for_lost_runs()
+
+    def _watch_for_lost_runs(self) -> None:
+        """Hand the owner each case left ``working`` with no run in flight: its run was lost.
+
+        A tick that failed after it had collected a run leaves such a case, and so does an
+        issue adopted with a 0.0.x ``working`` label. Nothing else would ever move one on,
+        so it goes to ``needs-owner``, and the operator is told once.
+        """
+        in_flight = {run.case_id for run in self.ledger.runs(status=RUNNING)}
+        for slug in self.slugs:
+            working = self.ledger.cases(subject=slug, state=WORKING)
+            for case in sorted(working, key=lambda case: case.id):
+                if case.id in in_flight:
+                    continue
+                try:
+                    self._run_lost(case)
+                except Exception as error:  # one case's failure is not the tick's
+                    self.problem(
+                        f"handing {case.id}, whose run was lost, to the owner failed: "
+                        f"{_error_text(error)}"
+                    )
+
+    def _run_lost(self, case: Case) -> None:
+        since = _entered_state_at(case, WORKING)
+        told = any(
+            entry.kind == "run"
+            and entry.detail.get("event") == RUN_LOST
+            and entry.at >= since
+            for entry in case.entries
+        )
+        self._transition(case.id, NEEDS_OWNER, "run lost: no run of it is in flight")
+        if not told:
+            self._notify(
+                f"liaise: {case.id} run lost",
+                f"{case.id} was working, but no run of it is in flight, so it waits for "
+                f"you in needs-owner. Nothing was sent to the partner about it; "
+                f"{SEE_STATUS}, and move it on with liaise case set-state.",
+            )
+        self._entry(case.id, "run", detail={"event": RUN_LOST})
+
+    def _give_up(self, subject: Subject, case: Case, run: RunRecord) -> None:
+        """Finish a run still not stopped by its lost-run deadline, as ``timed_out``.
+
+        Whether or not its pid is alive: by now that pid may be another process's, so it is
+        sent nothing more. Its case goes to the owner, who is told.
+        """
+        age = _fmt_age((self.now - run.started_at).total_seconds())
+        self.say(
+            f"  run {run.run_id} ({case.id}): still not stopped {age} after it started, "
+            f"past its wall clock and the lost-run deadline: given up as {_TIMED_OUT}"
+        )
+        finished = replace(run, status=FINISHED, ended_at=self.now)
+        result = RunResult(
+            run_id=run.run_id, error=_TIMED_OUT, session_id=run.session_id
+        )
+        self._collected(subject, case, finished, result)
 
     def _reconcile_run(self, run: RunRecord) -> None:
         subject = self.subjects[run.subject]
         case = self._case(run.case_id)
         budget = subject.policy.budget
         label = f"  run {run.run_id} ({case.id})"
-        timed_out = self.now - run.started_at > timedelta(
-            minutes=budget.timeout_minutes
-        )
+        wall_clock = timedelta(minutes=budget.timeout_minutes)
+        if self.now - run.started_at > wall_clock + self.lost_run_deadline:
+            self._give_up(subject, case, run)
+            return
+        timed_out = self.now - run.started_at > wall_clock
         hold = (
             None
             if timed_out
@@ -940,24 +1121,43 @@ class _Tick:
             for entry in case.entries
         )
 
-    def _release(self, subject: Subject, run_id: str) -> None:
+    def _release(self, subject: Subject, run_id: str) -> Optional[str]:
+        """Release ``run_id``'s checkout lock; why that failed, or None.
+
+        A lock that cannot be released must not strand the run's case in ``working``:
+        :meth:`_collected` hands the case to the owner instead.
+        """
         self.released.add(run_id)
         if self.dry_run:
-            return
-        checkout = self._workspace(subject)
-        if checkout is not None:
-            checkout.release(run_id=run_id)
+            return None
+        try:
+            checkout = self._workspace(subject)
+            if checkout is not None:
+                checkout.release(run_id=run_id)
+        except Exception as error:  # a lock file that cannot be read or removed
+            return _error_text(error)
+        return None
 
     def _collected(
         self, subject: Subject, case: Case, run: RunRecord, result: RunResult
     ) -> None:
         self.ledger.save_run(run)
         self.collected.append(run.run_id)
-        self._release(subject, run.run_id)
+        release_failure = self._release(subject, run.run_id)
+        if release_failure is not None:
+            self.problem(
+                f"run {run.run_id}: releasing its checkout failed: {release_failure}; "
+                f"counted as {_CRASHED}, and its outcomes are not carried out"
+            )
+            result = replace(result, error=_CRASHED, outcomes=())
         if result.session_id and result.session_id != case.session_id:
             self._save(replace(self._case(case.id), session_id=result.session_id))
         error = result.error or (None if result.outcomes else _NEEDS_HUMAN)
-        cancelled = error == _CRASHED and self._cancelled_for_hold(case, run.run_id)
+        cancelled = (
+            release_failure is None
+            and error == _CRASHED
+            and self._cancelled_for_hold(case, run.run_id)
+        )
         defer = None
         if error and not cancelled and error in ERROR_ACTIONS:
             attempt = max(len(_run_starts(case)) - 1, 0)
@@ -1125,7 +1325,7 @@ class _Tick:
         held: list[str] = []
         final: Union[None, tuple[str, str], _DeliveryGroup] = None
         deferred: Optional[datetime] = None
-        batched: list[_DeliveryGroup] = []
+        deploys: list[_DeliveryGroup] = []
         for item in _group_deliveries(actions):
             if isinstance(item, _DeliveryGroup):
                 hold = self._effect_hold(subject, case, effect=item.deliver.kind)
@@ -1134,18 +1334,20 @@ class _Tick:
                     self.say(f"  deliver ({item.deliver.kind}): held by {hold.scope}")
                     for send in item.sends:
                         self._hold_send(send, hold)
-                elif _is_batch(item.deliver):
-                    batched.append(item)
-                    final = item
-                    self.say(
-                        f"  deliver: waits for {subject.slug}'s batch deploy, after "
-                        f"every run is collected"
-                    )
-                else:
+                elif item.deliver.kind == PR_ONLY_DELIVERY:
                     for send in item.sends:
                         self._send(subject, self._try_it(item.deliver, send))
                     if item.transition is not None:
                         final = (item.transition.state, item.transition.reason)
+                else:  # a deploy: nothing says it is live before its command succeeds
+                    deploys.append(item)
+                    final = item
+                    self.say(
+                        f"  deliver: waits for {subject.slug}'s batch deploy, after "
+                        f"every run is collected"
+                        if _is_batch(item.deliver)
+                        else f"  deliver: deploys {case_id} once its outcomes are carried out"
+                    )
             elif isinstance(item, Send):
                 hold = self._effect_hold(subject, case)
                 if hold is not None:
@@ -1165,10 +1367,13 @@ class _Tick:
                 self.say(f"  draft kept for the operator: {item.draft.get('reason')}")
             elif isinstance(item, DigestNote):
                 self._entry(case_id, "note", text=item.text, detail={"run_id": run_id})
-        for group in batched:
-            self.pending.setdefault(subject.slug, []).append(
-                _PendingDelivery(case_id, group, applies_state=final is group)
-            )
+        deliveries = [
+            _PendingDelivery(case_id, group, applies_state=final is group and not held)
+            for group in deploys
+        ]
+        for delivery in deliveries:
+            if _is_batch(delivery.group.deliver):
+                self.pending.setdefault(subject.slug, []).append(delivery)
         if deferred is not None:
             self._defer(case_id, deferred)
         if held:
@@ -1180,12 +1385,15 @@ class _Tick:
                 f"have sent is kept on the case as drafts.",
             )
         elif isinstance(final, _DeliveryGroup):
-            pass  # the batch deploy decides the state
+            pass  # its deploy decides the state
         elif final is not None:
             self._transition(case_id, *final)
         else:
             state = NEEDS_PARTNER if planned_send else NEEDS_OWNER
             self._transition(case_id, state, f"run {run_id} ended")
+        immediate = [d for d in deliveries if not _is_batch(d.group.deliver)]
+        if immediate:
+            self._deliver(subject, immediate)  # a deploy per issue: a batch of one, now
 
     def _hold_send(self, send: Send, hold: Hold) -> None:
         reason = f"held: {hold.scope}"
@@ -1246,8 +1454,7 @@ class _Tick:
             self.lines += notes
             self._notify(
                 f"liaise: a draft for {case.id} waits for you",
-                f"why: {decision.diverted}\nto: {send.recipient} at {send.ref}\n\n"
-                f"{send.text}",
+                _kept_message_body(case.id, send, reason=decision.diverted),
             )
             return False
         outbound = decision.send
@@ -1284,8 +1491,7 @@ class _Tick:
             self.problem(f"{case.id}: {outbound.purpose} to {outbound.ref}: {reason}")
             self._notify(
                 f"liaise: a message for {case.id} was not sent",
-                f"{reason}\nto: {outbound.recipient} at {outbound.ref}\n\n"
-                f"{outbound.text}",
+                _kept_message_body(case.id, outbound, reason=reason),
             )
             return False
         self._entry(
@@ -1328,44 +1534,81 @@ class _Tick:
 
     def _run_batches(self) -> None:
         for slug in sorted(self.pending):
-            subject, pending = self.subjects[slug], self.pending[slug]
+            self._deliver(self.subjects[slug], self.pending[slug])
+
+    def _deliver(self, subject: Subject, pending: Sequence[_PendingDelivery]) -> None:
+        """Deploy ``pending`` (a subject's batch, or one case's deploy per issue) and act on it.
+
+        An exception on the way is a problem line, and each of those cases still
+        ``working`` goes to ``needs-owner``, the operator told once: it never ends the
+        tick for the other cases and subjects.
+        """
+        try:
+            self._run_delivery(subject, pending)
+        except Exception as error:  # one delivery's failure is not the tick's
+            why = _error_text(error)
             case_ids = ", ".join(item.case_id for item in pending)
-            ok, reason, output = self._deploy(subject)
-            if ok:
-                verb = "would run" if self.dry_run else "ran"
-                self.say(
-                    f"deploy {slug}: {verb} {subject.delivery.command} for {case_ids}"
-                )
-                for item in pending:
-                    for send in item.group.sends:
-                        self._send(subject, self._try_it(item.group.deliver, send))
-                    transition = item.group.transition
-                    if item.applies_state and transition is not None:
-                        self._transition(
-                            item.case_id, transition.state, transition.reason
-                        )
-                continue
-            error = classify_delivery_failure(output)
-            self.say(f"deploy {slug}: failed for {case_ids}: {reason}")
-            if error is not None:
-                action = ERROR_ACTIONS[error]
-                placed, _ = auto_hold(
-                    self.ledger, action.auto_hold, error_class=error, now=self.now
-                )
-                self.say(f"  hold {placed.scope}: {placed.mode} ({placed.set_by})")
+            self.problem(f"delivering {case_ids} for {subject.slug} failed: {why}")
             for item in pending:
-                if error is not None:
-                    self._entry(
-                        item.case_id,
-                        "hold",
-                        detail={"scope": placed.scope, "set_by": placed.set_by},
+                try:
+                    if self._case(item.case_id).state == WORKING:
+                        reason = f"delivery failed: {why}"
+                        self._transition(item.case_id, NEEDS_OWNER, reason)
+                except Exception as stranded:
+                    self.problem(
+                        f"handing {item.case_id} to the owner failed: "
+                        f"{_error_text(stranded)}"
                     )
-                self._transition(item.case_id, NEEDS_OWNER, f"deploy failed: {reason}")
             self._notify(
-                "liaise: batch landed but did not deploy",
-                f"{slug}: {case_ids} landed, but {reason}. Nothing was sent to the "
-                f"partner." + (f" Error class: {error}." if error else ""),
+                f"liaise: delivering {case_ids} failed",
+                f"{subject.slug}: delivering {case_ids} raised {type(error).__name__}, "
+                f"so it waits for you in needs-owner and nothing more was sent to the "
+                f"partner; {SEE_STATUS}.",
             )
+
+    def _run_delivery(
+        self, subject: Subject, pending: Sequence[_PendingDelivery]
+    ) -> None:
+        """Run the subject's deploy command once for ``pending``, then say "try it" or fail them.
+
+        Only a command that ran and succeeded sends the "try it" messages and moves the
+        cases to ``deployed``; anything else, an empty command included, moves them to
+        ``needs-owner`` and tells the operator.
+        """
+        slug = subject.slug
+        case_ids = ", ".join(item.case_id for item in pending)
+        ok, reason, output = self._deploy(subject)
+        if ok:
+            verb = "would run" if self.dry_run else "ran"
+            self.say(f"deploy {slug}: {verb} {subject.delivery.command} for {case_ids}")
+            for item in pending:
+                for send in item.group.sends:
+                    self._send(subject, self._try_it(item.group.deliver, send))
+                transition = item.group.transition
+                if item.applies_state and transition is not None:
+                    self._transition(item.case_id, transition.state, transition.reason)
+            return
+        error = classify_delivery_failure(output)
+        self.say(f"deploy {slug}: failed for {case_ids}: {reason}")
+        if error is not None:
+            action = ERROR_ACTIONS[error]
+            placed, _ = auto_hold(
+                self.ledger, action.auto_hold, error_class=error, now=self.now
+            )
+            self.say(f"  hold {placed.scope}: {placed.mode} ({placed.set_by})")
+        for item in pending:
+            if error is not None:
+                self._entry(
+                    item.case_id,
+                    "hold",
+                    detail={"scope": placed.scope, "set_by": placed.set_by},
+                )
+            self._transition(item.case_id, NEEDS_OWNER, f"deploy failed: {reason}")
+        self._notify(
+            f"liaise: {case_ids} landed but did not deploy",
+            f"{slug}: {case_ids} landed, but {reason}. Nothing was sent to the "
+            f"partner." + (f" Error class: {error}." if error else ""),
+        )
 
     def _deploy(self, subject: Subject) -> tuple[bool, str, str]:
         """Run the subject's deploy command once: ``(ok, reason, output)``."""
@@ -1405,33 +1648,77 @@ class _Tick:
             )
             eligible = [case for case in cases if case.state in ELIGIBLE_STATES]
             self.say(f"start {slug}: {len(eligible)} eligible case(s)")
+            ready: list[tuple[Case, str]] = []
             for case in eligible:
                 try:
-                    self._consider(subject, case)
+                    why_ready = self._readiness(subject, case)
+                except Exception as error:  # one case's failure is not the tick's
+                    self.problem(f"starting {case.id} failed: {_error_text(error)}")
+                    continue
+                if why_ready is not None:
+                    ready.append((case, why_ready))
+            for case, why_ready in self._triaged(slug, ready):
+                try:
+                    self._consider(subject, self._case(case.id), why_ready)
                 except Exception as error:  # one case's failure is not the tick's
                     self.problem(f"starting {case.id} failed: {_error_text(error)}")
 
-    def _consider(self, subject: Subject, case: Case) -> None:
+    def _triaged(
+        self, slug: str, ready: list[tuple[Case, str]]
+    ) -> list[tuple[Case, str]]:
+        """``ready`` in the order the triage seam gives it; as it is without one.
+
+        The triage gets the ready cases in the tick's order and returns them in groups. A
+        case it leaves out is not started this tick; one it names that is not ready, or
+        names twice, is started once at most. A triage that raises is a problem line, and
+        the cases start in the tick's own order.
+        """
+        if self.triage is None or not ready:
+            return ready
+        by_id = {case.id: (case, why) for case, why in ready}
+        try:
+            groups = self.triage(tuple(case for case, _ in ready))
+            named = dict.fromkeys(case.id for group in groups for case in group)
+        except Exception as error:  # a triage that fails must not stop every start
+            self.problem(
+                f"triage of {slug} failed: {_error_text(error)}; the cases start in "
+                f"the tick's own order"
+            )
+            return ready
+        kept = [by_id[case_id] for case_id in named if case_id in by_id]
+        left_out = [case_id for case_id in by_id if case_id not in named]
+        order = ", ".join(case.id for case, _ in kept) or "none"
+        self.say(
+            f"  triage {slug}: {order}"
+            + (f"; left out this tick: {', '.join(left_out)}" if left_out else "")
+        )
+        return kept
+
+    def _readiness(self, subject: Subject, case: Case) -> Optional[str]:
+        """Why ``case`` is ready to start, or None, after a plan line saying why it is not."""
         label = f"  case {case.id} ({case.state})"
-        policy, budget = subject.policy, subject.policy.budget
+        policy = subject.policy
         in_flight = [
             r for r in self.ledger.runs(status=RUNNING) if r.case_id == case.id
         ]
         if in_flight:
             self.say(f"{label}: run {in_flight[0].run_id} is still in flight")
-            return
+            return None
         if case.defer_until is not None and case.defer_until > self.now:
             self.say(f"{label}: deferred until {case.defer_until.isoformat()}")
-            return
+            return None
         partners = {case.reporter}
-        starts = _run_starts(case)
+        handover = _last_handover(case)
         if (
             case.state == NEEDS_PARTNER
-            and starts
-            and last_partner_activity(case, partner_persons=partners) <= starts[-1].at
+            and handover is not None
+            and last_partner_activity(case, partner_persons=partners) <= handover.at
         ):
-            self.say(f"{label}: awaiting the partner's reply since the last run")
-            return
+            since = (
+                "it was adopted" if handover.detail.get("adopted") else "the last run"
+            )
+            self.say(f"{label}: awaiting the partner's reply since {since}")
+            return None
         readiness = compute_readiness(
             case,
             quiet_minutes=policy.readiness.quiet_minutes,
@@ -1445,12 +1732,18 @@ class _Tick:
                 self.say(f"{label}: paused ({readiness.reason})")
             else:
                 self._transition(case.id, PAUSED, readiness.reason)
-            return
+            return None
         if not readiness.ready:
             countdown = _fmt_age(readiness.countdown.total_seconds())
             self.say(f"{label}: not ready ({readiness.reason}, {countdown} to go)")
-            return
-        passed = [f"ready ({readiness.reason})"]
+            return None
+        return readiness.reason
+
+    def _consider(self, subject: Subject, case: Case, why_ready: str) -> None:
+        """Start ``case``, ready for ``why_ready``, if it passes every other check."""
+        label = f"  case {case.id} ({case.state})"
+        budget = subject.policy.budget
+        passed = [f"ready ({why_ready})"]
 
         # An automatic processor hold is probed with preflight, and lifted once it passes
         # again, but only AUTH_PROBE_INTERVAL after it was set: a login that has expired
@@ -1472,6 +1765,8 @@ class _Tick:
 
         refusal = self._authorization_refusal(subject, case)
         if refusal is not None:
+            if self._issue_is_closed(case, label):
+                return
             self._transition(case.id, NEEDS_OWNER, f"cannot start work: {refusal}")
             self._notify(
                 f"liaise: {case.id} needs you before work starts",
@@ -1487,6 +1782,8 @@ class _Tick:
                     f"{label}: still over the daily cap ({today}/{budget.daily_dispatches})"
                 )
             else:
+                if self._issue_is_closed(case, label):
+                    return
                 reason = f"daily cap of {budget.daily_dispatches} dispatches reached"
                 self._transition(case.id, BUDGET, reason)
                 self._send_own(
@@ -1507,6 +1804,10 @@ class _Tick:
             f"within budget ({today}/{budget.daily_dispatches} today, "
             f"{running}/{budget.concurrent} running)"
         )
+        if self._issue_is_closed(case, label):
+            return
+        if _github_issue_ref(case) is not None:
+            passed.append("issue open")
 
         checkout = self._workspace(subject)
         if checkout is None:
@@ -1535,10 +1836,51 @@ class _Tick:
             )
             return
 
+        if (
+            self.dry_run
+        ):  # preflight runs `claude auth status`: a process, so never here
+            if auto_processor:
+                self.say(
+                    f"{label}: held by {PROCESSOR_SCOPE} (set automatically); preflight "
+                    f"skipped (dry run), so the hold is not probed"
+                )
+                return
+            passed.append("preflight skipped (dry run)")
+        elif self._preflight_passes(
+            subject, case, job, label=label, auto_processor=auto_processor
+        ):
+            passed.append("preflight ok")
+        else:
+            return
+
+        conflict = checkout.conflict() or self._lock_conflict(checkout, run_id)
+        if conflict is not None:
+            self.say(f"{label}: {_WORKSPACE_CONFLICT}: {conflict}")
+            self._defer(case.id, defer_for_error(_WORKSPACE_CONFLICT, now=self.now))
+            return
+        passed.append("workspace free")
+        self.say(f"{label}: {', '.join(passed)}")
+        self._dispatch(subject, case, job, checkout, mode=mode)
+
+    def _preflight_passes(
+        self,
+        subject: Subject,
+        case: Case,
+        job: Job,
+        *,
+        label: str,
+        auto_processor: bool,
+    ) -> bool:
+        """Whether ``job`` passes preflight, acting on it when it does not. Never in a dry run.
+
+        A preflight that raises is a start that failed. An automatic ``processor`` hold
+        being probed stays while preflight fails, and is lifted once it passes, after which
+        the other holds are asked again.
+        """
         health, failure = self._call("preflight", job)
         if failure is not None:
-            self._start_failed(subject, case, run_id, failure)
-            return
+            self._start_failed(subject, case, job.run_id, failure)
+            return False
         if not health.ok:
             if auto_processor:
                 self.say(
@@ -1547,7 +1889,7 @@ class _Tick:
                 )
             else:
                 self._preflight_failed(subject, case, health)
-            return
+            return False
         if auto_processor:
             for lifted in release_auto_holds(self.ledger, PROCESSOR_SCOPE):
                 self._entry(
@@ -1562,17 +1904,64 @@ class _Tick:
             hold = blocking_hold(self.ledger, self._scopes(subject, case), for_="start")
             if hold is not None:
                 self.say(f"{label}: held by {hold.scope} ({hold.mode})")
-                return
-        passed.append("preflight ok")
+                return False
+        return True
 
-        conflict = checkout.conflict() or self._lock_conflict(checkout, run_id)
-        if conflict is not None:
-            self.say(f"{label}: {_WORKSPACE_CONFLICT}: {conflict}")
-            self._defer(case.id, defer_for_error(_WORKSPACE_CONFLICT, now=self.now))
-            return
-        passed.append("workspace free")
-        self.say(f"{label}: {', '.join(passed)}")
-        self._dispatch(subject, case, job, checkout, mode=mode)
+    def _issue_is_closed(self, case: Case, label: str) -> bool:
+        """Whether ``case`` waits because its GitHub issue is closed, or cannot be read now.
+
+        The issue is read at most once a tick, and only for a case about to start or to be
+        told something (see :meth:`_read_issue_closed`). A case with no GitHub issue never
+        waits for this.
+        """
+        if case.id not in self.issue_closed:
+            self.issue_closed[case.id] = self._read_issue_closed(case)
+        closed = self.issue_closed[case.id]
+        if closed is False:
+            return False
+        self.say(f"{label}: its issue {'is closed' if closed else 'could not be read'}")
+        return True
+
+    def _read_issue_closed(self, case: Case) -> Optional[bool]:
+        """Whether ``case``'s GitHub issue is closed: True or False, None when it cannot be read.
+
+        Read with ``correspond.read``, from the opening's ``native["state"]``. The case
+        records a closing once, as a ``run`` entry ``{"closed": True}``, and a reopening as
+        one with ``{"closed": False}``. A read that fails is a problem line.
+        """
+        ref = _github_issue_ref(case)
+        if ref is None:
+            return False
+        try:
+            messages = correspond.read(ref, registry=self.registry)
+        except Exception as error:  # a channel that fails: the next tick reads it again
+            self.problem(
+                f"{case.id}: reading {ref} failed: {_error_text(error)}; the case waits "
+                f"for the next tick"
+            )
+            return None
+        opening = next(
+            (
+                message
+                for message in messages
+                if message.id.startswith(OPENING_ID_PREFIX)
+            ),
+            None,
+        )
+        closed = opening is not None and opening.native.get("state") == CLOSED_STATE
+        seen = _issue_seen_closed(self._case(case.id))
+        if closed and seen is not True:
+            detail = {"event": RUN_ISSUE_CLOSED, "closed": True}
+            self._entry(case.id, "run", detail=detail)
+            self.say(
+                f"  case {case.id}: {ref} is closed, so the case is neither started nor "
+                f"nudged until it reopens"
+            )
+        elif not closed and seen is True:
+            detail = {"event": RUN_ISSUE_REOPENED, "closed": False}
+            self._entry(case.id, "run", detail=detail)
+            self.say(f"  case {case.id}: {ref} was reopened")
+        return closed
 
     def _notify_daily_cap(self, subject: Subject, case: Case, *, count: int) -> None:
         """Tell the operator the daily cap holds ``subject``'s work back: once a day (0.0.x M-8).
@@ -1609,10 +1998,21 @@ class _Tick:
         return None
 
     def _next_run_id(self, case: Case) -> str:
+        """``<case id>-r<n>-<suffix>``: the case's n-th start, and a fresh uuid4's first hex digits.
+
+        The suffix keeps a run id from ever naming an earlier run's directory, even where the
+        ledger's count of the case's starts was lost (see :data:`RUN_ID_SUFFIX_DIGITS`).
+        """
+
+        def run_id(number: int) -> str:
+            return f"{case.id}-r{number}-{uuid4().hex[:RUN_ID_SUFFIX_DIGITS]}"
+
         number = len(_run_starts(case)) + 1
-        while self.ledger.get_run(f"{case.id}-r{number}") is not None:
+        candidate = run_id(number)
+        while self.ledger.get_run(candidate) is not None:  # a start the entries lost
             number += 1
-        return f"{case.id}-r{number}"
+            candidate = run_id(number)
+        return candidate
 
     def _lock_conflict(self, checkout: SharedCheckout, run_id: str) -> Optional[str]:
         holder = checkout.holder()
@@ -1737,6 +2137,10 @@ class _Tick:
         since = max(activity, since_deployed)
         if self.now - since < quiet:
             return
+        if _issue_seen_closed(case) or self._issue_is_closed(
+            case, f"  nudge {case.id}"
+        ):
+            return  # a closed case is never nudged
         self.say(f"nudge {case.id}: deployed, and quiet since {since.isoformat()}")
         self._send_own(subject, case, NUDGE_MESSAGE, purpose=NUDGE_PURPOSE)
         self._entry(case.id, "gate", detail={"purpose": NUDGE_PURPOSE, "nudged": True})
@@ -1744,12 +2148,32 @@ class _Tick:
     # ---- 5. labels ----
 
     def project(self) -> None:
+        """Show each case's state on its GitHub issues, as their one state label.
+
+        The targets are the cases this tick changed, and every other case of the subjects
+        ticked whose state is not the one last projected, such as a case the operator moved
+        with ``liaise case set-state`` between ticks. A projection is recorded on the case
+        as a ``projection`` entry holding the state, its error too when it failed, so a
+        failed one is not retried until the case changes.
+        """
+
+        def projected_state(case: Case) -> Optional[str]:
+            projections = [e for e in case.entries if e.kind == "projection"]
+            return projections[-1].detail.get("state") if projections else None
+
+        touched = [self.ledger.get_case(case_id) for case_id in list(self.touched)]
+        drifted = [
+            case
+            for slug in self.slugs
+            for case in sorted(self.ledger.cases(subject=slug), key=lambda c: c.id)
+            if case.id not in self.touched and projected_state(case) != case.state
+        ]
         targets = [
             case
-            for case in map(self.ledger.get_case, list(self.touched))
+            for case in (*touched, *drifted)
             if case is not None
             and case.subject in self.subjects
-            and any(github_issue(ref) for ref in case.conversations)
+            and _github_issue_ref(case) is not None
         ]
         self.say(f"labels: {len(targets)} case(s)")
         for case in targets:
@@ -1774,3 +2198,11 @@ class _Tick:
                 self.problem(f"labelling {case.id} {case.state} failed: {why}")
                 continue
             self.lines += [f"  {line}" for line in lines]
+            if projected_state(case) != case.state:
+                projected = LedgerEntry(
+                    at=self.now,
+                    kind="projection",
+                    actor=TICK_ACTOR,
+                    detail={"state": case.state},
+                )
+                self.ledger.append(case.id, projected)

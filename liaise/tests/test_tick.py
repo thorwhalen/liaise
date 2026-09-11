@@ -12,15 +12,19 @@ from __future__ import annotations
 import copy
 import json
 import os
+import re
 import sys
 import time
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+from correspond.errors import ChannelError
 
 from liaise import tick as tick_module
+from liaise.cases import set_case_state
 from liaise.config import ConfigError, GlobalConfig
 from liaise.github import FakeGitHub, Issue
 from liaise.holds import hold
@@ -35,7 +39,10 @@ from liaise.tests.conftest import write_executable_script
 from liaise.tick import (
     AUTH_PROBE_INTERVAL,
     BUDGET_MESSAGE,
+    LOST_RUN_DEADLINE,
     NUDGE_MESSAGE,
+    RUN_ID_SUFFIX_DIGITS,
+    SEE_STATUS,
     TRY_IT_MESSAGE,
     RunLockHeld,
     last_run_age,
@@ -54,7 +61,25 @@ REPO = "example/app"
 BINDING = "github:example/app?labels=partner:pat"
 ISSUE_12 = "github:example/app#12"
 CASE_1 = "example-app-1"
-RUN_1 = "example-app-1-r1"
+#: How every run id ends in these tests, in place of a uuid4's hex (see fixed_run_suffix).
+RUN_SUFFIX = "0a1b2c3d"
+
+
+def _run_id(case_id: str, number: int) -> str:
+    """The id of ``case_id``'s run number ``number``, as the tick gives it here."""
+    return f"{case_id}-r{number}-{RUN_SUFFIX}"
+
+
+RUN_1 = _run_id(CASE_1, 1)
+
+
+@pytest.fixture(autouse=True)
+def fixed_run_suffix(monkeypatch):
+    """Run ids end with a uuid4's hex; here with RUN_SUFFIX, so each test knows them.
+
+    A test that needs the real suffixes sets ``tick_module.uuid4`` back to ``uuid.uuid4``.
+    """
+    monkeypatch.setattr(tick_module, "uuid4", lambda: SimpleNamespace(hex=RUN_SUFFIX.ljust(32, "0")))
 
 ASK = Outcome(kind="ask", text="Thanks for the report.", questions=("Which browser? (default: all current ones)",))
 ASKED = RunResult(run_id="", outcomes=(ASK,), summary="asked")
@@ -267,15 +292,17 @@ def test_a_dry_run_plans_every_step_and_changes_nothing(world):
     assert f"  run {RUN_1} ({CASE_1}): collected, no error" in lines
     assert any(line.startswith(f"  gate ask to {ISSUE_12}: would send: @pat Thanks") for line in lines)
     (planned,) = [line for line in lines if line.startswith("  case example-app-2 (intake): ready")]
-    for check in ("no hold", "pat may request_work", "within budget", "preflight ok", "workspace free"):
+    checks = ("no hold", "pat may request_work", "within budget", "issue open", "preflight skipped (dry run)")
+    for check in (*checks, "workspace free"):
         assert check in planned
-    assert "  would dispatch example-app-2 as run example-app-2-r1 (fresh)" in lines
+    run_2 = _run_id("example-app-2", 1)
+    assert f"  would dispatch example-app-2 as run {run_2} (fresh)" in lines
     assert any("would label github:example/app#13 liaise:working" in line for line in lines)
-    assert report.dispatched == ("example-app-2-r1",)
+    assert report.dispatched == (run_2,)
 
     assert world.store == snapshot
     assert world.github.sent == []
-    assert len(world.processor.jobs) == 1
+    assert (len(world.processor.jobs), len(world.processor.preflights)) == (1, 1)  # the real tick's only
     assert (world.labels(12), world.labels(13)) == labels
     assert world.notes == []
     assert not (world.tmp_path / "state" / "run.lock").exists()
@@ -354,7 +381,7 @@ def test_auth_expired_holds_the_processor_until_preflight_passes_again(world):
     world.processor = EchoProcessor()
     recovered = world.tick(LATER + AUTH_PROBE_INTERVAL + timedelta(minutes=2))
     assert world.ledger.get_hold("processor") is None
-    assert recovered.dispatched == (f"{CASE_1}-r2",)
+    assert recovered.dispatched == (_run_id(CASE_1, 2),)
     (job,) = world.processor.jobs
     assert job.session_id == f"echo-session-{RUN_1}"  # a resume
 
@@ -664,7 +691,7 @@ def test_an_expired_login_preflight_cannot_see_notifies_once_per_probe_interval(
     assert _titled(world, "auth_expired") == 1
 
     probe = world.tick(LATER + AUTH_PROBE_INTERVAL)  # preflight passes, so the hold is lifted
-    assert probe.dispatched == (f"{CASE_1}-r2",)
+    assert probe.dispatched == (_run_id(CASE_1, 2),)
     world.tick(LATER + AUTH_PROBE_INTERVAL + timedelta(minutes=2))  # and r2 finds it expired
     assert world.ledger.get_hold("processor").set_by == "auto:auth_expired"
     assert _titled(world, "auth_expired") == 2
@@ -738,7 +765,7 @@ def test_a_partner_reply_after_the_question_starts_a_resumed_run(world):
 
     assert world.tick(LATER + timedelta(minutes=5)).dispatched == ()  # still inside the quiet window
     ready = world.tick(LATER + timedelta(minutes=12))
-    assert ready.dispatched == (f"{CASE_1}-r2",)
+    assert ready.dispatched == (_run_id(CASE_1, 2),)
     _, resumed = world.processor.jobs
     assert resumed.session_id == f"echo-session-{RUN_1}"
 
@@ -905,3 +932,359 @@ def test_a_tick_that_raises_still_stamps_its_end_and_releases_the_lock(world, mo
     assert run_stamps(world.store).started_at == NOW
     assert run_stamps(world.store, lock_path=lock_path).state == "finished"
     assert not lock_path.exists()
+
+
+# ---- S7: the fixes from the adversarial review ----
+
+#: The tick's own uuid4, before fixed_run_suffix replaces it in each test.
+REAL_UUID4 = tick_module.uuid4
+#: A token-shaped string, built by concatenation, that must never reach a notification.
+TOKEN_SHAPED = "ghp_" + "c" * 36
+
+
+def _closed_marks(case) -> list:
+    return [e.detail for e in case.entries if e.kind == "run" and "closed" in e.detail]
+
+
+class StubbornProcessor(SlowProcessor):
+    """A SlowProcessor whose runs ignore every cancel, so they never stop."""
+
+    def cancel(self, run, *, mode="graceful"):
+        self.cancels.append((run.run_id, mode))
+        return replace(run, status="running", ended_at=None)
+
+
+def test_a_working_case_with_no_run_in_flight_goes_to_the_owner_once(world):
+    """#1: a case left working with no run in flight (a tick that died after collecting its
+    run) is handed to the owner, who hears it once."""
+    world.issue()
+    world.tick()
+    world.ledger.save_run(replace(world.ledger.get_run(RUN_1), status="finished"))
+
+    world.tick(LATER)
+
+    case = world.case()
+    assert case.state == "needs-owner"
+    (lost,) = [e for e in case.entries if e.kind == "run" and e.detail.get("event") == "lost"]
+    assert lost.at == LATER
+    ((_, body, _),) = [note for note in world.notes if "run lost" in note[0]]
+    assert SEE_STATUS in body and "liaise case set-state" in body
+    assert "liaise:needs-owner" in world.labels()
+    world.tick(LATER + timedelta(minutes=5))
+    assert _titled(world, "run lost") == 1
+
+
+def test_an_issue_adopted_with_a_working_label_goes_to_the_owner(world):
+    """#1: an issue 0.0.x left at liaise:working has no run liaise can collect."""
+    world.issue(labels=("partner:pat", "liaise:working"))
+    report = world.tick()
+    assert (world.case().state, report.dispatched) == ("needs-owner", ())
+    assert _titled(world, "run lost") == 1
+
+
+def test_a_checkout_release_that_raises_hands_the_case_to_the_owner_and_the_tick_goes_on(world):
+    """#1: a lock that cannot be released after collection must not strand the case in
+    working, nor end the tick."""
+
+    class Unreleasable(SharedCheckout):
+        def release(self, *, run_id):
+            raise OSError("the lock's disk went away")
+
+    def workspace(subject, **kwargs):
+        return Unreleasable(subject.workspace.path, **kwargs)
+
+    world.issue()
+    world.tick(workspace=workspace)
+    report = world.tick(LATER, workspace=workspace)
+
+    assert report.collected == (RUN_1,)
+    assert any("releasing its checkout failed" in p and "went away" in p for p in report.problems)
+    case = world.case()
+    assert (case.state, _collected_error(case)) == ("needs-owner", "crashed")
+    assert world.github.sent == []  # its outcomes were not carried out
+    assert "liaise:needs-owner" in world.labels()  # the tick went on, to the labels
+
+
+def test_a_delivery_that_raises_hands_its_cases_to_the_owner_and_the_tick_goes_on(world, tmp_path, monkeypatch):
+    """#1: an exception in a batch deploy is a problem line and needs-owner, never the end of
+    the tick."""
+    script = write_executable_script(tmp_path / "deploy", "print('deployed')\n")
+    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="batch", command=script.as_posix()))
+    world.processor = EchoProcessor(results={CASE_1: DELIVERED})
+    world.issue()
+    world.tick()
+
+    def explode(self, subject):
+        raise RuntimeError("the deploy runner exploded")
+
+    monkeypatch.setattr(tick_module._Tick, "_deploy", explode)
+    report = world.tick(LATER)
+
+    assert any("the deploy runner exploded" in problem for problem in report.problems)
+    assert world.case().state == "needs-owner"
+    assert world.github.sent == []
+    assert _titled(world, "delivering") == 1
+    assert "liaise:needs-owner" in world.labels()  # the tick went on, to the labels
+
+
+def test_a_run_that_will_not_stop_is_given_up_past_the_lost_run_deadline(world):
+    """#2: past its wall clock and LOST_RUN_DEADLINE, a run that ignores every cancel is
+    finished as timed_out, whatever its pid says, and its case goes to the owner."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
+    world.processor = StubbornProcessor()
+    world.issue()
+    world.tick()
+    past_wall_clock = NOW + timedelta(minutes=31)
+
+    world.tick(past_wall_clock)
+    still = world.tick(NOW + timedelta(minutes=30) + LOST_RUN_DEADLINE)
+    assert still.collected == ()
+    assert world.processor.cancels == [(RUN_1, "now"), (RUN_1, "now")]
+    assert world.case().state == "working"
+
+    given_up = world.tick(past_wall_clock + LOST_RUN_DEADLINE)
+    assert given_up.collected == (RUN_1,)
+    assert len(world.processor.cancels) == 2  # nothing more is sent: its pid may be another's now
+    case = world.case()
+    assert (case.state, _collected_error(case)) == ("needs-owner", "timed_out")
+    assert world.ledger.get_run(RUN_1).status == "finished"
+    assert _titled(world, "timed_out") == 1
+    assert any("lost-run deadline" in line for line in given_up.plan_lines)
+
+
+def test_the_lost_run_deadline_is_a_keyword_of_the_tick(world):
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
+    world.processor = StubbornProcessor()
+    world.issue()
+    world.tick()
+    assert world.tick(NOW + timedelta(minutes=32), lost_run_deadline=timedelta(minutes=1)).collected == (RUN_1,)
+
+
+def test_an_issue_adopted_waiting_on_its_partner_waits_for_them_to_write_after_the_adoption(world):
+    """#3: 0.0.x asked, and the partner wrote before the upgrade; the adopted needs-partner case
+    starts only once they write after the adoption."""
+    world.issue(labels=("partner:pat", "liaise:needs-partner"))
+    world.github.add_comment(REPO, 12, author="pat", body="Chrome, mostly.", created_at=T0 + timedelta(minutes=20))
+
+    first = world.tick()
+
+    case = world.case()
+    assert case.state == "needs-partner"
+    assert [e.text for e in case.entries if e.kind == "message"] == ["The export drops the last row.", "Chrome, mostly."]
+    assert first.dispatched == ()
+    assert f"  case {CASE_1} (needs-partner): awaiting the partner's reply since it was adopted" in first.plan_lines
+    world.github.add_comment(REPO, 12, author="pat", body="Also Firefox.", created_at=NOW + timedelta(minutes=1))
+    assert world.tick(NOW + timedelta(minutes=12)).dispatched == (RUN_1,)
+
+
+def test_a_per_issue_deploy_runs_right_after_each_cases_outcomes(world, tmp_path):
+    """#4: per = "issue" runs the command for each case as soon as its outcomes are carried
+    out, and the partner hears it is live only after it succeeded."""
+    calls = tmp_path / "deploys.txt"
+    body = f"with open({str(calls)!r}, 'a') as f:\n    f.write('deploy\\n')\n"
+    script = write_executable_script(tmp_path / "deploy", body)
+    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="issue", command=script.as_posix()))
+    world.processor = EchoProcessor(default=DELIVERED)
+    world.issue()
+    world.tick()
+    second = _seed_running_case(world, 13)
+
+    report = world.tick(LATER)
+
+    assert report.collected == (RUN_1, second)
+    assert calls.read_text().splitlines() == ["deploy", "deploy"]  # once per case, not once per tick
+    assert {world.case(CASE_1).state, world.case("example-app-2").state} == {"deployed"}
+    assert world.github.sent[0][1].text == f"@pat The export keeps every row now.\n\n{TRY_IT_MESSAGE}"
+    deploys = [i for i, line in enumerate(report.plan_lines) if line.startswith(f"deploy {SLUG}: ran ")]
+    collecting_second = report.plan_lines.index(f"  run {second} (example-app-2): collected, no error")
+    assert len(deploys) == 2 and deploys[0] < collecting_second
+
+
+def test_a_per_issue_delivery_with_no_deploy_command_needs_the_owner_and_says_nothing(world):
+    """#4: never "it's live" without a command that ran: an empty one is needs-owner."""
+    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="issue", command=""))
+    world.processor = EchoProcessor(results={CASE_1: DELIVERED})
+    world.issue()
+    world.tick()
+    report = world.tick(LATER)
+
+    assert world.github.sent == []
+    assert world.case().state == "needs-owner"
+    assert any("no deploy command is configured" in line for line in report.plan_lines)
+    assert _titled(world, "did not deploy") == 1
+
+
+def test_a_closed_issue_is_not_started_until_it_reopens(world):
+    """#5: a case whose issue was closed after it was taken in starts nothing and says so
+    once; reopened, it starts."""
+    world.issue()
+    hold(world.ledger, f"subject:{SLUG}", mode="block", now=T0)
+    world.tick()  # taken in, and held
+    world.ledger.clear_hold(f"subject:{SLUG}")
+    world.github.set_state(REPO, 12, "closed")
+
+    closed = world.tick(LATER)
+    assert closed.dispatched == ()
+    assert f"  case {CASE_1} (intake): its issue is closed" in closed.plan_lines
+    assert world.tick(LATER + timedelta(minutes=5)).dispatched == ()
+    assert _closed_marks(world.case()) == [{"event": "issue_closed", "closed": True}]  # once
+    assert (world.notes, world.github.sent) == ([], [])
+
+    world.github.set_state(REPO, 12, "open")
+    assert world.tick(LATER + timedelta(minutes=10)).dispatched == (RUN_1,)
+    assert [mark["closed"] for mark in _closed_marks(world.case())] == [True, False]
+
+
+def test_a_closed_deployed_case_is_never_nudged(world):
+    """#5: the partner closed the delivered issue; nobody asks them whether they tried it."""
+    world.processor = EchoProcessor(results={CASE_1: DELIVERED})
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+    assert world.case().state == "deployed"
+    sent = len(world.github.sent)
+    world.github.set_state(REPO, 12, "closed")
+
+    world.tick(LATER + timedelta(days=4))
+    world.tick(LATER + timedelta(days=5))
+
+    assert len(world.github.sent) == sent
+    assert _closed_marks(world.case()) == [{"event": "issue_closed", "closed": True}]
+
+
+def test_an_issue_whose_state_cannot_be_read_starts_nothing_this_tick(world):
+    """#5: not knowing whether the issue is closed is not knowing it is open."""
+    world.issue()
+    hold(world.ledger, f"subject:{SLUG}", mode="block", now=T0)
+    world.tick()
+    world.ledger.clear_hold(f"subject:{SLUG}")
+    read = world.github.read
+
+    def refuse_issues(ref, **kwargs):
+        if "#" in ref.id:
+            raise ChannelError("gh is not logged in", kind="auth")
+        return read(ref, **kwargs)
+
+    world.github.read = refuse_issues
+    report = world.tick(LATER)
+    assert report.dispatched == ()
+    assert any("gh is not logged in" in problem for problem in report.problems)
+    del world.github.read
+    assert world.tick(LATER + timedelta(minutes=5)).dispatched == (RUN_1,)
+
+
+def test_two_first_starts_of_one_case_never_share_a_run_id(world, monkeypatch):
+    """#6: a start that failed counts no start, so the next is the case's first again; its run
+    id still differs, by its uuid suffix, and so never names the earlier run's directory."""
+    monkeypatch.setattr(tick_module, "uuid4", REAL_UUID4)
+
+    class StartRaisesOnce(EchoProcessor):
+        raised = False
+
+        def start(self, job):
+            if not self.raised:
+                self.raised = True
+                raise RuntimeError("the spawn exploded")
+            return super().start(job)
+
+    world.processor = StartRaisesOnce()
+    world.issue()
+    world.tick()  # the start raises: nothing is counted, and the case needs the owner
+    (failed,) = [e.detail["run_id"] for e in world.case().entries if e.detail.get("event") == "start_failed"]
+    set_case_state(world.ledger, CASE_1, "intake", now=NOW)
+    (started,) = world.tick(LATER).dispatched
+
+    first_start = rf"{CASE_1}-r1-[0-9a-f]{{{RUN_ID_SUFFIX_DIGITS}}}"
+    assert re.fullmatch(first_start, failed) and re.fullmatch(first_start, started)
+    assert started != failed
+
+
+def test_a_diverted_message_tells_the_operator_everything_but_its_text(world):
+    """#7: what the gate diverted a message for never reaches the notification."""
+    leaky = Outcome(kind="reply", text="Use " + TOKEN_SHAPED + " to log in.")
+    world.processor = EchoProcessor(results={CASE_1: RunResult(run_id="", outcomes=(leaky,))})
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+
+    ((_, body, _),) = [note for note in world.notes if "waits for you" in note[0]]
+    assert TOKEN_SHAPED not in body and "log in" not in body
+    for part in (CASE_1, "pat", ISSUE_12, "leak scan: token", SEE_STATUS):
+        assert part in body
+
+
+def test_a_failed_send_tells_the_operator_everything_but_its_text(world):
+    """#7: nor does the text of a message the channel refused."""
+    leaky = Outcome(kind="reply", text="Use " + TOKEN_SHAPED + " to log in.")
+    world.processor = EchoProcessor(results={CASE_1: RunResult(run_id="", outcomes=(leaky,))})
+    world.issue()
+    world.tick()
+    world.github.send_error = ChannelError("gh is not logged in", kind="auth")
+    world.tick(LATER, outbound_filters=())
+
+    ((_, body, _),) = [note for note in world.notes if "was not sent" in note[0]]
+    assert TOKEN_SHAPED not in body and "log in" not in body
+    for part in (CASE_1, "pat", ISSUE_12, "send failed", SEE_STATUS):
+        assert part in body
+
+
+def test_the_run_lock_is_created_exclusively(world, monkeypatch):
+    """#11: finding the run lock free and taking it are one step."""
+    lock = run_lock_path(world.config.state_dir)
+    flags = []
+    real_open = os.open
+
+    def spy(path, flag, *args, **kwargs):
+        if Path(path) == lock:
+            flags.append(flag)
+        return real_open(path, flag, *args, **kwargs)
+
+    monkeypatch.setattr(os, "open", spy)
+    world.tick()
+    assert flags and all(flag & os.O_CREAT and flag & os.O_EXCL for flag in flags)
+
+
+def test_a_tick_leaves_a_run_lock_another_process_took_over(world, monkeypatch):
+    """#11: releasing the run lock removes it only while it holds this process's pid."""
+    lock = run_lock_path(world.config.state_dir)
+
+    def taken_over(self):
+        lock.write_text(str(DEAD_PID))  # another tick reclaimed the lock mid-tick
+
+    monkeypatch.setattr(tick_module._Tick, "project", taken_over)
+    world.tick()
+    assert lock.read_text() == str(DEAD_PID)
+
+
+def test_a_state_the_operator_sets_reaches_the_issue_on_the_next_tick(world):
+    """#12: labels are projections of the ledger: after `liaise case set-state`, the next tick
+    relabels the issue, though nothing else changed the case."""
+    world.issue()
+    world.tick()
+    world.tick(LATER)  # the question goes out: needs-partner
+    world.tick(LATER + timedelta(minutes=2))  # hears its own comment; the case waits on pat
+    assert "liaise:needs-partner" in world.labels()
+
+    set_case_state(world.ledger, CASE_1, "needs-owner", reason="taking this one by hand", now=LATER)
+    report = world.tick(LATER + timedelta(minutes=4))
+
+    assert world.case().state == "needs-owner"
+    assert "liaise:needs-owner" in world.labels() and "liaise:needs-partner" not in world.labels()
+    assert f"  labelled {ISSUE_12} liaise:needs-owner" in report.plan_lines
+
+
+def test_a_triage_orders_the_ready_cases_and_the_tick_starts_them_in_that_order(world):
+    """#13: the triage seam gets the ready cases in the tick's order, and its order wins."""
+    world.issue()
+    world.issue(13, minutes=1)
+    seen = []
+
+    def newest_first(cases):
+        seen.append([case.id for case in cases])
+        return [[case] for case in reversed(cases)]
+
+    report = world.tick(triage=newest_first)
+
+    assert seen == [[CASE_1, "example-app-2"]]
+    assert report.dispatched == (_run_id("example-app-2", 1),)  # the concurrent cap starts one
+    assert f"  triage {SLUG}: example-app-2, {CASE_1}" in report.plan_lines

@@ -45,6 +45,7 @@ from liaise.config import (
     load_config,
 )
 from liaise.subjects import (
+    DELIVERY_PERS,
     DFLT_CONCURRENT_RUNS,
     DFLT_DELIVERY_KIND,
     DFLT_SUBJECTS_SUBDIR,
@@ -52,6 +53,10 @@ from liaise.subjects import (
     REPLY_MODES,
     load_subject,
 )
+
+#: A 0.1 delivery's ``per``: 0.0.x's ``batch`` stays ``batch``, and 0.0.x deployed each
+#: issue on its own for any other ``deploy_per``, which 0.1 calls ``issue``.
+BATCH_DELIVERY_PER, ISSUE_DELIVERY_PER = DELIVERY_PERS
 
 #: The 0.0.x global config file, under the config root.
 GLOBAL_CONFIG_FILE = "config.toml"
@@ -358,7 +363,12 @@ def _settings(
     return {
         "workspace.path": (dispatch.cwd, True),
         "verify": (partner.verify, chosen("verify", inherits=False)),
-        "delivery.per": (partner.deploy_per, True),
+        "delivery.per": (
+            BATCH_DELIVERY_PER
+            if partner.deploy_per == BATCH_DELIVERY_PER
+            else ISSUE_DELIVERY_PER,
+            True,
+        ),
         "delivery.command": (partner.deploy, True),
         "label_prefix": (partner.label_prefix, chosen("label_prefix")),
         "policy.deployed_nudge_days": (
@@ -531,6 +541,13 @@ def _partner_warnings(source: _PartnerSource) -> list[str]:
             f"{where}: deploy is empty, so 0.0.x moved every landed issue to "
             f'needs-owner. Set delivery.command, or delivery.kind = "pr_only" to '
             f"stop at a pull request."
+        )
+    if partner.deploy_per not in DELIVERY_PERS:
+        warnings.append(
+            f"{where}: deploy_per {partner.deploy_per!r} is not one of "
+            f"{', '.join(DELIVERY_PERS)}. 0.0.x deployed each issue on its own for "
+            f"anything but {BATCH_DELIVERY_PER}, so delivery.per becomes "
+            f"{ISSUE_DELIVERY_PER}."
         )
     if "cwd" not in dispatch:
         warnings.append(

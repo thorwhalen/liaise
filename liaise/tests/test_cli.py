@@ -7,6 +7,7 @@ is test_smoke.py.
 
 from __future__ import annotations
 
+import copy
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,9 +19,10 @@ import pytest
 from liaise import cli
 from liaise.github import FakeGitHub
 from liaise.ledger import Ledger
-from liaise.model import CASE_STATES
+from liaise.model import CASE_STATES, RunRecord
 from liaise.processor import EchoProcessor
 from liaise.testing import FakeGitHubChannel, demo_registry
+from liaise.tick import TickReport
 
 NOW = datetime(2026, 9, 11, 12, 0, tzinfo=timezone.utc)
 SLUG = "example-app"
@@ -86,7 +88,10 @@ def _fakes(root: Path, **overrides) -> dict:
 
 def test_the_command_tree_is_the_0_1_one():
     commands = cli._dispatch_funcs
-    assert set(commands) == {"run", "status", "hold", "unhold", "subject", "setup", "migrate-config", "schedule"}
+    assert set(commands) == {
+        "run", "status", "hold", "unhold", "case", "subject", "setup", "migrate-config", "schedule"
+    }
+    assert set(commands["case"]) == {"list", "set-state"}
     assert set(commands["subject"]) == {"list", "show"}
     assert set(commands["schedule"]) == {"install", "uninstall", "status"}
 
@@ -95,9 +100,22 @@ def test_run_takes_its_flags_and_hides_its_seams():
     parser = cw.mk_parser(cli._dispatch_funcs, config=cli._dispatch_config, prog="liaise")
     parsed = parser.parse_args(["run", "--once", "--dry-run", "--subject", SLUG, "--root", "somewhere"])
     assert (parsed.once, parsed.dry_run, parsed.subject, parsed.root) == (True, True, SLUG, "somewhere")
-    for seam in ("--registry", "--processor", "--labeler", "--store", "--notify-fn", "--sessions-dir", "--now"):
+    seams = ("--registry", "--processor", "--labeler", "--store", "--notify-fn", "--sessions-dir", "--now")
+    for seam in (*seams, "--resolver", "--workspace", "--triage"):
         with pytest.raises(SystemExit):
             parser.parse_args(["run", seam, "x"])
+
+
+def test_the_case_commands_take_their_flags_and_hide_their_seams():
+    parser = cw.mk_parser(cli._dispatch_funcs, config=cli._dispatch_config, prog="liaise")
+    listed = parser.parse_args(["case", "list", "--state", "needs-owner"])
+    assert listed.state == "needs-owner"
+    moved = parser.parse_args(["case", "set-state", f"{SLUG}-1", "intake", "--reason", "fixed by hand", "--dry-run"])
+    fields = (getattr(moved, "case-id"), moved.state, moved.reason, moved.dry_run)  # cw names a positional so
+    assert fields == (f"{SLUG}-1", "intake", "fixed by hand", True)
+    for command, seam in (("list", "--store"), ("set-state", "--store"), ("set-state", "--now")):
+        with pytest.raises(SystemExit):
+            parser.parse_args(["case", command, *(["x", "intake"] if command == "set-state" else []), seam, "x"])
 
 
 # ---- run ----
@@ -239,3 +257,101 @@ def test_migrate_config_prints_the_plan_and_writes_nothing_without_apply(config_
 def test_migrate_config_reports_a_config_that_does_not_load_as_one_line(tmp_path):
     with pytest.raises(cw.CommandError, match="Missing global config"):
         cli.migrate_config(root=str(tmp_path / "nowhere"))
+
+
+# ---- cases (S7 #12) ----
+
+
+def _seed_cases(store: dict) -> None:
+    """``example-app-1`` in needs-owner and, opened after it, ``example-app-2`` deployed."""
+    ledger = Ledger(store)
+    for number, state in ((1, "needs-owner"), (2, "deployed")):
+        opened = NOW - timedelta(hours=3 - number)
+        case = ledger.new_case(SLUG, f"github:{REPO}#{number}", reporter="pat", at=opened)
+        ledger.transition(case.id, state, at=opened, actor="liaise", reason="seeded")
+
+
+def test_case_list_lists_every_case_or_those_in_one_state(root):
+    store: dict = {}
+    _seed_cases(store)
+    assert cli.case_list(root=str(root), store=store).splitlines() == [
+        f"{SLUG}-1\tneeds-owner\tgithub:{REPO}#1",
+        f"{SLUG}-2\tdeployed\tgithub:{REPO}#2",
+    ]
+    assert cli.case_list(state="deployed", root=str(root), store=store) == f"{SLUG}-2\tdeployed\tgithub:{REPO}#2"
+    assert cli.case_list(state="intake", root=str(root), store=store) == "(no cases in intake)"
+    with pytest.raises(cw.CommandError, match="case state 'stuck' is not one of"):
+        cli.case_list(state="stuck", root=str(root), store=store)
+
+
+def test_case_set_state_moves_a_case_as_the_operator(root):
+    store: dict = {}
+    _seed_cases(store)
+    output = cli.case_set_state(f"{SLUG}-1", "intake", reason="fixed the brief", root=str(root), store=store, now=NOW)
+
+    assert output == f"moved {SLUG}-1 from needs-owner to intake; its labels follow on the next tick"
+    case = Ledger(store).get_case(f"{SLUG}-1")
+    transition = case.entries[-1]
+    assert (case.state, transition.kind, transition.at, transition.actor) == ("intake", "transition", NOW, "operator")
+    assert transition.detail == {"from": "needs-owner", "to": "intake", "reason": "fixed the brief"}
+    assert cli.case_set_state(f"{SLUG}-1", "intake", root=str(root), store=store) == f"{SLUG}-1 is already intake"
+
+
+def test_case_set_state_in_a_dry_run_says_what_it_would_do_and_writes_nothing(root, tmp_path):
+    store: dict = {}
+    _seed_cases(store)
+    before = copy.deepcopy(store)
+
+    output = cli.case_set_state(f"{SLUG}-2", "intake", dry_run=True, root=str(root), store=store, now=NOW)
+
+    assert output.startswith(f"would move {SLUG}-2 from deployed to intake")
+    assert store == before
+    with pytest.raises(cw.CommandError, match=f"no case '{SLUG}-2'"):
+        cli.case_set_state(f"{SLUG}-2", "intake", dry_run=True, root=str(root))  # the default ledger
+    assert not (tmp_path / "state").exists()
+
+
+@pytest.mark.parametrize(
+    "case_id, state, run_in_flight, message",
+    [
+        (f"{SLUG}-9", "intake", False, f"no case '{SLUG}-9'"),
+        (f"{SLUG}-1", "stuck", False, "case state 'stuck' is not one of"),
+        (f"{SLUG}-1", "working", False, "only the tick starts one"),
+        (f"{SLUG}-1", "intake", True, f"has run {SLUG}-1-r1 in flight"),
+    ],
+)
+def test_case_set_state_refuses_what_it_cannot_do_in_one_line(root, case_id, state, run_in_flight, message):
+    store: dict = {}
+    _seed_cases(store)
+    if run_in_flight:
+        run = RunRecord(
+            run_id=f"{SLUG}-1-r1", case_id=f"{SLUG}-1", subject=SLUG, mode="fresh", status="running", started_at=NOW
+        )
+        Ledger(store).save_run(run)
+    before = copy.deepcopy(store)
+    with pytest.raises(cw.CommandError, match=message):
+        cli.case_set_state(case_id, state, root=str(root), store=store)
+    assert store == before
+
+
+# ---- the run's other seams (S7 #13, #14) ----
+
+
+def test_run_passes_its_resolver_workspace_and_triage_to_the_tick(root, monkeypatch):
+    seen = {}
+
+    def spy(subjects, store, **kwargs):
+        seen.clear()
+        seen.update(kwargs)
+        return TickReport()
+
+    monkeypatch.setattr(cli, "run_once", spy)
+    resolver = lambda address, subject: None  # noqa: E731
+    workspace = lambda subject, **kwargs: None  # noqa: E731
+    triage = lambda cases: [cases]  # noqa: E731
+
+    cli.run(root=str(root), once=True, dry_run=True, resolver=resolver, workspace=workspace, triage=triage, **_fakes(root))
+    assert (seen["resolver"], seen["workspace"], seen["triage"]) == (resolver, workspace, triage)
+
+    cli.run(root=str(root), once=True, dry_run=True, **_fakes(root))
+    assert ("resolver" in seen, "workspace" in seen, seen["triage"]) == (False, False, None)  # the tick's own defaults

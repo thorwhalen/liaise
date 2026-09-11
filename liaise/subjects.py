@@ -59,6 +59,9 @@ DFLT_SUBJECTS_SUBDIR = "subjects"
 REPLY_MODES = ("direct", "draft")
 #: `deploy` runs the delivery command; `pr_only` stops at a pull request.
 DELIVERY_KINDS = ("deploy", "pr_only")
+#: When a `deploy` runs its command: `batch` once per tick, for every case delivered in
+#: it; `issue` for each case, right after that case's outcomes.
+DELIVERY_PERS = ("batch", "issue")
 #: Where a run works. v0.1 has one checkout, shared by the subject's runs.
 WORKSPACE_KINDS = ("shared",)
 #: Authenticity grades, weakest first, as correspond names them.
@@ -107,7 +110,13 @@ class Workspace:
 
 @dataclass(frozen=True)
 class Delivery:
-    """How finished work reaches the partner: ``deploy`` runs ``command`` per ``per``."""
+    """How finished work reaches the partner.
+
+    ``deploy`` runs ``command`` in the workspace: once per tick for every case delivered
+    in it (``per = "batch"``), or for each case right after its outcomes
+    (``per = "issue"``). Nothing tells the partner it is live without a run that
+    succeeded. ``pr_only`` stops at a pull request and runs nothing.
+    """
 
     kind: str = DFLT_DELIVERY_KIND
     per: str = DFLT_DEPLOY_PER
@@ -329,7 +338,8 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
     Each binding is kept as :func:`normalize_binding` gives it. Raises
     :class:`~liaise.config.ConfigError` naming the file and the fix for a missing file,
     invalid TOML, a missing ``bindings``, ``policy.people`` or ``policy.roles``, and any
-    value outside its vocabulary (reply modes, permissions, grades, roles).
+    value outside its vocabulary (workspace and delivery kinds, ``delivery.per``, reply
+    modes, permissions, grades, roles).
     """
     path = Path(path)
     raw = _read_toml(path)
@@ -376,7 +386,12 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
                 path=path,
                 dotted="delivery.kind",
             ),
-            per=delivery.get("per", DFLT_DEPLOY_PER),
+            per=_choice(
+                delivery.get("per", DFLT_DEPLOY_PER),
+                DELIVERY_PERS,
+                path=path,
+                dotted="delivery.per",
+            ),
             command=delivery.get("command", ""),
         ),
         label_prefix=raw.get("label_prefix", DFLT_LABEL_PREFIX),

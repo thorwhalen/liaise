@@ -195,13 +195,12 @@ def _case_commands(subject: Subject) -> str:
             "batch. Land the change and report `deliver` with what to tell the partner "
             "once it is live.",
         ]
-    elif delivery.command:
+    else:
         lines += [
             "",
-            "Deploy (run it yourself once the change has landed, then report "
-            "`deliver`):",
-            "",
-            f"    {delivery.command}",
+            "Deploy: do not deploy yourself. `liaise` deploys this case as soon as your "
+            "run has ended. Land the change and report `deliver` with what to tell the "
+            "partner once it is live.",
         ]
     return "\n".join(lines)
 

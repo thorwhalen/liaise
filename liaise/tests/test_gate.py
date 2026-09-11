@@ -142,6 +142,18 @@ LEAKS = {
     "fine-grained-github-token": ("token", "Use " + "github_pat_" + "a" * 40),
     "sk-key": ("token", "Use " + "sk-" + "a" * 24),
     "aws-key": ("token", "Use " + "AKIA" + "A" * 16),
+    "hugging-face-token": ("token", "Use " + "hf_" + "a" * 34),
+    "slack-token": ("token", "Use " + "xox" + "b-" + "1" * 12 + "-" + "a" * 24),
+    "token-wrapped-across-lines": ("token", "Use " + "ghp_" + "a" * 18 + "\n" + "a" * 18),
+    "windows-home-path-json-escaped": (
+        "local path",
+        '{"log": "' + "C:" + "\\\\" + "Users" + "\\\\" + "someone" + "\\\\" + "app.log" + '"}',
+    ),
+    "wsl-mounted-home-path": ("local path", "It lives in " + "/mnt/c" + "/Us" + "ers/someone/app"),
+    "macos-private-var-path": ("local path", "The log is at " + "/private" + "/var/folders/xy/T/app.log"),
+    "macos-var-folders-path": ("local path", "The log is at " + "/var" + "/folders/xy/T/app.log"),
+    "env-file-path": ("env file", "The key is in " + "app/" + ".env" + "."),
+    "private-key": ("private key", "-----BEGIN " + "OPENSSH PRIVATE KEY" + "-----\nb3BlbnNzaC1rZXktdjE\n"),
     "leak-term": ("leak term", "This is on the Example-Internal board."),
 }
 
@@ -167,6 +179,13 @@ def test_leak_scan_never_redacts_and_never_repeats_the_secret():
     assert all(token not in note for note in decision.notes)
 
 
+def test_a_token_wrapped_across_lines_is_noted_where_it_starts_even_after_a_word():
+    """Removing the line breaks glues "Use" to the token after it; the token still counts."""
+    decision = _gate("Use\n" + "ghp_" + "b" * 18 + "\r\n" + "b" * 18 + " now.")
+    assert decision.diverted == "leak scan: token"
+    assert decision.notes == ("leak scan: token at character 4",)
+
+
 def test_leak_scan_names_every_kind_it_found():
     text = "Mail " + "someone" + "@" + "example.com" + " the file in " + "/ho" + "me/someone/app/x"
     decision = _gate(text)
@@ -185,6 +204,15 @@ def test_leak_terms_match_whole_words_only(text):
         "Thanks @pat, see https://example.com/ho" + "me/page/x",
         "The task-" + "a" * 24 + " step passed.",
         "The sk-" + "a" * 5 + " prefix is too short to be a key.",
+        "Install it under " + "C:" + "\\\\" + "Program Files" + "\\\\" + "app",
+        "The data sits in " + "/mnt/c" + "/Program Files/app",
+        "The server logs to " + "/var" + "/log/app.log",
+        "Copy the " + ".env" + " file from the template.",
+        "The direnv file is " + "app/" + ".env" + "rc",
+        "-----BEGIN " + "PUBLIC KEY" + "-----",
+        "Call " + "hf_" + "hub_download() for the weights.",
+        "Hugs and " + "xox" + "o-xoxo from the team.",
+        "The " + "ghp_" + "\n" + "prefix alone is no token.",
     ],
 )
 def test_leak_scan_ignores_lookalikes(text):
