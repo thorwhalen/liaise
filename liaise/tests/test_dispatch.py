@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
-from liaise.config import Budget, DispatchConfig, PartnerConfig
+from liaise.config import DFLT_PERMISSION_MODE, Budget, DispatchConfig, PartnerConfig
 from liaise.dispatch import (
     ClaudeHeadless,
     EchoDispatcher,
@@ -575,3 +577,260 @@ def test_session_id_stored_and_reused_for_resume(tmp_path):
     dispatch_issue(fake, dispatcher, store, partner, fake.get_issue(REPO, 1), now=T0)
     second_job = dispatcher.jobs[1]
     assert second_job.session_id == stored_session_id(store, _issue())
+
+
+# ---- #22: a resume runs under the same permission mode as a fresh run ----
+
+
+@pytest.fixture
+def argv_recording_claude(tmp_path: Path) -> str:
+    """A fake `claude` that reports the argv it was given."""
+    return write_executable_script(
+        tmp_path / "claude",
+        "import sys, json\n"
+        "print(json.dumps({'session_id': 'sess-abc123', 'argv': sys.argv[1:]}))\n",
+    ).as_posix()
+
+
+def _argv_of_a_default_template_run(fake_claude: str, cwd, **job_fields) -> list[str]:
+    """Run the real default templates through `ClaudeHeadless`, with only the
+    program swapped for `fake_claude`, and return the argv it was given.
+    """
+    dispatch = DispatchConfig()
+    job = Job(
+        prompt="hi",
+        cwd=str(cwd),
+        budget=Budget(timeout_minutes=1),
+        command=dispatch.command.replace("claude", fake_claude, 1),
+        resume_command=dispatch.resume_command.replace("claude", fake_claude, 1),
+        **job_fields,
+    )
+    return json.loads(ClaudeHeadless().dispatch(job).stdout)["argv"]
+
+
+def _value_after(argv: list[str], flag: str) -> str:
+    return argv[argv.index(flag) + 1]
+
+
+@pytest.mark.parametrize("permission_mode", [DFLT_PERMISSION_MODE, "acceptEdits"])
+def test_resumed_dispatch_carries_the_same_permission_mode_as_a_fresh_one(
+    argv_recording_claude, tmp_path, permission_mode
+):
+    """#22 regression: the default resume template dropped `--permission-mode`,
+    so a resumed dispatch ran under a different mode than the run it
+    continued. Both default templates now take it from the one
+    `dispatch.permission_mode` setting — change it, and both follow.
+    """
+
+    def argv_of_run(**job_fields) -> list[str]:
+        return _argv_of_a_default_template_run(
+            argv_recording_claude, tmp_path, permission_mode=permission_mode, **job_fields
+        )
+
+    fresh, resumed = argv_of_run(), argv_of_run(session_id="sess-prior")
+    assert "--resume" not in fresh and "--resume" in resumed
+    assert (
+        _value_after(fresh, "--permission-mode")
+        == _value_after(resumed, "--permission-mode")
+        == permission_mode
+    )
+
+
+def test_dispatch_issue_hands_the_partner_permission_mode_to_every_job(tmp_path):
+    partner = _partner(
+        tmp_path,
+        dispatch=DispatchConfig(cwd=str(tmp_path), permission_mode="acceptEdits"),
+    )
+    fake = FakeGitHub([_issue()])
+    dispatcher = EchoDispatcher()
+    store: dict = {}
+
+    for _ in range(2):
+        dispatch_issue(
+            fake, dispatcher, store, partner, fake.get_issue(REPO, 1),
+            now=T0, notify_fn=lambda *a, **k: True,
+        )
+
+    fresh, resumed = dispatcher.jobs
+    assert resumed.session_id is not None
+    assert fresh.permission_mode == resumed.permission_mode == "acceptEdits"
+
+
+# ---- #22: the dispatch log is named in the prompt, and keeps what the agent wrote ----
+
+
+def _log_path_named_in(prompt: str) -> str:
+    return re.search(r"The dispatch log for this run is `([^`]+)`", prompt).group(1)
+
+
+def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_path):
+    """#22: the operating rules send drafts and escalations "to the dispatch
+    log", so the file the prompt names must exist when the agent runs, and
+    `liaise`'s own record must follow the agent's drafts, not overwrite them.
+    """
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+    named = []
+
+    class DraftingDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            log_path = Path(_log_path_named_in(job.prompt))
+            named.append(str(log_path))
+            assert log_path.is_file()
+            with open(log_path, "a") as f:
+                f.write("Draft for the partner: it's fixed, try again\n")
+            set_state(fake, fake.get_issue(REPO, 1), partner, "needs-owner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    outcome = dispatch_issue(
+        fake, DraftingDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=log_dir,
+    )
+
+    assert named == [outcome.log_path]
+    assert Path(outcome.log_path).parent == log_dir
+    text = Path(outcome.log_path).read_text()
+    assert text.index("Draft for the partner") < text.index("exit code: 0")
+
+
+def test_the_final_message_fallback_is_recorded_sendable_as_is(tmp_path):
+    """#22 review: an agent that can't write the log puts its drafts in its
+    final message, which reaches the log only inside JSON output — so the log
+    must also carry that message unescaped, real newlines and quotes intact.
+    """
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    draft = "Draft for the partner:\n\nIt's fixed — \"Save\" works again."
+
+    class FallbackDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            set_state(fake, fake.get_issue(REPO, 1), partner, "needs-owner")
+            stdout = json.dumps({"type": "result", "result": draft, "session_id": "s1"})
+            return DispatchResult(returncode=0, session_id="s1", stdout=stdout)
+
+    outcome = dispatch_issue(
+        fake, FallbackDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=tmp_path / "logs",
+    )
+
+    assert draft in Path(outcome.log_path).read_text(encoding="utf-8")
+
+
+def test_a_relative_log_dir_is_named_as_an_absolute_path(tmp_path, monkeypatch):
+    """The agent runs from `partner.dispatch.cwd`, where a relative path would
+    name a different file than the one `liaise` appends to.
+    """
+    monkeypatch.chdir(tmp_path)
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    dispatcher = EchoDispatcher()
+
+    outcome = dispatch_issue(
+        fake, dispatcher, {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=Path("logs"), notify_fn=lambda *a, **k: True,
+    )
+
+    named = Path(_log_path_named_in(dispatcher.jobs[0].prompt))
+    assert named.is_absolute()
+    assert str(named) == outcome.log_path
+    assert named.parent.resolve() == (tmp_path / "logs").resolve()
+
+
+def test_a_dispatch_that_fails_before_running_leaves_no_empty_log(tmp_path):
+    """A missing brief (or a `gh` error before the agent starts) fails the same
+    way every pass; no failed attempt may leave a log file behind.
+    """
+    partner = _partner(tmp_path, brief=str(tmp_path / "missing-brief.md"))
+    fake = FakeGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+
+    with pytest.raises(FileNotFoundError):
+        dispatch_issue(
+            fake, EchoDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+            now=T0, log_dir=log_dir,
+        )
+
+    assert not log_dir.exists() or list(log_dir.iterdir()) == []
+    assert current_state(fake.get_issue(REPO, 1), partner) is None  # never set working
+
+
+def test_a_log_that_cannot_be_written_does_not_skip_crash_reconciliation(tmp_path):
+    """Recording the result in a log that can't be written (here `log_dir` is a
+    file, so the log's directory can't be created) must not raise past the
+    reconciliation — that would strand the issue at `liaise:working`.
+    """
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+    log_dir.write_text("not a directory")
+    notifications = []
+
+    outcome = dispatch_issue(  # must not raise
+        fake, EchoDispatcher(returncode=1), {}, partner, fake.get_issue(REPO, 1),
+        notify_fn=lambda *a, **k: notifications.append(a) or True,
+        now=T0, log_dir=log_dir,
+    )
+
+    assert outcome.crashed
+    assert current_state(fake.get_issue(REPO, 1), partner) == "needs-owner"
+    assert len(notifications) == 1
+
+
+def test_mention_reconciliation_with_an_unwritable_log_keeps_the_outcome(tmp_path):
+    """#22 review: with the log unwritable, noting a failed mention repair in
+    it must not raise either — that would discard the dispatch outcome.
+    """
+    from liaise.github import GitHubError
+
+    partner = _partner(tmp_path, notify_login="pat")
+
+    class FlakyGitHub(FakeGitHub):
+        def ensure_last_comment_mentions(self, repo, number, mention):
+            raise GitHubError("rate limited")
+
+    fake = FlakyGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+    log_dir.write_text("not a directory")
+
+    class ForgetfulDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            fake.post_comment(REPO, 1, "Quick question: what color?")
+            set_state(fake, fake.get_issue(REPO, 1), partner, "needs-partner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    outcome = dispatch_issue(  # must not raise
+        fake, ForgetfulDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=log_dir,
+    )
+
+    assert outcome.dispatched and not outcome.crashed
+
+
+def test_output_that_does_not_encode_does_not_break_the_log(tmp_path):
+    """#22 review: a lone surrogate in the agent's output (or anything the
+    platform's default encoding can't take) must not raise out of the log
+    write and strand the issue at `liaise:working`.
+    """
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+
+    class SurrogateDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            return DispatchResult(returncode=1, session_id=None, stdout="bad \ud800 text")
+
+    outcome = dispatch_issue(  # must not raise
+        fake, SurrogateDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        notify_fn=lambda *a, **k: True, now=T0, log_dir=tmp_path / "logs",
+    )
+
+    assert outcome.crashed
+    assert Path(outcome.log_path).is_file()

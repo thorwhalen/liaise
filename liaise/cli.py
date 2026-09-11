@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import functools
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import MutableMapping, Optional, Sequence
 
@@ -26,7 +27,7 @@ from liaise.dispatch import (
 from liaise.github import GhCli, GitHub
 from liaise.intake import compute_readiness, find_partner_issues
 from liaise.notify import notify as _notify
-from liaise.run import last_run_age, run_once
+from liaise.run import RunStamps, run_lock_path, run_once, run_stamps
 from liaise.schedule import (
     install_schedule,
     schedule_status,
@@ -151,7 +152,8 @@ def run(
 ) -> str:
     """Intake, label, dispatch ready issues, batch-deploy, reconcile.
 
-    `--dry-run` prints the plan and changes nothing. Without `--once`, keeps
+    Prints where dispatch logs go (`log_dir`), then the plan. `--dry-run`
+    prints the same and changes nothing. Without `--once`, keeps
     running one pass after another — the scheduled job always passes
     `--once` (see `liaise schedule install`); this is for a foreground,
     manual "keep watching" run.
@@ -163,6 +165,7 @@ def run(
         store if store is not None else default_store(config.global_.state_dir)
     )
     notify_fn = _notify_fn_for(config.global_)
+    log_dir = config.global_.log_dir_path
 
     def one_pass() -> str:
         report = run_once(
@@ -173,8 +176,9 @@ def run(
             partner=partner,
             dry_run=dry_run,
             notify_fn=notify_fn,
+            log_dir=log_dir,
         )
-        lines = [f"plan ({len(report.plan)} item(s)):"]
+        lines = [f"log_dir: {log_dir}", f"plan ({len(report.plan)} item(s)):"]
         for item in report.plan:
             lines.append(
                 f"  {item.partner_slug} #{item.issue_number:<5} {item.action:<18} {item.issue_title}"
@@ -200,21 +204,49 @@ def run(
         return "stopped"
 
 
+def _format_run_stamps(stamps: RunStamps) -> list[str]:
+    """#22: both stamps, and whether the last pass is `running` (a long
+    dispatch used to read as a job that had not run for many minutes) or was
+    `interrupted` before it could finish.
+    """
+    if stamps.state == "never":
+        return ["last_run: never"]
+    now = datetime.now(timezone.utc)
+
+    def fmt(stamp: Optional[datetime]) -> str:
+        if stamp is None:
+            return "never"
+        age = int((now - stamp).total_seconds())
+        return f"{stamp.isoformat(timespec='seconds')} ({age}s ago)"
+
+    note = (
+        " (no live liaise process holds the run lock)"
+        if stamps.state == "interrupted"
+        else ""
+    )
+    return [
+        f"last_run: {stamps.state}{note}",
+        f"  run_started_at: {fmt(stamps.started_at)}",
+        f"  run_ended_at:   {fmt(stamps.ended_at)}",
+    ]
+
+
 def status(
     *,
     root: Optional[str] = None,
     gh: Optional[GitHub] = None,
     store: Optional[MutableMapping] = None,
 ) -> str:
-    """Last run stamp, today's dispatches per partner, and anything needing the owner."""
+    """When the last run started and ended (and whether it is still running or was interrupted), today's dispatches per partner, and anything needing the owner."""
     config = load_config(Path(root) if root else None)
     github = gh if gh is not None else GhCli()
     state_store = (
         store if store is not None else default_store(config.global_.state_dir)
     )
 
-    age = last_run_age(state_store)
-    lines = [f"last_run: {f'{int(age)}s ago' if age is not None else 'never'}"]
+    lines = _format_run_stamps(
+        run_stamps(state_store, lock_path=run_lock_path(config.global_.state_dir))
+    )
 
     for p in sorted(config.partners.values(), key=lambda p: p.slug):
         count = daily_dispatch_count(state_store, p)

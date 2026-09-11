@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 
@@ -11,7 +12,7 @@ from liaise.cli import status as cli_status
 from liaise.config import Budget, Config, DispatchConfig, PartnerConfig
 from liaise.dispatch import EchoDispatcher
 from liaise.github import FakeGitHub, Issue
-from liaise.run import last_run_age, run_once
+from liaise.run import RunReport, last_run_age, run_once, run_stamps
 from liaise.state import current_state
 from liaise.tests.conftest import write_executable_script
 
@@ -100,6 +101,7 @@ def test_dry_run_prints_plan_and_changes_nothing(tmp_path):
     assert current_state(issue, config.partner("pat")) is None
     assert dispatcher.jobs == []
     assert "last_run" not in store
+    assert store == {}  # no run stamps either (#22)
 
 
 def test_dry_run_on_a_ready_issue_plans_dispatch_without_dispatching(tmp_path):
@@ -527,3 +529,147 @@ def test_status_lists_needs_owner_issues(tmp_path):
     store: dict = {}
     output = cli_status(root=str(root), gh=fake, store=store)
     assert "needs-owner: #1" in output
+
+
+# ---- #22: the dispatch log is wired from config through the CLI ----
+
+
+def test_cli_run_once_dry_run_prints_the_log_dir(tmp_path):
+    root = _write_config_root(tmp_path)
+    output = cli_run(
+        root=str(root), once=True, dry_run=True, gh=FakeGitHub([]),
+        dispatcher=EchoDispatcher(), store={},
+    )
+    assert f"log_dir: {tmp_path / 'state' / 'logs'}" in output
+    assert not (tmp_path / "state" / "logs").exists()  # a dry run creates nothing
+
+
+def test_cli_run_passes_the_log_dir_it_prints_to_run_once(tmp_path, monkeypatch):
+    """#22 regression: `cli.run` never passed `log_dir`. `run_once` falls back
+    to the config value on its own, so only a spy shows that the CLI passes
+    it — and that the path it prints is the path it passes.
+    """
+    root = _write_config_root(tmp_path)
+    passed = {}
+
+    def spy_run_once(*args, **kwargs):
+        passed.update(kwargs)
+        return RunReport(stamped_at=T0)
+
+    monkeypatch.setattr("liaise.cli.run_once", spy_run_once)
+    output = cli_run(
+        root=str(root), once=True, gh=FakeGitHub([]),
+        dispatcher=EchoDispatcher(), store={},
+    )
+    assert passed["log_dir"] == tmp_path / "state" / "logs"
+    assert f"log_dir: {passed['log_dir']}" in output
+
+
+def test_cli_run_crash_notification_names_an_existing_log_file(tmp_path, monkeypatch):
+    """#22 regression: `cli.run` never passed `log_dir`, so no log was ever
+    written and every crash notification said "(no log_dir configured)".
+    """
+    root = _write_config_root(tmp_path)
+    notifications = []
+    monkeypatch.setattr(
+        "liaise.cli._notify",
+        lambda title, body, **kwargs: notifications.append((title, body)) or True,
+    )
+    fake = FakeGitHub([_issue(labels=("partner:pat", "liaise:intake"))])
+
+    cli_run(
+        root=str(root), once=True, gh=fake,
+        dispatcher=EchoDispatcher(returncode=1), store={},
+    )
+
+    [body] = [body for title, body in notifications if "crashed" in title]
+    log_file = Path(body.split("Log: ", 1)[1].strip())
+    assert log_file.is_file()
+    assert log_file.parent == tmp_path / "state" / "logs"
+    assert "exit code: 1" in log_file.read_text()
+
+
+# ---- #22: the run is stamped when it starts and when it ends ----
+
+
+def test_status_says_running_while_a_long_dispatch_is_in_progress(tmp_path):
+    """#22 regression: the run was stamped only with its start, so `liaise
+    status` showed a long dispatch as a job that had not run for many minutes.
+    Mid-dispatch, status must say "running"; once the pass ends, "finished".
+    """
+    root = _write_config_root(tmp_path)
+    config = _config(tmp_path, deploy="")
+    partner = config.partner("pat")
+    fake = FakeGitHub([_issue(labels=(partner.label, "liaise:intake"))])
+    previous_end = T0 + timedelta(minutes=1)
+    store: dict = {
+        "run_started_at": T0.isoformat(),
+        "run_ended_at": previous_end.isoformat(),
+    }
+    status_mid_run = []
+
+    class LongDispatcher:
+        def dispatch(self, job):
+            from liaise.dispatch import DispatchResult
+
+            status_mid_run.append(
+                cli_status(root=str(root), gh=FakeGitHub([]), store=store)
+            )
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    now = T0 + timedelta(minutes=20)
+    run_once(
+        fake, LongDispatcher(), store, config, now=now,
+        notify_fn=lambda *a, **k: True,
+    )
+
+    [mid_run] = status_mid_run
+    assert "last_run: running" in mid_run
+    assert f"run_started_at: {now.isoformat()}" in mid_run
+    assert f"run_ended_at:   {previous_end.isoformat()}" in mid_run
+
+    after = cli_status(root=str(root), gh=FakeGitHub([]), store=store)
+    assert "last_run: finished" in after
+    assert run_stamps(store).ended_at >= now
+
+
+def test_a_pass_that_raises_still_stamps_its_end(tmp_path, monkeypatch):
+    """A pass that dies (a `gh` outage, say) is not still running."""
+
+    def github_down(*args, **kwargs):
+        raise RuntimeError("gh is down")
+
+    monkeypatch.setattr("liaise.run.find_partner_issues", github_down)
+    store: dict = {}
+    with pytest.raises(RuntimeError, match="gh is down"):
+        run_once(FakeGitHub([]), EchoDispatcher(), store, _config(tmp_path), now=T0)
+    assert run_stamps(store).started_at == T0
+    assert run_stamps(store).state == "finished"
+
+
+def test_status_says_interrupted_when_the_pass_process_is_gone(tmp_path):
+    """#22 review: a pass killed by SIGTERM (`launchctl bootout`, a shutdown)
+    never reaches its `finally`, so its start stays later than the last end.
+    With no live process holding the run lock, that is not "running".
+    """
+    root = _write_config_root(tmp_path)
+    lock = tmp_path / "state" / "run.lock"
+    lock.parent.mkdir(parents=True)
+    lock.write_text("999999999")  # not a real pid: the pass's process is gone
+    store: dict = {
+        "run_started_at": (T0 + timedelta(minutes=5)).isoformat(),
+        "run_ended_at": T0.isoformat(),
+    }
+
+    output = cli_status(root=str(root), gh=FakeGitHub([]), store=store)
+
+    assert "last_run: interrupted" in output
+
+
+def test_run_stamps_read_a_legacy_last_run_as_a_finished_run():
+    """Stores written by 0.0.3 and earlier hold only `last_run` — written once
+    the pass finished, stamped with its start — so that run did finish.
+    """
+    stamps = run_stamps({"last_run": T0.isoformat()})
+    assert stamps.started_at == stamps.ended_at == T0
+    assert stamps.state == "finished"

@@ -133,3 +133,79 @@ def test_partner_show_prints_resolved_partner(config_root):
     assert "repo:           example/app" in output
     assert "github_logins:  pat" in output
     assert "notify_login:   pat" in output
+
+
+def test_log_dir_defaults_to_logs_under_state_dir(config_root):
+    glob = load_config(config_root).global_
+    assert glob.log_dir_path == Path(glob.state_dir) / "logs"
+
+
+def test_log_dir_is_overridable_in_config_toml(config_root, tmp_path):
+    path = config_root / "config.toml"
+    custom = (tmp_path / "elsewhere").as_posix()
+    # prepend, not append: keys after the [notify] header belong to that table
+    path.write_text(f'log_dir = "{custom}"\n' + path.read_text())
+    assert load_config(config_root).global_.log_dir_path == Path(custom)
+
+
+def test_a_relative_log_dir_is_under_state_dir_not_the_working_directory(config_root):
+    """A scheduled job runs from `/` (launchd): a relative `log_dir` resolved
+    against the working directory would be unwritable there and block every
+    dispatch.
+    """
+    path = config_root / "config.toml"
+    path.write_text('log_dir = "dispatch-logs"\n' + path.read_text())
+    glob = load_config(config_root).global_
+    assert glob.log_dir_path == Path(glob.state_dir) / "dispatch-logs"
+
+
+def test_log_dir_path_follows_a_replaced_state_dir(config_root, tmp_path):
+    from dataclasses import replace
+
+    glob = replace(load_config(config_root).global_, state_dir=str(tmp_path / "moved"))
+    assert glob.log_dir_path == tmp_path / "moved" / "logs"
+
+
+def test_permission_mode_defaults_to_auto_and_is_set_under_dispatch(config_root):
+    assert load_config(config_root).partner("pat").dispatch.permission_mode == "auto"
+    path = config_root / "partners" / "pat.toml"
+    # the fixture's file ends inside its [dispatch] table
+    path.write_text(path.read_text() + 'permission_mode = "acceptEdits"\n')
+    pat = load_config(config_root).partner("pat")
+    assert pat.dispatch.permission_mode == "acceptEdits"
+
+
+def _with_dispatch_command(config_root, command: str) -> None:
+    path = config_root / "partners" / "pat.toml"
+    # the fixture's file ends inside its [dispatch] table
+    path.write_text(path.read_text() + f'command = "{command}"\n')
+
+
+def test_a_0_0_3_style_template_override_still_loads(config_root):
+    """#22 review: refusing overrides at load broke consistent configs (a
+    copied default plus one flag), and every command with them.
+    """
+    _with_dispatch_command(
+        config_root, "claude -p {prompt_file} --permission-mode auto --model sonnet"
+    )
+    assert load_config(config_root).partner("pat").dispatch.permission_mode == "auto"
+
+
+@pytest.mark.parametrize(
+    "flag", ["--permission-mode acceptEdits", "--permission-mode=acceptEdits"]
+)
+def test_an_override_hardcoding_its_permission_mode_resumes_under_it(config_root, flag):
+    """#22 review: a 0.0.3 `command` hardcoding its mode, with the default
+    `resume_command`, must not quietly resume under `auto` instead. The
+    override is where the mode comes from, so the resume takes it from there.
+    """
+    _with_dispatch_command(config_root, f"claude -p {{prompt_file}} {flag}")
+    dispatch = load_config(config_root).partner("pat").dispatch
+    assert dispatch.permission_mode == "acceptEdits"
+    assert "--permission-mode {permission_mode}" in dispatch.resume_command
+
+
+def test_an_override_passing_no_permission_mode_resumes_without_one(config_root):
+    _with_dispatch_command(config_root, "claude -p {prompt_file} --output-format json")
+    dispatch = load_config(config_root).partner("pat").dispatch
+    assert "--permission-mode" not in dispatch.resume_command

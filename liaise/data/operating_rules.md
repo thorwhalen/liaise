@@ -3,8 +3,8 @@
 You are the coding agent `liaise` just dispatched. These rules are packaged with
 `liaise` itself — the same rules for every partner, every repo, every run. What
 is specific to this dispatch (the partner's brief, the issue, which label to set
-on each exit path, the verify/deploy commands, and your budget) follows this
-section in the prompt you were given.
+on each exit path, the path of the dispatch log, the verify/deploy commands, and
+your budget) follows this section in the prompt you were given.
 
 **The label names below (`liaise:needs-partner` and so on) are illustrative.**
 This partner's actual label prefix may not be `liaise:` — the **State contract**

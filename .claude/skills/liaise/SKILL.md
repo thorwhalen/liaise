@@ -20,7 +20,7 @@ Every partner is one config file plus one brief file, both under `~/.config/liai
 
 ## Reading `liaise status`
 
-`liaise status` reports, per partner: how long ago `liaise` last ran (a stale age past a couple of minutes past the schedule interval means the scheduled job stopped — check `liaise schedule status`), today's dispatch count against the daily cap, and every issue currently in `liaise:needs-owner`. That last list is the actual to-do list — everything else in the loop is either waiting on the partner or already handled.
+`liaise status` first reports when the last run started and ended. It says `running` while a pass is still in progress, which a long dispatch can stretch to many minutes, and `interrupted` when a pass started but its process died before it could finish (a shutdown, or the job unloaded mid-run). Otherwise, a `run_started_at` more than a couple of minutes past the schedule interval means the scheduled job stopped — check `liaise schedule status`. Then, per partner: today's dispatch count against the daily cap, and every issue currently in `liaise:needs-owner`. That last list is the actual to-do list — everything else in the loop is either waiting on the partner or already handled.
 
 ## What each `liaise:` label means
 
@@ -36,10 +36,10 @@ Exactly one of these is on a `liaise`-tracked issue at a time. `liaise` never cl
 | `liaise:deployed` | Live. The partner has been told to try it. | the agent, or liaise after a batch deploy |
 | `liaise:budget` | Today's dispatch cap was hit for this partner. Resumes tomorrow. | liaise |
 
-A `liaise:needs-owner` issue is where the owner's own judgment is actually needed — an escalation the agent declined to make alone, or reconciliation after something crashed. Read the issue thread and the dispatch log path (if `liaise` notified with one) before deciding what to do; the label alone only tells you that a decision is due, not what it is.
+A `liaise:needs-owner` issue is where the owner's own judgment is actually needed — an escalation the agent declined to make alone, or reconciliation after something crashed. Read the issue thread and the dispatch log before deciding what to do — the agent's drafts and escalations are in it, a crash notification names the file, and every log lives under `log_dir` (`logs/` under `state_dir` by default); the label alone only tells you that a decision is due, not what it is.
 
 ## Why an issue isn't moving
 
 - **Still in `liaise:intake` well past the quiet window?** Check `liaise poll` — a marker or a comment from someone who isn't the partner (including the owner) never restarts or shortens the clock, only the partner's own edits and comments do.
-- **Nothing happening at all?** `liaise status`'s `last_run` age is the first thing to check — a stale scheduled job looks exactly like an unready issue from the partner's side.
+- **Nothing happening at all?** `liaise status`'s `last_run` lines are the first thing to check — `running` means a dispatch is still in progress, while an old `run_started_at` means the scheduled job stopped, which looks exactly like an unready issue from the partner's side.
 - **Hit the daily cap?** `liaise:budget` resumes automatically the next day; there's nothing to do.

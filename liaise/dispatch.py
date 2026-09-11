@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, MutableMapping, Optional, Protocol
 
-from liaise.config import Budget, PartnerConfig
+from liaise.config import DFLT_PERMISSION_MODE, Budget, PartnerConfig
 from liaise.github import GitHub, Issue
 from liaise.messages import budget_capped_message, mention
 from liaise.notify import notify as _default_notify
@@ -37,6 +37,7 @@ class Job:
     command: str
     resume_command: str
     session_id: Optional[str] = None
+    permission_mode: str = DFLT_PERMISSION_MODE
 
 
 @dataclass(frozen=True)
@@ -61,7 +62,9 @@ class ClaudeHeadless:
     """The default :class:`Dispatcher`: runs the configured `claude` command headless.
 
     The prompt is written to a temp file and referenced by path in the command
-    template — never passed on the command line. Never inherits an assumed
+    template — never passed on the command line. The fresh and the resume
+    template are formatted with the same `job.permission_mode`, so a resume
+    runs under the mode of the run it continues. Never inherits an assumed
     environment beyond what `subprocess.run` gives it by default; callers that
     need specific variables (see `schedule.py`) pass them explicitly.
     """
@@ -75,7 +78,9 @@ class ClaudeHeadless:
 
             template = job.resume_command if job.session_id else job.command
             command = template.format(
-                prompt_file=str(prompt_file), session_id=job.session_id or ""
+                prompt_file=str(prompt_file),
+                session_id=job.session_id or "",
+                permission_mode=job.permission_mode,
             )
             try:
                 proc = subprocess.run(
@@ -293,7 +298,10 @@ def dispatch_issue(
 
     session_id = stored_session_id(store, issue)
     mode = "resume" if session_id else "fresh"
-    prompt = compose_prompt(partner, issue, mode)
+    # Named in the prompt, so decided before it is composed: the operating
+    # rules send drafts and escalations "to the dispatch log" (#22).
+    log_path = _log_path(log_dir, issue) if log_dir is not None else None
+    prompt = compose_prompt(partner, issue, mode, log_path=log_path)
     job = Job(
         prompt=prompt,
         cwd=partner.dispatch.cwd,
@@ -301,6 +309,7 @@ def dispatch_issue(
         command=partner.dispatch.command,
         resume_command=partner.dispatch.resume_command,
         session_id=session_id,
+        permission_mode=partner.dispatch.permission_mode,
     )
 
     set_state(gh, issue, partner, "working")
@@ -309,11 +318,14 @@ def dispatch_issue(
     )
     store[_dispatched_at_key(issue)] = (now or datetime.now(timezone.utc)).isoformat()
 
+    # Created only now, for the agent to append to, so a dispatch that fails
+    # before it runs leaves no log behind.
+    _append_to_log(log_path, f"liaise dispatch log: {issue.url} ({mode})\n")
     result = dispatcher.dispatch(job)
     if result.session_id:
         store[_session_key(issue)] = result.session_id
 
-    log_path = _write_log(log_dir, issue, result) if log_dir is not None else None
+    _append_to_log(log_path, _result_record(result))
 
     refreshed = gh.get_issue(issue.repo, issue.number)
     still_working = current_state(refreshed, partner) == "working"
@@ -348,9 +360,9 @@ def dispatch_issue(
         try:
             _reconcile_mention(gh, partner, refreshed, log_path=log_path)
         except Exception as e:  # noqa: BLE001 - see comment above
-            if log_path:
-                with open(log_path, "a") as f:
-                    f.write(f"\n[liaise: mention reconciliation failed: {e}]\n")
+            _append_to_log(
+                log_path, f"\n[liaise: mention reconciliation failed: {e}]\n"
+            )
 
     return DispatchOutcome(
         dispatched=True,
@@ -379,22 +391,64 @@ def _reconcile_mention(
     repaired = gh.ensure_last_comment_mentions(
         issue.repo, issue.number, mention(partner)
     )
-    if repaired and log_path:
-        with open(log_path, "a") as f:
-            f.write(
-                f"\n[liaise: repaired a partner-facing comment missing "
-                f"{mention(partner)}]\n"
-            )
+    if repaired:
+        _append_to_log(
+            log_path,
+            f"\n[liaise: repaired a partner-facing comment missing {mention(partner)}]\n",
+        )
 
 
-def _write_log(log_dir: Path, issue: Issue, result: DispatchResult) -> str:
-    log_dir = Path(log_dir)
-    log_dir.mkdir(parents=True, exist_ok=True)
+def _log_path(log_dir: Path, issue: Issue) -> str:
+    """This dispatch's log file, as an absolute path. Nothing is created yet.
+
+    Absolute because the path is named in a prompt read by an agent running
+    from `partner.dispatch.cwd`, where a relative path would name another file.
+    """
+    log_dir = Path(log_dir).expanduser().absolute()
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     safe_repo = issue.repo.replace("/", "-")
-    path = log_dir / f"{safe_repo}-{issue.number}-{stamp}.log"
-    path.write_text(
+    return str(log_dir / f"{safe_repo}-{issue.number}-{stamp}.log")
+
+
+def _append_to_log(log_path: Optional[str], text: str) -> None:
+    """Append `text` to the dispatch log, creating it if needed; no-op without one.
+
+    Never raises: a log that can't be written (an unwritable `log_dir`, a full
+    disk, text that won't encode) must not skip reconciliation — stranding the
+    issue at `liaise:working`, the H-7 failure mode — or discard an outcome.
+    """
+    if not log_path:
+        return
+    path = Path(log_path)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, "a", encoding="utf-8", errors="replace") as f:
+            f.write(text)
+    except OSError:
+        pass
+
+
+def _result_record(result: DispatchResult) -> str:
+    """How the dispatch ended, appended after whatever the agent wrote.
+
+    Leads with the agent's final message, unescaped, when the output carries
+    one: that message is where the agent puts drafts it couldn't write to the
+    log itself, and inside the raw JSON output they aren't sendable as is.
+    """
+    message = _final_message(result.stdout)
+    final = f"\n--- agent's final message ---\n{message}\n" if message else ""
+    return (
+        f"{final}\n--- liaise: dispatch ended ---\n"
         f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
         f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
     )
-    return str(path)
+
+
+def _final_message(stdout: str) -> Optional[str]:
+    """The `result` text of `claude --output-format json`'s output, or None."""
+    try:
+        raw = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    message = raw.get("result") if isinstance(raw, dict) else None
+    return message if isinstance(message, str) and message else None
