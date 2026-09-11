@@ -696,6 +696,31 @@ def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_
     assert text.index("Draft for the partner") < text.index("exit code: 0")
 
 
+def test_the_final_message_fallback_is_recorded_sendable_as_is(tmp_path):
+    """#22 review: an agent that can't write the log puts its drafts in its
+    final message, which reaches the log only inside JSON output — so the log
+    must also carry that message unescaped, real newlines and quotes intact.
+    """
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    draft = "Draft for the partner:\n\nIt's fixed — \"Save\" works again."
+
+    class FallbackDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            set_state(fake, fake.get_issue(REPO, 1), partner, "needs-owner")
+            stdout = json.dumps({"type": "result", "result": draft, "session_id": "s1"})
+            return DispatchResult(returncode=0, session_id="s1", stdout=stdout)
+
+    outcome = dispatch_issue(
+        fake, FallbackDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=tmp_path / "logs",
+    )
+
+    assert draft in Path(outcome.log_path).read_text(encoding="utf-8")
+
+
 def test_a_relative_log_dir_is_named_as_an_absolute_path(tmp_path, monkeypatch):
     """The agent runs from `partner.dispatch.cwd`, where a relative path would
     name a different file than the one `liaise` appends to.

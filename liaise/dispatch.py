@@ -429,9 +429,26 @@ def _append_to_log(log_path: Optional[str], text: str) -> None:
 
 
 def _result_record(result: DispatchResult) -> str:
-    """How the dispatch ended, appended after whatever the agent wrote."""
+    """How the dispatch ended, appended after whatever the agent wrote.
+
+    Leads with the agent's final message, unescaped, when the output carries
+    one: that message is where the agent puts drafts it couldn't write to the
+    log itself, and inside the raw JSON output they aren't sendable as is.
+    """
+    message = _final_message(result.stdout)
+    final = f"\n--- agent's final message ---\n{message}\n" if message else ""
     return (
-        f"\n--- liaise: dispatch ended ---\n"
+        f"{final}\n--- liaise: dispatch ended ---\n"
         f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
         f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
     )
+
+
+def _final_message(stdout: str) -> Optional[str]:
+    """The `result` text of `claude --output-format json`'s output, or None."""
+    try:
+        raw = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    message = raw.get("result") if isinstance(raw, dict) else None
+    return message if isinstance(message, str) and message else None
