@@ -55,6 +55,8 @@ def test_install_launchd_writes_a_plist_with_environment_snapshot(tmp_path):
     assert "<key>EnvironmentVariables</key>" in content
     assert "<key>PATH</key>" in content
     assert "<key>StartInterval</key>" in content
+    # detached processor runs must outlive the tick that started them
+    assert "<key>AbandonProcessGroup</key>\n    <true/>" in content
 
 
 def test_install_systemd_writes_service_and_timer_with_environment_snapshot(tmp_path):
@@ -65,6 +67,7 @@ def test_install_systemd_writes_service_and_timer_with_environment_snapshot(tmp_
     service_text = service_path.read_text()
     assert "ExecStart=" in service_text
     assert 'Environment="PATH=' in service_text
+    assert "KillMode=process" in service_text  # same reason as AbandonProcessGroup
 
     timer_text = timer_path.read_text()
     assert "OnUnitActiveSec=" in timer_text

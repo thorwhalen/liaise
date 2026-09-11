@@ -14,19 +14,12 @@ from typing import Optional
 
 from liaise.config import PartnerConfig
 from liaise.github import GitHub, Issue
+from liaise.model import CASE_STATES
 
 #: The seven states from the design table (A.4), in the order they're listed
 #: there. Each value is the suffix after the configurable `label_prefix`
-#: ("liaise:" by default).
-STATE_LABELS = (
-    "intake",
-    "paused",
-    "working",
-    "needs-partner",
-    "needs-owner",
-    "deployed",
-    "budget",
-)
+#: ("liaise:" by default). Defined once, as :data:`liaise.model.CASE_STATES`.
+STATE_LABELS = CASE_STATES
 
 #: Not a `liaise:` state label (not partner-prefixed, not part of the
 #: one-label invariant) — it marks an issue the *agent* opened on the

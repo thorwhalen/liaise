@@ -86,6 +86,8 @@ def _plist_xml(
         f"        <key>{esc(k)}</key>\n        <string>{esc(v)}</string>"
         for k, v in env.items()
     )
+    # AbandonProcessGroup: the tick starts processor runs detached and exits at once;
+    # without it launchd kills those runs along with the job's process group (§3.5).
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -105,6 +107,8 @@ def _plist_xml(
     <integer>{interval_seconds}</integer>
     <key>RunAtLoad</key>
     <false/>
+    <key>AbandonProcessGroup</key>
+    <true/>
     <key>StandardOutPath</key>
     <string>{esc(log_path)}</string>
     <key>StandardErrorPath</key>
@@ -117,11 +121,13 @@ def _plist_xml(
 def _systemd_unit_text(*, program_args: list[str], env: dict[str, str]) -> str:
     exec_start = " ".join(program_args)
     env_lines = "\n".join(f'Environment="{k}={v}"' for k, v in env.items())
+    # KillMode=process: like launchd's AbandonProcessGroup, so detached runs outlive the tick.
     return f"""[Unit]
 Description=liaise run --once
 
 [Service]
 Type=oneshot
+KillMode=process
 {env_lines}
 ExecStart={exec_start}
 """
