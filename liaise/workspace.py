@@ -56,26 +56,39 @@ def resolve_checkout(path: Union[str, os.PathLike]) -> Path:
     return Path(path).expanduser().resolve()
 
 
+#: What ``GetExitCodeProcess`` reports for a process that has not exited yet.
+_STILL_ACTIVE = 259
+
+
 def pid_is_alive(pid: Any) -> bool:
     """Whether ``pid`` names a live process. Never sends it a real signal.
 
     Anything but a positive int in pid range is no live process, so a malformed session
     record or lock never raises here. On POSIX this is ``os.kill(pid, 0)``, which delivers
     nothing. On Windows ``os.kill`` would terminate the process instead, so the check
-    opens a query-only handle. The same check as ``liaise.run._pid_is_alive``, which is
-    retired with that module.
+    opens a query-only handle, and then asks for its exit code. Opening the handle is not
+    enough: Windows keeps an exited process openable while anyone still holds a handle to
+    it, such as the ``Popen`` that started it. Such a process is alive only if its exit
+    code is still ``STILL_ACTIVE``. ``liaise.run._pid_is_alive``, retired with that module,
+    lacked this check.
     """
     if isinstance(pid, bool) or not isinstance(pid, int) or not 0 < pid <= _MAX_PID:
         return False
     if platform.system() == "Windows":
         import ctypes
+        from ctypes import wintypes
 
         kernel32 = ctypes.windll.kernel32
         handle = kernel32.OpenProcess(_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
         if not handle:
             return False
-        kernel32.CloseHandle(handle)
-        return True
+        try:
+            code = wintypes.DWORD()
+            if not kernel32.GetExitCodeProcess(handle, ctypes.byref(code)):
+                return True  # cannot tell; an openable process counts as alive
+            return code.value == _STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
     try:
         os.kill(pid, 0)
     except ProcessLookupError:

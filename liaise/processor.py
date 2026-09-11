@@ -392,10 +392,10 @@ class ClaudeHeadless:
             return process.poll() is None
         if run.pid is None:
             return False
-        # Imported here: liaise.run still pulls in the 0.0.x dispatch and intake modules.
-        from liaise.run import _pid_is_alive
+        # Imported here to keep processor free of an import-time dependency on workspace.
+        from liaise.workspace import pid_is_alive
 
-        return _pid_is_alive(run.pid)
+        return pid_is_alive(run.pid)
 
     def _send_cancel(
         self,
