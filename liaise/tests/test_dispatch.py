@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 
-from liaise.config import Budget, DispatchConfig, PartnerConfig
+from liaise.config import DFLT_PERMISSION_MODE, Budget, DispatchConfig, PartnerConfig
 from liaise.dispatch import (
     ClaudeHeadless,
     EchoDispatcher,
@@ -575,3 +576,128 @@ def test_session_id_stored_and_reused_for_resume(tmp_path):
     dispatch_issue(fake, dispatcher, store, partner, fake.get_issue(REPO, 1), now=T0)
     second_job = dispatcher.jobs[1]
     assert second_job.session_id == stored_session_id(store, _issue())
+
+
+# ---- #22: a resume runs under the same permission mode as a fresh run ----
+
+
+@pytest.fixture
+def argv_recording_claude(tmp_path: Path) -> str:
+    """A fake `claude` that reports the argv it was given."""
+    return write_executable_script(
+        tmp_path / "claude",
+        "import sys, json\n"
+        "print(json.dumps({'session_id': 'sess-abc123', 'argv': sys.argv[1:]}))\n",
+    ).as_posix()
+
+
+@pytest.mark.parametrize("permission_mode", [DFLT_PERMISSION_MODE, "plan"])
+def test_resumed_dispatch_carries_the_same_permission_mode_as_a_fresh_one(
+    argv_recording_claude, tmp_path, permission_mode
+):
+    """#22 regression: the default resume template dropped `--permission-mode`,
+    so a resumed dispatch ran under a different mode than the run it
+    continued. Both default templates now take it from the one
+    `dispatch.permission_mode` setting — change it, and both follow.
+    """
+    dispatch = DispatchConfig(permission_mode=permission_mode)
+
+    def argv_of_run(session_id=None) -> list[str]:
+        job = Job(
+            prompt="hi",
+            cwd=str(tmp_path),
+            budget=Budget(timeout_minutes=1),
+            # the default templates, with only the program swapped for the fake
+            command=dispatch.command.replace("claude", argv_recording_claude, 1),
+            resume_command=dispatch.resume_command.replace(
+                "claude", argv_recording_claude, 1
+            ),
+            permission_mode=dispatch.permission_mode,
+            session_id=session_id,
+        )
+        return json.loads(ClaudeHeadless().dispatch(job).stdout)["argv"]
+
+    def mode_of(argv: list[str]) -> str:
+        return argv[argv.index("--permission-mode") + 1]
+
+    fresh, resumed = argv_of_run(), argv_of_run(session_id="sess-prior")
+    assert "--resume" not in fresh and "--resume" in resumed
+    assert mode_of(fresh) == mode_of(resumed) == permission_mode
+
+
+def test_dispatch_issue_hands_the_partner_permission_mode_to_every_job(tmp_path):
+    partner = _partner(
+        tmp_path, dispatch=DispatchConfig(cwd=str(tmp_path), permission_mode="plan")
+    )
+    fake = FakeGitHub([_issue()])
+    dispatcher = EchoDispatcher()
+    store: dict = {}
+
+    dispatch_issue(fake, dispatcher, store, partner, fake.get_issue(REPO, 1), now=T0)
+    dispatch_issue(fake, dispatcher, store, partner, fake.get_issue(REPO, 1), now=T0)
+
+    fresh, resumed = dispatcher.jobs
+    assert resumed.session_id is not None
+    assert fresh.permission_mode == resumed.permission_mode == "plan"
+
+
+# ---- #22: the dispatch log exists before the agent runs, and keeps what it wrote ----
+
+
+def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_path):
+    """#22: the operating rules send drafts and escalations "to the dispatch
+    log", so it must exist before the agent runs, its path must be in the
+    prompt, and `liaise`'s own record must be appended after the agent's
+    drafts rather than written over them.
+    """
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+
+    class DraftingDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            [log_file] = list(log_dir.iterdir())
+            assert str(log_file) in job.prompt
+            with open(log_file, "a") as f:
+                f.write("DRAFT for the partner: it's fixed, try again\n")
+            set_state(fake, fake.get_issue(REPO, 1), partner, "needs-owner")
+            return DispatchResult(returncode=0, session_id="sess-1")
+
+    outcome = dispatch_issue(
+        fake, DraftingDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=log_dir,
+    )
+
+    text = Path(outcome.log_path).read_text()
+    assert text.index("DRAFT for the partner") < text.index("exit code: 0")
+
+
+def test_a_log_the_agent_removed_does_not_skip_crash_reconciliation(tmp_path):
+    """Appending the result to a log that is gone must not raise past the
+    reconciliation — that would strand the issue at `liaise:working`.
+    """
+    import shutil
+
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+    notifications = []
+
+    class LogRemovingDispatcher:
+        def dispatch(self, job: Job):
+            from liaise.dispatch import DispatchResult
+
+            shutil.rmtree(log_dir)
+            return DispatchResult(returncode=1, session_id=None)
+
+    outcome = dispatch_issue(  # must not raise
+        fake, LogRemovingDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        notify_fn=lambda *a, **k: notifications.append(a) or True,
+        now=T0, log_dir=log_dir,
+    )
+
+    assert outcome.crashed
+    assert current_state(fake.get_issue(REPO, 1), partner) == "needs-owner"
+    assert len(notifications) == 1

@@ -191,3 +191,14 @@ def test_budget_section_distinguishes_enforced_from_advisory(tmp_path):
     prompt = compose_prompt(partner, _issue(), "fresh")
     assert "enforced from outside" in prompt
     assert "not enforced from outside" in prompt
+
+
+def test_state_contract_names_the_dispatch_log_path(tmp_path):
+    """#22: the operating rules send drafts and escalations "to the dispatch
+    log" — the prompt must say which file that is.
+    """
+    partner = _partner(tmp_path)
+    log_path = "state/logs/example-app-42.log"
+    prompt = compose_prompt(partner, _issue(), "fresh", log_path=log_path)
+    assert f"The dispatch log for this run is `{log_path}`" in prompt
+    assert prompt.index(log_path) > prompt.index("## State contract")

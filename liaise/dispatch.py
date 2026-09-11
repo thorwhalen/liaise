@@ -19,7 +19,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, MutableMapping, Optional, Protocol
 
-from liaise.config import Budget, PartnerConfig
+from liaise.config import DFLT_PERMISSION_MODE, Budget, PartnerConfig
 from liaise.github import GitHub, Issue
 from liaise.messages import budget_capped_message, mention
 from liaise.notify import notify as _default_notify
@@ -37,6 +37,7 @@ class Job:
     command: str
     resume_command: str
     session_id: Optional[str] = None
+    permission_mode: str = DFLT_PERMISSION_MODE
 
 
 @dataclass(frozen=True)
@@ -61,7 +62,9 @@ class ClaudeHeadless:
     """The default :class:`Dispatcher`: runs the configured `claude` command headless.
 
     The prompt is written to a temp file and referenced by path in the command
-    template — never passed on the command line. Never inherits an assumed
+    template — never passed on the command line. The fresh and the resume
+    template are formatted with the same `job.permission_mode`, so a resume
+    runs under the mode of the run it continues. Never inherits an assumed
     environment beyond what `subprocess.run` gives it by default; callers that
     need specific variables (see `schedule.py`) pass them explicitly.
     """
@@ -75,7 +78,9 @@ class ClaudeHeadless:
 
             template = job.resume_command if job.session_id else job.command
             command = template.format(
-                prompt_file=str(prompt_file), session_id=job.session_id or ""
+                prompt_file=str(prompt_file),
+                session_id=job.session_id or "",
+                permission_mode=job.permission_mode,
             )
             try:
                 proc = subprocess.run(
@@ -293,7 +298,10 @@ def dispatch_issue(
 
     session_id = stored_session_id(store, issue)
     mode = "resume" if session_id else "fresh"
-    prompt = compose_prompt(partner, issue, mode)
+    # Created before the agent runs so its prompt can name it: the operating
+    # rules send drafts and escalations "to the dispatch log" (#22).
+    log_path = _start_log(log_dir, issue, mode) if log_dir is not None else None
+    prompt = compose_prompt(partner, issue, mode, log_path=log_path)
     job = Job(
         prompt=prompt,
         cwd=partner.dispatch.cwd,
@@ -301,6 +309,7 @@ def dispatch_issue(
         command=partner.dispatch.command,
         resume_command=partner.dispatch.resume_command,
         session_id=session_id,
+        permission_mode=partner.dispatch.permission_mode,
     )
 
     set_state(gh, issue, partner, "working")
@@ -313,7 +322,14 @@ def dispatch_issue(
     if result.session_id:
         store[_session_key(issue)] = result.session_id
 
-    log_path = _write_log(log_dir, issue, result) if log_dir is not None else None
+    if log_path:
+        # A log that can no longer be appended to (the agent removed it, the
+        # disk is full) must not raise past the reconciliation below — that
+        # would strand the issue at `liaise:working`, the H-7 failure mode.
+        try:
+            _append_result(log_path, result)
+        except OSError:
+            pass
 
     refreshed = gh.get_issue(issue.repo, issue.number)
     still_working = current_state(refreshed, partner) == "working"
@@ -387,14 +403,28 @@ def _reconcile_mention(
             )
 
 
-def _write_log(log_dir: Path, issue: Issue, result: DispatchResult) -> str:
-    log_dir = Path(log_dir)
+def _start_log(log_dir: Path, issue: Issue, mode: str) -> str:
+    """Create this dispatch's log file and return its absolute path.
+
+    Absolute because the agent runs from `partner.dispatch.cwd`, where a
+    relative `log_dir` would name a different file. The agent appends to it;
+    :func:`_append_result` adds `liaise`'s own record once the agent stops.
+    """
+    log_dir = Path(log_dir).expanduser().absolute()
     log_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     safe_repo = issue.repo.replace("/", "-")
     path = log_dir / f"{safe_repo}-{issue.number}-{stamp}.log"
-    path.write_text(
-        f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
-        f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
-    )
+    with open(path, "a") as f:
+        f.write(f"liaise dispatch log: {issue.url} ({mode})\n")
     return str(path)
+
+
+def _append_result(log_path: str, result: DispatchResult) -> None:
+    """Append the exit code and output after, never over, what the agent wrote."""
+    with open(log_path, "a") as f:
+        f.write(
+            f"\n--- liaise: dispatch ended ---\n"
+            f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
+            f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
+        )

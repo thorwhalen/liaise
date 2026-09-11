@@ -12,6 +12,7 @@ import os
 import platform
 import shlex
 import subprocess
+import time
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -76,13 +77,21 @@ def run_once(
     nudge stale `deployed` issues.
 
     `dry_run` prints the same plan without calling any mutating `GitHub`
-    method and without stamping `last_run` — it changes nothing, the same
-    promise `liaise poll` makes. Not re-entrant with itself (L-3): a real
+    method and without stamping the run — it changes nothing, the same
+    promise `liaise poll` makes. Otherwise the store gets `run_started_at`
+    when the pass begins and `run_ended_at` when it stops, even by raising
+    (see :func:`run_stamps`). Not re-entrant with itself (L-3): a real
     scheduled invocation takes a lock in `config.global_.state_dir` so a
     manual `liaise run` alongside the timer can't double-dispatch.
+
+    `log_dir` defaults to `config.global_.log_dir`; each dispatch's log, whose
+    path the agent's prompt names, is written there.
     """
     now = now if now is not None else datetime.now(timezone.utc)
     partners = [config.partner(partner)] if partner else list(config.partners.values())
+    log_dir = Path(
+        log_dir if log_dir is not None else config.global_.log_dir
+    ).expanduser()
 
     plan: list[PlanItem] = []
     dispatched: list[DispatchOutcome] = []
@@ -93,7 +102,8 @@ def run_once(
         if dry_run
         else _run_lock(Path(config.global_.state_dir).expanduser() / "run.lock")
     )
-    with lock:
+    stamps = contextlib.nullcontext() if dry_run else _stamp_run(store, now=now)
+    with lock, stamps:
         for p in sorted(partners, key=lambda p: p.slug):
             landed_this_pass: list[int] = []
 
@@ -133,9 +143,6 @@ def run_once(
 
             if not dry_run:
                 _nudge_stale_deployed(gh, p, now=now, store=store)
-
-        if not dry_run:
-            store["last_run"] = now.isoformat()
 
     return RunReport(
         stamped_at=now, plan=plan, dispatched=dispatched, deployed=deployed
@@ -387,12 +394,69 @@ def _pid_is_alive(pid: int) -> bool:
     return True
 
 
+# ---- run stamps (#22): start and end, so a long pass reads as running ----
+
+_RUN_STARTED_KEY = "run_started_at"
+_RUN_ENDED_KEY = "run_ended_at"
+#: 0.0.3 and earlier: one stamp, the pass's start, written once it finished.
+_LEGACY_LAST_RUN_KEY = "last_run"
+
+
+@dataclass(frozen=True)
+class RunStamps:
+    """When the most recent non-dry-run pass started and ended."""
+
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+
+    @property
+    def running(self) -> bool:
+        """Whether a pass is in progress: it started later than the last one ended."""
+        if self.started_at is None:
+            return False
+        return self.ended_at is None or self.started_at > self.ended_at
+
+
+def run_stamps(store: MutableMapping) -> RunStamps:
+    """The run stamps `run_once` keeps in `store`.
+
+    A store last written by 0.0.3 or earlier holds only `last_run` — the start
+    of a pass that had already finished — read here as a run that started and
+    ended then.
+    """
+    started, ended = store.get(_RUN_STARTED_KEY), store.get(_RUN_ENDED_KEY)
+    if started is None and ended is None:
+        started = ended = store.get(_LEGACY_LAST_RUN_KEY)
+    return RunStamps(
+        started_at=datetime.fromisoformat(started) if started else None,
+        ended_at=datetime.fromisoformat(ended) if ended else None,
+    )
+
+
+@contextlib.contextmanager
+def _stamp_run(store: MutableMapping, *, now: datetime) -> Iterator[None]:
+    """Stamp the pass's start on entry and its end on exit — an exit by
+    exception included, since a pass that died is not still running.
+
+    The end is `now` plus the monotonic time elapsed, so both stamps share the
+    pass's own clock (an injected `now` included) and the end never precedes
+    the start.
+    """
+    store[_RUN_STARTED_KEY] = now.isoformat()
+    started = time.monotonic()
+    try:
+        yield
+    finally:
+        elapsed = timedelta(seconds=time.monotonic() - started)
+        store[_RUN_ENDED_KEY] = (now + elapsed).isoformat()
+
+
 def last_run_age(
     store: MutableMapping, *, now: Optional[datetime] = None
 ) -> Optional[float]:
-    """Seconds since the last non-dry-run `run_once`, or None if it never ran."""
-    stamp = store.get("last_run")
-    if not stamp:
+    """Seconds since the most recent non-dry-run `run_once` started, or None if it never ran."""
+    started_at = run_stamps(store).started_at
+    if started_at is None:
         return None
     now = now if now is not None else datetime.now(timezone.utc)
-    return (now - datetime.fromisoformat(stamp)).total_seconds()
+    return (now - started_at).total_seconds()

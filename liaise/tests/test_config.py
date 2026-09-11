@@ -133,3 +133,24 @@ def test_partner_show_prints_resolved_partner(config_root):
     assert "repo:           example/app" in output
     assert "github_logins:  pat" in output
     assert "notify_login:   pat" in output
+
+
+def test_log_dir_defaults_to_logs_under_state_dir(config_root):
+    glob = load_config(config_root).global_
+    assert Path(glob.log_dir) == Path(glob.state_dir) / "logs"
+
+
+def test_log_dir_is_overridable_in_config_toml(config_root, tmp_path):
+    path = config_root / "config.toml"
+    custom = (tmp_path / "elsewhere").as_posix()
+    # prepend, not append: keys after the [notify] header belong to that table
+    path.write_text(f'log_dir = "{custom}"\n' + path.read_text())
+    assert Path(load_config(config_root).global_.log_dir) == Path(custom)
+
+
+def test_permission_mode_defaults_to_auto_and_is_set_under_dispatch(config_root):
+    assert load_config(config_root).partner("pat").dispatch.permission_mode == "auto"
+    path = config_root / "partners" / "pat.toml"
+    # the fixture's file ends inside its [dispatch] table
+    path.write_text(path.read_text() + 'permission_mode = "plan"\n')
+    assert load_config(config_root).partner("pat").dispatch.permission_mode == "plan"

@@ -38,7 +38,9 @@ That's a working loop for one partner (`pat`, testing the fictional `example/app
 
 **State labels.** Exactly one `liaise:` label is on an issue at a time: `intake`, `paused`, `working`, `needs-partner`, `needs-owner`, `deployed`, or `budget`. That label is the entire state machine — read it on the issue, and you know exactly where things stand. `liaise` never closes an issue; that's the partner's or the owner's call.
 
-**Dispatch.** A ready issue gets handed to a coding agent (headless `claude` by default) with a composed prompt: the packaged operating rules, the partner's brief, the issue, which label to set on each exit path, the verify/deploy commands, and a budget. The agent asks questions in the thread, does the work in the repo's own conventions (branch, PR, CI, land), and reports back through the label.
+**Dispatch.** A ready issue gets handed to a coding agent (headless `claude` by default) with a composed prompt: the packaged operating rules, the partner's brief, the issue, which label to set on each exit path, the dispatch log's path, the verify/deploy commands, and a budget. The agent asks questions in the thread, does the work in the repo's own conventions (branch, PR, CI, land), and reports back through the label. An issue dispatched again resumes its earlier session, under the same `permission_mode` as the first run (`auto` unless a partner's `[dispatch]` table sets it).
+
+**Dispatch logs.** Every dispatch gets its own log file under `log_dir` — `logs/` under `state_dir` unless `config.toml` sets `log_dir`. The agent writes its drafts and escalations there, `liaise` appends the exit code and output once it stops, and a crash notification names the file. `liaise run --once --dry-run` prints where the logs go.
 
 **Batch or per-issue deploy.** With `deploy_per = "batch"` (the default), the agent lands each ready issue without deploying, and `liaise` runs the deploy command once after processing every ready issue, then tells each partner it's live. With `deploy_per = "issue"`, the agent deploys and posts itself.
 
@@ -52,8 +54,8 @@ That's a working loop for one partner (`pat`, testing the fictional `example/app
 
 - `liaise setup <partner>` — create the partner's label and every state label in their repo. Idempotent.
 - `liaise poll [--partner SLUG]` — report every partner issue, its state, and a readiness countdown. Changes nothing.
-- `liaise run [--once] [--dry-run] [--partner SLUG]` — intake, label, dispatch ready issues, batch-deploy, reconcile. `--dry-run` prints the plan and changes nothing.
-- `liaise status` — the last run's age, today's dispatch counts, and anything waiting on the owner.
+- `liaise run [--once] [--dry-run] [--partner SLUG]` — intake, label, dispatch ready issues, batch-deploy, reconcile. `--dry-run` prints the plan and the log directory, and changes nothing.
+- `liaise status` — when the last run started and ended (`running` while one is in progress), today's dispatch counts, and anything waiting on the owner.
 - `liaise partner list` / `liaise partner show <slug>` — see the resolved config, defaults applied.
 - `liaise schedule install` / `uninstall` / `status` — manage the scheduled job.
 

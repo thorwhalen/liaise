@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from importlib import resources
 from pathlib import Path
+from typing import Optional
 
 from liaise.config import PartnerConfig
 from liaise.github import Issue
@@ -47,7 +48,7 @@ def _issue_pointer(issue: Issue, mode: str) -> str:
     return "\n".join(lines)
 
 
-def _state_contract(partner: PartnerConfig) -> str:
+def _state_contract(partner: PartnerConfig, log_path: Optional[str]) -> str:
     prefix = partner.label_prefix
     lines = [
         "## State contract",
@@ -60,6 +61,14 @@ def _state_contract(partner: PartnerConfig) -> str:
             else "Post directly to the thread as the operating rules describe."
         ),
     ]
+    if log_path:
+        lines += [
+            "",
+            f"The dispatch log for this run is `{log_path}`. Append to it, never "
+            "overwrite it: every draft, escalation, and note for the owner that "
+            "the operating rules send to the dispatch log goes there. `liaise` "
+            "adds the exit code and output after you stop.",
+        ]
     if partner.notify_login:
         lines += [
             "",
@@ -118,11 +127,18 @@ def _budget(partner: PartnerConfig) -> str:
     )
 
 
-def compose_prompt(partner: PartnerConfig, issue: Issue, mode: str) -> str:
+def compose_prompt(
+    partner: PartnerConfig,
+    issue: Issue,
+    mode: str,
+    *,
+    log_path: Optional[str] = None,
+) -> str:
     """Build the full prompt for `issue`, in the fixed section order (A.5).
 
     `mode` is `"fresh"` for a new dispatch or `"resume"` for continuing a
-    stored session.
+    stored session. `log_path`, when given, is named in the State contract
+    as the dispatch log the operating rules send drafts and escalations to.
     """
     if mode not in MODES:
         raise ValueError(f"mode must be one of {MODES}, got {mode!r}")
@@ -131,7 +147,7 @@ def compose_prompt(partner: PartnerConfig, issue: Issue, mode: str) -> str:
         _operating_rules(),
         _partner_brief(partner),
         _issue_pointer(issue, mode),
-        _state_contract(partner),
+        _state_contract(partner, log_path),
         _commands(partner),
         _budget(partner),
     ]
