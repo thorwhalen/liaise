@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.config &mdash; liaise 0.0.2 documentation</title>
+  <title>liaise.config &mdash; liaise 0.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=47de8214"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -111,6 +111,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">import</span><span class="w"> </span><span class="nn">shlex</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
@@ -135,17 +136,29 @@
 <span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span> <span class="o">=</span> <span class="mi">3</span>
 <span class="n">DFLT_REPLY_MODE</span> <span class="o">=</span> <span class="s2">"draft"</span>
 <span class="n">DFLT_NTFY_TOPIC_ENV</span> <span class="o">=</span> <span class="s2">"LIAISE_NTFY_TOPIC"</span>
+<span class="n">DFLT_PERMISSION_MODE</span> <span class="o">=</span> <span class="s2">"auto"</span>
 <span class="c1">#: `-p`/`--print` takes the prompt as its next argument, not a file to open on</span>
 <span class="c1">#: its own — a bare path here IS the prompt (an agent seeing only a path has no</span>
 <span class="c1">#: instruction to read it), so the templates spell that out explicitly.</span>
+<span class="c1">#: Both templates take `{permission_mode}` from the one `dispatch.permission_mode`</span>
+<span class="c1">#: setting (#22): the resume template used to omit it, so a resumed dispatch ran</span>
+<span class="c1">#: under a different permission mode than the run it continued.</span>
 <span class="n">DFLT_DISPATCH_COMMAND</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s1">'claude -p "Read and follow the instructions in </span><span class="si">{prompt_file}</span><span class="s1">" '</span>
-    <span class="s2">"--permission-mode auto --output-format json"</span>
+    <span class="s2">"--permission-mode </span><span class="si">{permission_mode}</span><span class="s2"> --output-format json"</span>
 <span class="p">)</span>
 <span class="n">DFLT_RESUME_COMMAND</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s1">'claude --resume </span><span class="si">{session_id}</span><span class="s1"> -p "Read and follow the instructions in '</span>
+    <span class="s1">'</span><span class="si">{prompt_file}</span><span class="s1">" --permission-mode </span><span class="si">{permission_mode}</span><span class="s1"> --output-format json'</span>
+<span class="p">)</span>
+<span class="c1">#: The 0.0.3 resume template, which passes no permission mode: kept for an</span>
+<span class="c1">#: overridden `command` that passes none either, so its resume still matches.</span>
+<span class="n">_RESUME_COMMAND_WITHOUT_PERMISSION_MODE</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s1">'claude --resume </span><span class="si">{session_id}</span><span class="s1"> -p "Read and follow the instructions in '</span>
     <span class="s1">'</span><span class="si">{prompt_file}</span><span class="s1">" --output-format json'</span>
 <span class="p">)</span>
+<span class="c1">#: `log_dir`'s default, relative to `state_dir`.</span>
+<span class="n">DFLT_LOG_SUBDIR</span> <span class="o">=</span> <span class="s2">"logs"</span>
 
 
 <div class="viewcode-block" id="ConfigError">
@@ -197,11 +210,19 @@
 <a class="viewcode-back" href="../../module_docs/liaise/config.html#liaise.DispatchConfig">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">DispatchConfig</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Command templates used to run (and resume) the coding agent."""</span>
+<span class="w">    </span><span class="sd">"""Command templates used to run (and resume) the coding agent.</span>
+
+<span class="sd">    Both templates are formatted with ``prompt_file``, ``session_id`` and</span>
+<span class="sd">    ``permission_mode`` — the last from this one field, so a fresh and a</span>
+<span class="sd">    resumed dispatch run under the same permission mode. For an overridden</span>
+<span class="sd">    ``command`` that hardcodes its mode instead, the loader resumes under that</span>
+<span class="sd">    mode (see ``_dispatch_from``).</span>
+<span class="sd">    """</span>
 
     <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_DISPATCH_COMMAND</span>
     <span class="n">cwd</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"."</span>
-    <span class="n">resume_command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_RESUME_COMMAND</span></div>
+    <span class="n">resume_command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_RESUME_COMMAND</span>
+    <span class="n">permission_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_PERMISSION_MODE</span></div>
 
 
 
@@ -242,7 +263,23 @@
     <span class="n">label_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_LABEL_PREFIX</span>
     <span class="n">budget</span><span class="p">:</span> <span class="n">Budget</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">Budget</span><span class="p">)</span>
     <span class="n">deploy_per</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_DEPLOY_PER</span>
-    <span class="n">deployed_nudge_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span></div>
+    <span class="n">deployed_nudge_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span>
+    <span class="c1">#: Where each dispatch's log goes, as written in `config.toml`; read it</span>
+    <span class="c1">#: through :attr:`log_dir_path`.</span>
+    <span class="n">log_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">log_dir_path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""`log_dir` resolved: the agent's drafts and escalations go here, then</span>
+<span class="sd">        the exit code and output `liaise` appends.</span>
+
+<span class="sd">        Empty means `logs/` under `state_dir`, and a relative `log_dir` is</span>
+<span class="sd">        relative to `state_dir` too — never to whatever directory a scheduler</span>
+<span class="sd">        runs the job from. Derived on each read, so it follows a `state_dir`</span>
+<span class="sd">        changed with `dataclasses.replace`.</span>
+<span class="sd">        """</span>
+        <span class="n">state_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">state_dir</span> <span class="o">/</span> <span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">log_dir</span> <span class="ow">or</span> <span class="n">DFLT_LOG_SUBDIR</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span></div>
 
 
 
@@ -392,6 +429,54 @@
         <span class="n">budget</span><span class="o">=</span><span class="n">_budget_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"budget"</span><span class="p">),</span> <span class="n">dflt</span><span class="o">=</span><span class="n">dflt_budget</span><span class="p">),</span>
         <span class="n">deploy_per</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deploy_per"</span><span class="p">,</span> <span class="n">DFLT_DEPLOY_PER</span><span class="p">),</span>
         <span class="n">deployed_nudge_days</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"deployed_nudge_days"</span><span class="p">,</span> <span class="n">DFLT_DEPLOYED_NUDGE_DAYS</span><span class="p">),</span>
+        <span class="n">log_dir</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"log_dir"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_hardcoded_permission_mode</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The mode a template passes literally (`--permission-mode X` or</span>
+<span class="sd">    `--permission-mode=X`), or None when it passes none or can't be parsed.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tokens</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">token</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">token</span> <span class="o">==</span> <span class="s2">"--permission-mode"</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">tokens</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">tokens</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">token</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"--permission-mode="</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"="</span><span class="p">,</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="kc">None</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_dispatch_from</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DispatchConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""`[dispatch]`, resolved so a resume runs under the fresh run's mode (#22).</span>
+
+<span class="sd">    The default templates take `{permission_mode}` from `permission_mode`. An</span>
+<span class="sd">    overridden `command` that doesn't use the placeholder (the only way to set</span>
+<span class="sd">    a mode in 0.0.3) is itself where the mode comes from: unless</span>
+<span class="sd">    `resume_command` or `permission_mode` is set too, the default resume takes</span>
+<span class="sd">    the mode that `command` hardcodes, or passes none if it passes none —</span>
+<span class="sd">    never a quiet switch to `auto`.</span>
+<span class="sd">    """</span>
+    <span class="n">command</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"command"</span><span class="p">,</span> <span class="n">DFLT_DISPATCH_COMMAND</span><span class="p">)</span>
+    <span class="n">permission_mode</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"permission_mode"</span><span class="p">,</span> <span class="n">DFLT_PERMISSION_MODE</span><span class="p">)</span>
+    <span class="n">resume_command</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"resume_command"</span><span class="p">,</span> <span class="n">DFLT_RESUME_COMMAND</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="s2">"</span><span class="si">{permission_mode}</span><span class="s2">"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">command</span>
+        <span class="ow">and</span> <span class="s2">"resume_command"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span>
+        <span class="ow">and</span> <span class="s2">"permission_mode"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span>
+    <span class="p">):</span>
+        <span class="n">hardcoded</span> <span class="o">=</span> <span class="n">_hardcoded_permission_mode</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hardcoded</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">resume_command</span> <span class="o">=</span> <span class="n">_RESUME_COMMAND_WITHOUT_PERMISSION_MODE</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">permission_mode</span> <span class="o">=</span> <span class="n">hardcoded</span>
+    <span class="k">return</span> <span class="n">DispatchConfig</span><span class="p">(</span>
+        <span class="n">command</span><span class="o">=</span><span class="n">command</span><span class="p">,</span>
+        <span class="n">cwd</span><span class="o">=</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"cwd"</span><span class="p">,</span> <span class="s2">"."</span><span class="p">),</span>
+        <span class="n">resume_command</span><span class="o">=</span><span class="n">resume_command</span><span class="p">,</span>
+        <span class="n">permission_mode</span><span class="o">=</span><span class="n">permission_mode</span><span class="p">,</span>
     <span class="p">)</span>
 
 
@@ -402,12 +487,7 @@
         <span class="k">if</span> <span class="n">required</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">raw</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">_missing_partner_field_error</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">required</span><span class="p">)</span>
 
-    <span class="n">dispatch_raw</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dispatch"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
-    <span class="n">dispatch</span> <span class="o">=</span> <span class="n">DispatchConfig</span><span class="p">(</span>
-        <span class="n">command</span><span class="o">=</span><span class="n">dispatch_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"command"</span><span class="p">,</span> <span class="n">DFLT_DISPATCH_COMMAND</span><span class="p">),</span>
-        <span class="n">cwd</span><span class="o">=</span><span class="n">dispatch_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"cwd"</span><span class="p">,</span> <span class="s2">"."</span><span class="p">),</span>
-        <span class="n">resume_command</span><span class="o">=</span><span class="n">dispatch_raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"resume_command"</span><span class="p">,</span> <span class="n">DFLT_RESUME_COMMAND</span><span class="p">),</span>
-    <span class="p">)</span>
+    <span class="n">dispatch</span> <span class="o">=</span> <span class="n">_dispatch_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"dispatch"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
     <span class="n">escalate</span> <span class="o">=</span> <span class="n">_escalate_from</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"escalate"</span><span class="p">))</span>
 
     <span class="n">github_logins</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">raw</span><span class="p">[</span><span class="s2">"github_logins"</span><span class="p">])</span>

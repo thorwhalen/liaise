@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; liaise 0.0.2 documentation</title>
+  <title>Index &mdash; liaise 0.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="_static/jquery.js?v=5d32c60e"></script>
       <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="_static/documentation_options.js?v=47de8214"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -229,6 +229,8 @@
       <li><a href="module_docs/liaise/messages.html#liaise.messages.deployed_message">deployed_message() (in module liaise.messages)</a>
 </li>
       <li><a href="module_docs/liaise/config.html#liaise.config.DFLT_DISPATCH_COMMAND">DFLT_DISPATCH_COMMAND (in module liaise.config)</a>
+</li>
+      <li><a href="module_docs/liaise/config.html#liaise.config.DFLT_LOG_SUBDIR">DFLT_LOG_SUBDIR (in module liaise.config)</a>
 </li>
       <li><a href="module_docs/liaise/notify.html#liaise.notify.DFLT_TOPIC_ENV">DFLT_TOPIC_ENV (in module liaise.notify)</a>
 </li>
@@ -477,8 +479,6 @@
         <li><a href="module_docs/liaise/intake.html#module-liaise.intake">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     liaise.messages
 
@@ -493,6 +493,8 @@
         <li><a href="module_docs/liaise/notify.html#module-liaise.notify">module</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     liaise.prompt
 
@@ -559,6 +561,20 @@
 
       <ul>
         <li><a href="module_docs/liaise/config.html#liaise.config.load_config">(in module liaise.config)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise/run.html#liaise.run.RunStamps.lock_held">lock_held (liaise.run.RunStamps attribute)</a>
+</li>
+      <li><a href="module_docs/liaise/config.html#liaise.config.GlobalConfig.log_dir">log_dir (liaise.config.GlobalConfig attribute)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise.html#liaise.GlobalConfig.log_dir">(liaise.GlobalConfig attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="module_docs/liaise/config.html#liaise.config.GlobalConfig.log_dir_path">log_dir_path (liaise.config.GlobalConfig property)</a>
+
+      <ul>
+        <li><a href="module_docs/liaise.html#liaise.GlobalConfig.log_dir_path">(liaise.GlobalConfig property)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -716,22 +732,28 @@
         <li><a href="module_docs/liaise/github.html#liaise.github.GitHub.remove_labels">(liaise.github.GitHub method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise/cli.html#liaise.cli.run">run() (in module liaise.cli)</a>
 </li>
+      <li><a href="module_docs/liaise/run.html#liaise.run.run_lock_path">run_lock_path() (in module liaise.run)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="module_docs/liaise.html#liaise.run_once">run_once() (in module liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/run.html#liaise.run.run_once">(in module liaise.run)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/run.html#liaise.run.run_stamps">run_stamps() (in module liaise.run)</a>
+</li>
       <li><a href="module_docs/liaise.html#liaise.RunReport">RunReport (class in liaise)</a>
 
       <ul>
         <li><a href="module_docs/liaise/run.html#liaise.run.RunReport">(class in liaise.run)</a>
 </li>
       </ul></li>
+      <li><a href="module_docs/liaise/run.html#liaise.run.RunStamps">RunStamps (class in liaise.run)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -777,6 +799,8 @@
 </li>
       </ul></li>
       <li><a href="module_docs/liaise.html#liaise.setup_labels">setup_labels() (in module liaise)</a>
+</li>
+      <li><a href="module_docs/liaise/run.html#liaise.run.RunStamps.state">state (liaise.run.RunStamps property)</a>
 </li>
       <li><a href="module_docs/liaise.html#liaise.state_label">state_label() (in module liaise)</a>
 

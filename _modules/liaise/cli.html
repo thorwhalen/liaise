@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.cli &mdash; liaise 0.0.2 documentation</title>
+  <title>liaise.cli &mdash; liaise 0.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=47de8214"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -113,6 +113,7 @@
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
 
@@ -128,7 +129,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GhCli</span><span class="p">,</span> <span class="n">GitHub</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.intake</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">find_partner_issues</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span> <span class="k">as</span> <span class="n">_notify</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.run</span><span class="w"> </span><span class="kn">import</span> <span class="n">last_run_age</span><span class="p">,</span> <span class="n">run_once</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.run</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunStamps</span><span class="p">,</span> <span class="n">run_lock_path</span><span class="p">,</span> <span class="n">run_once</span><span class="p">,</span> <span class="n">run_stamps</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.schedule</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">install_schedule</span><span class="p">,</span>
     <span class="n">schedule_status</span><span class="p">,</span>
@@ -267,7 +268,8 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Intake, label, dispatch ready issues, batch-deploy, reconcile.</span>
 
-<span class="sd">    `--dry-run` prints the plan and changes nothing. Without `--once`, keeps</span>
+<span class="sd">    Prints where dispatch logs go (`log_dir`), then the plan. `--dry-run`</span>
+<span class="sd">    prints the same and changes nothing. Without `--once`, keeps</span>
 <span class="sd">    running one pass after another — the scheduled job always passes</span>
 <span class="sd">    `--once` (see `liaise schedule install`); this is for a foreground,</span>
 <span class="sd">    manual "keep watching" run.</span>
@@ -279,6 +281,7 @@
         <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
     <span class="p">)</span>
     <span class="n">notify_fn</span> <span class="o">=</span> <span class="n">_notify_fn_for</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="p">)</span>
+    <span class="n">log_dir</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">log_dir_path</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">one_pass</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">report</span> <span class="o">=</span> <span class="n">run_once</span><span class="p">(</span>
@@ -289,8 +292,9 @@
             <span class="n">partner</span><span class="o">=</span><span class="n">partner</span><span class="p">,</span>
             <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
             <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span><span class="p">,</span>
+            <span class="n">log_dir</span><span class="o">=</span><span class="n">log_dir</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"plan (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">plan</span><span class="p">)</span><span class="si">}</span><span class="s2"> item(s)):"</span><span class="p">]</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"log_dir: </span><span class="si">{</span><span class="n">log_dir</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"plan (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">plan</span><span class="p">)</span><span class="si">}</span><span class="s2"> item(s)):"</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">report</span><span class="o">.</span><span class="n">plan</span><span class="p">:</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
                 <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">partner_slug</span><span class="si">}</span><span class="s2"> #</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_number</span><span class="si">:</span><span class="s2">&lt;5</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">action</span><span class="si">:</span><span class="s2">&lt;18</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">issue_title</span><span class="si">}</span><span class="s2">"</span>
@@ -317,6 +321,33 @@
 
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_format_run_stamps</span><span class="p">(</span><span class="n">stamps</span><span class="p">:</span> <span class="n">RunStamps</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""#22: both stamps, and whether the last pass is `running` (a long</span>
+<span class="sd">    dispatch used to read as a job that had not run for many minutes) or was</span>
+<span class="sd">    `interrupted` before it could finish.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">stamps</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">"never"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="s2">"last_run: never"</span><span class="p">]</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">fmt</span><span class="p">(</span><span class="n">stamp</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">stamp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"never"</span>
+        <span class="n">age</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">now</span> <span class="o">-</span> <span class="n">stamp</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">())</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stamp</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s1">'seconds'</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">age</span><span class="si">}</span><span class="s2">s ago)"</span>
+
+    <span class="n">note</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">" (no live liaise process holds the run lock)"</span>
+        <span class="k">if</span> <span class="n">stamps</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="s2">"interrupted"</span>
+        <span class="k">else</span> <span class="s2">""</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"last_run: </span><span class="si">{</span><span class="n">stamps</span><span class="o">.</span><span class="n">state</span><span class="si">}{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  run_started_at: </span><span class="si">{</span><span class="n">fmt</span><span class="p">(</span><span class="n">stamps</span><span class="o">.</span><span class="n">started_at</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  run_ended_at:   </span><span class="si">{</span><span class="n">fmt</span><span class="p">(</span><span class="n">stamps</span><span class="o">.</span><span class="n">ended_at</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="p">]</span>
+
+
 <div class="viewcode-block" id="status">
 <a class="viewcode-back" href="../../module_docs/liaise/cli.html#liaise.cli.status">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span>
@@ -325,15 +356,16 @@
     <span class="n">gh</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GitHub</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Last run stamp, today's dispatches per partner, and anything needing the owner."""</span>
+<span class="w">    </span><span class="sd">"""When the last run started and ended (and whether it is still running or was interrupted), today's dispatches per partner, and anything needing the owner."""</span>
     <span class="n">config</span> <span class="o">=</span> <span class="n">load_config</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">github</span> <span class="o">=</span> <span class="n">gh</span> <span class="k">if</span> <span class="n">gh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
     <span class="n">state_store</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">store</span> <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_store</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
     <span class="p">)</span>
 
-    <span class="n">age</span> <span class="o">=</span> <span class="n">last_run_age</span><span class="p">(</span><span class="n">state_store</span><span class="p">)</span>
-    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"last_run: </span><span class="si">{</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">age</span><span class="p">)</span><span class="si">}</span><span class="s1">s ago'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">age</span><span class="w"> </span><span class="ow">is</span><span class="w"> </span><span class="ow">not</span><span class="w"> </span><span class="kc">None</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'never'</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="n">_format_run_stamps</span><span class="p">(</span>
+        <span class="n">run_stamps</span><span class="p">(</span><span class="n">state_store</span><span class="p">,</span> <span class="n">lock_path</span><span class="o">=</span><span class="n">run_lock_path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">))</span>
+    <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">partners</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">):</span>
         <span class="n">count</span> <span class="o">=</span> <span class="n">daily_dispatch_count</span><span class="p">(</span><span class="n">state_store</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span>

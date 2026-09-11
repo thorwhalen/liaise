@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.dispatch &mdash; liaise 0.0.2 documentation</title>
+  <title>liaise.dispatch &mdash; liaise 0.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=47de8214"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -121,7 +121,7 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Protocol</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Budget</span><span class="p">,</span> <span class="n">PartnerConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_PERMISSION_MODE</span><span class="p">,</span> <span class="n">Budget</span><span class="p">,</span> <span class="n">PartnerConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">Issue</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.messages</span><span class="w"> </span><span class="kn">import</span> <span class="n">budget_capped_message</span><span class="p">,</span> <span class="n">mention</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span> <span class="k">as</span> <span class="n">_default_notify</span>
@@ -140,7 +140,8 @@
     <span class="n">budget</span><span class="p">:</span> <span class="n">Budget</span>
     <span class="n">command</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">resume_command</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">session_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">permission_mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_PERMISSION_MODE</span></div>
 
 
 
@@ -177,7 +178,9 @@
 <span class="w">    </span><span class="sd">"""The default :class:`Dispatcher`: runs the configured `claude` command headless.</span>
 
 <span class="sd">    The prompt is written to a temp file and referenced by path in the command</span>
-<span class="sd">    template — never passed on the command line. Never inherits an assumed</span>
+<span class="sd">    template — never passed on the command line. The fresh and the resume</span>
+<span class="sd">    template are formatted with the same `job.permission_mode`, so a resume</span>
+<span class="sd">    runs under the mode of the run it continues. Never inherits an assumed</span>
 <span class="sd">    environment beyond what `subprocess.run` gives it by default; callers that</span>
 <span class="sd">    need specific variables (see `schedule.py`) pass them explicitly.</span>
 <span class="sd">    """</span>
@@ -191,7 +194,9 @@
 
             <span class="n">template</span> <span class="o">=</span> <span class="n">job</span><span class="o">.</span><span class="n">resume_command</span> <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">session_id</span> <span class="k">else</span> <span class="n">job</span><span class="o">.</span><span class="n">command</span>
             <span class="n">command</span> <span class="o">=</span> <span class="n">template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
-                <span class="n">prompt_file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">prompt_file</span><span class="p">),</span> <span class="n">session_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">session_id</span> <span class="ow">or</span> <span class="s2">""</span>
+                <span class="n">prompt_file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">prompt_file</span><span class="p">),</span>
+                <span class="n">session_id</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">session_id</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+                <span class="n">permission_mode</span><span class="o">=</span><span class="n">job</span><span class="o">.</span><span class="n">permission_mode</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
@@ -430,7 +435,10 @@
 
     <span class="n">session_id</span> <span class="o">=</span> <span class="n">stored_session_id</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">issue</span><span class="p">)</span>
     <span class="n">mode</span> <span class="o">=</span> <span class="s2">"resume"</span> <span class="k">if</span> <span class="n">session_id</span> <span class="k">else</span> <span class="s2">"fresh"</span>
-    <span class="n">prompt</span> <span class="o">=</span> <span class="n">compose_prompt</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+    <span class="c1"># Named in the prompt, so decided before it is composed: the operating</span>
+    <span class="c1"># rules send drafts and escalations "to the dispatch log" (#22).</span>
+    <span class="n">log_path</span> <span class="o">=</span> <span class="n">_log_path</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">issue</span><span class="p">)</span> <span class="k">if</span> <span class="n">log_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">prompt</span> <span class="o">=</span> <span class="n">compose_prompt</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">log_path</span><span class="o">=</span><span class="n">log_path</span><span class="p">)</span>
     <span class="n">job</span> <span class="o">=</span> <span class="n">Job</span><span class="p">(</span>
         <span class="n">prompt</span><span class="o">=</span><span class="n">prompt</span><span class="p">,</span>
         <span class="n">cwd</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">cwd</span><span class="p">,</span>
@@ -438,6 +446,7 @@
         <span class="n">command</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">command</span><span class="p">,</span>
         <span class="n">resume_command</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">resume_command</span><span class="p">,</span>
         <span class="n">session_id</span><span class="o">=</span><span class="n">session_id</span><span class="p">,</span>
+        <span class="n">permission_mode</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">dispatch</span><span class="o">.</span><span class="n">permission_mode</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">set_state</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="s2">"working"</span><span class="p">)</span>
@@ -446,11 +455,14 @@
     <span class="p">)</span>
     <span class="n">store</span><span class="p">[</span><span class="n">_dispatched_at_key</span><span class="p">(</span><span class="n">issue</span><span class="p">)]</span> <span class="o">=</span> <span class="p">(</span><span class="n">now</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
+    <span class="c1"># Created only now, for the agent to append to, so a dispatch that fails</span>
+    <span class="c1"># before it runs leaves no log behind.</span>
+    <span class="n">_append_to_log</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"liaise dispatch log: </span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">)</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">result</span> <span class="o">=</span> <span class="n">dispatcher</span><span class="o">.</span><span class="n">dispatch</span><span class="p">(</span><span class="n">job</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">session_id</span><span class="p">:</span>
         <span class="n">store</span><span class="p">[</span><span class="n">_session_key</span><span class="p">(</span><span class="n">issue</span><span class="p">)]</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">session_id</span>
 
-    <span class="n">log_path</span> <span class="o">=</span> <span class="n">_write_log</span><span class="p">(</span><span class="n">log_dir</span><span class="p">,</span> <span class="n">issue</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span> <span class="k">if</span> <span class="n">log_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">_append_to_log</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="n">_result_record</span><span class="p">(</span><span class="n">result</span><span class="p">))</span>
 
     <span class="n">refreshed</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">get_issue</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
     <span class="n">still_working</span> <span class="o">=</span> <span class="n">current_state</span><span class="p">(</span><span class="n">refreshed</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"working"</span>
@@ -485,9 +497,9 @@
         <span class="k">try</span><span class="p">:</span>
             <span class="n">_reconcile_mention</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">partner</span><span class="p">,</span> <span class="n">refreshed</span><span class="p">,</span> <span class="n">log_path</span><span class="o">=</span><span class="n">log_path</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - see comment above</span>
-            <span class="k">if</span> <span class="n">log_path</span><span class="p">:</span>
-                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[liaise: mention reconciliation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">_append_to_log</span><span class="p">(</span>
+                <span class="n">log_path</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[liaise: mention reconciliation failed: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="p">)</span>
 
     <span class="k">return</span> <span class="n">DispatchOutcome</span><span class="p">(</span>
         <span class="n">dispatched</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -517,25 +529,67 @@
     <span class="n">repaired</span> <span class="o">=</span> <span class="n">gh</span><span class="o">.</span><span class="n">ensure_last_comment_mentions</span><span class="p">(</span>
         <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">mention</span><span class="p">(</span><span class="n">partner</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">repaired</span> <span class="ow">and</span> <span class="n">log_path</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[liaise: repaired a partner-facing comment missing "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">mention</span><span class="p">(</span><span class="n">partner</span><span class="p">)</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span>
-            <span class="p">)</span>
+    <span class="k">if</span> <span class="n">repaired</span><span class="p">:</span>
+        <span class="n">_append_to_log</span><span class="p">(</span>
+            <span class="n">log_path</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[liaise: repaired a partner-facing comment missing </span><span class="si">{</span><span class="n">mention</span><span class="p">(</span><span class="n">partner</span><span class="p">)</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_write_log</span><span class="p">(</span><span class="n">log_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">result</span><span class="p">:</span> <span class="n">DispatchResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="n">log_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_dir</span><span class="p">)</span>
-    <span class="n">log_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_log_path</span><span class="p">(</span><span class="n">log_dir</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""This dispatch's log file, as an absolute path. Nothing is created yet.</span>
+
+<span class="sd">    Absolute because the path is named in a prompt read by an agent running</span>
+<span class="sd">    from `partner.dispatch.cwd`, where a relative path would name another file.</span>
+<span class="sd">    """</span>
+    <span class="n">log_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
     <span class="n">stamp</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">"%Y%m</span><span class="si">%d</span><span class="s2">T%H%M%SZ"</span><span class="p">)</span>
     <span class="n">safe_repo</span> <span class="o">=</span> <span class="n">issue</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">"/"</span><span class="p">,</span> <span class="s2">"-"</span><span class="p">)</span>
-    <span class="n">path</span> <span class="o">=</span> <span class="n">log_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">safe_repo</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">stamp</span><span class="si">}</span><span class="s2">.log"</span>
-    <span class="n">path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">log_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">safe_repo</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">stamp</span><span class="si">}</span><span class="s2">.log"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_append_to_log</span><span class="p">(</span><span class="n">log_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Append `text` to the dispatch log, creating it if needed; no-op without one.</span>
+
+<span class="sd">    Never raises: a log that can't be written (an unwritable `log_dir`, a full</span>
+<span class="sd">    disk, text that won't encode) must not skip reconciliation — stranding the</span>
+<span class="sd">    issue at `liaise:working`, the H-7 failure mode — or discard an outcome.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">log_path</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_path</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+        <span class="k">pass</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_result_record</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">DispatchResult</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""How the dispatch ended, appended after whatever the agent wrote.</span>
+
+<span class="sd">    Leads with the agent's final message, unescaped, when the output carries</span>
+<span class="sd">    one: that message is where the agent puts drafts it couldn't write to the</span>
+<span class="sd">    log itself, and inside the raw JSON output they aren't sendable as is.</span>
+<span class="sd">    """</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">_final_message</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+    <span class="n">final</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">--- agent's final message ---</span><span class="se">\n</span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="k">if</span> <span class="n">message</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">final</span><span class="si">}</span><span class="se">\n</span><span class="s2">--- liaise: dispatch ended ---</span><span class="se">\n</span><span class="s2">"</span>
         <span class="sa">f</span><span class="s2">"exit code: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">returncode</span><span class="si">}</span><span class="se">\n</span><span class="s2">session id: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">session_id</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">"</span>
         <span class="sa">f</span><span class="s2">"--- stdout ---</span><span class="se">\n</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">stdout</span><span class="si">}</span><span class="se">\n\n</span><span class="s2">--- stderr ---</span><span class="se">\n</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">stderr</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_final_message</span><span class="p">(</span><span class="n">stdout</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The `result` text of `claude --output-format json`'s output, or None."""</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">raw</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">stdout</span><span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"result"</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">message</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">message</span> <span class="k">else</span> <span class="kc">None</span>
 </pre></div>
 
            </div>

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.run &mdash; liaise 0.0.2 documentation</title>
+  <title>liaise.run &mdash; liaise 0.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=47de8214"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -114,6 +114,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">shlex</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
@@ -186,13 +187,19 @@
 <span class="sd">    nudge stale `deployed` issues.</span>
 
 <span class="sd">    `dry_run` prints the same plan without calling any mutating `GitHub`</span>
-<span class="sd">    method and without stamping `last_run` — it changes nothing, the same</span>
-<span class="sd">    promise `liaise poll` makes. Not re-entrant with itself (L-3): a real</span>
+<span class="sd">    method and without stamping the run — it changes nothing, the same</span>
+<span class="sd">    promise `liaise poll` makes. Otherwise the store gets `run_started_at`</span>
+<span class="sd">    when the pass begins and `run_ended_at` when it stops, even by raising</span>
+<span class="sd">    (see :func:`run_stamps`). Not re-entrant with itself (L-3): a real</span>
 <span class="sd">    scheduled invocation takes a lock in `config.global_.state_dir` so a</span>
 <span class="sd">    manual `liaise run` alongside the timer can't double-dispatch.</span>
+
+<span class="sd">    `log_dir` defaults to `config.global_.log_dir_path`; each dispatch's log,</span>
+<span class="sd">    whose path the agent's prompt names, is written there.</span>
 <span class="sd">    """</span>
     <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
     <span class="n">partners</span> <span class="o">=</span> <span class="p">[</span><span class="n">config</span><span class="o">.</span><span class="n">partner</span><span class="p">(</span><span class="n">partner</span><span class="p">)]</span> <span class="k">if</span> <span class="n">partner</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">partners</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">log_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log_dir</span><span class="p">)</span> <span class="k">if</span> <span class="n">log_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">log_dir_path</span>
 
     <span class="n">plan</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">PlanItem</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">dispatched</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">DispatchOutcome</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -201,9 +208,10 @@
     <span class="n">lock</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">contextlib</span><span class="o">.</span><span class="n">nullcontext</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">dry_run</span>
-        <span class="k">else</span> <span class="n">_run_lock</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="o">/</span> <span class="s2">"run.lock"</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">_run_lock</span><span class="p">(</span><span class="n">run_lock_path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">global_</span><span class="o">.</span><span class="n">state_dir</span><span class="p">))</span>
     <span class="p">)</span>
-    <span class="k">with</span> <span class="n">lock</span><span class="p">:</span>
+    <span class="n">stamps</span> <span class="o">=</span> <span class="n">contextlib</span><span class="o">.</span><span class="n">nullcontext</span><span class="p">()</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="n">_stamp_run</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">lock</span><span class="p">,</span> <span class="n">stamps</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">partners</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="n">p</span><span class="o">.</span><span class="n">slug</span><span class="p">):</span>
             <span class="n">landed_this_pass</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
@@ -243,9 +251,6 @@
 
             <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
                 <span class="n">_nudge_stale_deployed</span><span class="p">(</span><span class="n">gh</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
-            <span class="n">store</span><span class="p">[</span><span class="s2">"last_run"</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
     <span class="k">return</span> <span class="n">RunReport</span><span class="p">(</span>
         <span class="n">stamped_at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span> <span class="n">dispatched</span><span class="o">=</span><span class="n">dispatched</span><span class="p">,</span> <span class="n">deployed</span><span class="o">=</span><span class="n">deployed</span>
@@ -439,6 +444,27 @@
         <span class="n">store</span><span class="p">[</span><span class="n">nudged_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
 
+<div class="viewcode-block" id="run_lock_path">
+<a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.run_lock_path">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_lock_path</span><span class="p">(</span><span class="n">state_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Where `run_once` keeps its lock (L-3). `liaise status` reads it too, to</span>
+<span class="sd">    tell a running pass from one whose process died.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="o">/</span> <span class="s2">"run.lock"</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_lock_owner</span><span class="p">(</span><span class="n">lock_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The pid of the live process holding `lock_path`, or None: no lock, an</span>
+<span class="sd">    unreadable one, or one left behind by a process that is gone.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">pid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lock_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">pid</span> <span class="k">if</span> <span class="n">_pid_is_alive</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+
 <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_run_lock</span><span class="p">(</span><span class="n">lock_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""L-3: concurrency of one (A.1 rule 5), enforced rather than assumed.</span>
@@ -449,16 +475,12 @@
 <span class="sd">    with the scheduled one on the same machine", which is the actual risk.</span>
 <span class="sd">    """</span>
     <span class="n">lock_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">lock_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">other_pid</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lock_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
-        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-            <span class="n">other_pid</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">if</span> <span class="n">other_pid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">_pid_is_alive</span><span class="p">(</span><span class="n">other_pid</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"another liaise run (pid </span><span class="si">{</span><span class="n">other_pid</span><span class="si">}</span><span class="s2">) is already in progress "</span>
-                <span class="sa">f</span><span class="s2">"(lock: </span><span class="si">{</span><span class="n">lock_path</span><span class="si">}</span><span class="s2">)"</span>
-            <span class="p">)</span>
+    <span class="n">other_pid</span> <span class="o">=</span> <span class="n">_lock_owner</span><span class="p">(</span><span class="n">lock_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">other_pid</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"another liaise run (pid </span><span class="si">{</span><span class="n">other_pid</span><span class="si">}</span><span class="s2">) is already in progress "</span>
+            <span class="sa">f</span><span class="s2">"(lock: </span><span class="si">{</span><span class="n">lock_path</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="p">)</span>
     <span class="n">lock_path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()))</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">yield</span>
@@ -498,17 +520,96 @@
     <span class="k">return</span> <span class="kc">True</span>
 
 
+<span class="c1"># ---- run stamps (#22): start and end, so a long pass reads as running ----</span>
+
+<span class="n">_RUN_STARTED_KEY</span> <span class="o">=</span> <span class="s2">"run_started_at"</span>
+<span class="n">_RUN_ENDED_KEY</span> <span class="o">=</span> <span class="s2">"run_ended_at"</span>
+<span class="c1">#: 0.0.3 and earlier: one stamp, the pass's start, written once it finished.</span>
+<span class="n">_LEGACY_LAST_RUN_KEY</span> <span class="o">=</span> <span class="s2">"last_run"</span>
+
+
+<div class="viewcode-block" id="RunStamps">
+<a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.RunStamps">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">RunStamps</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""When the most recent non-dry-run pass started and ended."""</span>
+
+    <span class="n">started_at</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">ended_at</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: Whether a live process held the run lock when these were read; None</span>
+    <span class="c1">#: when the lock wasn't checked.</span>
+    <span class="n">lock_held</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""`never`, `finished`, `running` or `interrupted`.</span>
+
+<span class="sd">        A pass that started later than the last one ended is `running` —</span>
+<span class="sd">        unless the lock was checked and no live process holds it. Then the</span>
+<span class="sd">        pass was killed (a SIGTERM from `launchctl bootout`, a shutdown) before</span>
+<span class="sd">        it could stamp its end: `interrupted`, since a job that stopped must</span>
+<span class="sd">        not read as one that is busy.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"never"</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ended_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">started_at</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ended_at</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"finished"</span>
+        <span class="k">return</span> <span class="s2">"interrupted"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock_held</span> <span class="ow">is</span> <span class="kc">False</span> <span class="k">else</span> <span class="s2">"running"</span></div>
+
+
+
+<div class="viewcode-block" id="run_stamps">
+<a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.run_stamps">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_stamps</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">lock_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RunStamps</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The run stamps `run_once` keeps in `store`. Pass `lock_path` (see</span>
+<span class="sd">    :func:`run_lock_path`) to tell a running pass from a killed one.</span>
+
+<span class="sd">    A store last written by 0.0.3 or earlier holds only `last_run` — the start</span>
+<span class="sd">    of a pass that had already finished — read here as a run that started and</span>
+<span class="sd">    ended then.</span>
+<span class="sd">    """</span>
+    <span class="n">started</span><span class="p">,</span> <span class="n">ended</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_RUN_STARTED_KEY</span><span class="p">),</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_RUN_ENDED_KEY</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">started</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ended</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">started</span> <span class="o">=</span> <span class="n">ended</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">_LEGACY_LAST_RUN_KEY</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">RunStamps</span><span class="p">(</span>
+        <span class="n">started_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">started</span><span class="p">)</span> <span class="k">if</span> <span class="n">started</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ended_at</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">ended</span><span class="p">)</span> <span class="k">if</span> <span class="n">ended</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">lock_held</span><span class="o">=</span><span class="p">(</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="n">lock_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">_lock_owner</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">lock_path</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_stamp_run</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Stamp the pass's start on entry and its end on exit — an exit by</span>
+<span class="sd">    exception included, since a pass that died is not still running.</span>
+
+<span class="sd">    The end is `now` plus the monotonic time elapsed, so both stamps share the</span>
+<span class="sd">    pass's own clock (an injected `now` included) and the end never precedes</span>
+<span class="sd">    the start.</span>
+<span class="sd">    """</span>
+    <span class="n">store</span><span class="p">[</span><span class="n">_RUN_STARTED_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">yield</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">elapsed</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">monotonic</span><span class="p">()</span> <span class="o">-</span> <span class="n">started</span><span class="p">)</span>
+        <span class="n">store</span><span class="p">[</span><span class="n">_RUN_ENDED_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">now</span> <span class="o">+</span> <span class="n">elapsed</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+
 <div class="viewcode-block" id="last_run_age">
 <a class="viewcode-back" href="../../module_docs/liaise/run.html#liaise.last_run_age">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">last_run_age</span><span class="p">(</span>
     <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Seconds since the last non-dry-run `run_once`, or None if it never ran."""</span>
-    <span class="n">stamp</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"last_run"</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">stamp</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Seconds since the most recent non-dry-run `run_once` started, or None if it never ran."""</span>
+    <span class="n">started_at</span> <span class="o">=</span> <span class="n">run_stamps</span><span class="p">(</span><span class="n">store</span><span class="p">)</span><span class="o">.</span><span class="n">started_at</span>
+    <span class="k">if</span> <span class="n">started_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">fromisoformat</span><span class="p">(</span><span class="n">stamp</span><span class="p">))</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span></div>
+    <span class="k">return</span> <span class="p">(</span><span class="n">now</span> <span class="o">-</span> <span class="n">started_at</span><span class="p">)</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span></div>
 
 </pre></div>
 

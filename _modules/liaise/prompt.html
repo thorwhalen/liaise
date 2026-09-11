@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.prompt &mdash; liaise 0.0.2 documentation</title>
+  <title>liaise.prompt &mdash; liaise 0.0.3 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=47de8214"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -113,6 +113,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">PartnerConfig</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">Issue</span>
@@ -149,7 +150,7 @@
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_state_contract</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_state_contract</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">log_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">prefix</span> <span class="o">=</span> <span class="n">partner</span><span class="o">.</span><span class="n">label_prefix</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s2">"## State contract"</span><span class="p">,</span>
@@ -162,6 +163,16 @@
             <span class="k">else</span> <span class="s2">"Post directly to the thread as the operating rules describe."</span>
         <span class="p">),</span>
     <span class="p">]</span>
+    <span class="k">if</span> <span class="n">log_path</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="s2">""</span><span class="p">,</span>
+            <span class="sa">f</span><span class="s2">"The dispatch log for this run is `</span><span class="si">{</span><span class="n">log_path</span><span class="si">}</span><span class="s2">`. Append to it, never "</span>
+            <span class="s2">"overwrite it: every draft, escalation, and note for the owner that "</span>
+            <span class="s2">"the operating rules send to the dispatch log goes there. `liaise` "</span>
+            <span class="s2">"adds the exit code and output after you stop. If you can't write to "</span>
+            <span class="s2">"it, put that text at the end of your final message instead; the log "</span>
+            <span class="s2">"records your output too."</span><span class="p">,</span>
+        <span class="p">]</span>
     <span class="k">if</span> <span class="n">partner</span><span class="o">.</span><span class="n">notify_login</span><span class="p">:</span>
         <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span>
             <span class="s2">""</span><span class="p">,</span>
@@ -222,11 +233,18 @@
 
 <div class="viewcode-block" id="compose_prompt">
 <a class="viewcode-back" href="../../module_docs/liaise/prompt.html#liaise.compose_prompt">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">compose_prompt</span><span class="p">(</span><span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compose_prompt</span><span class="p">(</span>
+    <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span>
+    <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">log_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Build the full prompt for `issue`, in the fixed section order (A.5).</span>
 
 <span class="sd">    `mode` is `"fresh"` for a new dispatch or `"resume"` for continuing a</span>
-<span class="sd">    stored session.</span>
+<span class="sd">    stored session. `log_path`, when given, is named in the State contract</span>
+<span class="sd">    as the dispatch log the operating rules send drafts and escalations to.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">mode</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">MODES</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mode must be one of </span><span class="si">{</span><span class="n">MODES</span><span class="si">}</span><span class="s2">, got </span><span class="si">{</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
@@ -235,7 +253,7 @@
         <span class="n">_operating_rules</span><span class="p">(),</span>
         <span class="n">_partner_brief</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
         <span class="n">_issue_pointer</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">mode</span><span class="p">),</span>
-        <span class="n">_state_contract</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
+        <span class="n">_state_contract</span><span class="p">(</span><span class="n">partner</span><span class="p">,</span> <span class="n">log_path</span><span class="p">),</span>
         <span class="n">_commands</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
         <span class="n">_budget</span><span class="p">(</span><span class="n">partner</span><span class="p">),</span>
     <span class="p">]</span>
