@@ -38,6 +38,9 @@ class Job:
     resume_command: str
     session_id: Optional[str] = None
     permission_mode: str = DFLT_PERMISSION_MODE
+    #: The dispatch log's directory, granted to the agent (`{log_dir}` in the
+    #: templates). None when there is no log; the agent's own `cwd` stands in.
+    log_dir: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -64,7 +67,8 @@ class ClaudeHeadless:
     The prompt is written to a temp file and referenced by path in the command
     template — never passed on the command line. The fresh and the resume
     template are formatted with the same `job.permission_mode`, so a resume
-    runs under the mode of the run it continues. Never inherits an assumed
+    runs under the mode of the run it continues, and with `job.log_dir`, the
+    directory the agent writes its dispatch log in. Never inherits an assumed
     environment beyond what `subprocess.run` gives it by default; callers that
     need specific variables (see `schedule.py`) pass them explicitly.
     """
@@ -81,6 +85,7 @@ class ClaudeHeadless:
                 prompt_file=str(prompt_file),
                 session_id=job.session_id or "",
                 permission_mode=job.permission_mode,
+                log_dir=job.log_dir or job.cwd,
             )
             try:
                 proc = subprocess.run(
@@ -298,9 +303,9 @@ def dispatch_issue(
 
     session_id = stored_session_id(store, issue)
     mode = "resume" if session_id else "fresh"
-    # Created before the agent runs so its prompt can name it: the operating
-    # rules send drafts and escalations "to the dispatch log" (#22).
-    log_path = _start_log(log_dir, issue, mode) if log_dir is not None else None
+    # Decided before the prompt is composed, because the prompt names it: the
+    # operating rules send drafts and escalations "to the dispatch log" (#22).
+    log_path = _log_path(log_dir, issue) if log_dir is not None else None
     prompt = compose_prompt(partner, issue, mode, log_path=log_path)
     job = Job(
         prompt=prompt,
@@ -310,6 +315,7 @@ def dispatch_issue(
         resume_command=partner.dispatch.resume_command,
         session_id=session_id,
         permission_mode=partner.dispatch.permission_mode,
+        log_dir=str(Path(log_path).parent) if log_path else None,
     )
 
     set_state(gh, issue, partner, "working")
@@ -403,21 +409,20 @@ def _reconcile_mention(
             )
 
 
-def _start_log(log_dir: Path, issue: Issue, mode: str) -> str:
-    """Create this dispatch's log file and return its absolute path.
+def _log_path(log_dir: Path, issue: Issue) -> str:
+    """This dispatch's log file: an absolute path in a directory that exists.
 
     Absolute because the agent runs from `partner.dispatch.cwd`, where a
-    relative `log_dir` would name a different file. The agent appends to it;
-    :func:`_append_result` adds `liaise`'s own record once the agent stops.
+    relative path would name a different file. The file itself is created by
+    whoever writes first — the agent's drafts, or :func:`_append_result` once
+    the agent stops — so a dispatch that fails before it runs leaves no empty
+    log behind.
     """
     log_dir = Path(log_dir).expanduser().absolute()
     log_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     safe_repo = issue.repo.replace("/", "-")
-    path = log_dir / f"{safe_repo}-{issue.number}-{stamp}.log"
-    with open(path, "a") as f:
-        f.write(f"liaise dispatch log: {issue.url} ({mode})\n")
-    return str(path)
+    return str(log_dir / f"{safe_repo}-{issue.number}-{stamp}.log")
 
 
 def _append_result(log_path: str, result: DispatchResult) -> None:

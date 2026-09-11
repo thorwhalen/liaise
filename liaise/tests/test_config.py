@@ -137,7 +137,7 @@ def test_partner_show_prints_resolved_partner(config_root):
 
 def test_log_dir_defaults_to_logs_under_state_dir(config_root):
     glob = load_config(config_root).global_
-    assert Path(glob.log_dir) == Path(glob.state_dir) / "logs"
+    assert glob.log_dir_path == Path(glob.state_dir) / "logs"
 
 
 def test_log_dir_is_overridable_in_config_toml(config_root, tmp_path):
@@ -145,12 +145,49 @@ def test_log_dir_is_overridable_in_config_toml(config_root, tmp_path):
     custom = (tmp_path / "elsewhere").as_posix()
     # prepend, not append: keys after the [notify] header belong to that table
     path.write_text(f'log_dir = "{custom}"\n' + path.read_text())
-    assert Path(load_config(config_root).global_.log_dir) == Path(custom)
+    assert load_config(config_root).global_.log_dir_path == Path(custom)
+
+
+def test_a_relative_log_dir_is_under_state_dir_not_the_working_directory(config_root):
+    """A scheduled job runs from `/` (launchd): a relative `log_dir` resolved
+    against the working directory would be unwritable there and block every
+    dispatch.
+    """
+    path = config_root / "config.toml"
+    path.write_text('log_dir = "dispatch-logs"\n' + path.read_text())
+    glob = load_config(config_root).global_
+    assert glob.log_dir_path == Path(glob.state_dir) / "dispatch-logs"
+
+
+def test_log_dir_path_follows_a_replaced_state_dir(config_root, tmp_path):
+    from dataclasses import replace
+
+    glob = replace(load_config(config_root).global_, state_dir=str(tmp_path / "moved"))
+    assert glob.log_dir_path == tmp_path / "moved" / "logs"
 
 
 def test_permission_mode_defaults_to_auto_and_is_set_under_dispatch(config_root):
     assert load_config(config_root).partner("pat").dispatch.permission_mode == "auto"
     path = config_root / "partners" / "pat.toml"
     # the fixture's file ends inside its [dispatch] table
-    path.write_text(path.read_text() + 'permission_mode = "plan"\n')
-    assert load_config(config_root).partner("pat").dispatch.permission_mode == "plan"
+    path.write_text(path.read_text() + 'permission_mode = "acceptEdits"\n')
+    pat = load_config(config_root).partner("pat")
+    assert pat.dispatch.permission_mode == "acceptEdits"
+
+
+def test_a_template_overridden_without_the_permission_mode_raises(config_root):
+    """#22: an override that hardcodes the mode (the only way to set one in
+    0.0.3) in just one of the two templates would resume under a different
+    permission mode than the fresh run. Refused at load, naming the fix.
+    """
+    path = config_root / "partners" / "pat.toml"
+    # the fixture's file ends inside its [dispatch] table
+    path.write_text(
+        path.read_text()
+        + 'command = "claude -p {prompt_file} --permission-mode acceptEdits"\n'
+    )
+    with pytest.raises(ConfigError) as exc_info:
+        load_config(config_root)
+    message = str(exc_info.value)
+    assert str(path) in message
+    assert "{permission_mode}" in message

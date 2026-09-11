@@ -12,7 +12,7 @@ from liaise.cli import status as cli_status
 from liaise.config import Budget, Config, DispatchConfig, PartnerConfig
 from liaise.dispatch import EchoDispatcher
 from liaise.github import FakeGitHub, Issue
-from liaise.run import last_run_age, run_once, run_stamps
+from liaise.run import RunReport, last_run_age, run_once, run_stamps
 from liaise.state import current_state
 from liaise.tests.conftest import write_executable_script
 
@@ -544,6 +544,27 @@ def test_cli_run_once_dry_run_prints_the_log_dir(tmp_path):
     assert not (tmp_path / "state" / "logs").exists()  # a dry run creates nothing
 
 
+def test_cli_run_passes_the_log_dir_it_prints_to_run_once(tmp_path, monkeypatch):
+    """#22 regression: `cli.run` never passed `log_dir`. `run_once` falls back
+    to the config value on its own, so only a spy shows that the CLI passes
+    it — and that the path it prints is the path it passes.
+    """
+    root = _write_config_root(tmp_path)
+    passed = {}
+
+    def spy_run_once(*args, **kwargs):
+        passed.update(kwargs)
+        return RunReport(stamped_at=T0)
+
+    monkeypatch.setattr("liaise.cli.run_once", spy_run_once)
+    output = cli_run(
+        root=str(root), once=True, gh=FakeGitHub([]),
+        dispatcher=EchoDispatcher(), store={},
+    )
+    assert passed["log_dir"] == tmp_path / "state" / "logs"
+    assert f"log_dir: {passed['log_dir']}" in output
+
+
 def test_cli_run_crash_notification_names_an_existing_log_file(tmp_path, monkeypatch):
     """#22 regression: `cli.run` never passed `log_dir`, so no log was ever
     written and every crash notification said "(no log_dir configured)".
@@ -623,7 +644,26 @@ def test_a_pass_that_raises_still_stamps_its_end(tmp_path, monkeypatch):
     with pytest.raises(RuntimeError, match="gh is down"):
         run_once(FakeGitHub([]), EchoDispatcher(), store, _config(tmp_path), now=T0)
     assert run_stamps(store).started_at == T0
-    assert not run_stamps(store).running
+    assert run_stamps(store).state == "finished"
+
+
+def test_status_says_interrupted_when_the_pass_process_is_gone(tmp_path):
+    """#22 review: a pass killed by SIGTERM (`launchctl bootout`, a shutdown)
+    never reaches its `finally`, so its start stays later than the last end.
+    With no live process holding the run lock, that is not "running".
+    """
+    root = _write_config_root(tmp_path)
+    lock = tmp_path / "state" / "run.lock"
+    lock.parent.mkdir(parents=True)
+    lock.write_text("999999999")  # not a real pid: the pass's process is gone
+    store: dict = {
+        "run_started_at": (T0 + timedelta(minutes=5)).isoformat(),
+        "run_ended_at": T0.isoformat(),
+    }
+
+    output = cli_status(root=str(root), gh=FakeGitHub([]), store=store)
+
+    assert "last_run: interrupted" in output
 
 
 def test_run_stamps_read_a_legacy_last_run_as_a_finished_run():
@@ -632,4 +672,4 @@ def test_run_stamps_read_a_legacy_last_run_as_a_finished_run():
     """
     stamps = run_stamps({"last_run": T0.isoformat()})
     assert stamps.started_at == stamps.ended_at == T0
-    assert not stamps.running
+    assert stamps.state == "finished"

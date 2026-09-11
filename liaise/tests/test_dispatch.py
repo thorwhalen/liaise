@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -591,7 +592,27 @@ def argv_recording_claude(tmp_path: Path) -> str:
     ).as_posix()
 
 
-@pytest.mark.parametrize("permission_mode", [DFLT_PERMISSION_MODE, "plan"])
+def _argv_of_a_default_template_run(fake_claude: str, cwd, **job_fields) -> list[str]:
+    """Run the real default templates through `ClaudeHeadless`, with only the
+    program swapped for `fake_claude`, and return the argv it was given.
+    """
+    dispatch = DispatchConfig()
+    job = Job(
+        prompt="hi",
+        cwd=str(cwd),
+        budget=Budget(timeout_minutes=1),
+        command=dispatch.command.replace("claude", fake_claude, 1),
+        resume_command=dispatch.resume_command.replace("claude", fake_claude, 1),
+        **job_fields,
+    )
+    return json.loads(ClaudeHeadless().dispatch(job).stdout)["argv"]
+
+
+def _value_after(argv: list[str], flag: str) -> str:
+    return argv[argv.index(flag) + 1]
+
+
+@pytest.mark.parametrize("permission_mode", [DFLT_PERMISSION_MODE, "acceptEdits"])
 def test_resumed_dispatch_carries_the_same_permission_mode_as_a_fresh_one(
     argv_recording_claude, tmp_path, permission_mode
 ):
@@ -600,67 +621,80 @@ def test_resumed_dispatch_carries_the_same_permission_mode_as_a_fresh_one(
     continued. Both default templates now take it from the one
     `dispatch.permission_mode` setting — change it, and both follow.
     """
-    dispatch = DispatchConfig(permission_mode=permission_mode)
 
-    def argv_of_run(session_id=None) -> list[str]:
-        job = Job(
-            prompt="hi",
-            cwd=str(tmp_path),
-            budget=Budget(timeout_minutes=1),
-            # the default templates, with only the program swapped for the fake
-            command=dispatch.command.replace("claude", argv_recording_claude, 1),
-            resume_command=dispatch.resume_command.replace(
-                "claude", argv_recording_claude, 1
-            ),
-            permission_mode=dispatch.permission_mode,
-            session_id=session_id,
+    def argv_of_run(**job_fields) -> list[str]:
+        return _argv_of_a_default_template_run(
+            argv_recording_claude, tmp_path, permission_mode=permission_mode, **job_fields
         )
-        return json.loads(ClaudeHeadless().dispatch(job).stdout)["argv"]
-
-    def mode_of(argv: list[str]) -> str:
-        return argv[argv.index("--permission-mode") + 1]
 
     fresh, resumed = argv_of_run(), argv_of_run(session_id="sess-prior")
     assert "--resume" not in fresh and "--resume" in resumed
-    assert mode_of(fresh) == mode_of(resumed) == permission_mode
+    assert (
+        _value_after(fresh, "--permission-mode")
+        == _value_after(resumed, "--permission-mode")
+        == permission_mode
+    )
+
+
+def test_both_default_templates_grant_the_agent_the_log_dir(argv_recording_claude, tmp_path):
+    """#22: the dispatch log lives under `state_dir`, outside the agent's
+    working directory; without `--add-dir` a headless agent can be refused
+    the very writes its prompt asks for.
+    """
+    log_dir = str(tmp_path / "logs")
+    for session_id in (None, "sess-prior"):
+        argv = _argv_of_a_default_template_run(
+            argv_recording_claude, tmp_path, session_id=session_id, log_dir=log_dir
+        )
+        assert _value_after(argv, "--add-dir") == log_dir
 
 
 def test_dispatch_issue_hands_the_partner_permission_mode_to_every_job(tmp_path):
     partner = _partner(
-        tmp_path, dispatch=DispatchConfig(cwd=str(tmp_path), permission_mode="plan")
+        tmp_path,
+        dispatch=DispatchConfig(cwd=str(tmp_path), permission_mode="acceptEdits"),
     )
     fake = FakeGitHub([_issue()])
     dispatcher = EchoDispatcher()
     store: dict = {}
 
-    dispatch_issue(fake, dispatcher, store, partner, fake.get_issue(REPO, 1), now=T0)
-    dispatch_issue(fake, dispatcher, store, partner, fake.get_issue(REPO, 1), now=T0)
+    for _ in range(2):
+        dispatch_issue(
+            fake, dispatcher, store, partner, fake.get_issue(REPO, 1),
+            now=T0, notify_fn=lambda *a, **k: True,
+        )
 
     fresh, resumed = dispatcher.jobs
     assert resumed.session_id is not None
-    assert fresh.permission_mode == resumed.permission_mode == "plan"
+    assert fresh.permission_mode == resumed.permission_mode == "acceptEdits"
 
 
-# ---- #22: the dispatch log exists before the agent runs, and keeps what it wrote ----
+# ---- #22: the dispatch log is named in the prompt, and keeps what the agent wrote ----
+
+
+def _log_path_named_in(prompt: str) -> str:
+    return re.search(r"The dispatch log for this run is `([^`]+)`", prompt).group(1)
 
 
 def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_path):
     """#22: the operating rules send drafts and escalations "to the dispatch
-    log", so it must exist before the agent runs, its path must be in the
-    prompt, and `liaise`'s own record must be appended after the agent's
-    drafts rather than written over them.
+    log", so the prompt must name a file the agent can write, its directory
+    must be granted to the agent, and `liaise`'s own record must be appended
+    after the agent's drafts rather than written over them.
     """
     partner = _partner(tmp_path)
     fake = FakeGitHub([_issue()])
     log_dir = tmp_path / "logs"
+    named = []
 
     class DraftingDispatcher:
         def dispatch(self, job: Job):
             from liaise.dispatch import DispatchResult
 
-            [log_file] = list(log_dir.iterdir())
-            assert str(log_file) in job.prompt
-            with open(log_file, "a") as f:
+            log_path = _log_path_named_in(job.prompt)
+            named.append(log_path)
+            assert job.log_dir == str(Path(log_path).parent)
+            with open(log_path, "a") as f:
                 f.write("DRAFT for the partner: it's fixed, try again\n")
             set_state(fake, fake.get_issue(REPO, 1), partner, "needs-owner")
             return DispatchResult(returncode=0, session_id="sess-1")
@@ -670,8 +704,48 @@ def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_
         now=T0, log_dir=log_dir,
     )
 
+    assert named == [outcome.log_path]
+    assert Path(outcome.log_path).parent == log_dir
     text = Path(outcome.log_path).read_text()
     assert text.index("DRAFT for the partner") < text.index("exit code: 0")
+
+
+def test_a_relative_log_dir_is_named_as_an_absolute_path(tmp_path, monkeypatch):
+    """The agent runs from `partner.dispatch.cwd`, where a relative path would
+    name a different file than the one `liaise` appends to.
+    """
+    monkeypatch.chdir(tmp_path)
+    partner = _partner(tmp_path)
+    fake = FakeGitHub([_issue()])
+    dispatcher = EchoDispatcher()
+
+    outcome = dispatch_issue(
+        fake, dispatcher, {}, partner, fake.get_issue(REPO, 1),
+        now=T0, log_dir=Path("logs"), notify_fn=lambda *a, **k: True,
+    )
+
+    named = Path(_log_path_named_in(dispatcher.jobs[0].prompt))
+    assert named.is_absolute()
+    assert str(named) == outcome.log_path
+    assert named.parent.resolve() == (tmp_path / "logs").resolve()
+
+
+def test_a_dispatch_that_fails_before_running_leaves_no_empty_log(tmp_path):
+    """A missing brief (or a `gh` error before the agent starts) fails the same
+    way every pass; no failed attempt may leave a log file behind.
+    """
+    partner = _partner(tmp_path, brief=str(tmp_path / "missing-brief.md"))
+    fake = FakeGitHub([_issue()])
+    log_dir = tmp_path / "logs"
+
+    with pytest.raises(FileNotFoundError):
+        dispatch_issue(
+            fake, EchoDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+            now=T0, log_dir=log_dir,
+        )
+
+    assert not log_dir.exists() or list(log_dir.iterdir()) == []
+    assert current_state(fake.get_issue(REPO, 1), partner) is None  # never set working
 
 
 def test_a_log_the_agent_removed_does_not_skip_crash_reconciliation(tmp_path):

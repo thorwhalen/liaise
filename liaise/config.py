@@ -39,14 +39,18 @@ DFLT_PERMISSION_MODE = "auto"
 #: instruction to read it), so the templates spell that out explicitly.
 #: Both templates take `{permission_mode}` from the one `dispatch.permission_mode`
 #: setting (#22): the resume template used to omit it, so a resumed dispatch ran
-#: under a different permission mode than the run it continued.
+#: under a different permission mode than the run it continued. `--add-dir`
+#: gives the agent the dispatch log's directory, which lies under `state_dir`,
+#: outside the repo it works in; the flag takes a list, so it goes last.
 DFLT_DISPATCH_COMMAND = (
     'claude -p "Read and follow the instructions in {prompt_file}" '
-    "--permission-mode {permission_mode} --output-format json"
+    "--permission-mode {permission_mode} --output-format json "
+    '--add-dir "{log_dir}"'
 )
 DFLT_RESUME_COMMAND = (
     'claude --resume {session_id} -p "Read and follow the instructions in '
-    '{prompt_file}" --permission-mode {permission_mode} --output-format json'
+    '{prompt_file}" --permission-mode {permission_mode} --output-format json '
+    '--add-dir "{log_dir}"'
 )
 #: `log_dir`'s default, relative to `state_dir`.
 DFLT_LOG_SUBDIR = "logs"
@@ -89,9 +93,11 @@ class NotifyConfig:
 class DispatchConfig:
     """Command templates used to run (and resume) the coding agent.
 
-    Both templates are formatted with ``prompt_file``, ``session_id`` and
-    ``permission_mode`` — the last from this one field, so a fresh and a
-    resumed dispatch run under the same permission mode.
+    Both templates are formatted with ``prompt_file``, ``session_id``,
+    ``log_dir`` and ``permission_mode`` — the last from this one field, so a
+    fresh and a resumed dispatch run under the same permission mode. An
+    override must use ``{permission_mode}`` in both templates or in neither
+    (checked at load).
     """
 
     command: str = DFLT_DISPATCH_COMMAND
@@ -133,19 +139,22 @@ class GlobalConfig:
     budget: Budget = field(default_factory=Budget)
     deploy_per: str = DFLT_DEPLOY_PER
     deployed_nudge_days: int = DFLT_DEPLOYED_NUDGE_DAYS
-    #: Where each dispatch's log is written: the agent's drafts and
-    #: escalations, then the exit code and output `liaise` appends. Empty
-    #: means `logs/` under `state_dir`, filled in on construction so every
-    #: reader sees a real path.
+    #: Where each dispatch's log goes, as written in `config.toml`; read it
+    #: through :attr:`log_dir_path`.
     log_dir: str = ""
 
-    def __post_init__(self):
-        if not self.log_dir:
-            # frozen: `object.__setattr__` is the dataclass idiom for a
-            # default derived from another field.
-            object.__setattr__(
-                self, "log_dir", str(Path(self.state_dir) / DFLT_LOG_SUBDIR)
-            )
+    @property
+    def log_dir_path(self) -> Path:
+        """`log_dir` resolved: the agent's drafts and escalations go here, then
+        the exit code and output `liaise` appends.
+
+        Empty means `logs/` under `state_dir`, and a relative `log_dir` is
+        relative to `state_dir` too — never to whatever directory a scheduler
+        runs the job from. Derived on each read, so it follows a `state_dir`
+        changed with `dataclasses.replace`.
+        """
+        state_dir = Path(self.state_dir).expanduser()
+        return state_dir / Path(self.log_dir or DFLT_LOG_SUBDIR).expanduser()
 
 
 @dataclass(frozen=True)
@@ -289,6 +298,19 @@ def _load_global_config(root: Path) -> GlobalConfig:
     )
 
 
+def _permission_mode_in_one_template_error(path: Path) -> ConfigError:
+    return ConfigError(
+        f"{path} overrides a [dispatch] template so that only one of `command` "
+        "and `resume_command` takes {permission_mode}: a resumed dispatch would "
+        "run under a different permission mode than the run it continues. Set "
+        "the mode once and use the placeholder in both templates (or in "
+        "neither), e.g.\n\n"
+        "  [dispatch]\n"
+        '  permission_mode = "auto"\n'
+        '  command = "claude -p ... --permission-mode {permission_mode} ..."\n'
+    )
+
+
 def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
     raw = _load_toml(path)
     slug = path.stem
@@ -303,6 +325,12 @@ def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
         resume_command=dispatch_raw.get("resume_command", DFLT_RESUME_COMMAND),
         permission_mode=dispatch_raw.get("permission_mode", DFLT_PERMISSION_MODE),
     )
+    # #22: the one place the permission mode comes from only holds if both
+    # templates read it — an override hardcoding the mode in just one of them
+    # (the only way to set it in 0.0.3) would resume under a different mode.
+    placeholder = "{permission_mode}"
+    if (placeholder in dispatch.command) != (placeholder in dispatch.resume_command):
+        raise _permission_mode_in_one_template_error(path)
     escalate = _escalate_from(raw.get("escalate"))
 
     github_logins = tuple(raw["github_logins"])

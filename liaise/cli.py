@@ -27,7 +27,7 @@ from liaise.dispatch import (
 from liaise.github import GhCli, GitHub
 from liaise.intake import compute_readiness, find_partner_issues
 from liaise.notify import notify as _notify
-from liaise.run import RunStamps, run_once, run_stamps
+from liaise.run import RunStamps, run_lock_path, run_once, run_stamps
 from liaise.schedule import (
     install_schedule,
     schedule_status,
@@ -165,7 +165,7 @@ def run(
         store if store is not None else default_store(config.global_.state_dir)
     )
     notify_fn = _notify_fn_for(config.global_)
-    log_dir = Path(config.global_.log_dir).expanduser()
+    log_dir = config.global_.log_dir_path
 
     def one_pass() -> str:
         report = run_once(
@@ -205,10 +205,11 @@ def run(
 
 
 def _format_run_stamps(stamps: RunStamps) -> list[str]:
-    """#22: both stamps, and "running" when the start is later than the end —
-    a long dispatch used to read as a job that had not run for many minutes.
+    """#22: both stamps, and whether the last pass is `running` (a long
+    dispatch used to read as a job that had not run for many minutes) or was
+    `interrupted` before it could finish.
     """
-    if stamps.started_at is None:
+    if stamps.state == "never":
         return ["last_run: never"]
     now = datetime.now(timezone.utc)
 
@@ -218,8 +219,13 @@ def _format_run_stamps(stamps: RunStamps) -> list[str]:
         age = int((now - stamp).total_seconds())
         return f"{stamp.isoformat(timespec='seconds')} ({age}s ago)"
 
+    note = (
+        " (no live liaise process holds the run lock)"
+        if stamps.state == "interrupted"
+        else ""
+    )
     return [
-        f"last_run: {'running' if stamps.running else 'finished'}",
+        f"last_run: {stamps.state}{note}",
         f"  run_started_at: {fmt(stamps.started_at)}",
         f"  run_ended_at:   {fmt(stamps.ended_at)}",
     ]
@@ -231,14 +237,16 @@ def status(
     gh: Optional[GitHub] = None,
     store: Optional[MutableMapping] = None,
 ) -> str:
-    """When the last run started and ended (or "running"), today's dispatches per partner, and anything needing the owner."""
+    """When the last run started and ended (and whether it is still running or was interrupted), today's dispatches per partner, and anything needing the owner."""
     config = load_config(Path(root) if root else None)
     github = gh if gh is not None else GhCli()
     state_store = (
         store if store is not None else default_store(config.global_.state_dir)
     )
 
-    lines = _format_run_stamps(run_stamps(state_store))
+    lines = _format_run_stamps(
+        run_stamps(state_store, lock_path=run_lock_path(config.global_.state_dir))
+    )
 
     for p in sorted(config.partners.values(), key=lambda p: p.slug):
         count = daily_dispatch_count(state_store, p)

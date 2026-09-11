@@ -84,14 +84,12 @@ def run_once(
     scheduled invocation takes a lock in `config.global_.state_dir` so a
     manual `liaise run` alongside the timer can't double-dispatch.
 
-    `log_dir` defaults to `config.global_.log_dir`; each dispatch's log, whose
-    path the agent's prompt names, is written there.
+    `log_dir` defaults to `config.global_.log_dir_path`; each dispatch's log,
+    whose path the agent's prompt names, is written there.
     """
     now = now if now is not None else datetime.now(timezone.utc)
     partners = [config.partner(partner)] if partner else list(config.partners.values())
-    log_dir = Path(
-        log_dir if log_dir is not None else config.global_.log_dir
-    ).expanduser()
+    log_dir = Path(log_dir) if log_dir is not None else config.global_.log_dir_path
 
     plan: list[PlanItem] = []
     dispatched: list[DispatchOutcome] = []
@@ -100,7 +98,7 @@ def run_once(
     lock = (
         contextlib.nullcontext()
         if dry_run
-        else _run_lock(Path(config.global_.state_dir).expanduser() / "run.lock")
+        else _run_lock(run_lock_path(config.global_.state_dir))
     )
     stamps = contextlib.nullcontext() if dry_run else _stamp_run(store, now=now)
     with lock, stamps:
@@ -335,6 +333,24 @@ def _nudge_stale_deployed(
         store[nudged_key] = now.isoformat()
 
 
+def run_lock_path(state_dir: str) -> Path:
+    """Where `run_once` keeps its lock (L-3). `liaise status` reads it too, to
+    tell a running pass from one whose process died.
+    """
+    return Path(state_dir).expanduser() / "run.lock"
+
+
+def _lock_owner(lock_path: Path) -> Optional[int]:
+    """The pid of the live process holding `lock_path`, or None: no lock, an
+    unreadable one, or one left behind by a process that is gone.
+    """
+    try:
+        pid = int(lock_path.read_text().strip())
+    except (OSError, ValueError):
+        return None
+    return pid if _pid_is_alive(pid) else None
+
+
 @contextlib.contextmanager
 def _run_lock(lock_path: Path) -> Iterator[None]:
     """L-3: concurrency of one (A.1 rule 5), enforced rather than assumed.
@@ -345,16 +361,12 @@ def _run_lock(lock_path: Path) -> Iterator[None]:
     with the scheduled one on the same machine", which is the actual risk.
     """
     lock_path.parent.mkdir(parents=True, exist_ok=True)
-    if lock_path.exists():
-        try:
-            other_pid = int(lock_path.read_text().strip())
-        except ValueError:
-            other_pid = None
-        if other_pid is not None and _pid_is_alive(other_pid):
-            raise RuntimeError(
-                f"another liaise run (pid {other_pid}) is already in progress "
-                f"(lock: {lock_path})"
-            )
+    other_pid = _lock_owner(lock_path)
+    if other_pid is not None:
+        raise RuntimeError(
+            f"another liaise run (pid {other_pid}) is already in progress "
+            f"(lock: {lock_path})"
+        )
     lock_path.write_text(str(os.getpid()))
     try:
         yield
@@ -408,17 +420,30 @@ class RunStamps:
 
     started_at: Optional[datetime] = None
     ended_at: Optional[datetime] = None
+    #: Whether a live process held the run lock when these were read; None
+    #: when the lock wasn't checked.
+    lock_held: Optional[bool] = None
 
     @property
-    def running(self) -> bool:
-        """Whether a pass is in progress: it started later than the last one ended."""
+    def state(self) -> str:
+        """`never`, `finished`, `running` or `interrupted`.
+
+        A pass that started later than the last one ended is `running` —
+        unless the lock was checked and no live process holds it. Then the
+        pass was killed (a SIGTERM from `launchctl bootout`, a shutdown) before
+        it could stamp its end: `interrupted`, since a job that stopped must
+        not read as one that is busy.
+        """
         if self.started_at is None:
-            return False
-        return self.ended_at is None or self.started_at > self.ended_at
+            return "never"
+        if self.ended_at is not None and self.started_at <= self.ended_at:
+            return "finished"
+        return "interrupted" if self.lock_held is False else "running"
 
 
-def run_stamps(store: MutableMapping) -> RunStamps:
-    """The run stamps `run_once` keeps in `store`.
+def run_stamps(store: MutableMapping, *, lock_path: Optional[Path] = None) -> RunStamps:
+    """The run stamps `run_once` keeps in `store`. Pass `lock_path` (see
+    :func:`run_lock_path`) to tell a running pass from a killed one.
 
     A store last written by 0.0.3 or earlier holds only `last_run` — the start
     of a pass that had already finished — read here as a run that started and
@@ -430,6 +455,9 @@ def run_stamps(store: MutableMapping) -> RunStamps:
     return RunStamps(
         started_at=datetime.fromisoformat(started) if started else None,
         ended_at=datetime.fromisoformat(ended) if ended else None,
+        lock_held=(
+            None if lock_path is None else _lock_owner(Path(lock_path)) is not None
+        ),
     )
 
 

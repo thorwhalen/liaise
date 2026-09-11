@@ -20,7 +20,7 @@ Every partner is one config file plus one brief file, both under `~/.config/liai
 
 ## Reading `liaise status`
 
-`liaise status` first reports when the last run started and ended. It says `running` while a pass is still in progress, which a long dispatch can stretch to many minutes; otherwise, a `run_started_at` more than a couple of minutes past the schedule interval means the scheduled job stopped — check `liaise schedule status`. Then, per partner: today's dispatch count against the daily cap, and every issue currently in `liaise:needs-owner`. That last list is the actual to-do list — everything else in the loop is either waiting on the partner or already handled.
+`liaise status` first reports when the last run started and ended. It says `running` while a pass is still in progress, which a long dispatch can stretch to many minutes, and `interrupted` when a pass started but its process died before it could finish (a shutdown, or the job unloaded mid-run). Otherwise, a `run_started_at` more than a couple of minutes past the schedule interval means the scheduled job stopped — check `liaise schedule status`. Then, per partner: today's dispatch count against the daily cap, and every issue currently in `liaise:needs-owner`. That last list is the actual to-do list — everything else in the loop is either waiting on the partner or already handled.
 
 ## What each `liaise:` label means
 
