@@ -175,19 +175,17 @@ def test_permission_mode_defaults_to_auto_and_is_set_under_dispatch(config_root)
     assert pat.dispatch.permission_mode == "acceptEdits"
 
 
-def test_a_template_overridden_without_the_permission_mode_raises(config_root):
-    """#22: an override that hardcodes the mode (the only way to set one in
-    0.0.3) in just one of the two templates would resume under a different
-    permission mode than the fresh run. Refused at load, naming the fix.
+def test_a_0_0_3_style_template_override_still_loads(config_root):
+    """#22 review: refusing an override that hardcodes the mode also refused
+    consistent configs (a copied default plus one flag) — and with them every
+    command, the scheduled run included. Keeping custom templates consistent
+    is the owner's call; loading must not fail over it.
     """
     path = config_root / "partners" / "pat.toml"
     # the fixture's file ends inside its [dispatch] table
     path.write_text(
         path.read_text()
-        + 'command = "claude -p {prompt_file} --permission-mode acceptEdits"\n'
+        + 'command = "claude -p {prompt_file} --permission-mode auto --verbose"\n'
     )
-    with pytest.raises(ConfigError) as exc_info:
-        load_config(config_root)
-    message = str(exc_info.value)
-    assert str(path) in message
-    assert "{permission_mode}" in message
+    pat = load_config(config_root).partner("pat")
+    assert "--permission-mode auto --verbose" in pat.dispatch.command

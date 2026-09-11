@@ -38,9 +38,6 @@ class Job:
     resume_command: str
     session_id: Optional[str] = None
     permission_mode: str = DFLT_PERMISSION_MODE
-    #: The dispatch log's directory, granted to the agent (`{log_dir}` in the
-    #: templates). None when there is no log; the agent's own `cwd` stands in.
-    log_dir: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -67,8 +64,7 @@ class ClaudeHeadless:
     The prompt is written to a temp file and referenced by path in the command
     template — never passed on the command line. The fresh and the resume
     template are formatted with the same `job.permission_mode`, so a resume
-    runs under the mode of the run it continues, and with `job.log_dir`, the
-    directory the agent writes its dispatch log in. Never inherits an assumed
+    runs under the mode of the run it continues. Never inherits an assumed
     environment beyond what `subprocess.run` gives it by default; callers that
     need specific variables (see `schedule.py`) pass them explicitly.
     """
@@ -85,7 +81,6 @@ class ClaudeHeadless:
                 prompt_file=str(prompt_file),
                 session_id=job.session_id or "",
                 permission_mode=job.permission_mode,
-                log_dir=job.log_dir or job.cwd,
             )
             try:
                 proc = subprocess.run(
@@ -303,8 +298,9 @@ def dispatch_issue(
 
     session_id = stored_session_id(store, issue)
     mode = "resume" if session_id else "fresh"
-    # Decided before the prompt is composed, because the prompt names it: the
-    # operating rules send drafts and escalations "to the dispatch log" (#22).
+    # Named in the prompt, so decided before it is composed: `liaise` records
+    # the agent's final message there, and the operating rules put drafts and
+    # escalations in that message (#22).
     log_path = _log_path(log_dir, issue) if log_dir is not None else None
     prompt = compose_prompt(partner, issue, mode, log_path=log_path)
     job = Job(
@@ -315,7 +311,6 @@ def dispatch_issue(
         resume_command=partner.dispatch.resume_command,
         session_id=session_id,
         permission_mode=partner.dispatch.permission_mode,
-        log_dir=str(Path(log_path).parent) if log_path else None,
     )
 
     set_state(gh, issue, partner, "working")
@@ -329,9 +324,9 @@ def dispatch_issue(
         store[_session_key(issue)] = result.session_id
 
     if log_path:
-        # A log that can no longer be appended to (the agent removed it, the
-        # disk is full) must not raise past the reconciliation below — that
-        # would strand the issue at `liaise:working`, the H-7 failure mode.
+        # A log that can't be written (an unwritable `log_dir`, a full disk)
+        # must not raise past the reconciliation below — that would strand
+        # the issue at `liaise:working`, the H-7 failure mode.
         try:
             _append_result(log_path, result)
         except OSError:
@@ -410,26 +405,39 @@ def _reconcile_mention(
 
 
 def _log_path(log_dir: Path, issue: Issue) -> str:
-    """This dispatch's log file: an absolute path in a directory that exists.
+    """This dispatch's log file, as an absolute path. Nothing is created yet.
 
-    Absolute because the agent runs from `partner.dispatch.cwd`, where a
-    relative path would name a different file. The file itself is created by
-    whoever writes first — the agent's drafts, or :func:`_append_result` once
-    the agent stops — so a dispatch that fails before it runs leaves no empty
-    log behind.
+    Absolute because the path is named in a prompt read by an agent running
+    from `partner.dispatch.cwd`. :func:`_append_result` creates the file once
+    the agent stops, so a dispatch that fails before it runs leaves nothing.
     """
     log_dir = Path(log_dir).expanduser().absolute()
-    log_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     safe_repo = issue.repo.replace("/", "-")
     return str(log_dir / f"{safe_repo}-{issue.number}-{stamp}.log")
 
 
 def _append_result(log_path: str, result: DispatchResult) -> None:
-    """Append the exit code and output after, never over, what the agent wrote."""
-    with open(log_path, "a") as f:
+    """Record how the dispatch ended: the agent's final message first — the
+    operating rules put drafts and escalations there, for the owner to send as
+    is — then the exit code and the raw output.
+    """
+    path = Path(log_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "a") as f:
         f.write(
-            f"\n--- liaise: dispatch ended ---\n"
+            f"--- final message ---\n{_final_message(result.stdout)}\n\n"
+            f"--- liaise: dispatch ended ---\n"
             f"exit code: {result.returncode}\nsession id: {result.session_id}\n\n"
             f"--- stdout ---\n{result.stdout}\n\n--- stderr ---\n{result.stderr}\n"
         )
+
+
+def _final_message(stdout: str) -> str:
+    """The `result` text of `claude --output-format json`'s output, unescaped."""
+    try:
+        raw = json.loads(stdout)
+    except (json.JSONDecodeError, TypeError):
+        raw = None
+    message = raw.get("result") if isinstance(raw, dict) else None
+    return message if isinstance(message, str) else "(none recorded)"

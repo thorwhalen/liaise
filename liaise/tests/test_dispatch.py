@@ -636,19 +636,6 @@ def test_resumed_dispatch_carries_the_same_permission_mode_as_a_fresh_one(
     )
 
 
-def test_both_default_templates_grant_the_agent_the_log_dir(argv_recording_claude, tmp_path):
-    """#22: the dispatch log lives under `state_dir`, outside the agent's
-    working directory; without `--add-dir` a headless agent can be refused
-    the very writes its prompt asks for.
-    """
-    log_dir = str(tmp_path / "logs")
-    for session_id in (None, "sess-prior"):
-        argv = _argv_of_a_default_template_run(
-            argv_recording_claude, tmp_path, session_id=session_id, log_dir=log_dir
-        )
-        assert _value_after(argv, "--add-dir") == log_dir
-
-
 def test_dispatch_issue_hands_the_partner_permission_mode_to_every_job(tmp_path):
     partner = _partner(
         tmp_path,
@@ -669,35 +656,32 @@ def test_dispatch_issue_hands_the_partner_permission_mode_to_every_job(tmp_path)
     assert fresh.permission_mode == resumed.permission_mode == "acceptEdits"
 
 
-# ---- #22: the dispatch log is named in the prompt, and keeps what the agent wrote ----
+# ---- #22: the dispatch log is named in the prompt, and records the final message ----
 
 
 def _log_path_named_in(prompt: str) -> str:
     return re.search(r"The dispatch log for this run is `([^`]+)`", prompt).group(1)
 
 
-def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_path):
-    """#22: the operating rules send drafts and escalations "to the dispatch
-    log", so the prompt must name a file the agent can write, its directory
-    must be granted to the agent, and `liaise`'s own record must be appended
-    after the agent's drafts rather than written over them.
+def test_dispatch_log_is_named_in_the_prompt_and_records_the_final_message(tmp_path):
+    """#22: the operating rules put drafts and escalations in the agent's final
+    message, which `liaise` records in the dispatch log the prompt names — as
+    readable text, not escaped JSON, so the owner can send a draft as is.
     """
     partner = _partner(tmp_path)
     fake = FakeGitHub([_issue()])
     log_dir = tmp_path / "logs"
     named = []
+    draft = "Draft for the partner:\n\n@pat It's fixed, try again."
 
     class DraftingDispatcher:
         def dispatch(self, job: Job):
             from liaise.dispatch import DispatchResult
 
-            log_path = _log_path_named_in(job.prompt)
-            named.append(log_path)
-            assert job.log_dir == str(Path(log_path).parent)
-            with open(log_path, "a") as f:
-                f.write("DRAFT for the partner: it's fixed, try again\n")
+            named.append(_log_path_named_in(job.prompt))
             set_state(fake, fake.get_issue(REPO, 1), partner, "needs-owner")
-            return DispatchResult(returncode=0, session_id="sess-1")
+            stdout = json.dumps({"result": draft, "session_id": "sess-1"})
+            return DispatchResult(returncode=0, session_id="sess-1", stdout=stdout)
 
     outcome = dispatch_issue(
         fake, DraftingDispatcher(), {}, partner, fake.get_issue(REPO, 1),
@@ -707,7 +691,8 @@ def test_dispatch_log_is_named_in_the_prompt_and_keeps_what_the_agent_wrote(tmp_
     assert named == [outcome.log_path]
     assert Path(outcome.log_path).parent == log_dir
     text = Path(outcome.log_path).read_text()
-    assert text.index("DRAFT for the partner") < text.index("exit code: 0")
+    assert draft in text  # real newlines, not "\n" escapes
+    assert text.index(draft) < text.index("exit code: 0")
 
 
 def test_a_relative_log_dir_is_named_as_an_absolute_path(tmp_path, monkeypatch):
@@ -748,26 +733,19 @@ def test_a_dispatch_that_fails_before_running_leaves_no_empty_log(tmp_path):
     assert current_state(fake.get_issue(REPO, 1), partner) is None  # never set working
 
 
-def test_a_log_the_agent_removed_does_not_skip_crash_reconciliation(tmp_path):
-    """Appending the result to a log that is gone must not raise past the
+def test_a_log_that_cannot_be_written_does_not_skip_crash_reconciliation(tmp_path):
+    """Recording the result in a log that can't be written (here `log_dir` is a
+    file, so the log's directory can't be created) must not raise past the
     reconciliation — that would strand the issue at `liaise:working`.
     """
-    import shutil
-
     partner = _partner(tmp_path)
     fake = FakeGitHub([_issue()])
     log_dir = tmp_path / "logs"
+    log_dir.write_text("not a directory")
     notifications = []
 
-    class LogRemovingDispatcher:
-        def dispatch(self, job: Job):
-            from liaise.dispatch import DispatchResult
-
-            shutil.rmtree(log_dir)
-            return DispatchResult(returncode=1, session_id=None)
-
     outcome = dispatch_issue(  # must not raise
-        fake, LogRemovingDispatcher(), {}, partner, fake.get_issue(REPO, 1),
+        fake, EchoDispatcher(returncode=1), {}, partner, fake.get_issue(REPO, 1),
         notify_fn=lambda *a, **k: notifications.append(a) or True,
         now=T0, log_dir=log_dir,
     )
