@@ -1,45 +1,145 @@
 ---
 name: liaise
-description: Use when onboarding a new partner to liaise, checking what liaise is waiting on or has done (liaise status / liaise poll), or explaining what a liaise: state label on a GitHub issue means. Triggers on "add a partner to liaise", "onboard <name> to liaise", "what's liaise waiting on", "check liaise status", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue".
+description: Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on "add a partner to liaise", "onboard <name> to liaise", "add a subject to liaise", "check liaise status", "what is liaise waiting on", "hold liaise", "pause liaise for <subject>", "unhold", "why is this issue unrouted", "migrate my liaise config", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue".
 ---
 
 # liaise: the owner's agent skill
 
-`liaise` runs the loop between a non-technical partner and a coding agent, over GitHub issues. This skill is for the owner's own agent — the one helping the owner run `liaise`, not the one `liaise` dispatches to do the work.
+`liaise` runs the loop between the people who test an app and a coding agent, over GitHub issues and web inboxes. This skill is for the agent helping the owner run `liaise`, not for the agent `liaise` starts on a case. The package README has the full picture; this is what you need at the terminal.
 
-## Onboarding a new partner
+Everything personal lives under `~/.config/liaise/` on the owner's machine, never in the package. Start read-only: `liaise subject show`, `liaise status` and `liaise run --once --dry-run` change nothing.
 
-Every partner is one config file plus one brief file, both under `~/.config/liaise/`. Nothing about a partner belongs in the `liaise` package itself.
+## Onboarding a partner in 0.1
 
-1. Pick a short slug (e.g. `pat`).
-2. Write `~/.config/liaise/partners/<slug>.toml` — at minimum `display_name`, `github_logins`, `repo`, `brief`. See the package README's quick start for the full shape, including `dispatch`, `verify`, `deploy`, `escalate`, and any global default you want to override for just this partner. `notify_login` (the login `@mentioned` in every partner-facing comment — it's the only way the partner gets notified) defaults to the first `github_logins` entry; set it explicitly for a partner identified by label only, and it's required when `reply_mode = "direct"`.
-3. Write `~/.config/liaise/briefs/<slug>.md` — how to talk to this partner: tone, what they care about, which decisions are theirs and which are the owner's. This goes verbatim into every prompt the coding agent sees for their issues.
-4. Run `liaise setup <slug>` — creates the partner's label and every `liaise:` state label in their repo. Safe to re-run.
-5. Run `liaise poll --partner <slug>` to confirm `liaise` sees their issues and is computing readiness correctly.
-6. If not already installed, `liaise schedule install` sets up the recurring job (once, covers every partner).
+In 0.1 a partner is a person on a subject: the repository or site they give feedback on. If the subject exists, add the person to its file; otherwise create `~/.config/liaise/subjects/<slug>.toml`.
+
+1. **Write the subject file.** For a partner `pat`, whose reports reach `example/app` through the app's bot and through the site's web inbox, and an observer `sam`:
+
+   ```toml
+   bindings = ["github:example/app?labels=partner:pat", "webinbox:example-site"]
+   workspace = { path = "~/code/example-app" }
+   verify = "npm test"
+   delivery = { kind = "deploy", per = "batch", command = "./deploy.sh" }
+
+   [policy]
+   default_reply_mode = "draft"
+   people = { "github:pat" = "pat", "webinbox:pat" = "pat", "github:sam" = "sam" }
+   roles = { pat = "partner", sam = "observer" }
+   relays = ["github:example-bot"]
+   claim_labels = { "partner:pat" = "pat" }
+   briefs = { pat = "~/.config/liaise/briefs/pat.md" }
+   ```
+
+   - `people`: every address the person writes from, as `channel:handle`, mapped to their person id. Case does not matter.
+   - `roles`: `partner` may report and have work started; `observer` may only report.
+   - `relays`: accounts that file issues on others' behalf, such as the app's bot. Only a relay's claim labels count.
+   - `claim_labels`: the routing label a relay adds, and the person it names. The same label on an issue anyone else opened goes to the unrouted queue.
+   - `briefs`: how to talk to this person (tone, what they care about, which decisions are theirs). The agent reads it on every run of their cases. A top-level `brief` is the fallback for anyone without one. Write it at the path you give.
+   - `reply_modes = { pat = "direct" }` lets one person's replies go out without the owner; the default `draft` keeps every reply for the owner to send.
+   - `notify = { pat = "github:pat" }` when the handle to mention is not their first `github:` address.
+2. **Create the labels.** `liaise setup <slug>` creates the subject's claim labels and every `liaise:` state label in each repository it binds. Safe to run again.
+3. **Check the file.** `liaise subject show <slug>` prints it with every default applied; you want `binding problems: none` at the end.
+4. **Check the plan.** `liaise run --once --dry-run --subject <slug>` shows how each report is taken in. `opened example-app-4 (... pat via relay-label)` or `via handle` is right; `unrouted: <reason>` is not (see below). The per-case lines then say what would start.
+5. **Schedule it**, if it is not already: `liaise schedule install` (once for every subject).
 
 ## Reading `liaise status`
 
-`liaise status` first reports when the last run started and ended. It says `running` while a pass is still in progress, which a long dispatch can stretch to many minutes, and `interrupted` when a pass started but its process died before it could finish (a shutdown, or the job unloaded mid-run). Otherwise, a `run_started_at` more than a couple of minutes past the schedule interval means the scheduled job stopped — check `liaise schedule status`. Then, per partner: today's dispatch count against the daily cap, and every issue currently in `liaise:needs-owner`. That last list is the actual to-do list — everything else in the loop is either waiting on the partner or already handled.
+```
+last_run: finished
+  run_started_at: 2026-09-12T09:30:00+00:00 (1m ago)
+  run_ended_at:   2026-09-12T09:30:04+00:00 (1m ago)
+holds: 1
+  effect:deploy: block, set by operator since 2026-09-12 08:00: release freeze
+runs in flight: 1
+  example-app-3-r1 (example-app-3, fresh): started 12m ago, heartbeat 20s ago
+subject example-app: 3 case(s), 2/6 dispatches today
+  working: example-app-3
+  needs-partner: example-app-1
+  needs-owner: example-app-2
+unrouted: 1
+  2026-09-12T09:12:00+00:00 github:someone-else on github:example/app#7: label claim by an untrusted author
+drafts waiting for the operator: 1
+  example-app-2 escalate to github:example/app#5: the fix needs a paid plan
+digest notes: 1
+  example-app-1: The export code has no tests.
+```
+
+- **Stamps.** `finished` is normal. `running` means a tick is in progress; ticks are short in 0.1, since runs are detached. `interrupted` means a tick started and its process died before it could stamp its end (a shutdown, the job unloaded). A `run_started_at` older than a few schedule intervals (2 minutes by default) means the scheduled job has stopped: check `liaise schedule status`.
+- **Holds.** Each hold's scope, mode, who set it (`operator`, or `auto:<error class>` when `liaise` set it itself) and why.
+- **Runs in flight.** The heartbeat is the last time the run wrote to its stream. The tick stops a run past its `timeout_minutes` (60 by default) and hands the case to the owner as `timed_out`.
+- **Cases by state**, per subject, with today's dispatches against the daily cap. `needs-owner` is the owner's to-do list.
+- **Unrouted.** Messages that matched a binding but could not be routed, with the reason; see "Why an issue isn't moving".
+- **Drafts waiting for the operator.** Messages `liaise` kept instead of sending: draft reply mode, a gate divert (a leak, deslop, no handle to mention), an escalation, held effects, a failed send. Nothing sends them later: the owner sends what they want by hand. Each draft's full text is in its case's file under `state_dir/ledger`.
+- **Digest notes.** `note` outcomes: what the agent noticed for the owner, never shown to the partner.
+
+## Holds
+
+```
+liaise hold subject:example-app --reason "pat is away until Monday"
+liaise hold effect:deploy --reason "release freeze"
+liaise hold person:sam --mode drain
+liaise hold global --mode cancel --reason "something is wrong"
+liaise unhold subject:example-app
+```
+
+- **Scopes:** `global`, `processor`, `subject:<slug>`, `person:<id>`, `repo:<owner/repo>`, `checkout:<path>`, `effect:<kind>`.
+- **`block`** (the default): nothing new starts; runs in flight go on and are collected; their messages and deploys wait, kept as drafts, and the case goes to `needs-owner`.
+- **`drain`**: nothing new starts; runs in flight finish and their effects go out as usual. Use it before a release.
+- **`cancel`**: nothing new starts; runs in flight are interrupted, then terminated after 15 seconds, and stay resumable, their cases back in `intake`; effects wait.
+- `effect:deploy` holds deliveries only: runs still start and messages still go out, but a delivery waits as a draft.
+- Notifications to the owner always go out, whatever the mode.
+- **Automatic holds.** `liaise` holds `processor` itself after `config_error` or `auth_expired`, and lifts it once preflight passes again (it probes every 30 minutes). It holds `effect:deploy` after a deploy refused for billing, CI minutes or a 403, and that one stays until `liaise unhold effect:deploy`. It never replaces or lifts a hold the owner set.
+- **Unhold sends nothing.** Messages kept while a hold stood stay as drafts, their cases in `needs-owner`.
 
 ## What each `liaise:` label means
 
-Exactly one of these is on a `liaise`-tracked issue at a time. `liaise` never closes an issue — that's the partner's or the owner's call.
+The label is a projection of the case's state in the ledger: `liaise` sets it, the agent never does, and a label changed by hand is set right the next time the case changes. Exactly one is on an issue, and `liaise` never closes an issue.
 
-| Label | What it means | Who set it |
+| Label | What it means | What moves it on |
 |---|---|---|
-| `liaise:intake` | Seen. The partner may still be writing, or the quiet window is running. | liaise |
-| `liaise:paused` | The partner asked to wait (a `#wait#` marker). | liaise |
-| `liaise:working` | A coding agent is dispatched and running right now. | liaise |
-| `liaise:needs-partner` | The agent asked a question and is waiting on the partner to answer. | the agent |
-| `liaise:needs-owner` | Needs the owner: an escalation, a decision, or a crashed/stuck run. | the agent, or liaise on a crash or the daily budget cap |
-| `liaise:deployed` | Live. The partner has been told to try it. | the agent, or liaise after a batch deploy |
-| `liaise:budget` | Today's dispatch cap was hit for this partner. Resumes tomorrow. | liaise |
-
-A `liaise:needs-owner` issue is where the owner's own judgment is actually needed — an escalation the agent declined to make alone, or reconciliation after something crashed. Read the issue thread and the dispatch log before deciding what to do — the agent's drafts and escalations are in it, a crash notification names the file, and every log lives under `log_dir` (`logs/` under `state_dir` by default); the label alone only tells you that a decision is due, not what it is.
+| `liaise:intake` | Taken in. The partner may still be writing: the quiet window (10 minutes by default) is running, or the case was deferred. | The window closing, or `#startwork#` from the partner. A run starts, and the case is `working`. |
+| `liaise:paused` | The partner wrote `#wait#`. | The partner writing `#startwork#`. |
+| `liaise:working` | A run is in flight. | The run ending: its outcomes, or its error class, decide the next state. |
+| `liaise:needs-partner` | A question or a proposal went to the partner. | The partner writing again. No run starts before they do. |
+| `liaise:needs-owner` | Waiting on the owner: an escalation or decline, a run that failed, a start refused for the reporter's role or grade, a failed deploy, held effects. | Nothing automatic in 0.1 (see below). |
+| `liaise:deployed` | Delivered, and the partner was asked to try it. A quiet partner is nudged once, after 3 days. | Nothing: the case is done. A follow-up comment is recorded but starts nothing. |
+| `liaise:budget` | Ready, but the subject's daily dispatch cap is used up. The partner was told once, and the owner once that day. | The next day: it starts again. |
 
 ## Why an issue isn't moving
 
-- **Still in `liaise:intake` well past the quiet window?** Check `liaise poll` — a marker or a comment from someone who isn't the partner (including the owner) never restarts or shortens the clock, only the partner's own edits and comments do.
-- **Nothing happening at all?** `liaise status`'s `last_run` lines are the first thing to check — `running` means a dispatch is still in progress, while an old `run_started_at` means the scheduled job stopped, which looks exactly like an unready issue from the partner's side.
-- **Hit the daily cap?** `liaise:budget` resumes automatically the next day; there's nothing to do.
+Start with `liaise run --once --dry-run --subject <slug>`: its plan has a line per case saying what stops it. Then:
+
+- **No case at all: it is unrouted.** `liaise status` lists it with its reason:
+  - `label claim by an untrusted author`: the issue has a claim label, but its author is neither a person with a role nor one of `policy.relays`. Add the app's account to `relays`, or the author to `people` and `roles`.
+  - `unresolved sender`: the author is not in `policy.people` (nor in acquaint's records) and the issue has no claim label. Add them to `people` and give them a role.
+  - `no role on this subject`: the person resolves but has no entry in `policy.roles`.
+  - `grade <grade> not accepted for report`: the message's authenticity is below what `policy.grades.report` accepts, such as an unsigned web-inbox report (`claimed`) where `report` was narrowed.
+  - `label claims name more than one person`: two claim labels on one issue.
+  - Queued messages are not retried: once the policy is fixed, have the partner report again.
+  - Not in the queue either: the message matched no binding (another repository, a missing label) or is a closed issue. `liaise subject show` names a binding that could never match.
+- **`needs-partner`, waiting for a reply.** After an `ask` or a `propose`, no run starts until the reporter writes again (`awaiting the partner's reply since the last run`), and then the quiet window runs again. Comments by the owner, a relay or `liaise` itself do not count.
+- **A hold.** `held by <scope> (<mode>)`. `liaise status` lists the holds; an `auto:` one is `liaise`'s own (see Holds).
+- **`defer_until`.** `deferred until <time>`: a `defer` outcome (24 hours), a rate limit (2 minutes, doubling up to 30), an unavailable API (5 minutes), an exhausted quota (until it resets) or a busy workspace (10 minutes). It clears itself.
+- **The budget.** `still over the daily cap (6/6)`: it starts again the next day. `ready, but 1 run(s) in flight (concurrent cap 1)`: it waits for the subject's running run.
+- **A workspace conflict.** `workspace_conflict: live session <name> in <path>`: a Claude Code session, probably the owner's, is working in the checkout; the case tries again in 10 minutes. `the checkout is locked by run <id>`: another run of the subject holds it.
+- **Not ready yet.** `not ready (waiting, 4m to go)` is the quiet window; `paused (partner asked to wait)` is a `#wait#`.
+- **`needs-owner`.** It waits on the owner, and 0.1 has no command to move a case on: relabelling the issue, the 0.0.x way, no longer changes its state. Read the case's drafts and entries in its file under `state_dir/ledger`, and act on the issue by hand.
+- **Nothing happens at all.** An old `run_started_at` in `liaise status` means the scheduled job stopped (`liaise schedule status`); `interrupted` means its last tick died.
+
+## Migrating from 0.0.x
+
+```
+liaise schedule uninstall        # stop the 0.0.x job while you migrate
+liaise migrate-config            # print the plan; nothing is written
+liaise migrate-config --apply    # write the subject files the plan printed
+liaise run --once --dry-run      # check what 0.1 would do
+liaise schedule install          # required after migrating
+```
+
+- `migrate-config` is a dry run by default. `--apply` creates each missing `subjects/<slug>.toml`, never overwrites one, and never touches `config.toml`, `partners/` or `briefs/`.
+- **Install the schedule again after migrating.** The 0.1 launchd agent sets `AbandonProcessGroup` (the systemd unit, `KillMode=process`) so detached runs survive the tick; a job installed by 0.0.x lacks it, and launchd would kill every run when its tick exits.
+- Partners sharing a repository become one subject; read every `conflict:` line, since the first partner's value was kept.
+- Each partner's brief moves to `policy.briefs`, so it stays theirs.
+- 0.0.x also took issues a partner's login opened without the label. 0.1 does not; each `note:` line names the `?author=` binding that opts back in.
+- Custom `dispatch.command` and `resume_command` templates are not carried (a `warning:` line shows what each passed), nor is a partner's `display_name`.
+- On a repository's first real poll, open issues with a `liaise:` state label are adopted into cases in that state; 0.0.x sessions are not carried over, so their next run starts fresh.

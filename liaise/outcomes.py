@@ -42,7 +42,7 @@ from typing import Any, Optional, Union
 
 from correspond.model import ConversationRef
 
-from liaise.gate import Outbound, notify_addresses
+from liaise.gate import Outbound
 from liaise.model import CASE_STATES, OUTCOME_KINDS, Case, Outcome, require_one_of
 from liaise.subjects import Subject
 
@@ -344,9 +344,10 @@ def plan_outcomes(
     The module docstring lists what each kind plans; ``decline`` is planned as
     ``escalate`` (see :func:`normalize`). Messages are for ``case.reporter``, and go to
     the case's first conversation on one of ``sending_channels``. Failing that, they go
-    to the reporter's first notify address (see :func:`liaise.gate.notify_addresses`) on
-    one of ``address_channels``. Failing both, each becomes a :class:`StoreDraft` with a
-    ``no channel to reach <person>`` :class:`NotifyOperator`. ``now`` stamps the drafts.
+    to the reporter's first notify address on one of ``address_channels`` (see
+    :meth:`~liaise.subjects.Subject.notify_address_for`). Failing both, each becomes a
+    :class:`StoreDraft` with a ``no channel to reach <person>`` :class:`NotifyOperator`.
+    ``now`` stamps the drafts.
 
     Raises ``ValueError`` for an outcome kind outside the vocabulary.
     """
@@ -356,8 +357,9 @@ def plan_outcomes(
         for ref in case.conversations
         if ConversationRef.parse(ref).channel in sending_channels
     )
-    addresses = notify_addresses(subject, person, channels=address_channels)
-    ref = next(conversations, None) or next(iter(addresses), None)
+    ref = next(conversations, None) or subject.notify_address_for(
+        person, channels=address_channels
+    )
     channel = ConversationRef.parse(ref).channel if ref else None
 
     def text_of(outcome: Outcome) -> str:

@@ -30,7 +30,7 @@ import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Iterable, Mapping, Optional, Union
+from typing import Any, Collection, Iterable, Mapping, Optional, Union
 
 from correspond import check_binding
 from correspond.model import Grade
@@ -261,27 +261,37 @@ class Subject:
         """
         return self.policy.briefs.get(person) or self.brief or None
 
-    def notify_address_for(
-        self, person: str, *, channel: Optional[str] = None
-    ) -> Optional[str]:
-        """The address to notify ``person`` at, or None when the policy has none.
+    def notify_addresses_for(
+        self, person: str, *, channels: Union[str, Collection[str], None] = None
+    ) -> tuple[str, ...]:
+        """Every address ``person`` can be notified at on this subject, best first.
 
-        ``policy.notify[person]`` when set, else the first ``policy.people`` address that
-        maps to ``person``. ``channel`` (as in ``github``) keeps only addresses on that
-        channel, so a GitHub mention is never handed a web-inbox user id.
+        ``policy.notify[person]`` comes first when set, then each ``policy.people``
+        address that maps to ``person``, in file order, each once. A string with no
+        channel part (the ``github`` of ``github:pat``) is not an address, so it is left
+        out. ``channels``, one channel or several, keeps only the addresses on them, so a
+        GitHub mention is never handed a web-inbox user id.
         """
-        candidates = (
-            self.policy.notify.get(person),
-            *(address for address, who in self.policy.people.items() if who == person),
-        )
-        return next(
-            (
-                address
-                for address in candidates
-                if address and (channel is None or address.partition(":")[0] == channel)
-            ),
-            None,
-        )
+        wanted = (channels,) if isinstance(channels, str) else channels
+
+        def is_wanted(address: str) -> bool:
+            channel, separator, _ = address.partition(":")
+            return bool(separator and channel) and (wanted is None or channel in wanted)
+
+        policy = self.policy
+        explicit = (policy.notify[person],) if person in policy.notify else ()
+        handles = (address for address, who in policy.people.items() if who == person)
+        return tuple(filter(is_wanted, dict.fromkeys((*explicit, *handles))))
+
+    def notify_address_for(
+        self, person: str, *, channels: Union[str, Collection[str], None] = None
+    ) -> Optional[str]:
+        """The best address to notify ``person`` at, or None when the policy has none.
+
+        That is the first of :meth:`notify_addresses_for`, which says how ``channels``
+        filters.
+        """
+        return next(iter(self.notify_addresses_for(person, channels=channels)), None)
 
     def permissions_for(self, role: Optional[str]) -> tuple[str, ...]:
         """The permissions ``role`` grants on this subject (none for an unknown role)."""

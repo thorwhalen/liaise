@@ -29,7 +29,6 @@ from liaise.gate import (
     Pass,
     deslop,
     leak_scan,
-    notify_addresses,
     notify_recipient,
     reply_mode,
     run_gate,
@@ -303,12 +302,12 @@ def test_other_channels_pass_without_a_mention():
     assert decision.send == _outbound("Fixed.", **fields)
 
 
-def test_notify_addresses_put_the_notify_override_first_then_the_handles():
-    people = {"github:pat": "pat", "github:someone-else": "someone-else", "telegram:@pat": "pat", "pat": "pat"}
-    subject = _subject(people=people, notify={"pat": "github:pat-reports"})
-    assert notify_addresses(subject, "pat") == ("github:pat-reports", "github:pat", "telegram:@pat")
-    assert notify_addresses(subject, "pat", channels=("telegram",)) == ("telegram:@pat",)
-    assert notify_addresses(subject, "nobody") == ()
+def test_a_notify_address_that_is_no_login_falls_back_to_the_next_github_address():
+    """The gate asks Subject.notify_addresses_for (tested in test_subjects) for every GitHub
+    address, best first, and mentions the first valid login among them."""
+    subject = _subject(notify={"pat": "github:not a login"})
+    decision = _gate("Fixed.", subject=subject)
+    assert decision.send.text == "@pat Fixed."
 
 
 # ---- order and run_gate ----

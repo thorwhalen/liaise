@@ -153,6 +153,8 @@ NUDGE_MESSAGE = (
 #: The ``purpose`` of those messages, as the gate and the ledger see it.
 BUDGET_PURPOSE = "budget"
 NUDGE_PURPOSE = "nudge"
+#: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.
+DAILY_CAP_PRIORITY = "default"
 
 #: What a ``run`` entry records: a start, a start that failed, a collection.
 RUN_STARTED = "started"
@@ -1484,12 +1486,13 @@ class _Tick:
                 self.say(
                     f"{label}: still over the daily cap ({today}/{budget.daily_dispatches})"
                 )
-                return
-            reason = f"daily cap of {budget.daily_dispatches} dispatches reached"
-            self._transition(case.id, BUDGET, reason)
-            self._send_own(
-                subject, self._case(case.id), BUDGET_MESSAGE, purpose=BUDGET_PURPOSE
-            )
+            else:
+                reason = f"daily cap of {budget.daily_dispatches} dispatches reached"
+                self._transition(case.id, BUDGET, reason)
+                self._send_own(
+                    subject, self._case(case.id), BUDGET_MESSAGE, purpose=BUDGET_PURPOSE
+                )
+            self._notify_daily_cap(subject, case, count=today)
             return
         running = sum(
             1 for r in self.ledger.runs(status=RUNNING) if r.subject == subject.slug
@@ -1570,6 +1573,25 @@ class _Tick:
         passed.append("workspace free")
         self.say(f"{label}: {', '.join(passed)}")
         self._dispatch(subject, case, job, checkout, mode=mode)
+
+    def _notify_daily_cap(self, subject: Subject, case: Case, *, count: int) -> None:
+        """Tell the operator the daily cap holds ``subject``'s work back: once a day (0.0.x M-8).
+
+        The ledger keeps the day the operator was told, so a second capped case that day
+        adds no notification, and the first one the next day does.
+        """
+        day = self.now.date()
+        if self.ledger.daily_cap_notified(subject.slug, day):
+            return
+        self.ledger.mark_daily_cap_notified(subject.slug, day, at=self.now)
+        cap = subject.policy.budget.daily_dispatches
+        self._notify(
+            f"liaise: {subject.slug} reached its daily cap",
+            f"{count} of {cap} dispatches used today, so {case.id} waits in budget. "
+            f"Capped cases start again tomorrow; to allow more, raise "
+            f"policy.budget.daily_dispatches in subjects/{subject.slug}.toml.",
+            priority=DAILY_CAP_PRIORITY,
+        )
 
     def _authorization_refusal(self, subject: Subject, case: Case) -> Optional[str]:
         """Why the reporter may not have work started, or None when they may."""

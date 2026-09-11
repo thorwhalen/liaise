@@ -390,15 +390,31 @@ def _subject_with(**policy) -> Subject:
 def test_notify_address_for_prefers_policy_notify():
     subject = _subject_with(people={"github:pat": "pat"}, notify={"pat": "webinbox:pat"})
     assert subject.notify_address_for("pat") == "webinbox:pat"
-    assert subject.notify_address_for("pat", channel="github") == "github:pat"
+    assert subject.notify_address_for("pat", channels="github") == "github:pat"
 
 
 def test_notify_address_for_falls_back_to_the_first_handle_of_the_person():
     subject = _subject_with(people={"github:example-bot": "bot", "webinbox:u-1": "pat", "github:pat": "pat"})
     assert subject.notify_address_for("pat") == "webinbox:u-1"
-    assert subject.notify_address_for("pat", channel="github") == "github:pat"
+    assert subject.notify_address_for("pat", channels=("github",)) == "github:pat"
     assert subject.notify_address_for("someone-else") is None
-    assert subject.notify_address_for("pat", channel="email") is None
+    assert subject.notify_address_for("pat", channels="email") is None
+
+
+def test_notify_addresses_for_put_the_notify_override_first_then_the_handles():
+    people = {"github:pat": "pat", "github:someone-else": "someone-else", "telegram:@pat": "pat", "pat": "pat"}
+    subject = _subject_with(people=people, notify={"pat": "github:pat-reports"})
+    assert subject.notify_addresses_for("pat") == ("github:pat-reports", "github:pat", "telegram:@pat")
+    assert subject.notify_addresses_for("pat", channels=("telegram",)) == ("telegram:@pat",)
+    assert subject.notify_addresses_for("pat", channels="telegram") == ("telegram:@pat",)
+    assert subject.notify_addresses_for("nobody") == ()
+    # a string with no channel is not an address, even as the only one
+    assert _subject_with(people={"pat": "pat"}).notify_address_for("pat") is None
+
+
+def test_one_channel_is_not_read_as_its_letters():
+    subject = _subject_with(people={"g:pat": "pat", "github:pat": "pat"})
+    assert subject.notify_address_for("pat", channels="github") == "github:pat"
 
 
 # ---- S2b: per-person briefs, and one subject per polled conversation ----

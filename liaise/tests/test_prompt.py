@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 from importlib import resources
 
@@ -200,3 +201,28 @@ def test_a_subject_without_a_brief_says_so(tmp_path):
 def test_a_brief_that_cannot_be_read_is_a_config_error_naming_it(tmp_path):
     with pytest.raises(ConfigError, match="missing.md"):
         _prompt(tmp_path, brief=str(tmp_path / "missing.md"))
+
+
+def _with_briefs(subject: Subject, **briefs: str) -> Subject:
+    roles = {"pat": "partner", "sam": "partner"}
+    return replace(subject, policy=replace(subject.policy, roles=roles, briefs=briefs))
+
+
+def test_the_brief_is_the_reporters_own_else_the_subjects(tmp_path):
+    """Two partners sharing a subject each get their own brief (the per-person briefs gap)."""
+    sam_brief = tmp_path / "sam.md"
+    sam_brief.write_text("Sam reads on a phone: one short paragraph.\n", encoding="utf-8")
+    subject = _with_briefs(_subject(tmp_path), sam=str(sam_brief))
+
+    for_sam = compose_case_prompt(subject, _case(reporter="sam"), "fresh")
+    assert "Sam reads on a phone" in for_sam and BRIEF not in for_sam
+    assert for_sam.index("# Operating rules") < for_sam.index("Sam reads") < for_sam.index("## Case")
+
+    for_pat = compose_case_prompt(subject, _case(reporter="pat"), "fresh")
+    assert BRIEF in for_pat and "Sam reads on a phone" not in for_pat
+
+
+def test_a_persons_brief_that_cannot_be_read_names_their_setting(tmp_path):
+    subject = _with_briefs(_subject(tmp_path), pat=str(tmp_path / "gone.md"))
+    with pytest.raises(ConfigError, match=r"gone\.md.*policy\.briefs\.pat"):
+        compose_case_prompt(subject, _case(), "fresh")

@@ -28,7 +28,7 @@ the operator.
 from __future__ import annotations
 
 import re
-from collections.abc import Collection, Iterable
+from collections.abc import Iterable
 from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Callable, Optional, Union
@@ -114,31 +114,6 @@ class GateDecision:
     send: Optional[Outbound]
     diverted: Optional[str]
     notes: tuple[str, ...] = ()
-
-
-def notify_addresses(
-    subject: Subject, person: str, *, channels: Optional[Collection[str]] = None
-) -> tuple[str, ...]:
-    """The addresses ``person`` can be reached at on ``subject``, best first.
-
-    ``policy.notify[person]`` comes first when set, then each handle ``policy.people``
-    maps to ``person``, in file order. ``channels`` keeps only the addresses on those
-    channels (``github`` in ``github:pat``). A string with no channel is not an address.
-    """
-    policy = subject.policy
-    explicit = (policy.notify[person],) if person in policy.notify else ()
-    handles = (address for address, who in policy.people.items() if who == person)
-    return tuple(
-        address
-        for address in dict.fromkeys((*explicit, *handles))
-        if (channel := _channel_of(address))
-        and (channels is None or channel in channels)
-    )
-
-
-def _channel_of(address: str) -> Optional[str]:
-    channel, separator, _ = address.partition(":")
-    return channel if separator and channel else None
 
 
 def _acquaint_failure(error: Exception) -> str:
@@ -247,15 +222,16 @@ def notify_recipient(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert
     """On GitHub, make the message start with an ``@mention`` of its recipient.
 
     GitHub notifies only the people a comment mentions, and an issue an app files
-    subscribes its partner to nothing. The login is that of the recipient's first
-    ``github:`` address (see :func:`notify_addresses`). A missing mention is prefixed,
-    the one rewrite the gate makes. A recipient with no GitHub address is diverted.
-    Other channels pass unchanged.
+    subscribes its partner to nothing. The login is the first valid one among the
+    recipient's ``github:`` addresses, best first (see
+    :meth:`~liaise.subjects.Subject.notify_addresses_for`). A missing mention is
+    prefixed, the one rewrite the gate makes. A recipient with no GitHub address is
+    diverted. Other channels pass unchanged.
     """
     if outbound.channel != MENTION_CHANNEL:
         return Pass(outbound)
-    addresses = notify_addresses(
-        ctx.subject, outbound.recipient, channels=(MENTION_CHANNEL,)
+    addresses = ctx.subject.notify_addresses_for(
+        outbound.recipient, channels=MENTION_CHANNEL
     )
     logins = (address.partition(":")[2] for address in addresses)
     login = next((name for name in logins if _GITHUB_LOGIN_RE.fullmatch(name)), None)

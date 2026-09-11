@@ -1,8 +1,8 @@
 """The prompt composer: the whole prompt a processor run on one case starts from.
 
 :func:`compose_case_prompt` builds it in a fixed order: the packaged operating rules, the
-subject's brief, the case pointer, the outcome vocabulary, the verify and delivery
-commands, and the budget. The processor writes it to a file and puts only a pointer to that
+brief for the case's reporter, the case pointer, the outcome vocabulary, the verify and
+delivery commands, and the budget. The processor writes it to a file and puts only a pointer to that
 file on the command line. The agent reports only through the structured outcomes its run
 ends with: it is never told to post, label or open anything.
 """
@@ -111,17 +111,22 @@ def conversation_link(ref: str) -> str:
     return GITHUB_ISSUE_URL.format(**match.groupdict()) if match else ref
 
 
-def _subject_brief(subject: Subject) -> str:
-    if not subject.brief:
+def _brief(subject: Subject, person: Optional[str]) -> str:
+    """The brief a run on ``person``'s case reads: theirs, else the subject's."""
+    path = subject.brief_for(person)
+    if not path:
         name = subject.display_name or subject.slug
         return f"## Brief\n\nNo brief is configured for {name}."
     try:
-        return Path(subject.brief).expanduser().read_text(encoding="utf-8")
+        return Path(path).expanduser().read_text(encoding="utf-8")
     except OSError as error:
+        setting = (
+            f"policy.briefs.{person}" if subject.policy.briefs.get(person) else "brief"
+        )
         raise ConfigError(
-            f"{subject.source or subject.slug}: cannot read the brief {subject.brief!r} "
-            f"({error.strerror or error}). Write the brief there, or point `brief` at "
-            "a file that exists."
+            f"{subject.source or subject.slug}: cannot read the brief {path!r} "
+            f"({error.strerror or error}). Write the brief there, or point `{setting}` "
+            "at a file that exists."
         ) from None
 
 
@@ -225,9 +230,10 @@ def compose_case_prompt(
 ) -> str:
     """Build the prompt for one run on ``case``, in the fixed section order.
 
-    The sections: the packaged operating rules, the subject's brief, the case pointer
-    (each conversation, as a URL where it has one), the outcome vocabulary, the verify
-    and delivery commands, and the budget. The agent is never told to post, label or open
+    The sections: the packaged operating rules, the brief for the case's reporter (see
+    :meth:`~liaise.subjects.Subject.brief_for`), the case pointer (each conversation, as
+    a URL where it has one), the outcome vocabulary, the verify and delivery commands,
+    and the budget. The agent is never told to post, label or open
     anything: it reports only through the structured outcomes its run ends with.
 
     ``mode`` is ``"fresh"`` or ``"resume"``. ``runs_dir_note``, when given, is added as
@@ -238,7 +244,7 @@ def compose_case_prompt(
     _check_mode(mode)
     sections = [
         _packaged_text(OPERATING_RULES_RESOURCE),
-        _subject_brief(subject),
+        _brief(subject, case.reporter),
         _case_pointer(case, mode, runs_dir_note=runs_dir_note),
         _outcomes(subject),
         _case_commands(subject),

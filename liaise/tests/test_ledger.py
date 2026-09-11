@@ -273,6 +273,16 @@ def test_decrement_daily_takes_one_back_and_never_goes_below_zero(ledger):
     assert "daily__example-site__2026-01-01" not in ledger.store  # nothing to take back, nothing written
 
 
+def test_the_daily_cap_notice_is_remembered_per_subject_and_day(ledger):
+    assert not ledger.daily_cap_notified("example-app", date(2026, 1, 1))
+    ledger.mark_daily_cap_notified("example-app", date(2026, 1, 1), at=T0)
+    assert ledger.daily_cap_notified("example-app", "2026-01-01")
+    assert ledger.daily_cap_notified("example-app", T0)  # a datetime counts as its date
+    assert not ledger.daily_cap_notified("example-app", date(2026, 1, 2))
+    assert not ledger.daily_cap_notified("example-site", date(2026, 1, 1))
+    assert ledger.store == {"budget_notified__example-app__2026-01-01": T0.isoformat()}  # the 0.0.x key shape
+
+
 # ---- cursors ----
 
 

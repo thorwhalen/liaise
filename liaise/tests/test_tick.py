@@ -458,6 +458,40 @@ def test_the_daily_cap_moves_the_case_to_budget_and_tells_the_partner_once(world
     assert world.case().state == "budget"
 
 
+def test_the_daily_cap_tells_the_operator_once_per_subject_per_day(world):
+    """0.0.x M-8: a cap holding work back is one notification a day, not one per capped case."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(daily_dispatches=1))
+    world.ledger.increment_daily(SLUG, NOW.date())
+    world.issue()
+    world.tick()
+    assert world.case().state == "budget"
+    assert _titled(world, "reached its daily cap") == 1
+
+    world.issue(13, minutes=1)
+    world.tick(LATER)
+    assert world.case("example-app-2").state == "budget"  # a second capped case, the same day
+    assert _titled(world, "reached its daily cap") == 1
+
+    tomorrow = NOW + timedelta(days=1)
+    world.ledger.increment_daily(SLUG, tomorrow.date())  # the next day's cap, used up already
+    world.tick(tomorrow)
+    world.tick(tomorrow + timedelta(minutes=5))
+    assert _titled(world, "reached its daily cap") == 2
+    (title,) = {title for title in world.titles() if "daily cap" in title}
+    assert title == f"liaise: {SLUG} reached its daily cap"
+
+
+def test_a_dry_run_says_it_would_tell_the_operator_of_the_cap_and_remembers_nothing(world):
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(daily_dispatches=1))
+    world.ledger.increment_daily(SLUG, NOW.date())
+    world.issue()
+    report = world.tick(dry_run=True)
+
+    assert f"  would notify the operator: liaise: {SLUG} reached its daily cap" in report.plan_lines
+    assert world.notes == []
+    assert not world.ledger.daily_cap_notified(SLUG, NOW.date())
+
+
 def test_a_run_past_its_wall_clock_is_cancelled_now_then_collected_as_timed_out(world):
     world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
     world.processor = SlowProcessor()

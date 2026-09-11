@@ -13,6 +13,7 @@ flat string with no "/", since ``dol.Jsons`` would read one as a subdirectory::
     cursor__<encoded ref>               a channel cursor (see Ledger.cursors)
     counter__cases                      the last case number handed out
     daily__<subject>__<YYYY-MM-DD>      that day's dispatches, as 0.0.x kept them
+    budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
 ``repo:example/app`` is stored under ``hold__repo%3Aexample%2Fapp``. The result has
@@ -83,10 +84,19 @@ def _digest(delivery_id: str) -> str:
     return hashlib.sha1(delivery_id.encode()).hexdigest()[:DFLT_DIGEST_LENGTH]
 
 
-def _daily_key(subject: str, day: Union[date, str]) -> str:
+def _day_stamp(day: Union[date, str]) -> str:
+    """``day`` as ``YYYY-MM-DD``: a datetime counts as its date, a string is kept."""
     if isinstance(day, datetime):
         day = day.date()
-    return _key("daily", subject, day if isinstance(day, str) else day.isoformat())
+    return day if isinstance(day, str) else day.isoformat()
+
+
+def _daily_key(subject: str, day: Union[date, str]) -> str:
+    return _key("daily", subject, _day_stamp(day))
+
+
+def _cap_notice_key(subject: str, day: Union[date, str]) -> str:
+    return _key("budget_notified", subject, _day_stamp(day))
 
 
 def _delete(store: MutableMapping[str, Any], key: str) -> None:
@@ -348,6 +358,19 @@ class Ledger:
             return 0
         self.store[_daily_key(subject, day)] = count - 1
         return count - 1
+
+    def daily_cap_notified(self, subject: str, day: Union[date, str]) -> bool:
+        """Whether the operator has been told that ``subject`` reached its cap on ``day``."""
+        return self._get(_cap_notice_key(subject, day)) is not None
+
+    def mark_daily_cap_notified(
+        self, subject: str, day: Union[date, str], *, at: datetime
+    ) -> None:
+        """Record that the operator was told, ``at``, that ``subject`` reached its cap on ``day``.
+
+        :meth:`daily_cap_notified` then says so, so they are told once per subject per day.
+        """
+        self.store[_cap_notice_key(subject, day)] = at.isoformat()
 
     # ---- cursors ----
 
