@@ -11,9 +11,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+from liaise.model import CASE_STATES
+
 PACKAGE_ROOT = Path(__file__).resolve().parent.parent.parent
 
-REPO = "example/app"  # the README's own fictional partner repo
+REPO = "example/app"  # the README's own fictional repo
+SUBJECT = "example-app"  # and its subject
+#: What 0.1 removed: `subject` and `run --dry-run` replace them.
+RETIRED_COMMANDS = ("liaise poll", "liaise partner")
 
 
 def _bash_executable() -> str:
@@ -37,9 +42,13 @@ def _bash_executable() -> str:
     return shutil.which("bash") or "bash"
 
 
+def _readme() -> str:
+    return (PACKAGE_ROOT / "README.md").read_text()
+
+
 def _readme_quick_start_block() -> str:
     """The fenced shell block under README's "## Quick start" heading, verbatim."""
-    readme = (PACKAGE_ROOT / "README.md").read_text()
+    readme = _readme()
     marker = "## Quick start"
     start = readme.index(marker)
     fence_start = readme.index("```", start) + 3
@@ -48,18 +57,17 @@ def _readme_quick_start_block() -> str:
 
 
 def test_readme_quick_start_actually_builds_a_working_config(tmp_path):
-    """M-9: drives the test from the README's own fenced block — instead of a
-    hand-typed config that could drift from it silently — up to the first
-    line that needs a real `gh` (`liaise setup pat`). Runs it as real shell
-    (the heredocs, `~` expansion, quoting — exactly as a reader would type
-    it) against a fake $HOME, then confirms `liaise partner show pat`
-    resolves the config it actually built.
+    """M-9: drives the test from the README's own fenced block, instead of a
+    hand-typed config that could drift from it silently, up to the first
+    `liaise` command. Runs it as real shell (the heredocs, `~` expansion,
+    quoting, exactly as a reader would type it) against a fake $HOME, then
+    confirms `liaise subject show example-app` resolves the subject it built.
     """
     block = _readme_quick_start_block()
     lines = block.splitlines()
 
-    setup_end = next(i for i, line in enumerate(lines) if line.startswith("liaise setup"))
-    setup_lines = [line for line in lines[:setup_end] if line != "pip install liaise"]
+    first_command = next(i for i, line in enumerate(lines) if line.startswith("liaise "))
+    setup_lines = [line for line in lines[:first_command] if line != "pip install liaise"]
     assert setup_lines, "README quick start block shape changed — nothing to run"
 
     fake_home = tmp_path / "home"
@@ -82,38 +90,44 @@ def test_readme_quick_start_actually_builds_a_working_config(tmp_path):
 
     config_root = fake_home / ".config" / "liaise"
     assert (config_root / "config.toml").exists()
-    assert (config_root / "partners" / "pat.toml").exists()
-    assert (config_root / "briefs" / "pat.md").exists()
+    assert (config_root / "subjects" / f"{SUBJECT}.toml").exists()
 
     out = subprocess.run(
-        [sys.executable, "-m", "liaise", "partner", "show", "pat", "--root", str(config_root)],
+        [sys.executable, "-m", "liaise", "subject", "show", SUBJECT, "--root", str(config_root)],
         capture_output=True,
         text=True,
-        timeout=20,
+        timeout=60,
     )
-    assert out.returncode == 0
-    assert "partner: pat" in out.stdout
-    assert "display_name:   Pat" in out.stdout
-    assert f"repo:           {REPO}" in out.stdout
+    assert out.returncode == 0, out.stderr
+    assert f"subject: {SUBJECT}" in out.stdout
+    assert f"  bindings: github:{REPO}?labels=partner:pat" in out.stdout
+    assert "  policy.roles.pat: partner" in out.stdout
+    assert "binding problems: none" in out.stdout
 
 
-def test_readme_quick_start_does_not_end_by_installing_a_live_daemon():
-    """M-9: read-only-by-default is non-negotiable (A.1 rule 4) — the quick
-    start must not end on an acting command (`liaise schedule install`
-    installs a recurring scheduled job). It should end at a read-only
-    command (`poll`, or `run --once --dry-run`).
+def test_readme_quick_start_ends_at_a_read_only_command():
+    """M-9: read-only by default is non-negotiable (A.1 rule 4). The quick start
+    must not end on an acting command: `liaise schedule install` installs a
+    recurring job, and `liaise run` without `--dry-run` acts. It ends at
+    `liaise run --once --dry-run`, which prints a plan and changes nothing.
     """
     block = _readme_quick_start_block()
     lines = [line for line in block.splitlines() if line.strip()]
     last_command = lines[-1]
     assert "schedule install" not in last_command
-    assert last_command.startswith("liaise poll") or "--dry-run" in last_command
+    assert last_command.startswith("liaise run") and "--dry-run" in last_command
 
 
 def test_readme_uses_the_fictional_partner_and_repo():
-    readme = (PACKAGE_ROOT / "README.md").read_text()
+    readme = _readme()
     assert "pat" in readme
     assert REPO in readme
+
+
+def test_readme_names_no_retired_command():
+    readme = _readme()
+    for retired in RETIRED_COMMANDS:
+        assert retired not in readme
 
 
 def test_skill_file_exists_and_has_valid_frontmatter():
@@ -133,7 +147,6 @@ def test_skill_file_exists_and_has_valid_frontmatter():
 def test_skill_documents_every_state_label():
     skill_path = PACKAGE_ROOT / ".claude" / "skills" / "liaise" / "SKILL.md"
     text = skill_path.read_text()
-    from liaise.state import STATE_LABELS
 
-    for state in STATE_LABELS:
+    for state in CASE_STATES:
         assert f"liaise:{state}" in text

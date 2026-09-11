@@ -22,9 +22,8 @@ from liaise.model import (
     RunRecord,
     RunResult,
 )
-from liaise.state import STATE_LABELS
 
-T0 = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
+T0 =datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
 REF = "github:example/app#12"
 
 
@@ -70,7 +69,6 @@ def test_case_states_are_the_label_vocabulary_with_one_home():
         "deployed",
         "budget",
     )
-    assert STATE_LABELS is CASE_STATES
 
 
 def test_closed_vocabularies():
@@ -94,6 +92,7 @@ def test_closed_vocabularies():
         "run",
         "hold",
         "projection",
+        "note",
     )
 
 

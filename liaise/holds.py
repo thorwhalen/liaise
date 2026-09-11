@@ -26,8 +26,8 @@ holds apply it gets the most specific one, the narrowest reason there is.
 
 The holds the tick sets itself (``processor`` on ``config_error`` or ``auth_expired``,
 ``effect:deploy`` on ``effect_blocked``) come from :func:`auto_hold`, recorded with
-``set_by="auto:<error class>"``. :func:`release_auto_holds` lifts those, and never an
-operator's hold.
+``set_by="auto:<error class>"``, which also says whether it placed a new hold.
+:func:`release_auto_holds` lifts those, and never an operator's hold.
 
 Everything goes through a :class:`~liaise.ledger.Ledger`, so a dry-run ledger
 (``Ledger(ChainMap({}, store))``) holds and lifts without touching the real one.
@@ -38,7 +38,7 @@ from __future__ import annotations
 from collections.abc import Iterable
 from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Any, Optional
+from typing import Any, NamedTuple, Optional
 
 from liaise.ledger import Ledger
 from liaise.model import HOLD_MODES, Hold, require_one_of
@@ -226,10 +226,19 @@ def blocking_hold(
     )
 
 
+class AutoHold(NamedTuple):
+    """What :func:`auto_hold` did: the hold now in force on the scope, and whether it is new."""
+
+    hold: Hold
+    #: True when the scope had no hold before. False when an earlier automatic hold was
+    #: replaced, or an operator's hold was kept. The tick tells the operator only when True.
+    created: bool
+
+
 def auto_hold(
     ledger: Ledger, scope: str, *, error_class: str, now: Optional[datetime] = None
-) -> Hold:
-    """Block ``scope`` because the tick met ``error_class``, and return the hold in force.
+) -> AutoHold:
+    """Block ``scope`` because the tick met ``error_class``: the hold in force, and whether it is new.
 
     The hold is recorded with ``set_by="auto:<error_class>"``, so
     :func:`release_auto_holds` can lift it, and it replaces an earlier automatic hold. An
@@ -243,8 +252,8 @@ def auto_hold(
         )
     existing = ledger.get_hold(canonical_scope(scope))
     if existing is not None and not _is_auto(existing):
-        return existing
-    return hold(
+        return AutoHold(existing, created=False)
+    placed = hold(
         ledger,
         scope,
         mode="block",
@@ -252,6 +261,7 @@ def auto_hold(
         set_by=f"{AUTO_SET_BY_PREFIX}{error_class}",
         now=now,
     )
+    return AutoHold(placed, created=existing is None)
 
 
 def release_auto_holds(ledger: Ledger, scope: str) -> list[Hold]:

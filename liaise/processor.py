@@ -2,13 +2,17 @@
 
 A :class:`Processor` has six verbs, each with its default in :class:`ClaudeHeadless`:
 
-- ``preflight(job)``: whether work could start now. It never starts any.
+- ``preflight(job)``: whether work could start now: the command, the checkout, and whether
+  the login still works. It never starts any.
 - ``start(job)`` and ``resume(session_id, job)``: spawn a detached run and return its
   :class:`~liaise.model.RunRecord` at once. Both are idempotent on ``job.run_id``.
 - ``status(run)``: never blocks. It refreshes the heartbeat, the status and the end time.
 - ``cancel(run, mode=...)``: interrupt, then terminate. The session stays resumable.
 - ``collect(run)``: ``None`` while the run is going, then its
   :class:`~liaise.model.RunResult`, classified by :func:`liaise.errors.classify`.
+
+In a dry run the tick passes ``persist=False`` to ``status`` and ``collect``, which then
+write nothing.
 
 :class:`ClaudeHeadless` keeps each run's files in ``<runs_dir>/<run_id>/``::
 
@@ -34,7 +38,15 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Mapping, Optional, Protocol, Union, runtime_checkable
+from typing import (
+    Any,
+    Mapping,
+    Optional,
+    Protocol,
+    Sequence,
+    Union,
+    runtime_checkable,
+)
 
 from liaise.errors import StreamSummary, classify, parse_stream
 from liaise.model import (
@@ -64,6 +76,11 @@ SCRUBBED_ENV_VARS = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")
 #: Set in every run's environment: claude retries transient API errors, a bounded number
 #: of times, before it gives up and reports them.
 CHILD_ENV_OVERRIDES = MappingProxyType({"CLAUDE_CODE_MAX_RETRIES": "3"})
+#: The arguments that ask ``claude`` whether its login still works: ``claude auth
+#: status``, which exits non-zero once the login is gone.
+DFLT_AUTH_CHECK = ("auth", "status")
+#: Seconds :meth:`ClaudeHeadless.preflight` gives that check to answer.
+DFLT_AUTH_TIMEOUT_S = 15.0
 
 PROMPT_FILE = "prompt.md"
 STREAM_FILE = "stream.jsonl"
@@ -75,6 +92,7 @@ _SESSION_FLAGS = MappingProxyType({FRESH: "--session-id", RESUME: "--resume"})
 
 _CONFIG_ERROR = "config_error"
 _TIMED_OUT = "timed_out"
+_AUTH_EXPIRED = "auth_expired"
 #: record.json keys beyond the RunRecord's own fields.
 _CANCEL_REQUESTED_AT = "cancel_requested_at"
 _CANCEL_SIGNAL = "cancel_signal"
@@ -119,8 +137,11 @@ class Processor(Protocol):
         """Start ``job`` continuing ``session_id``, in the same permission mode as ``start``."""
         ...
 
-    def status(self, run: RunRecord) -> RunRecord:
-        """``run`` with its heartbeat, status and end time refreshed. Never blocks."""
+    def status(self, run: RunRecord, *, persist: bool = True) -> RunRecord:
+        """``run`` with its heartbeat, status and end time refreshed. Never blocks.
+
+        With ``persist=False``, as in a dry run, the processor writes nothing of its own.
+        """
         ...
 
     def cancel(self, run: RunRecord, *, mode: str = "graceful") -> RunRecord:
@@ -128,9 +149,12 @@ class Processor(Protocol):
         ...
 
     def collect(
-        self, run: RunRecord, *, timed_out: bool = False
+        self, run: RunRecord, *, timed_out: bool = False, persist: bool = True
     ) -> Optional[RunResult]:
-        """``run``'s result once it has finished, or None while it is still going."""
+        """``run``'s result once it has finished, or None while it is still going.
+
+        ``persist`` is as for :meth:`status`.
+        """
         ...
 
 
@@ -157,6 +181,9 @@ class ClaudeHeadless:
     ``<state_dir>/runs``, and nothing but :meth:`preflight` works without it.
     ``claude_bin`` is the command, found on ``PATH`` or given as a path. ``grace_s`` is
     how long a graceful cancel waits after its interrupt before it may terminate.
+    ``auth_check`` is the arguments that ask ``claude`` whether its login still works
+    (:data:`DFLT_AUTH_CHECK`), which :meth:`preflight` gives ``auth_timeout_s`` seconds
+    to answer; None skips that check, for a ``claude`` without the command.
 
     A run is spawned in its own process group (a new session on POSIX), so it outlives
     the tick that started it and a cancel reaches everything it started. Its environment
@@ -169,12 +196,16 @@ class ClaudeHeadless:
         claude_bin: Union[str, os.PathLike] = DFLT_CLAUDE_BIN,
         runs_dir: Optional[Union[str, os.PathLike]] = None,
         grace_s: float = DFLT_GRACE_S,
+        auth_check: Optional[Sequence[str]] = DFLT_AUTH_CHECK,
+        auth_timeout_s: float = DFLT_AUTH_TIMEOUT_S,
     ):
         self.claude_bin = str(claude_bin)
         self.runs_dir = (
             Path(runs_dir).expanduser().absolute() if runs_dir is not None else None
         )
         self.grace_s = grace_s
+        self.auth_check = tuple(auth_check or ())
+        self.auth_timeout_s = auth_timeout_s
         # The processes this instance spawned. A child that exits stays a zombie until
         # its parent reaps it, and a zombie's pid still looks alive, so for these the
         # liveness check is Popen.poll(), which reaps. A pid is only checked for runs
@@ -184,14 +215,44 @@ class ClaudeHeadless:
     # ---- the verbs ----
 
     def preflight(self, job: Job) -> Health:
-        """``config_error`` without ``runs_dir``, a runnable ``claude_bin``, or ``job.cwd``."""
+        """Whether ``job`` could start now. It starts no run.
+
+        ``config_error`` without ``runs_dir``, a runnable ``claude_bin``, or ``job.cwd``.
+        Then ``auth_expired`` when ``claude auth status`` (``auth_check``) exits non-zero,
+        so a login that has expired costs no run. A check that cannot be run, or does not
+        answer within ``auth_timeout_s``, tells nothing: preflight passes, and the run's
+        own classification has the last word.
+        """
+        claude = _resolve_bin(self.claude_bin)
         if (
             self.runs_dir is None
-            or _resolve_bin(self.claude_bin) is None
+            or claude is None
             or not Path(job.cwd).expanduser().is_dir()
         ):
             return Health(ok=False, error=_CONFIG_ERROR)
+        if self.auth_check and self._login_expired(claude):
+            return Health(ok=False, error=_AUTH_EXPIRED)
         return Health(ok=True)
+
+    def _login_expired(self, claude: str) -> bool:
+        """Whether ``claude <auth_check>`` says the login is gone, by exiting non-zero.
+
+        Its output is not read, so it goes nowhere: a pipe could keep the wait going past
+        the timeout on Windows, where the child of a ``.cmd`` shim holds it open.
+        """
+        try:
+            done = subprocess.run(
+                [claude, *self.auth_check],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                env=child_env(os.environ),
+                timeout=self.auth_timeout_s,
+                check=False,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return False
+        return done.returncode != 0
 
     def start(self, job: Job) -> RunRecord:
         """Spawn ``job`` in a new session (``--session-id``) and return its record at once.
@@ -207,12 +268,13 @@ class ClaudeHeadless:
         """Like :meth:`start`, but continuing ``session_id`` (``--resume``)."""
         return self._launch(job, mode=RESUME, session_id=session_id)
 
-    def status(self, run: RunRecord) -> RunRecord:
+    def status(self, run: RunRecord, *, persist: bool = True) -> RunRecord:
         """``run`` refreshed from its files and process, and saved to its ``record.json``.
 
         ``heartbeat_at`` is the stream's mtime. The run is finished once its stream holds
         a ``result`` event or its process has exited; ``ended_at`` is then the stream's
-        mtime. Reads files only, so it never blocks.
+        mtime. Reads files only, so it never blocks. With ``persist=False``, as in a dry
+        run, ``record.json`` is left as it was.
         """
         stream_path = self._stream_path(run)
         heartbeat = _mtime(stream_path)
@@ -230,7 +292,8 @@ class ClaudeHeadless:
         process = self._children.get(run.run_id)
         if finished and process is not None and process.poll() is not None:
             del self._children[run.run_id]
-        self._save(updated)
+        if persist:
+            self._save(updated)
         return updated
 
     def cancel(self, run: RunRecord, *, mode: str = "graceful") -> RunRecord:
@@ -256,16 +319,17 @@ class ClaudeHeadless:
         return current
 
     def collect(
-        self, run: RunRecord, *, timed_out: bool = False
+        self, run: RunRecord, *, timed_out: bool = False, persist: bool = True
     ) -> Optional[RunResult]:
         """``run``'s result, or None while it is running. Never raises on a bad stream.
 
         The outcomes are the last ``result`` event's ``structured_output.outcomes``; if
         any of them is malformed the run has no outcomes. The error class comes from
         :func:`liaise.errors.classify`, given ``stderr.log`` and ``timed_out`` (which the
-        tick sets for a run it cancelled for passing its wall clock).
+        tick sets for a run it cancelled for passing its wall clock). ``persist`` is as
+        for :meth:`status`.
         """
-        current = self.status(run)
+        current = self.status(run, persist=persist)
         if current.status != FINISHED:
             return None
         return _run_result(
@@ -461,7 +525,7 @@ class EchoProcessor:
     ``results`` maps a case id to the :class:`~liaise.model.RunResult` its runs return,
     and ``default`` is returned for any other case; without either, a run reports one
     ``note``. ``health`` is what :meth:`preflight` returns (ok by default). A run is
-    finished as soon as it starts. ``jobs``, ``preflights`` and ``cancels`` record the
+    finished as soon as it starts. It writes nothing, so ``persist`` changes nothing. ``jobs``, ``preflights`` and ``cancels`` record the
     calls, for tests to assert on.
     """
 
@@ -490,7 +554,7 @@ class EchoProcessor:
     def resume(self, session_id: str, job: Job) -> RunRecord:
         return self._run(job, mode=RESUME, session_id=session_id)
 
-    def status(self, run: RunRecord) -> RunRecord:
+    def status(self, run: RunRecord, *, persist: bool = True) -> RunRecord:
         known = self._runs.get(run.run_id)
         if known is not None:
             return known
@@ -502,7 +566,7 @@ class EchoProcessor:
         return self.status(run)
 
     def collect(
-        self, run: RunRecord, *, timed_out: bool = False
+        self, run: RunRecord, *, timed_out: bool = False, persist: bool = True
     ) -> Optional[RunResult]:
         scripted = self._results.get(run.case_id, self._default)
         if scripted is None:

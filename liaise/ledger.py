@@ -337,6 +337,18 @@ class Ledger:
         self.store[_daily_key(subject, day)] = count
         return count
 
+    def decrement_daily(self, subject: str, day: Union[date, str]) -> int:
+        """Take back one dispatch counted for ``subject`` on ``day``, returning the new count.
+
+        For a run that turned out not to count against the cap, such as one that found the
+        login expired. A day with no dispatches stays at zero, and nothing is written.
+        """
+        count = self.daily_count(subject, day)
+        if count <= 0:
+            return 0
+        self.store[_daily_key(subject, day)] = count - 1
+        return count - 1
+
     # ---- cursors ----
 
     @cached_property

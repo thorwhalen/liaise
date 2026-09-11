@@ -8,7 +8,7 @@ import pytest
 
 from liaise.github import FakeGitHub, Issue
 from liaise.model import CASE_STATES, Case
-from liaise.projection import github_issue, project_labels
+from liaise.projection import github_issue, github_repos, project_labels, setup_labels
 from liaise.subjects import Policy, Subject
 
 T0 = datetime(2026, 9, 11, 9, 0, tzinfo=timezone.utc)
@@ -115,3 +115,57 @@ def test_github_issue_parses_issue_refs_only():
     assert github_issue("github:example/app") is None
     assert github_issue("webinbox:example-site") is None
     assert github_issue("fake:example/app#12") is None
+
+
+# ---- setup_labels: the labels a subject needs, in each repository it binds ----
+
+
+def _claiming_subject(*bindings, **fields) -> Subject:
+    return Subject(
+        slug="example-app",
+        bindings=bindings or ("github:example/app?labels=partner:pat",),
+        policy=Policy(
+            people={"github:pat": "pat"},
+            roles={"pat": "partner"},
+            relays=("github:example-bot",),
+            claim_labels={"partner:pat": "pat"},
+        ),
+        **fields,
+    )
+
+
+def test_setup_creates_the_claim_labels_and_every_state_label_in_each_bound_repository():
+    """Ported from 0.0.x test_state: every state label, with a plain description, plus the
+    routing label. 0.0.x also created `discovered`; the 0.1 rules forbid opening issues."""
+    subject = _claiming_subject(
+        "github:example/app?labels=partner:pat",
+        "github:example/site#3",
+        "github:example/app?author=pat",
+        "webinbox:example-site",
+        "github:example/*",
+    )
+    fake = FakeGitHub()
+    lines = setup_labels(fake, subject)
+
+    assert github_repos(subject) == ["example/app", "example/site"]
+    for repo in ("example/app", "example/site"):
+        created = fake.labels_created(repo)
+        assert set(created) == {"partner:pat", *(f"liaise:{state}" for state in CASE_STATES)}
+        assert all(created.values())  # each says what it is for
+        assert "pat" in created["partner:pat"]
+    assert [line.split(":")[0] for line in lines] == ["example/app", "example/site"]
+
+
+def test_setup_is_idempotent_and_uses_the_subjects_label_prefix():
+    subject = _claiming_subject(label_prefix="helper:")
+    fake = FakeGitHub()
+    setup_labels(fake, subject)
+    first = fake.labels_created(REPO)
+    setup_labels(fake, subject)
+    assert fake.labels_created(REPO) == first
+    assert "helper:needs-owner" in first and "liaise:needs-owner" not in first
+
+
+def test_setup_for_a_subject_that_binds_no_github_repository_creates_nothing():
+    lines = setup_labels(_Untouchable(), _claiming_subject("webinbox:example-site"))
+    assert lines == ["example-app binds no GitHub repository: no labels to create"]

@@ -1,4 +1,4 @@
-"""Tests for liaise.config: loading, defaults, missing-file errors."""
+"""Tests for liaise.config: the global config, and the 0.0.x partner files migrate-config reads."""
 
 from __future__ import annotations
 
@@ -6,8 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from liaise.cli import partner_show
-from liaise.config import ConfigError, load_config
+from liaise.config import ConfigError, load_config, load_global_config
 
 
 def test_load_config_returns_frozen_dataclasses_with_defaults(config_root):
@@ -126,44 +125,30 @@ def test_unknown_partner_names_slug_and_known_partners(config_root):
     assert "pat" in message
 
 
-def test_partner_show_prints_resolved_partner(config_root):
-    output = partner_show("pat", root=str(config_root))
-    assert "partner: pat" in output
-    assert "display_name:   Pat" in output
-    assert "repo:           example/app" in output
-    assert "github_logins:  pat" in output
-    assert "notify_login:   pat" in output
+def test_load_global_config_reads_config_toml_alone(tmp_path):
+    """0.1 reads only config.toml: a root with no partners directory loads."""
+    root = tmp_path / "config"
+    root.mkdir()
+    (root / "config.toml").write_text(
+        'owner_login = "owner"\nstate_dir = "~/state"\n\n[notify]\nntfy_topic_env = "EXAMPLE_NTFY_TOPIC"\n'
+    )
+    glob = load_global_config(root)
+    assert (glob.owner_login, glob.state_dir, glob.notify.ntfy_topic_env) == (
+        "owner",
+        "~/state",
+        "EXAMPLE_NTFY_TOPIC",
+    )
+    assert load_config(root).global_ == glob
+    with pytest.raises(ConfigError, match="owner_login"):
+        load_global_config(tmp_path / "nowhere")
 
 
-def test_log_dir_defaults_to_logs_under_state_dir(config_root):
-    glob = load_config(config_root).global_
-    assert glob.log_dir_path == Path(glob.state_dir) / "logs"
-
-
-def test_log_dir_is_overridable_in_config_toml(config_root, tmp_path):
-    path = config_root / "config.toml"
-    custom = (tmp_path / "elsewhere").as_posix()
-    # prepend, not append: keys after the [notify] header belong to that table
-    path.write_text(f'log_dir = "{custom}"\n' + path.read_text())
-    assert load_config(config_root).global_.log_dir_path == Path(custom)
-
-
-def test_a_relative_log_dir_is_under_state_dir_not_the_working_directory(config_root):
-    """A scheduled job runs from `/` (launchd): a relative `log_dir` resolved
-    against the working directory would be unwritable there and block every
-    dispatch.
-    """
+def test_a_0_0_x_log_dir_in_config_toml_still_loads_and_is_not_kept(config_root):
+    """0.1 has no dispatch log (a run's files live under state_dir/runs): a leftover
+    `log_dir` must not stop the config from loading."""
     path = config_root / "config.toml"
     path.write_text('log_dir = "dispatch-logs"\n' + path.read_text())
-    glob = load_config(config_root).global_
-    assert glob.log_dir_path == Path(glob.state_dir) / "dispatch-logs"
-
-
-def test_log_dir_path_follows_a_replaced_state_dir(config_root, tmp_path):
-    from dataclasses import replace
-
-    glob = replace(load_config(config_root).global_, state_dir=str(tmp_path / "moved"))
-    assert glob.log_dir_path == tmp_path / "moved" / "logs"
+    assert not hasattr(load_global_config(config_root), "log_dir")
 
 
 def test_permission_mode_defaults_to_auto_and_is_set_under_dispatch(config_root):

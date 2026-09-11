@@ -444,3 +444,29 @@ def test_several_bindings_of_one_subject_may_share_a_conversation(tmp_path):
     _write(tmp_path, MINIMAL_TOML.replace("example/app", "example/site"), slug="sam")
     _write(tmp_path, MINIMAL_TOML.replace(BINDING, "github:example/*"), slug="zeta")  # a glob is never polled
     assert list(load_subjects(tmp_path)) == ["pat", "sam", "zeta"]
+
+
+# ---- S5b-2: a GitHub binding loads lower-cased, its conditions as written ----
+
+
+def test_a_github_binding_loads_lower_cased_and_keeps_its_conditions(tmp_path):
+    """correspond compares a binding's conversation case-sensitively with the lower-cased
+    reference its GitHub adapter gives each message, so `github:Example/App` would match no
+    issue at all. Loading lower-cases the channel and conversation; the conditions stay."""
+    from correspond.routing import binding_matches
+
+    from liaise.testing import FakeGitHubChannel
+
+    bindings = '["GitHub:Example/App?labels=Partner:Pat", "github:Example/App#12", "webinbox:Example-Site"]'
+    subject = _load(tmp_path, MINIMAL_TOML.replace(f'["{BINDING}"]', bindings))
+
+    assert subject.bindings == (
+        "github:example/app?labels=Partner:Pat",
+        "github:example/app#12",
+        "webinbox:Example-Site",
+    )
+    message = FakeGitHubChannel().add_issue(
+        "example/app", 12, author="pat", title="Export", body="", labels=["Partner:Pat"],
+        created_at="2026-09-11T09:00:00Z",
+    )
+    assert binding_matches(subject.bindings[0], message)

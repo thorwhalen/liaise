@@ -1,10 +1,15 @@
-"""Config model and loading for liaise.
+"""The global config, and the 0.0.x partner files ``liaise migrate-config`` reads.
 
-Everything partner-specific — identities, repos, briefs, commands, hosts — lives
-under ``~/.config/liaise/`` (see :func:`load_config`), never in this package's
-code, tests, docs, fixtures or examples. This module only knows the *shape* of
-that configuration and how to resolve it into frozen dataclasses with defaults
-applied; it never hardcodes a real partner.
+:func:`load_global_config` reads ``~/.config/liaise/config.toml``: the owner, the state
+directory and notifications. A 0.1 subject is a ``subjects/<slug>.toml`` file (see
+:mod:`liaise.subjects`). :func:`load_config` also reads the 0.0.x ``partners/*.toml``,
+which only :mod:`liaise.migrate` still uses. The defaults here are the ones both formats
+share.
+
+Everything partner-specific (identities, repos, briefs, commands, hosts) lives under
+``~/.config/liaise/``, never in this package's code, tests, docs, fixtures or examples.
+This module only knows the *shape* of that configuration and how to resolve it into
+frozen dataclasses with defaults applied; it never hardcodes a real partner.
 """
 
 from __future__ import annotations
@@ -55,8 +60,6 @@ _RESUME_COMMAND_WITHOUT_PERMISSION_MODE = (
     'claude --resume {session_id} -p "Read and follow the instructions in '
     '{prompt_file}" --output-format json'
 )
-#: `log_dir`'s default, relative to `state_dir`.
-DFLT_LOG_SUBDIR = "logs"
 
 
 class ConfigError(Exception):
@@ -117,20 +120,13 @@ class EscalateConfig:
     max_scope: str = "about a day of work"
 
 
-#: Fields every partner inherits from the global config unless overridden.
-_INHERITABLE_DEFAULTS = (
-    "quiet_minutes",
-    "go_minutes",
-    "markers",
-    "label_prefix",
-    "budget",
-    "deploy_per",
-)
-
-
 @dataclass(frozen=True)
 class GlobalConfig:
-    """``~/.config/liaise/config.toml`` — settings every partner inherits."""
+    """``~/.config/liaise/config.toml``: the owner, the state directory, and notifications.
+
+    The other fields are the 0.0.x defaults a partner file inherits, which only
+    :mod:`liaise.migrate` still reads. A 0.1 subject file has defaults of its own.
+    """
 
     owner_login: str
     state_dir: str
@@ -142,22 +138,6 @@ class GlobalConfig:
     budget: Budget = field(default_factory=Budget)
     deploy_per: str = DFLT_DEPLOY_PER
     deployed_nudge_days: int = DFLT_DEPLOYED_NUDGE_DAYS
-    #: Where each dispatch's log goes, as written in `config.toml`; read it
-    #: through :attr:`log_dir_path`.
-    log_dir: str = ""
-
-    @property
-    def log_dir_path(self) -> Path:
-        """`log_dir` resolved: the agent's drafts and escalations go here, then
-        the exit code and output `liaise` appends.
-
-        Empty means `logs/` under `state_dir`, and a relative `log_dir` is
-        relative to `state_dir` too — never to whatever directory a scheduler
-        runs the job from. Derived on each read, so it follows a `state_dir`
-        changed with `dataclasses.replace`.
-        """
-        state_dir = Path(self.state_dir).expanduser()
-        return state_dir / Path(self.log_dir or DFLT_LOG_SUBDIR).expanduser()
 
 
 @dataclass(frozen=True)
@@ -273,8 +253,14 @@ def _escalate_from(raw: Optional[dict]) -> EscalateConfig:
     )
 
 
-def _load_global_config(root: Path) -> GlobalConfig:
-    path = root / "config.toml"
+def load_global_config(root: Optional[Path] = None) -> GlobalConfig:
+    """Load ``<root>/config.toml`` into a :class:`GlobalConfig`, defaults applied.
+
+    ``root`` defaults to ``~/.config/liaise``. A missing file raises :class:`ConfigError`
+    naming the path and the minimal content it needs, as does a missing ``owner_login``
+    or ``state_dir``. Nothing under ``partners/`` is read (see :func:`load_config`).
+    """
+    path = (Path(root) if root is not None else DFLT_CONFIG_ROOT) / "config.toml"
     if not path.exists():
         raise _missing_global_config_error(path)
     raw = _load_toml(path)
@@ -297,7 +283,6 @@ def _load_global_config(root: Path) -> GlobalConfig:
         budget=_budget_from(raw.get("budget"), dflt=dflt_budget),
         deploy_per=raw.get("deploy_per", DFLT_DEPLOY_PER),
         deployed_nudge_days=raw.get("deployed_nudge_days", DFLT_DEPLOYED_NUDGE_DAYS),
-        log_dir=raw.get("log_dir", ""),
     )
 
 
@@ -394,7 +379,10 @@ def _load_partner_config(path: Path, *, glob: GlobalConfig) -> PartnerConfig:
 
 
 def load_config(root: Optional[Path] = None) -> Config:
-    """Load and resolve liaise's configuration into frozen dataclasses.
+    """Load a 0.0.x configuration, the global config and every partner, as frozen dataclasses.
+
+    Only :mod:`liaise.migrate` still reads partner files. 0.1 reads the global config alone
+    (:func:`load_global_config`) and its subjects (:func:`liaise.subjects.load_subjects`).
 
     ``root`` defaults to ``~/.config/liaise``. A missing global config raises
     :class:`ConfigError` naming the path and the minimal content needed. Every
@@ -402,7 +390,7 @@ def load_config(root: Optional[Path] = None) -> Config:
     applied, then overridden by whatever the partner file sets explicitly.
     """
     root = Path(root) if root is not None else DFLT_CONFIG_ROOT
-    glob = _load_global_config(root)
+    glob = load_global_config(root)
 
     partners: dict[str, PartnerConfig] = {}
     partners_dir = root / "partners"

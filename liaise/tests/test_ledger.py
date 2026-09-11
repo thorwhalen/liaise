@@ -261,6 +261,18 @@ def test_daily_counter_counts_per_subject_and_day(ledger):
     assert ledger.store["daily__pat__2026-01-01"] == 2  # the 0.0.x key
 
 
+def test_decrement_daily_takes_one_back_and_never_goes_below_zero(ledger):
+    day = date(2026, 1, 1)
+    ledger.increment_daily("pat", day)
+    ledger.increment_daily("pat", day)
+    assert ledger.decrement_daily("pat", day) == 1
+    assert ledger.decrement_daily("pat", "2026-01-01") == 0
+    assert ledger.decrement_daily("pat", day) == 0
+    assert ledger.daily_count("pat", day) == 0
+    assert ledger.decrement_daily("example-site", day) == 0
+    assert "daily__example-site__2026-01-01" not in ledger.store  # nothing to take back, nothing written
+
+
 # ---- cursors ----
 
 

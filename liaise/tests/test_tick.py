@@ -13,23 +13,37 @@ import copy
 import json
 import os
 import sys
+import time
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
 
+from liaise import tick as tick_module
 from liaise.config import ConfigError, GlobalConfig
 from liaise.github import FakeGitHub, Issue
 from liaise.holds import hold
 from liaise.ledger import Ledger
-from liaise.model import Health, Outcome, RunRecord, RunResult
+from liaise.model import Health, LedgerEntry, Outcome, RunRecord, RunResult
 from liaise.outcomes import OUTCOME_SCHEMA
-from liaise.processor import EchoProcessor
-from liaise.subjects import BudgetPolicy, Delivery, Policy, Subject, Workspace
+from liaise.processor import RECORD_FILE, ClaudeHeadless, EchoProcessor
+from liaise.subjects import BudgetPolicy, Delivery, Policy, ProcessorConfig, Subject, Workspace
 from liaise.testing import FakeGitHubChannel, demo_registry
+from liaise.tests._fake_claude import fake_claude
 from liaise.tests.conftest import write_executable_script
-from liaise.tick import BUDGET_MESSAGE, TRY_IT_MESSAGE, run_once, status_lines
+from liaise.tick import (
+    AUTH_PROBE_INTERVAL,
+    BUDGET_MESSAGE,
+    NUDGE_MESSAGE,
+    TRY_IT_MESSAGE,
+    RunLockHeld,
+    last_run_age,
+    run_lock_path,
+    run_once,
+    run_stamps,
+    status_lines,
+)
 from liaise.workspace import SharedCheckout
 
 T0 = datetime(2026, 9, 11, 9, 0, tzinfo=timezone.utc)
@@ -81,7 +95,7 @@ class SlowProcessor(EchoProcessor):
     def start(self, job):
         return replace(super().start(job), status="running", ended_at=None)
 
-    def status(self, run):
+    def status(self, run, *, persist=True):
         if run.run_id in self.stopping:
             return replace(run, status="finished", ended_at=run.started_at)
         return replace(run, status="running", ended_at=None)
@@ -93,7 +107,7 @@ class SlowProcessor(EchoProcessor):
             self.stopping.add(run.run_id)
         return current
 
-    def collect(self, run, *, timed_out=False):
+    def collect(self, run, *, timed_out=False, persist=True):
         error = "timed_out" if timed_out else "crashed"  # a stopped claude run ends with no result
         return RunResult(run_id=run.run_id, error=error, session_id=run.session_id)
 
@@ -328,13 +342,17 @@ def test_auth_expired_holds_the_processor_until_preflight_passes_again(world):
 
     world.processor = EchoProcessor(health=Health(ok=False, error="auth_expired"))
     notified = len(world.notes)
-    still = world.tick(LATER + timedelta(minutes=2))
+    held = world.tick(LATER + timedelta(minutes=2))
+    assert held.dispatched == ()
+    assert world.processor.preflights == []  # not probed before AUTH_PROBE_INTERVAL
+    still = world.tick(LATER + AUTH_PROBE_INTERVAL)
     assert still.dispatched == ()
+    assert len(world.processor.preflights) == 1  # probed, and still failing
     assert world.ledger.get_hold("processor") is not None
     assert len(world.notes) == notified  # the operator heard once
 
     world.processor = EchoProcessor()
-    recovered = world.tick(LATER + timedelta(minutes=4))
+    recovered = world.tick(LATER + AUTH_PROBE_INTERVAL + timedelta(minutes=2))
     assert world.ledger.get_hold("processor") is None
     assert recovered.dispatched == (f"{CASE_1}-r2",)
     (job,) = world.processor.jobs
@@ -552,3 +570,304 @@ def test_status_lines_show_stamps_holds_runs_cases_unrouted_drafts_and_notes(wor
     assert f"  {CASE_1} ask to {ISSUE_12}: draft reply mode" in lines
     assert "digest notes: 1" in lines
     assert f"  {CASE_1}: The export code has no tests." in lines
+    (note,) = [e for e in world.case().entries if e.kind == "note"]
+    assert note.text == "The export code has no tests."
+
+
+# ---- helpers for the tests below ----
+
+#: A pid no process has: in range, so the liveness check asks the system, which says no.
+DEAD_PID = 999999999
+
+
+def _titled(world, text) -> int:
+    """How many operator notifications carry ``text`` in their title."""
+    return sum(text in title for title in world.titles())
+
+
+def _lock(world, pid) -> Path:
+    lock = run_lock_path(world.config.state_dir)
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    lock.write_text(str(pid))
+    return lock
+
+
+def _seed_running_case(world, number, *, started_at=NOW) -> str:
+    """Case ``example-app-2``, on issue ``number``, working on a run no tick has collected.
+
+    A shared checkout runs one case at a time, so two runs that finish in one tick come
+    from the ledger, not from two starts. Returns the run's id.
+    """
+    world.issue(number)
+    ledger = world.ledger
+    case = ledger.new_case(SLUG, f"github:{REPO}#{number}", reporter="pat", at=T0)
+    message = LedgerEntry(at=T0, kind="message", actor="pat", grade="platform", permission="report", text="And the CSV.")
+    ledger.append(case.id, message)
+    ledger.transition(case.id, "working", at=started_at, actor="liaise", reason="seeded")
+    run_id = f"{case.id}-r1"
+    started = {"event": "started", "run_id": run_id, "mode": "fresh", "day": started_at.date().isoformat()}
+    ledger.append(case.id, LedgerEntry(at=started_at, kind="run", actor="liaise", detail=started))
+    ledger.save_run(
+        RunRecord(run_id=run_id, case_id=case.id, subject=SLUG, mode="fresh", status="running", started_at=started_at)
+    )
+    ledger.increment_daily(SLUG, started_at.date())
+    return run_id
+
+
+# ---- an expired login: one notification per probe interval, not one per tick ----
+
+
+def test_an_expired_login_preflight_cannot_see_notifies_once_per_probe_interval(world):
+    world.processor = EchoProcessor(default=RunResult(run_id="", error="auth_expired"))
+    world.issue()
+    world.tick()
+    world.tick(LATER)  # r1 finds the login expired: the processor is held, the operator told
+    assert _titled(world, "auth_expired") == 1
+
+    for minutes in range(2, 30, 4):
+        assert world.tick(LATER + timedelta(minutes=minutes)).dispatched == ()
+    assert (len(world.processor.jobs), len(world.processor.preflights)) == (1, 1)
+    assert _titled(world, "auth_expired") == 1
+
+    probe = world.tick(LATER + AUTH_PROBE_INTERVAL)  # preflight passes, so the hold is lifted
+    assert probe.dispatched == (f"{CASE_1}-r2",)
+    world.tick(LATER + AUTH_PROBE_INTERVAL + timedelta(minutes=2))  # and r2 finds it expired
+    assert world.ledger.get_hold("processor").set_by == "auto:auth_expired"
+    assert _titled(world, "auth_expired") == 2
+
+
+def test_runs_that_find_the_login_expired_in_one_tick_notify_once(world):
+    world.processor = EchoProcessor(default=RunResult(run_id="", error="auth_expired"))
+    world.issue()
+    world.tick()
+    second = _seed_running_case(world, 13)
+    report = world.tick(LATER)
+
+    assert report.collected == (RUN_1, second)
+    assert _titled(world, "auth_expired") == 1
+    (placed,) = world.ledger.holds()
+    assert placed.set_by == "auto:auth_expired"
+    assert world.ledger.daily_count(SLUG, NOW.date()) == 0  # neither run counts
+
+
+# ---- a dry run writes no file ----
+
+
+def test_a_dry_run_leaves_a_running_claude_runs_record_json_untouched(world):
+    claude = fake_claude(world.tmp_path / "claude", scenario="hang", sleep_s=60)
+    processor = ClaudeHeadless(claude_bin=claude, runs_dir=world.tmp_path / "state" / "runs")
+    world.processor = processor
+    world.issue()
+    assert world.tick().dispatched == (RUN_1,)  # a real tick spawns the run
+    run = world.ledger.get_run(RUN_1)
+    try:
+        record = processor.run_dir(RUN_1) / RECORD_FILE
+        before = (record.read_bytes(), record.stat().st_mtime_ns)
+        snapshot = copy.deepcopy(world.store)
+
+        report = world.tick(LATER, dry_run=True)
+
+        assert any(line.startswith(f"  run {RUN_1} ({CASE_1}): running, heartbeat") for line in report.plan_lines)
+        assert (record.read_bytes(), record.stat().st_mtime_ns) == before
+        assert world.store == snapshot
+    finally:
+        processor.cancel(run, mode="now")
+        deadline = time.monotonic() + 10
+        while processor.status(run).status != "finished":
+            assert time.monotonic() < deadline, "the fake claude run did not stop"
+            time.sleep(0.05)
+
+
+# ---- 0.0.x behaviours the retired run.py and dispatch.py tests guarded ----
+
+
+def test_a_case_capped_yesterday_is_started_the_next_day(world):
+    """0.0.x H-4: `budget` is a state the tick starts cases from, since the cap is per day."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(daily_dispatches=1))
+    world.ledger.increment_daily(SLUG, NOW.date())
+    world.issue()
+    world.tick()
+    assert world.case().state == "budget"
+
+    tomorrow = world.tick(NOW + timedelta(days=1))
+    assert tomorrow.dispatched == (RUN_1,)
+    assert world.case().state == "working"
+    assert len(world.github.sent) == 1  # the budget message went out once, yesterday
+
+
+def test_a_partner_reply_after_the_question_starts_a_resumed_run(world):
+    """0.0.x H-3, the other half: once the partner answers, the case starts again, resumed."""
+    world.issue()
+    world.tick()
+    world.tick(LATER)  # the question goes out, and the case waits on the partner
+    world.github.add_comment(REPO, 12, author="pat", body="All current ones.", created_at=LATER + timedelta(minutes=1))
+
+    assert world.tick(LATER + timedelta(minutes=5)).dispatched == ()  # still inside the quiet window
+    ready = world.tick(LATER + timedelta(minutes=12))
+    assert ready.dispatched == (f"{CASE_1}-r2",)
+    _, resumed = world.processor.jobs
+    assert resumed.session_id == f"echo-session-{RUN_1}"
+
+
+def test_fresh_and_resumed_runs_carry_the_subjects_permission_mode(world):
+    """0.0.x #22: a resumed run runs under the permission mode of the fresh one."""
+    world.subject = replace(world.subject, processor=ProcessorConfig(permission_mode="acceptEdits"))
+    world.processor = EchoProcessor(results={CASE_1: RunResult(run_id="", error="unavailable")})
+    world.issue()
+    world.tick()
+    world.tick(LATER)  # unavailable: back to intake for five minutes, the session kept
+    world.tick(LATER + timedelta(minutes=6))
+
+    fresh, resumed = world.processor.jobs
+    assert resumed.session_id == f"echo-session-{RUN_1}"
+    assert fresh.permission_mode == resumed.permission_mode == "acceptEdits"
+
+
+def test_a_brief_that_cannot_be_read_fails_the_start_and_leaves_no_run(world):
+    """0.0.x: a dispatch that failed before running left no log and no `working` label. Here
+    the prompt cannot be composed, so nothing starts, nothing counts, and the owner hears."""
+    world.subject = replace(world.subject, brief=str(world.tmp_path / "missing-brief.md"))
+    world.issue()
+    report = world.tick()
+
+    assert (report.dispatched, world.processor.jobs) == ((), [])
+    assert world.case().state == "needs-owner"
+    assert any("cannot read the brief" in problem for problem in report.problems)
+    assert list(world.ledger.runs()) == []
+    assert world.ledger.daily_count(SLUG, NOW.date()) == 0
+    assert _titled(world, "crashed") == 1
+
+
+def test_a_batch_deploy_runs_its_command_once_for_every_case_it_delivers(world, tmp_path):
+    """0.0.x A.5 batching: two deliveries collected in one tick share one deploy."""
+    calls = tmp_path / "deploys.txt"
+    script = write_executable_script(tmp_path / "deploy", f"with open({str(calls)!r}, 'a') as f:\n    f.write('deploy\\n')\n")
+    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="batch", command=script.as_posix()))
+    world.processor = EchoProcessor(default=DELIVERED)
+    world.issue()
+    world.tick()
+    second = _seed_running_case(world, 13)
+    report = world.tick(LATER)
+
+    assert report.collected == (RUN_1, second)
+    assert calls.read_text().splitlines() == ["deploy"]
+    assert {world.case(CASE_1).state, world.case("example-app-2").state} == {"deployed"}
+    assert sorted(ref.encoded for ref, _ in world.github.sent) == [ISSUE_12, f"github:{REPO}#13"]
+
+
+def test_a_batch_delivery_with_no_deploy_command_needs_the_owner_and_tells_the_partner_nothing(world):
+    """0.0.x M-2: the default delivery, a batch deploy, with no command must not strand the case."""
+    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="batch", command=""))
+    world.processor = EchoProcessor(results={CASE_1: DELIVERED})
+    world.issue()
+    world.tick()
+    report = world.tick(LATER)
+
+    assert world.github.sent == []
+    assert world.case().state == "needs-owner"
+    assert any("no deploy command is configured" in line for line in report.plan_lines)
+    assert _titled(world, "did not deploy") == 1
+
+
+def test_a_quiet_deployed_case_is_nudged_once(world):
+    """0.0.x M-10: a deployed case its partner has gone quiet on gets one nudge, then no more."""
+    world.processor = EchoProcessor(results={CASE_1: DELIVERED})
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+    assert world.case().state == "deployed"
+    sent = len(world.github.sent)
+
+    world.tick(LATER + timedelta(days=2))  # not quiet long enough yet
+    assert len(world.github.sent) == sent
+    world.tick(LATER + timedelta(days=4))
+    assert len(world.github.sent) == sent + 1
+    assert world.github.sent[-1][1].text == f"@pat {NUDGE_MESSAGE}"
+    world.tick(LATER + timedelta(days=5))
+    assert len(world.github.sent) == sent + 1
+
+
+# ---- the run lock and the run stamps (ported from 0.0.x test_run) ----
+
+
+def test_status_says_running_during_a_tick_and_finished_after_it(world):
+    """0.0.x #22: a tick stamps its start when it begins and its end when it stops, so status
+    reads `running` while one is in progress, not a job that has not run for a while."""
+    previous_end = T0 + timedelta(minutes=1)
+    world.store.update(run_started_at=T0.isoformat(), run_ended_at=previous_end.isoformat())
+    seen = []
+
+    class Watching(EchoProcessor):
+        def preflight(self, job):
+            seen.append(status_lines({SLUG: world.subject}, world.store, global_config=world.config, now=NOW))
+            return super().preflight(job)
+
+    world.processor = Watching()
+    world.issue()
+    world.tick()
+
+    (during,) = seen
+    assert during[0] == "last_run: running"
+    assert during[1] == f"  run_started_at: {NOW.isoformat(timespec='seconds')} (0s ago)"
+    assert during[2].startswith(f"  run_ended_at:   {previous_end.isoformat(timespec='seconds')}")
+    after = status_lines({SLUG: world.subject}, world.store, global_config=world.config, now=NOW)
+    assert after[0] == "last_run: finished"
+    assert run_stamps(world.store).ended_at >= NOW
+
+
+def test_status_says_interrupted_when_the_ticks_process_is_gone(world):
+    """0.0.x #22: a tick killed before it stamped its end, its lock held by no live process,
+    is not `running`."""
+    _lock(world, DEAD_PID)
+    world.store.update(run_started_at=(NOW + timedelta(minutes=5)).isoformat(), run_ended_at=NOW.isoformat())
+    lines = status_lines({SLUG: world.subject}, world.store, global_config=world.config, now=LATER)
+    assert lines[0] == "last_run: interrupted (no live liaise process holds the run lock)"
+
+
+def test_run_stamps_read_a_legacy_last_run_as_a_finished_run():
+    """Stores written by 0.0.3 and earlier hold only `last_run`: a pass's start, stamped once
+    it had finished."""
+    stamps = run_stamps({"last_run": T0.isoformat()})
+    assert stamps.started_at == stamps.ended_at == T0
+    assert stamps.state == "finished"
+    assert last_run_age({}) is None
+    assert last_run_age({"last_run": T0.isoformat()}, now=T0 + timedelta(seconds=90)) == pytest.approx(90)
+
+
+def test_a_tick_refuses_to_start_while_a_live_process_holds_the_run_lock(world):
+    """0.0.x L-3: one tick at a time. The lock holds this test's own pid, which is alive."""
+    lock = _lock(world, os.getpid())
+    world.issue()
+    with pytest.raises(RunLockHeld, match="already in progress"):
+        world.tick()
+    assert (world.processor.jobs, world.store) == ([], {})
+    assert lock.read_text() == str(os.getpid())
+
+
+def test_a_run_lock_left_by_a_dead_process_is_reclaimed(world):
+    lock = _lock(world, DEAD_PID)
+    world.issue()
+    assert world.tick().dispatched == (RUN_1,)
+    assert not lock.exists()  # released once the tick ended
+
+
+def test_a_dry_run_neither_takes_nor_minds_the_run_lock(world):
+    lock = _lock(world, os.getpid())
+    world.issue()
+    assert world.tick(dry_run=True).dispatched == (RUN_1,)  # a live holder does not stop it
+    assert lock.read_text() == str(os.getpid())
+
+
+def test_a_tick_that_raises_still_stamps_its_end_and_releases_the_lock(world, monkeypatch):
+    """A tick that dies (its store unreachable, say) must not read as still running."""
+
+    def unreachable(self):
+        raise RuntimeError("the store is unreachable")
+
+    monkeypatch.setattr(tick_module._Tick, "reconcile", unreachable)
+    with pytest.raises(RuntimeError, match="the store is unreachable"):
+        world.tick()
+    lock_path = run_lock_path(world.config.state_dir)
+    assert run_stamps(world.store).started_at == NOW
+    assert run_stamps(world.store, lock_path=lock_path).state == "finished"
+    assert not lock_path.exists()

@@ -15,8 +15,14 @@ This is not a test module; the leading underscore keeps pytest from collecting i
 - ``config_error``: a message on stderr and exit 1, before any stream.
 - ``hang``: init, then sleep for `sleep_s` seconds. Used for timeouts, cancel and heartbeat.
 
+Asked `claude auth status`, as `ClaudeHeadless.preflight` asks, the fake answers as `auth`
+says, whatever the scenario (see :data:`AUTH_SCENARIOS`):
+
+- ``auth_ok``: logged in, exit 0.
+- ``auth_expired``: the login is gone, exit 1.
+
 The script records the argv it received as JSON in `<path>.argv.json`, so tests can assert
-on flags: `--json-schema`, `--session-id`, `--resume`, `--permission-mode`.
+on flags: `--json-schema`, `--session-id`, `--resume`, `--permission-mode`, `auth status`.
 """
 
 from __future__ import annotations
@@ -35,6 +41,8 @@ SCENARIOS = (
     "config_error",
     "hang",
 )
+#: How the fake answers `claude auth status`.
+AUTH_SCENARIOS = ("auth_ok", "auth_expired")
 
 _SCRIPT = """
 import json, sys, time
@@ -46,6 +54,10 @@ def emit(event):
     sys.stdout.write(json.dumps(event) + "\\n")
     sys.stdout.flush()
 
+if sys.argv[1:3] == ["auth", "status"]:
+    logged_in = CONFIG["auth"] == "auth_ok"
+    emit({{"loggedIn": logged_in}})
+    sys.exit(0 if logged_in else 1)
 scenario = CONFIG["scenario"]
 sid = CONFIG["session_id"]
 if scenario == "config_error":
@@ -89,14 +101,17 @@ def fake_claude(
     session_id: str = "sess-fake-1",
     sleep_s: float = 30.0,
     resets_at: int = 1767272400,
+    auth: str = "auth_ok",
 ) -> Path:
     """Write a fake `claude` for `scenario` at `path`; return the runnable path.
 
-    The runnable path can differ from `path` on Windows. Recorded argv goes to
-    `argv_log(path)`.
+    `auth` is how it answers `claude auth status`. The runnable path can differ from `path`
+    on Windows. Recorded argv goes to `argv_log(path)`.
     """
     if scenario not in SCENARIOS:
         raise ValueError(f"unknown scenario {scenario!r}; known: {', '.join(SCENARIOS)}")
+    if auth not in AUTH_SCENARIOS:
+        raise ValueError(f"unknown auth {auth!r}; known: {', '.join(AUTH_SCENARIOS)}")
     config = json.dumps(
         {
             "scenario": scenario,
@@ -106,6 +121,7 @@ def fake_claude(
             "session_id": session_id,
             "sleep_s": sleep_s,
             "resets_at": resets_at,
+            "auth": auth,
         }
     )
     body = _SCRIPT.format(config=config, argv_log=str(argv_log(path)))

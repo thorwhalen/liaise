@@ -1,15 +1,10 @@
-"""The prompt composers (A.5, and liaise 0.1).
+"""The prompt composer: the whole prompt a processor run on one case starts from.
 
-Both build the whole prompt handed to the coding agent, in a fixed order, and both are
-written to a file and referenced by path, never passed on the command line.
-
-- :func:`compose_case_prompt` (0.1) works on a case: the packaged 0.1 operating rules,
-  the subject's brief, the case pointer, the outcome vocabulary, the verify and delivery
-  commands, and the budget. The agent reports only through structured outcomes; it is
-  never told to post, label or open anything.
-- :func:`compose_prompt` (0.0.x) works on one GitHub issue: the operating rules, the
-  partner brief, the issue pointer, the state contract (labels to set, comments to
-  post), the verify/deploy commands, and the budget lines. :mod:`liaise.dispatch` uses it.
+:func:`compose_case_prompt` builds it in a fixed order: the packaged operating rules, the
+subject's brief, the case pointer, the outcome vocabulary, the verify and delivery
+commands, and the budget. The processor writes it to a file and puts only a pointer to that
+file on the command line. The agent reports only through the structured outcomes its run
+ends with: it is never told to post, label or open anything.
 """
 
 from __future__ import annotations
@@ -20,23 +15,19 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Optional
 
-from liaise.config import ConfigError, PartnerConfig
-from liaise.github import Issue
-from liaise.messages import mention
+from liaise.config import ConfigError
 from liaise.model import OUTCOME_KINDS
 
 if TYPE_CHECKING:
     from liaise.model import Case
     from liaise.subjects import Subject
 
-#: fresh: a new dispatch. resume: continuing a stored session (A.3 — a new
-#: partner comment on a `liaise:needs-partner` issue re-arms readiness and
-#: dispatches a resume rather than a fresh run).
+#: fresh: a new session. resume: continuing the case's stored session, because someone
+#: wrote again since it last stopped.
 MODES = ("fresh", "resume")
 
-#: The packaged rules each composer starts with, in `liaise/data`.
+#: The packaged rules every prompt starts with, in `liaise/data`.
 OPERATING_RULES_RESOURCE = "operating_rules.md"
-CASE_OPERATING_RULES_RESOURCE = "operating_rules_01.md"
 _SECTION_SEPARATOR = "\n\n---\n\n"
 
 #: `github:owner/repo#N`: the encoded reference of a GitHub issue or pull request.
@@ -103,143 +94,6 @@ def _join_sections(sections) -> str:
 def _check_mode(mode: str) -> None:
     if mode not in MODES:
         raise ValueError(f"mode must be one of {MODES}, got {mode!r}")
-
-
-# ---- 0.0.x: one GitHub issue ----
-
-
-def _operating_rules() -> str:
-    return _packaged_text(OPERATING_RULES_RESOURCE)
-
-
-def _partner_brief(partner: PartnerConfig) -> str:
-    return Path(partner.brief).expanduser().read_text()
-
-
-def _issue_pointer(issue: Issue, mode: str) -> str:
-    lines = ["## Issue", "", issue.url]
-    if mode == "resume":
-        lines += [
-            "",
-            "This is a **resume** of a session already working on this issue "
-            "(the partner commented again after the agent asked a question).",
-        ]
-    lines += [
-        "",
-        "Read the thread yourself with `gh` — this pointer is deliberately just "
-        "the URL, not a copy of the issue body or comments, which may have "
-        "changed since this prompt was composed.",
-    ]
-    return "\n".join(lines)
-
-
-def _state_contract(partner: PartnerConfig, log_path: Optional[str]) -> str:
-    prefix = partner.label_prefix
-    lines = [
-        "## State contract",
-        "",
-        f"This partner's `reply_mode` is `{partner.reply_mode}`. "
-        + (
-            "Post nothing to the thread; write every partner-facing comment to "
-            "the dispatch log as a draft instead (see the operating rules above)."
-            if partner.reply_mode == "draft"
-            else "Post directly to the thread as the operating rules describe."
-        ),
-    ]
-    if log_path:
-        lines += [
-            "",
-            f"The dispatch log for this run is `{log_path}`. Append to it, never "
-            "overwrite it: every draft, escalation, and note for the owner that "
-            "the operating rules send to the dispatch log goes there. `liaise` "
-            "adds the exit code and output after you stop. If you can't write to "
-            "it, put that text at the end of your final message instead; the log "
-            "records your output too.",
-        ]
-    if partner.notify_login:
-        lines += [
-            "",
-            f"Every comment meant for the partner starts with `{mention(partner)}` "
-            '— questions, progress notes, pushback, and the "it\'s live" note alike. '
-            "This applies even in draft mode: write the mention into the draft itself.",
-        ]
-    lines += [
-        "",
-        "Set exactly one of these labels before you stop, matching what actually happened:",
-        "",
-        f"- `{prefix}needs-partner` — you asked a question and are waiting on the partner.",
-        f"- `{prefix}needs-owner` — you escalated, or are declining, or hit a stop condition.",
-        f"- `{prefix}deployed` — the change is live and the partner has been told to try it "
-        f"(only when you deploy yourself; see the deploy command below).",
-        f"- `{prefix}paused` — the partner asked you to wait.",
-        "",
-        f"Escalation money threshold: ${partner.escalate.money_usd:.2f}. "
-        f"Scope beyond {partner.escalate.max_scope} needs the owner.",
-    ]
-    return "\n".join(lines)
-
-
-def _commands(partner: PartnerConfig) -> str:
-    lines = ["## Commands"]
-    if partner.verify:
-        lines += ["", "Verify (run before landing):", "", f"    {partner.verify}"]
-    if partner.deploy_per == "issue" and partner.deploy:
-        lines += [
-            "",
-            "Deploy (run yourself once landed, then post and set deployed):",
-            "",
-            f"    {partner.deploy}",
-        ]
-    elif partner.deploy_per == "batch":
-        lines += [
-            "",
-            "Deploy: do not deploy yourself. `liaise` deploys once after the whole "
-            "batch. Land the change and say in the dispatch log what to tell the "
-            "partner once it's live.",
-        ]
-    return "\n".join(lines)
-
-
-def _budget(partner: PartnerConfig) -> str:
-    b = partner.budget
-    return "\n".join(
-        [
-            "## Budget",
-            "",
-            f"- timeout: {b.timeout_minutes} minutes — enforced from outside: past this, "
-            f"the dispatch is killed and reconciled as a crash, whatever you were doing.",
-            f"- turn cap: {b.max_turns} turns — not enforced from outside; please self-monitor "
-            f"and stop cleanly (right label, one-line comment saying why) before you'd exceed it.",
-        ]
-    )
-
-
-def compose_prompt(
-    partner: PartnerConfig,
-    issue: Issue,
-    mode: str,
-    *,
-    log_path: Optional[str] = None,
-) -> str:
-    """Build the full prompt for `issue`, in the fixed section order (A.5).
-
-    `mode` is `"fresh"` for a new dispatch or `"resume"` for continuing a
-    stored session. `log_path`, when given, is named in the State contract
-    as the dispatch log the operating rules send drafts and escalations to.
-    """
-    _check_mode(mode)
-    sections = [
-        _operating_rules(),
-        _partner_brief(partner),
-        _issue_pointer(issue, mode),
-        _state_contract(partner, log_path),
-        _commands(partner),
-        _budget(partner),
-    ]
-    return _join_sections(sections)
-
-
-# ---- 0.1: one case ----
 
 
 def conversation_link(ref: str) -> str:
@@ -369,13 +223,12 @@ def compose_case_prompt(
     *,
     runs_dir_note: Optional[str] = None,
 ) -> str:
-    """Build the prompt for one run on ``case``, in the fixed section order (liaise 0.1).
+    """Build the prompt for one run on ``case``, in the fixed section order.
 
-    The sections: the packaged 0.1 operating rules, the subject's brief, the case pointer
+    The sections: the packaged operating rules, the subject's brief, the case pointer
     (each conversation, as a URL where it has one), the outcome vocabulary, the verify
-    and delivery commands, and the budget. Unlike :func:`compose_prompt`, the agent is
-    never told to post, label or open anything: it reports only through the structured
-    outcomes its run ends with.
+    and delivery commands, and the budget. The agent is never told to post, label or open
+    anything: it reports only through the structured outcomes its run ends with.
 
     ``mode`` is ``"fresh"`` or ``"resume"``. ``runs_dir_note``, when given, is added as
     it is to the case section (the tick can say there where this run's files are kept).
@@ -384,7 +237,7 @@ def compose_case_prompt(
     """
     _check_mode(mode)
     sections = [
-        _packaged_text(CASE_OPERATING_RULES_RESOURCE),
+        _packaged_text(OPERATING_RULES_RESOURCE),
         _subject_brief(subject),
         _case_pointer(case, mode, runs_dir_note=runs_dir_note),
         _outcomes(subject),

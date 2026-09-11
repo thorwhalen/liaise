@@ -2,7 +2,7 @@
 
 `liaise` has no owner-facing UI; ntfy (a plain HTTP POST) is the whole channel.
 Silent when unconfigured, because a package should not require a notification
-service just to run its tests or a first `liaise poll`.
+service just to run its tests or a first `liaise run --once --dry-run`.
 """
 
 from __future__ import annotations

@@ -14,7 +14,7 @@ from liaise.errors import (
     parse_stream,
     reset_time,
 )
-from liaise.state import STATE_LABELS
+from liaise.model import CASE_STATES
 
 T0 = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
 
@@ -164,7 +164,7 @@ def test_refused_delivery_is_effect_blocked_and_other_failures_are_not():
 def test_every_error_class_has_an_action_with_a_real_state():
     assert set(ERROR_ACTIONS) == set(ERROR_CLASSES)
     for error, action in ERROR_ACTIONS.items():
-        assert action.state is None or action.state in STATE_LABELS, error
+        assert action.state is None or action.state in CASE_STATES, error
 
 
 def test_auth_and_config_errors_hold_the_processor_and_blocked_effects_hold_deploys():

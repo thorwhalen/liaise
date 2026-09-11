@@ -7,8 +7,8 @@ their values. ``from_dict`` rebuilds each field from its annotation, so a field'
 type is written down in one place.
 
 The vocabularies live here too (case states, entry kinds, outcome kinds,
-permissions, hold modes), so each has one home: :mod:`liaise.state` takes its label
-names from :data:`CASE_STATES`.
+permissions, hold modes), so each has one home: :mod:`liaise.projection` takes its
+label names from :data:`CASE_STATES`.
 
 Nothing in this module touches storage, a channel or the clock. The case helpers
 are pure and take the time they record as an argument.
@@ -38,7 +38,8 @@ CASE_STATES = (
 )
 #: The state a new case opens in.
 INITIAL_CASE_STATE = CASE_STATES[0]
-#: What a :class:`LedgerEntry` records.
+#: What a :class:`LedgerEntry` records. A ``note`` is a line of the operator's digest,
+#: which ``liaise status`` lists.
 ENTRY_KINDS = (
     "message",
     "transition",
@@ -47,6 +48,7 @@ ENTRY_KINDS = (
     "run",
     "hold",
     "projection",
+    "note",
 )
 #: The closed vocabulary a processor run reports its outcomes in. Validating an
 #: :class:`Outcome` (and treating `decline` as `escalate`) is `liaise.outcomes`'s job.

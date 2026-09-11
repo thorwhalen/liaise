@@ -392,8 +392,29 @@ def test_child_env_drops_the_credentials_whatever_their_case():
 
 
 def test_preflight_passes_with_a_runnable_claude_and_an_existing_cwd(tmp_path):
-    processor = _processor(tmp_path, fake_claude(tmp_path / "claude"))
+    path = tmp_path / "claude"
+    processor = _processor(tmp_path, fake_claude(path))
     assert processor.preflight(_job(tmp_path)) == Health(ok=True)
+    assert json.loads(argv_log(path).read_text()) == ["auth", "status"]
+    assert not processor.run_dir("r1").exists()  # it started nothing
+
+
+def test_preflight_reports_an_expired_login_as_auth_expired(tmp_path):
+    claude = fake_claude(tmp_path / "claude", auth="auth_expired")
+    assert _processor(tmp_path, claude).preflight(_job(tmp_path)) == Health(
+        ok=False, error="auth_expired"
+    )
+    skipping = _processor(tmp_path, claude, auth_check=None)
+    assert skipping.preflight(_job(tmp_path)) == Health(ok=True)
+
+
+def test_a_login_check_that_does_not_answer_in_time_tells_nothing(tmp_path):
+    processor = _processor(
+        tmp_path, _script(tmp_path, "import time\ntime.sleep(5)\n"), auth_timeout_s=0.5
+    )
+    began = time.monotonic()
+    assert processor.preflight(_job(tmp_path)) == Health(ok=True)
+    assert time.monotonic() - began < WAIT_S
 
 
 def test_preflight_reports_a_missing_binary_as_config_error(tmp_path):

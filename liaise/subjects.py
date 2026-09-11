@@ -66,6 +66,9 @@ GRADES = tuple(grade.value for grade in Grade)
 #: What makes a binding's conversation part a glob, which v0.1 cannot poll ("?" starts
 #: a binding's conditions, so it never gets that far).
 REF_WILDCARDS = frozenset("*[")
+#: Channels whose conversation references ignore case, so their bindings load lower-cased
+#: (see :func:`normalize_binding`).
+CASE_INSENSITIVE_REF_CHANNELS = ("github",)
 
 DFLT_WORKSPACE_KIND = "shared"
 DFLT_DELIVERY_KIND = "deploy"
@@ -198,6 +201,25 @@ def poll_ref(binding: str) -> Optional[str]:
     return None if REF_WILDCARDS & set(ref) else ref
 
 
+def normalize_binding(binding: str) -> str:
+    """``binding`` as a subject keeps it: on a GitHub channel, its channel and conversation lower-cased.
+
+    GitHub references ignore case, but correspond's ``binding_matches`` compares a binding's
+    conversation case-sensitively with the lower-cased reference its GitHub adapter gives a
+    message, so ``github:Example/App`` would match nothing. The ``?conditions`` stay as
+    written, and a binding on any other channel is returned unchanged.
+
+    >>> normalize_binding("github:Example/App?labels=partner:Pat")
+    'github:example/app?labels=partner:Pat'
+    >>> normalize_binding("webinbox:Example-Site")
+    'webinbox:Example-Site'
+    """
+    head, separator, conditions = binding.partition("?")
+    if head.partition(":")[0].casefold() in CASE_INSENSITIVE_REF_CHANNELS:
+        head = head.lower()
+    return head + separator + conditions
+
+
 def ref_key(ref: str) -> str:
     """How two polled conversations compare: without regard to case, as their cursors do.
 
@@ -294,9 +316,10 @@ def check_bindings(
 def load_subject(path: Union[str, os.PathLike]) -> Subject:
     """Load and resolve one subject file into a :class:`Subject`, its slug the file's stem.
 
-    Raises :class:`~liaise.config.ConfigError` naming the file and the fix for a missing
-    file, invalid TOML, a missing ``bindings``, ``policy.people`` or ``policy.roles``,
-    and any value outside its vocabulary (reply modes, permissions, grades, roles).
+    Each binding is kept as :func:`normalize_binding` gives it. Raises
+    :class:`~liaise.config.ConfigError` naming the file and the fix for a missing file,
+    invalid TOML, a missing ``bindings``, ``policy.people`` or ``policy.roles``, and any
+    value outside its vocabulary (reply modes, permissions, grades, roles).
     """
     path = Path(path)
     raw = _read_toml(path)
@@ -304,7 +327,12 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
         raise ConfigError(
             f"{path} is missing required field 'bindings'. {_MINIMAL_SUBJECT}"
         )
-    bindings = _strings(raw, "bindings", path=path, dotted="bindings")
+    bindings = tuple(
+        map(
+            normalize_binding,
+            _strings(raw, "bindings", path=path, dotted="bindings"),
+        )
+    )
     if not bindings:
         raise ConfigError(
             f"{path}: bindings is empty, so no conversation would ever reach this "

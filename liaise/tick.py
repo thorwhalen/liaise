@@ -24,10 +24,14 @@ failure is a problem line, never the other cases' end.
 
 **Dry run.** The ledger is ``Ledger(ChainMap({}, store))``: every step runs on real state,
 and every write vanishes with the overlay. Nothing is sent (``correspond.send`` gets
-``dry_run=True``), labelled, started, cancelled, deployed, locked, stamped or notified;
-the report's plan lines say what would be.
+``dry_run=True``), labelled, started, cancelled, deployed, locked, stamped, notified or
+written (the processor is asked with ``persist=False``). The report's plan lines say what
+would be.
 
-:func:`status_lines` is what ``liaise status`` prints.
+**One tick at a time.** A tick holds the run lock in ``state_dir`` (:func:`run_lock_path`)
+and stamps its start and end in the store (:func:`run_stamps`), so ``liaise status`` can
+tell a running tick from a finished or an interrupted one. :func:`status_lines` is what
+``liaise status`` prints.
 """
 
 from __future__ import annotations
@@ -36,9 +40,17 @@ import functools
 import os
 import shlex
 import subprocess
+import time
 from collections import ChainMap
-from collections.abc import Collection, Iterable, Mapping, MutableMapping, Sequence
-from contextlib import nullcontext
+from collections.abc import (
+    Collection,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    Sequence,
+)
+from contextlib import contextmanager, nullcontext
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -66,7 +78,7 @@ from liaise.holds import (
     scopes_for,
 )
 from liaise.intake import LIAISE_ACTOR, intake
-from liaise.ledger import Ledger, _daily_key
+from liaise.ledger import Ledger
 from liaise.model import (
     CASE_STATES,
     Case,
@@ -95,7 +107,6 @@ from liaise.processor import FINISHED, FRESH, RESUME, RUNNING, ClaudeHeadless, J
 from liaise.projection import github_issue, project_labels
 from liaise.prompt import compose_case_prompt
 from liaise.readiness import compute_readiness, last_partner_activity
-from liaise.run import RunStamps, _run_lock, _stamp_run, run_lock_path, run_stamps
 from liaise.subjects import DELIVERY_KINDS, Subject
 from liaise.workspace import (
     DFLT_LOCKS_SUBDIR,
@@ -121,6 +132,10 @@ TICK_ACTOR = LIAISE_ACTOR
 REQUEST_WORK = "request_work"
 #: The hold scope of the processor, which the tick holds itself after some errors.
 PROCESSOR_SCOPE = "processor"
+#: How long an automatic ``processor`` hold stands before the tick probes it with
+#: preflight, lifting it if preflight passes. A login that has expired where preflight
+#: cannot see it then costs one failed run, and one notification, per interval, not a tick.
+AUTH_PROBE_INTERVAL = timedelta(minutes=30)
 #: A deploy that runs the subject's command, and a delivery that stops at a pull request.
 DEPLOY_DELIVERY, PR_ONLY_DELIVERY = DELIVERY_KINDS
 #: A deploy that runs once per tick, after every case of the subject has been collected.
@@ -351,8 +366,8 @@ def run_once(
     ``only`` is a slug or slugs to run alone; an unknown one raises
     :class:`~liaise.config.ConfigError`. ``now`` is the tick's clock (the current UTC
     time when None). Unless ``dry_run``, the tick holds the run lock in ``state_dir``
-    (raising ``RuntimeError`` while another tick holds it) and stamps its start and end
-    in ``store``.
+    (raising :class:`RunLockHeld` while another tick holds it) and stamps its start and
+    end in ``store``.
     """
     now = now if now is not None else datetime.now(timezone.utc)
     state_dir = Path(global_config.state_dir).expanduser()
@@ -392,6 +407,138 @@ def run_once(
         tick.nudge_all()
         tick.project()
     return tick.report()
+
+
+# ---- the run lock and the run stamps ----
+
+#: The run lock's file under ``state_dir``.
+RUN_LOCK_FILE = "run.lock"
+#: Where the store keeps a tick's start and end.
+RUN_STARTED_KEY = "run_started_at"
+RUN_ENDED_KEY = "run_ended_at"
+#: 0.0.3 and earlier kept one stamp: a pass's start, written once the pass had finished.
+LEGACY_LAST_RUN_KEY = "last_run"
+
+
+class RunLockHeld(RuntimeError):
+    """Another live liaise process holds the run lock, so this tick did not start."""
+
+
+def run_lock_path(state_dir: Union[str, os.PathLike]) -> Path:
+    """Where a tick keeps its run lock.
+
+    ``liaise status`` reads it too, to tell a running tick from one whose process died.
+    """
+    return Path(state_dir).expanduser() / RUN_LOCK_FILE
+
+
+def _lock_owner(lock_path: Path) -> Optional[int]:
+    """The pid of the live process holding ``lock_path``, or None.
+
+    None for no lock, an unreadable one, or one left by a process that is gone. Liveness
+    is :func:`liaise.workspace.pid_is_alive`'s, which is right on Windows too.
+    """
+    try:
+        pid = int(lock_path.read_text().strip())
+    except (OSError, ValueError):
+        return None
+    return pid if pid_is_alive(pid) else None
+
+
+@contextmanager
+def _run_lock(lock_path: Path) -> Iterator[None]:
+    """Hold the run lock for one tick, so one tick runs at a time (0.0.x L-3).
+
+    A plain pid file, and a lock whose process is gone is reclaimed. It is advisory, which
+    is enough to keep a manual ``liaise run`` from colliding with the scheduled one on the
+    same machine. Raises :class:`RunLockHeld` while a live process holds it.
+    """
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    other = _lock_owner(lock_path)
+    if other is not None:
+        raise RunLockHeld(
+            f"another liaise run (pid {other}) is already in progress "
+            f"(lock: {lock_path})"
+        )
+    lock_path.write_text(str(os.getpid()))
+    try:
+        yield
+    finally:
+        lock_path.unlink(missing_ok=True)
+
+
+@dataclass(frozen=True)
+class RunStamps:
+    """When the latest tick that was not a dry run started and ended."""
+
+    started_at: Optional[datetime] = None
+    ended_at: Optional[datetime] = None
+    #: Whether a live process held the run lock when these were read; None when the lock
+    #: was not checked.
+    lock_held: Optional[bool] = None
+
+    @property
+    def state(self) -> str:
+        """``never``, ``finished``, ``running`` or ``interrupted``.
+
+        A tick that started later than the last one ended is ``running``, unless the lock
+        was checked and no live process holds it. Then the tick was killed before it could
+        stamp its end (a ``launchctl bootout``, a shutdown): ``interrupted``, since a job
+        that stopped must not read as one that is busy.
+        """
+        if self.started_at is None:
+            return "never"
+        if self.ended_at is not None and self.started_at <= self.ended_at:
+            return "finished"
+        return "interrupted" if self.lock_held is False else "running"
+
+
+def run_stamps(
+    store: Mapping[str, Any], *, lock_path: Optional[Union[str, os.PathLike]] = None
+) -> RunStamps:
+    """The run stamps a tick keeps in ``store``.
+
+    Pass ``lock_path`` (see :func:`run_lock_path`) to tell a running tick from a killed
+    one. A store last written by 0.0.3 or earlier holds only ``last_run``, the start of a
+    pass that had already finished, read here as a run that started and ended then.
+    """
+    started, ended = store.get(RUN_STARTED_KEY), store.get(RUN_ENDED_KEY)
+    if started is None and ended is None:
+        started = ended = store.get(LEGACY_LAST_RUN_KEY)
+    return RunStamps(
+        started_at=datetime.fromisoformat(started) if started else None,
+        ended_at=datetime.fromisoformat(ended) if ended else None,
+        lock_held=(
+            None if lock_path is None else _lock_owner(Path(lock_path)) is not None
+        ),
+    )
+
+
+@contextmanager
+def _stamp_run(store: MutableMapping[str, Any], *, now: datetime) -> Iterator[None]:
+    """Stamp the tick's start on entry and its end on exit, an exit by exception included.
+
+    The end is ``now`` plus the monotonic time elapsed, so both stamps share the tick's
+    own clock (an injected ``now`` included) and the end never precedes the start.
+    """
+    store[RUN_STARTED_KEY] = now.isoformat()
+    started = time.monotonic()
+    try:
+        yield
+    finally:
+        elapsed = timedelta(seconds=time.monotonic() - started)
+        store[RUN_ENDED_KEY] = (now + elapsed).isoformat()
+
+
+def last_run_age(
+    store: Mapping[str, Any], *, now: Optional[datetime] = None
+) -> Optional[float]:
+    """Seconds since the latest tick that was not a dry run started, or None before any."""
+    started_at = run_stamps(store).started_at
+    if started_at is None:
+        return None
+    now = now if now is not None else datetime.now(timezone.utc)
+    return (now - started_at).total_seconds()
 
 
 # ---- status ----
@@ -493,7 +640,7 @@ def status_lines(
             (case.id, entry)
             for case in cases
             for entry in case.entries
-            if entry.kind == "outcome" and entry.detail.get("digest")
+            if entry.kind == "note"
         ),
         key=lambda pair: pair[1].at,
         reverse=True,
@@ -733,7 +880,7 @@ class _Tick:
             )
             if self.dry_run:
                 self.say(f"{label}: {why}: would cancel ({mode})")
-                current, failure = self._call("status", run)
+                current, failure = self._call("status", run, persist=False)
             else:
                 self.say(f"{label}: {why}: cancelling ({mode})")
                 current, failure = self._call("cancel", run, mode=mode)
@@ -748,7 +895,7 @@ class _Tick:
                         },
                     )
         else:
-            current, failure = self._call("status", run)
+            current, failure = self._call("status", run, persist=not self.dry_run)
 
         result: Optional[RunResult] = None
         if failure is None and current.status != FINISHED:
@@ -761,7 +908,9 @@ class _Tick:
                 self.say(f"{label}: running, heartbeat {age} ago")
             return
         if failure is None:
-            result, failure = self._call("collect", current, timed_out=timed_out)
+            result, failure = self._call(
+                "collect", current, timed_out=timed_out, persist=not self.dry_run
+            )
             if failure is None and result is None:
                 self.ledger.save_run(
                     replace(current, status=RUNNING, started_at=run.started_at)
@@ -873,7 +1022,11 @@ class _Tick:
         uncount_run: Optional[str] = None,
         notify_operator: bool = True,
     ) -> None:
-        """What :data:`liaise.errors.ERROR_ACTIONS` says for ``error``; an unknown class is ``crashed``."""
+        """What :data:`liaise.errors.ERROR_ACTIONS` says for ``error``; an unknown class is ``crashed``.
+
+        An error whose action holds a scope itself tells the operator only when that hold
+        is new, so a login that has expired is one notification, not one per run.
+        """
         action = ERROR_ACTIONS.get(error) or ERROR_ACTIONS[_CRASHED]
         reason = f"{source}: {error}"
         if defer is not None:
@@ -881,7 +1034,7 @@ class _Tick:
         if action.state is not None:
             self._transition(case_id, action.state, reason)
         if action.auto_hold:
-            placed = auto_hold(
+            placed, created = auto_hold(
                 self.ledger, action.auto_hold, error_class=error, now=self.now
             )
             self._entry(
@@ -894,6 +1047,7 @@ class _Tick:
                 },
             )
             self.say(f"  hold {placed.scope}: {placed.mode} ({placed.set_by})")
+            notify_operator = notify_operator and created
         if not action.counts and uncount_run is not None:
             self._uncount(subject.slug, case_id, uncount_run)
         if action.notify and notify_operator:
@@ -917,10 +1071,8 @@ class _Tick:
         )
         if day is None:
             return
-        count = self.ledger.daily_count(slug, day)
-        if count > 0:
-            # Ledger has no public way to take a count back; this is its own key.
-            self.ledger.store[_daily_key(slug, day)] = count - 1
+        if self.ledger.daily_count(slug, day) > 0:
+            self.ledger.decrement_daily(slug, day)
             self.say(f"  {slug}: run {run_id} not counted against {day}'s cap")
 
     # ---- 2b. a finished run's outcomes ----
@@ -1010,12 +1162,7 @@ class _Tick:
                 self._add_draft(case_id, item.draft)
                 self.say(f"  draft kept for the operator: {item.draft.get('reason')}")
             elif isinstance(item, DigestNote):
-                self._entry(
-                    case_id,
-                    "outcome",
-                    text=item.text,
-                    detail={"digest": True, "run_id": run_id},
-                )
+                self._entry(case_id, "note", text=item.text, detail={"run_id": run_id})
         for group in batched:
             self.pending.setdefault(subject.slug, []).append(
                 _PendingDelivery(case_id, group, applies_state=final is group)
@@ -1200,7 +1347,7 @@ class _Tick:
             self.say(f"deploy {slug}: failed for {case_ids}: {reason}")
             if error is not None:
                 action = ERROR_ACTIONS[error]
-                placed = auto_hold(
+                placed, _ = auto_hold(
                     self.ledger, action.auto_hold, error_class=error, now=self.now
                 )
                 self.say(f"  hold {placed.scope}: {placed.mode} ({placed.set_by})")
@@ -1304,12 +1451,13 @@ class _Tick:
         passed = [f"ready ({readiness.reason})"]
 
         # An automatic processor hold is probed with preflight, and lifted once it passes
-        # again: on a later tick than the one that set it, never the same one.
+        # again, but only AUTH_PROBE_INTERVAL after it was set: a login that has expired
+        # where preflight cannot see it would otherwise cost a failed run every tick.
         processor_hold = self.ledger.get_hold(PROCESSOR_SCOPE)
         auto_processor = (
             _is_auto(processor_hold)
             and processor_hold.set_at is not None
-            and processor_hold.set_at < self.now
+            and self.now - processor_hold.set_at >= AUTH_PROBE_INTERVAL
         )
         scopes = self._scopes(subject, case, processor=not auto_processor)
         hold = blocking_hold(self.ledger, scopes, for_="start")

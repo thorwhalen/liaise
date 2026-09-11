@@ -260,7 +260,8 @@ def test_a_narrow_hold_that_does_not_stop_the_check_gives_way_to_a_broader_one(l
 
 
 def test_auto_hold_is_a_block_recorded_as_set_by_its_error_class(ledger):
-    placed = auto_hold(ledger, "effect:deploy", error_class="effect_blocked", now=T0)
+    placed, created = auto_hold(ledger, "effect:deploy", error_class="effect_blocked", now=T0)
+    assert created is True
     assert (placed.scope, placed.mode, placed.set_by, placed.set_at) == (
         "effect:deploy",
         "block",
@@ -272,7 +273,7 @@ def test_auto_hold_is_a_block_recorded_as_set_by_its_error_class(ledger):
 
 
 def test_release_auto_holds_lifts_only_the_ticks_own_hold(ledger):
-    auto = auto_hold(ledger, "processor", error_class="auth_expired", now=T0)
+    auto, _ = auto_hold(ledger, "processor", error_class="auth_expired", now=T0)
     operator = hold(ledger, "effect:deploy", reason="billing review", now=T0)
     assert release_auto_holds(ledger, "processor") == [auto]
     assert release_auto_holds(ledger, "processor") == []
@@ -283,7 +284,7 @@ def test_release_auto_holds_lifts_only_the_ticks_own_hold(ledger):
 def test_auto_hold_leaves_an_operators_hold_on_the_scope_in_place(ledger):
     operator = hold(ledger, "processor", mode="cancel", reason="switching accounts", now=T0)
     later = T0 + timedelta(minutes=1)
-    assert auto_hold(ledger, "processor", error_class="config_error", now=later) == operator
+    assert auto_hold(ledger, "processor", error_class="config_error", now=later) == (operator, False)
     assert release_auto_holds(ledger, "processor") == []
     assert ledger.get_hold("processor") == operator
 
@@ -297,8 +298,9 @@ def test_an_operator_hold_over_an_auto_hold_is_not_released(ledger):
 
 def test_a_later_auto_hold_replaces_an_earlier_one(ledger):
     auto_hold(ledger, "processor", error_class="config_error", now=T0)
-    later = auto_hold(ledger, "processor", error_class="auth_expired", now=T0 + timedelta(minutes=1))
+    later, created = auto_hold(ledger, "processor", error_class="auth_expired", now=T0 + timedelta(minutes=1))
     assert later.set_by == "auto:auth_expired"
+    assert created is False  # not new: the tick told the operator when the first was placed
     assert list(ledger.holds()) == [later]
 
 

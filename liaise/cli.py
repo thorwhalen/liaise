@@ -1,287 +1,369 @@
-"""The ``liaise`` command-line interface.
+"""The ``liaise`` command line (liaise 0.1).
 
-One SSOT list of plain functions (``_dispatch_funcs``), dispatched with ``cw``
-(see ``python-dispatching``). Each function takes flat, serializable arguments
-and prints its own output — nothing here returns a live object across the CLI
-boundary. The list grows as later issues add ``setup``, ``poll``, ``run``,
-``status`` and ``schedule``.
+One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with ``cw``::
+
+    liaise run [--once] [--dry-run] [--subject SLUG]
+    liaise status
+    liaise hold SCOPE [--mode MODE] [--reason TEXT]
+    liaise unhold SCOPE
+    liaise subject list
+    liaise subject show SLUG
+    liaise setup SUBJECT
+    liaise migrate-config [--apply]
+    liaise schedule install | uninstall | status
+
+Every command takes ``--root``, the config root (``~/.config/liaise`` by default), and
+returns the text it prints. The seams (the channel registry, the processor, the labeler,
+the ledger store, the notifier, the sessions directory and the clock) are keyword
+arguments with working defaults, hidden from the command line by ``_dispatch_config``:
+tests fill them with fakes, and the command line never shows them.
+
+An expected failure, such as a configuration that does not load, an unknown subject or a
+bad hold scope, is one line on stderr and a nonzero exit (``cw.CommandError``), not a
+traceback.
+
+**Breaking change from 0.0.x.** ``partner list``, ``partner show`` and ``poll`` are gone.
+``subject list``, ``subject show`` and ``run --once --dry-run`` replace them, and
+``migrate-config`` derives the subject files from a 0.0.x configuration.
 """
 
 from __future__ import annotations
 
+import dataclasses
 import functools
 import time
-from datetime import datetime, timezone
+from collections.abc import Callable, Mapping, MutableMapping, Sequence
+from datetime import datetime
 from pathlib import Path
-from typing import MutableMapping, Optional, Sequence
+from typing import Any, Optional
 
 import cw
 
-from liaise.config import ConfigError, GlobalConfig, PartnerConfig, load_config
-from liaise.dispatch import (
-    ClaudeHeadless,
-    Dispatcher,
-    daily_dispatch_count,
-    default_store,
+from liaise import holds, migrate
+from liaise.config import (
+    DFLT_CONFIG_ROOT,
+    ConfigError,
+    GlobalConfig,
+    load_global_config,
 )
-from liaise.github import GhCli, GitHub
-from liaise.intake import compute_readiness, find_partner_issues
-from liaise.notify import notify as _notify
-from liaise.run import RunStamps, run_lock_path, run_once, run_stamps
+from liaise.github import GhCli, GitHub, GitHubError
+from liaise.ledger import DFLT_LEDGER_SUBDIR, Ledger, default_ledger_store
+from liaise.model import HOLD_MODES, require_one_of
+from liaise.processor import ClaudeHeadless
+from liaise.projection import setup_labels
 from liaise.schedule import (
+    DFLT_INTERVAL_MINUTES,
     install_schedule,
     schedule_status,
     uninstall_schedule,
 )
-from liaise.state import STATE_LABELS, current_state, setup as _state_setup
+from liaise.subjects import DFLT_SUBJECTS_SUBDIR, Subject, check_bindings, load_subjects
+from liaise.tick import DFLT_RUNS_SUBDIR, RunLockHeld, run_once, status_lines
+
+#: Seconds between two ticks of ``liaise run`` without ``--once``. The scheduled job
+#: passes ``--once`` and leaves the interval to the scheduler.
+DFLT_LOOP_SECONDS = 60
+#: What ``liaise run`` without ``--once`` returns once it is interrupted.
+STOPPED = "stopped"
+#: How ``liaise subject show`` prints an empty or unset value.
+NONE_SHOWN = "(none)"
 
 
-def _notify_fn_for(glob: GlobalConfig):
-    """M-4: bind `notify()` to this installation's configured
-    `notify.ntfy_topic_env`, rather than every caller silently falling back
-    to `notify()`'s own hardcoded default — a custom variable name would
-    otherwise mean every notification silently disappears.
-    """
-    return functools.partial(_notify, topic_env=glob.notify.ntfy_topic_env)
+def _expected_errors(*kinds: type[Exception]) -> Callable[[Callable], Callable]:
+    """Report the ``kinds`` a command raises as ``cw.CommandError``: one line, no traceback."""
+
+    def decorate(command: Callable) -> Callable:
+        @functools.wraps(command)
+        def reported(*args: Any, **kwargs: Any) -> Any:
+            try:
+                return command(*args, **kwargs)
+            except kinds as error:
+                raise cw.CommandError(str(error)) from error
+
+        return reported
+
+    return decorate
 
 
-def _format_partner(p: PartnerConfig) -> str:
-    lines = [
-        f"partner: {p.slug}",
-        f"  display_name:   {p.display_name}",
-        f"  github_logins:  {', '.join(p.github_logins)}",
-        f"  repo:           {p.repo}",
-        f"  label:          {p.label}",
-        f"  notify_login:   {p.notify_login or '(none)'}",
-        f"  brief:          {p.brief}",
-        f"  reply_mode:     {p.reply_mode}",
-        f"  quiet_minutes:  {p.quiet_minutes}",
-        f"  go_minutes:     {p.go_minutes}",
-        f"  markers:        go={p.markers.go!r} wait={p.markers.wait!r}",
-        f"  label_prefix:   {p.label_prefix}",
-        f"  deploy_per:     {p.deploy_per}",
-        f"  budget:         timeout_minutes={p.budget.timeout_minutes} "
-        f"max_turns={p.budget.max_turns} daily_dispatches={p.budget.daily_dispatches}",
-        f"  verify:         {p.verify or '(none)'}",
-        f"  deploy:         {p.deploy or '(none)'}",
-        f"  escalate:       money_usd={p.escalate.money_usd} "
-        f"max_scope={p.escalate.max_scope!r}",
-    ]
-    return "\n".join(lines)
+def _root(root: Optional[str]) -> Path:
+    return Path(root).expanduser() if root else DFLT_CONFIG_ROOT
 
 
-def partner_show(slug: str, *, root: Optional[str] = None) -> str:
-    """Print the resolved config for partner ``slug``, defaults applied."""
-    config = load_config(Path(root) if root else None)
-    try:
-        return _format_partner(config.partner(slug))
-    except ConfigError as e:
-        return str(e)
-
-
-def partner_list(*, root: Optional[str] = None) -> str:
-    """Print every configured partner's slug and display name."""
-    config = load_config(Path(root) if root else None)
-    if not config.partners:
-        return "(no partners configured)"
-    return "\n".join(
-        f"{slug}\t{p.display_name}" for slug, p in sorted(config.partners.items())
-    )
-
-
-def _fmt_countdown(td) -> str:
-    total_seconds = int(td.total_seconds())
-    if total_seconds <= 0:
-        return "0m"
-    hours, remainder = divmod(total_seconds, 3600)
-    minutes = remainder // 60
-    return f"{hours}h{minutes:02d}m" if hours else f"{minutes}m"
-
-
-def poll(
+def _ledger_store(
+    global_config: GlobalConfig,
+    store: Optional[MutableMapping[str, Any]],
     *,
-    root: Optional[str] = None,
-    partner: Optional[str] = None,
-    gh: Optional[GitHub] = None,
-) -> str:
-    """Report each partner's open issues, their readiness, and a countdown. Changes nothing."""
-    config = load_config(Path(root) if root else None)
-    partners = [config.partner(partner)] if partner else list(config.partners.values())
-    github = gh if gh is not None else GhCli()
+    create: bool,
+) -> MutableMapping[str, Any]:
+    """``store`` when given, else the ledger under ``state_dir``.
 
-    if not partners:
-        return "(no partners configured)"
-
-    lines = []
-    for p in sorted(partners, key=lambda p: p.slug):
-        issues = find_partner_issues(github, p)
-        lines.append(f"partner: {p.slug} ({len(issues)} open)")
-        for issue in issues:
-            readiness = compute_readiness(issue, p)
-            if readiness.paused:
-                status = "PAUSED"
-            elif readiness.ready:
-                status = "READY"
-            else:
-                status = f"in {_fmt_countdown(readiness.countdown)}"
-            lines.append(f"  #{issue.number:<5} {status:<10} {issue.title}")
-    return "\n".join(lines)
+    A command that writes nothing (``status``, a dry run) creates nothing either: before
+    the ledger directory exists there is nothing to read, so it reads an empty store.
+    """
+    if store is not None:
+        return store
+    ledger_dir = Path(global_config.state_dir).expanduser() / DFLT_LEDGER_SUBDIR
+    if not create and not ledger_dir.is_dir():
+        return {}
+    return default_ledger_store(global_config.state_dir)
 
 
-def setup(slug: str, *, root: Optional[str] = None, gh: Optional[GitHub] = None) -> str:
-    """Create partner `slug`'s label and every state label in their repo. Idempotent."""
-    config = load_config(Path(root) if root else None)
-    partner = config.partner(slug)
-    github = gh if gh is not None else GhCli()
-    _state_setup(github, partner)
-    return (
-        f"created {partner.label!r}, {len(STATE_LABELS)} state labels, "
-        f"and 'discovered' in {partner.repo}"
+def _subject_named(
+    subjects: Mapping[str, Subject], slug: str, *, root: Path
+) -> Subject:
+    """``subjects[slug]``, or a :class:`ConfigError` naming the subjects there are."""
+    if slug in subjects:
+        return subjects[slug]
+    known = ", ".join(sorted(subjects)) or "(none)"
+    path = root / DFLT_SUBJECTS_SUBDIR / f"{slug}.toml"
+    raise ConfigError(
+        f"no subject {slug!r} is configured; the subjects are: {known}. A subject is a "
+        f"file such as {path}."
     )
 
 
+# ---- the loop ----
+
+
+@_expected_errors(ConfigError, RunLockHeld)
 def run(
     *,
     root: Optional[str] = None,
     once: bool = False,
     dry_run: bool = False,
-    partner: Optional[str] = None,
-    gh: Optional[GitHub] = None,
-    dispatcher: Optional[Dispatcher] = None,
-    store: Optional[MutableMapping] = None,
+    subject: Optional[str] = None,
+    registry: Optional[Mapping[str, Any]] = None,
+    processor: Optional[Any] = None,
+    labeler: Optional[GitHub] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    notify_fn: Optional[Callable[..., Any]] = None,
+    sessions_dir: Optional[str] = None,
+    now: Optional[datetime] = None,
 ) -> str:
-    """Intake, label, dispatch ready issues, batch-deploy, reconcile.
+    """One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.
 
-    Prints where dispatch logs go (`log_dir`), then the plan. `--dry-run`
-    prints the same and changes nothing. Without `--once`, keeps
-    running one pass after another — the scheduled job always passes
-    `--once` (see `liaise schedule install`); this is for a foreground,
-    manual "keep watching" run.
+    Prints the tick's plan, a line per event, case, run and decision. ``--dry-run`` prints
+    the same plan and changes nothing: nothing is sent, labelled, started, cancelled,
+    deployed, locked or written. ``--subject`` ticks one subject alone. Without ``--once``
+    or ``--dry-run``, it ticks every minute, printing each plan, until interrupted; the
+    scheduled job (``liaise schedule install``) passes ``--once``.
     """
-    config = load_config(Path(root) if root else None)
-    github = gh if gh is not None else GhCli()
-    agent = dispatcher if dispatcher is not None else ClaudeHeadless()
-    state_store = (
-        store if store is not None else default_store(config.global_.state_dir)
-    )
-    notify_fn = _notify_fn_for(config.global_)
-    log_dir = config.global_.log_dir_path
-
-    def one_pass() -> str:
-        report = run_once(
-            github,
-            agent,
-            state_store,
-            config,
-            partner=partner,
-            dry_run=dry_run,
-            notify_fn=notify_fn,
-            log_dir=log_dir,
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    subjects = load_subjects(config_root)
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    if processor is None:
+        # One processor for every tick of a loop: it reaps the runs it spawned, which a
+        # new instance each tick could not, so a finished run never reads as a live one.
+        state_dir = Path(global_config.state_dir).expanduser()
+        processor = ClaudeHeadless(runs_dir=state_dir / DFLT_RUNS_SUBDIR)
+    hint = (
+        ()
+        if subjects
+        else (
+            f"no subjects are configured: add {config_root / DFLT_SUBJECTS_SUBDIR}"
+            "/<slug>.toml, or derive them from a 0.0.x configuration with "
+            "liaise migrate-config",
         )
-        lines = [f"log_dir: {log_dir}", f"plan ({len(report.plan)} item(s)):"]
-        for item in report.plan:
-            lines.append(
-                f"  {item.partner_slug} #{item.issue_number:<5} {item.action:<18} {item.issue_title}"
-            )
-        if report.dispatched:
-            lines.append(f"dispatched: {len(report.dispatched)}")
-        for slug, numbers in report.deployed.items():
-            lines.append(f"deployed for {slug}: {', '.join(f'#{n}' for n in numbers)}")
-        return "\n".join(lines)
+    )
+
+    def tick() -> str:
+        report = run_once(
+            subjects,
+            ledger_store,
+            global_config=global_config,
+            registry=registry,
+            processor=processor,
+            labeler=labeler,
+            notify_fn=notify_fn,
+            sessions_dir=sessions_dir,
+            now=now,
+            dry_run=dry_run,
+            only=subject,
+        )
+        return "\n".join((*hint, *report.plan_lines))
 
     if once or dry_run:
-        return one_pass()
-
-    # L-4: without --once, this runs indefinitely — printing each pass as it
-    # happens (rather than accumulating every pass's output into a list
-    # returned only at the end) is what makes a long foreground run usable
-    # rather than silent and unbounded in memory.
+        return tick()
     try:
         while True:
-            print(one_pass())
-            time.sleep(60)
+            try:
+                print(tick(), flush=True)
+            except RunLockHeld as busy:  # the scheduled tick is running: try the next
+                print(busy, flush=True)
+            time.sleep(DFLT_LOOP_SECONDS)
     except KeyboardInterrupt:
-        return "stopped"
+        return STOPPED
 
 
-def _format_run_stamps(stamps: RunStamps) -> list[str]:
-    """#22: both stamps, and whether the last pass is `running` (a long
-    dispatch used to read as a job that had not run for many minutes) or was
-    `interrupted` before it could finish.
-    """
-    if stamps.state == "never":
-        return ["last_run: never"]
-    now = datetime.now(timezone.utc)
-
-    def fmt(stamp: Optional[datetime]) -> str:
-        if stamp is None:
-            return "never"
-        age = int((now - stamp).total_seconds())
-        return f"{stamp.isoformat(timespec='seconds')} ({age}s ago)"
-
-    note = (
-        " (no live liaise process holds the run lock)"
-        if stamps.state == "interrupted"
-        else ""
-    )
-    return [
-        f"last_run: {stamps.state}{note}",
-        f"  run_started_at: {fmt(stamps.started_at)}",
-        f"  run_ended_at:   {fmt(stamps.ended_at)}",
-    ]
-
-
+@_expected_errors(ConfigError)
 def status(
     *,
     root: Optional[str] = None,
-    gh: Optional[GitHub] = None,
-    store: Optional[MutableMapping] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
 ) -> str:
-    """When the last run started and ended (and whether it is still running or was interrupted), today's dispatches per partner, and anything needing the owner."""
-    config = load_config(Path(root) if root else None)
-    github = gh if gh is not None else GhCli()
-    state_store = (
-        store if store is not None else default_store(config.global_.state_dir)
-    )
+    """What the ledger says, changing nothing: the last run, holds, runs, cases, what waits on you.
 
-    lines = _format_run_stamps(
-        run_stamps(state_store, lock_path=run_lock_path(config.global_.state_dir))
+    That is the run stamps (``running``, ``interrupted`` or ``finished``), the holds, the
+    runs in flight, each subject's cases by state and dispatches today, the unrouted
+    queue, the drafts waiting for the operator, and the latest digest notes.
+    """
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    lines = status_lines(
+        load_subjects(config_root),
+        _ledger_store(global_config, store, create=False),
+        global_config=global_config,
+        now=now,
     )
-
-    for p in sorted(config.partners.values(), key=lambda p: p.slug):
-        count = daily_dispatch_count(state_store, p)
-        lines.append(
-            f"partner {p.slug}: {count}/{p.budget.daily_dispatches} dispatches today"
-        )
-        needs_owner = [
-            i
-            for i in find_partner_issues(github, p)
-            if current_state(i, p) == "needs-owner"
-        ]
-        for issue in needs_owner:
-            lines.append(f"  needs-owner: #{issue.number} {issue.title}")
     return "\n".join(lines)
 
 
+# ---- holds ----
+
+
+@_expected_errors(ConfigError, ValueError)
+def hold(
+    scope: str,
+    *,
+    mode: str = holds.DFLT_HOLD_MODE,
+    reason: str = "",
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """Stop work in SCOPE until ``liaise unhold``.
+
+    SCOPE is ``global``, ``processor``, ``effect:<kind>``, ``subject:<slug>``,
+    ``person:<id>``, ``repo:<owner/repo>`` or ``checkout:<path>``. ``--mode block`` (the
+    default) starts nothing new and keeps a finished run's messages as drafts; ``drain``
+    starts nothing new and lets work already running finish and send; ``cancel`` also
+    stops running runs, which stay resumable.
+    """
+    scope = holds.canonical_scope(scope)
+    require_one_of(mode, HOLD_MODES, what="hold mode")
+    global_config = load_global_config(_root(root))
+    ledger = Ledger(_ledger_store(global_config, store, create=True))
+    placed = holds.hold(ledger, scope, mode=mode, reason=reason)
+    because = f": {placed.reason}" if placed.reason else ""
+    return f"held {placed.scope} ({placed.mode}){because}"
+
+
+@_expected_errors(ConfigError, ValueError)
+def unhold(
+    scope: str,
+    *,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """Lift the hold on SCOPE, whoever set it."""
+    scope = holds.canonical_scope(scope)
+    global_config = load_global_config(_root(root))
+    ledger = Ledger(_ledger_store(global_config, store, create=False))
+    if holds.unhold(ledger, scope):
+        return f"lifted the hold on {scope}"
+    return f"no hold on {scope}"
+
+
+# ---- subjects ----
+
+
+@_expected_errors(ConfigError)
+def subject_list(*, root: Optional[str] = None) -> str:
+    """Every configured subject with its bindings, flagging any binding that could never match."""
+    config_root = _root(root)
+    subjects = load_subjects(config_root)
+    if not subjects:
+        return f"(no subjects under {config_root / DFLT_SUBJECTS_SUBDIR})"
+    lines = []
+    for slug, subject in subjects.items():
+        problems = check_bindings(subject)
+        flag = (
+            f"  [{len(problems)} binding problem(s): liaise subject show {slug}]"
+            if problems
+            else ""
+        )
+        lines.append(f"{slug}\t{', '.join(subject.bindings)}{flag}")
+    return "\n".join(lines)
+
+
+@_expected_errors(ConfigError)
+def subject_show(slug: str, *, root: Optional[str] = None) -> str:
+    """The subject SLUG as liaise reads it, every default applied, and its binding problems."""
+
+    def field_lines(fields: Mapping[str, Any], *, prefix: str = "") -> list[str]:
+        lines = []
+        for key, value in fields.items():
+            name = f"{prefix}{key}"
+            if isinstance(value, Mapping) and value:
+                lines += field_lines(value, prefix=f"{name}.")
+            elif isinstance(value, (list, tuple)):
+                lines.append(f"  {name}: {', '.join(map(str, value)) or NONE_SHOWN}")
+            else:
+                shown = NONE_SHOWN if value is None or value in ("", {}) else value
+                lines.append(f"  {name}: {shown}")
+        return lines
+
+    config_root = _root(root)
+    subject = _subject_named(load_subjects(config_root), slug, root=config_root)
+    fields = dataclasses.asdict(subject)
+    del fields["slug"]
+    problems = check_bindings(subject)
+    return "\n".join(
+        [
+            f"subject: {slug}",
+            *field_lines(fields),
+            f"binding problems: {len(problems) or 'none'}",
+            *(f"  {problem}" for problem in problems),
+        ]
+    )
+
+
+@_expected_errors(ConfigError, GitHubError)
+def setup(
+    subject: str, *, root: Optional[str] = None, labeler: Optional[GitHub] = None
+) -> str:
+    """Create SUBJECT's labels in each GitHub repository it binds. Idempotent.
+
+    Those are its claim labels and one ``<label_prefix><state>`` label per case state.
+    """
+    config_root = _root(root)
+    found = _subject_named(load_subjects(config_root), subject, root=config_root)
+    return "\n".join(setup_labels(labeler if labeler is not None else GhCli(), found))
+
+
+@_expected_errors(ConfigError)
+def migrate_config(*, root: Optional[str] = None, apply: bool = False) -> str:
+    """Derive 0.1 subject files from a 0.0.x configuration, and print the plan.
+
+    Writes nothing without ``--apply``, which creates each missing
+    ``subjects/<slug>.toml`` and never overwrites one. Nothing else under the config root
+    is touched.
+    """
+    return "\n".join(migrate.migrate_config(_root(root), apply=apply).lines())
+
+
+# ---- the scheduled job ----
+
+
+@_expected_errors(ConfigError)
 def schedule_install(
     *,
     root: Optional[str] = None,
-    interval_minutes: int = 2,
+    interval_minutes: int = DFLT_INTERVAL_MINUTES,
     extra_env_vars: Optional[Sequence[str]] = None,
 ) -> str:
     """Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux).
 
-    `extra_env_vars`: names of additional environment variables (beyond
-    `PATH`, `HOME`, and the configured ntfy topic variable) a partner's
-    dispatch command needs snapshotted into the job's environment — A.7
-    ("whatever the dispatch command needs"), which had no way to reach the
-    scheduler from the CLI (M-4).
+    `extra_env_vars`: names of additional environment variables (beyond `PATH`, `HOME`,
+    and the configured ntfy topic variable) the job needs snapshotted into its
+    environment, such as one a deploy command reads.
     """
-    config = load_config(Path(root) if root else None)
+    global_config = load_global_config(_root(root))
     path = install_schedule(
         root=root,
         interval_minutes=interval_minutes,
-        ntfy_topic_env=config.global_.notify.ntfy_topic_env,
+        ntfy_topic_env=global_config.notify.ntfy_topic_env,
         extra_env_vars=extra_env_vars or (),
     )
     return f"installed: {path}"
@@ -297,15 +379,16 @@ def schedule_status_cmd() -> str:
     return schedule_status()
 
 
-#: SSOT command tree consumed by both ``__main__.py`` and (later) MCP/HTTP surfaces.
-#: Named explicitly (not by function `__name__`) so `liaise partner show`, not
-#: `liaise partner partner-show`.
+#: SSOT command tree consumed by ``__main__.py`` and any later surface (MCP, HTTP). Named
+#: explicitly, so the commands read ``liaise subject show`` and ``liaise migrate-config``.
 _dispatch_funcs = {
-    "partner": {"show": partner_show, "list": partner_list},
-    "poll": poll,
-    "setup": setup,
     "run": run,
     "status": status,
+    "hold": hold,
+    "unhold": unhold,
+    "subject": {"list": subject_list, "show": subject_show},
+    "setup": setup,
+    "migrate-config": migrate_config,
     "schedule": {
         "install": schedule_install,
         "uninstall": schedule_uninstall,
@@ -313,11 +396,24 @@ _dispatch_funcs = {
     },
 }
 
-#: DI seams (real `GitHub`/`Dispatcher`/store by default) — not CLI-serializable,
-#: so hidden from the command line.
+#: Each command's seams: keyword arguments with working defaults that no command line can
+#: spell (a registry, a processor, a store, a clock).
+_SEAMS = {
+    "run": (
+        "registry",
+        "processor",
+        "labeler",
+        "store",
+        "notify_fn",
+        "sessions_dir",
+        "now",
+    ),
+    "status": ("store", "now"),
+    "hold": ("store",),
+    "unhold": ("store",),
+    "setup": ("labeler",),
+}
+#: The seams, hidden from the command line; each keeps its default.
 _dispatch_config = {
-    "poll": {"gh": cw.HIDE},
-    "setup": {"gh": cw.HIDE},
-    "run": {"gh": cw.HIDE, "dispatcher": cw.HIDE, "store": cw.HIDE},
-    "status": {"gh": cw.HIDE, "store": cw.HIDE},
+    command: dict.fromkeys(params, cw.HIDE) for command, params in _SEAMS.items()
 }

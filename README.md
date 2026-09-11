@@ -6,25 +6,28 @@
 
 ```
 pip install liaise
-mkdir -p ~/.config/liaise/partners ~/.config/liaise/briefs
+mkdir -p ~/.config/liaise/subjects
 cat > ~/.config/liaise/config.toml <<'EOF'
 owner_login = "you"
 state_dir = "~/.local/share/liaise"
 EOF
-cat > ~/.config/liaise/partners/pat.toml <<'EOF'
-display_name = "Pat"
-github_logins = ["pat"]
-repo = "example/app"
-brief = "~/.config/liaise/briefs/pat.md"
+cat > ~/.config/liaise/subjects/example-app.toml <<'EOF'
+bindings = ["github:example/app?labels=partner:pat"]
+workspace = { path = "~/code/example-app" }
+
+[policy]
+people = { "github:pat" = "pat" }
+roles = { pat = "partner" }
+relays = ["github:example-bot"]
+claim_labels = { "partner:pat" = "pat" }
 EOF
-echo "Pat likes short, plain answers and hates surprises." > ~/.config/liaise/briefs/pat.md
-liaise setup pat
-liaise poll
+liaise subject show example-app
+liaise run --once --dry-run
 ```
 
-That's read-only by default (non-negotiable #4) — `poll` reports Pat's issues and their readiness without changing anything. Once you believe the plan it shows, `liaise run --once --dry-run` prints what a real pass would do, still without acting; drop `--dry-run` to actually act; and `liaise schedule install` sets up the recurring job once you're ready to stop running it by hand.
+That's read-only by default (non-negotiable #4). `liaise subject show` prints the subject as `liaise` reads it, every default applied, and names any binding that could never match. `liaise run --once --dry-run` prints what one pass would do (what it takes in, which finished runs it collects and what their outcomes would send, which cases it would start) and changes nothing. Once you believe the plan, `liaise setup example-app` creates the labels in the repository, dropping `--dry-run` acts, and `liaise schedule install` sets up the recurring job once you're ready to stop running it by hand.
 
-That's a working loop for one partner (`pat`, testing the fictional `example/app`) polling every couple of minutes. Add more partners by adding more files under `partners/` and `briefs/`.
+That's one subject: the fictional `example/app`, whose app files issues as `example-bot` with a `partner:pat` label for its tester `pat`. Replies start in `draft` mode, each kept for you to send, until the subject sets `default_reply_mode = "direct"` under `[policy]`. Coming from 0.0.x? `liaise migrate-config` prints the subject files your `partners/` files become, and `--apply` writes them.
 
 ## Concepts
 
@@ -52,11 +55,12 @@ That's a working loop for one partner (`pat`, testing the fictional `example/app
 
 ## Commands
 
-- `liaise setup <partner>` — create the partner's label and every state label in their repo. Idempotent.
-- `liaise poll [--partner SLUG]` — report every partner issue, its state, and a readiness countdown. Changes nothing.
-- `liaise run [--once] [--dry-run] [--partner SLUG]` — intake, label, dispatch ready issues, batch-deploy, reconcile. `--dry-run` prints the plan and the log directory, and changes nothing.
-- `liaise status` — when the last run started and ended (`running` while one is in progress, `interrupted` if its process died first), today's dispatch counts, and anything waiting on the owner.
-- `liaise partner list` / `liaise partner show <slug>` — see the resolved config, defaults applied.
+- `liaise run [--once] [--dry-run] [--subject SLUG]` — one pass: take in what arrived, collect finished runs and carry out their outcomes through the gate, start ready cases, deploy, label. `--dry-run` prints the plan and changes nothing; without `--once`, it runs a pass every minute.
+- `liaise status` — when the last run started and ended (`running` while one is in progress, `interrupted` if its process died first), the holds, the runs in flight, each subject's cases by state and dispatches today, the unrouted queue, the drafts waiting for you, and the latest digest notes.
+- `liaise hold <scope> [--mode block|drain|cancel] [--reason TEXT]` / `liaise unhold <scope>` — stop and resume work in a scope: `global`, `processor`, `subject:<slug>`, `person:<id>`, `repo:<owner/repo>`, `checkout:<path>` or `effect:<kind>`.
+- `liaise subject list` / `liaise subject show <slug>` — see each subject as `liaise` reads it, defaults applied, with any binding that could never match.
+- `liaise setup <subject>` — create the subject's claim labels and every state label in each repository it binds. Idempotent.
+- `liaise migrate-config [--apply]` — derive subject files from a 0.0.x `partners/` configuration. A dry run unless `--apply`, which never overwrites a file.
 - `liaise schedule install` / `uninstall` / `status` — manage the scheduled job.
 
 ## Design
