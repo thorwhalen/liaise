@@ -16,6 +16,9 @@ shared by its runs. Two checks keep a run from trampling other work there:
 Paths are compared resolved (``~`` expanded, symlinks followed) and on path-part
 boundaries, so ``.../app`` never matches ``.../app2``.
 
+It also says whether a pid still names a given process (:func:`pid_matches_start`): a pid
+is reused once its process is gone, after a reboot say, so a live pid alone proves nothing.
+
 The named replacement is a worktree per run, which would come in at :func:`workspace_for`.
 """
 
@@ -25,8 +28,12 @@ import hashlib
 import json
 import os
 import platform
+import re
+import shutil
+import subprocess
+import sys
 from collections.abc import Iterable, Iterator
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
 
@@ -40,11 +47,28 @@ DFLT_LOCKS_SUBDIR = "locks"
 #: How many hex digits of the resolved path's sha1 a lock file's name keeps.
 DFLT_LOCK_DIGEST_LENGTH = 16
 LOCK_SUFFIX = ".lock"
+#: How far a process's start may lie from the start recorded for it, either side, for its
+#: pid to be taken for that process (see :func:`pid_matches_start`). A process that started
+#: further away is another one, which was given the pid after the first was gone.
+PID_START_TOLERANCE = timedelta(minutes=2)
+#: The command that reports a process's elapsed time on POSIX, and how many seconds it is
+#: given to answer.
+PS_COMMAND = "ps"
+PS_TIMEOUT_S = 5.0
 
 #: A pid is a positive signed 32-bit int on every platform liaise runs on.
 _MAX_PID = 2**31 - 1
 #: The Windows access right that lets a handle query a process and nothing more.
 _PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+#: What ``ps -o etime=`` prints, on macOS and Linux alike: ``[[dd-]hh:]mm:ss``.
+_ETIME_PATTERN = re.compile(r"(?:(?:([0-9]+)-)?([0-9]+):)?([0-9]+):([0-9]+)")
+_SECONDS_PER_MINUTE = 60
+_MINUTES_PER_HOUR = 60
+_HOURS_PER_DAY = 24
+#: Windows counts a FILETIME in 100-nanosecond ticks from 1601, UTC, in two 32-bit halves.
+_FILETIME_EPOCH = datetime(1601, 1, 1, tzinfo=timezone.utc)
+_FILETIME_TICKS_PER_MICROSECOND = 10
+_FILETIME_HALF_BITS = 32
 
 
 def resolve_checkout(path: Union[str, os.PathLike]) -> Path:
@@ -72,7 +96,7 @@ def pid_is_alive(pid: Any) -> bool:
     code is still ``STILL_ACTIVE``. ``liaise.run._pid_is_alive``, retired with that module,
     lacked this check.
     """
-    if isinstance(pid, bool) or not isinstance(pid, int) or not 0 < pid <= _MAX_PID:
+    if not _is_pid(pid):
         return False
     if platform.system() == "Windows":
         import ctypes
@@ -96,6 +120,110 @@ def pid_is_alive(pid: Any) -> bool:
     except PermissionError:
         return True  # it exists, it is just not ours to signal
     return True
+
+
+def _is_pid(value: Any) -> bool:
+    """Whether ``value`` is a positive int in pid range (a bool is not)."""
+    return (
+        not isinstance(value, bool) and isinstance(value, int) and 0 < value <= _MAX_PID
+    )
+
+
+def process_started_at(pid: Any) -> Optional[datetime]:
+    """When the process ``pid`` started, in UTC; None when that cannot be determined.
+
+    None, never an exception, for anything but a pid in range, a process that is gone, or a
+    system that does not say. On POSIX it is now less the elapsed time ``ps -o etime=``
+    reports, to the second, which reads the same on macOS and Linux and involves no time
+    zone; ``ps`` is found on ``PATH``, else on the system's default path, and given
+    :data:`PS_TIMEOUT_S` to answer. On Windows it is the creation time ``GetProcessTimes``
+    reads through a query-only handle.
+    """
+    if not _is_pid(pid):
+        return None
+    if sys.platform == "win32":
+        return _windows_process_started_at(pid)
+    return _posix_process_started_at(pid)
+
+
+def _posix_process_started_at(pid: int) -> Optional[datetime]:
+    ps = shutil.which(PS_COMMAND) or shutil.which(PS_COMMAND, path=os.defpath)
+    if ps is None:
+        return None
+    try:
+        done = subprocess.run(
+            [ps, "-o", "etime=", "-p", str(pid)],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=PS_TIMEOUT_S,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    elapsed = _parse_etime(done.stdout) if done.returncode == 0 else None
+    return None if elapsed is None else datetime.now(timezone.utc) - elapsed
+
+
+def _parse_etime(text: str) -> Optional[timedelta]:
+    """The elapsed time ``ps -o etime=`` printed as ``[[dd-]hh:]mm:ss``; None for anything else.
+
+    >>> _parse_etime(" 3-04:05:06")
+    datetime.timedelta(days=3, seconds=14706)
+    """
+    match = _ETIME_PATTERN.fullmatch(text.strip())
+    if match is None:
+        return None
+    days, hours, minutes, seconds = (int(part or 0) for part in match.groups())
+    has_days = match.group(1) is not None
+    if (
+        seconds >= _SECONDS_PER_MINUTE
+        or minutes >= _MINUTES_PER_HOUR
+        or (has_days and hours >= _HOURS_PER_DAY)
+    ):
+        return None
+    return timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
+
+
+def _windows_process_started_at(pid: int) -> Optional[datetime]:
+    import ctypes
+    from ctypes import wintypes
+
+    kernel32 = ctypes.windll.kernel32
+    handle = kernel32.OpenProcess(_PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+    if not handle:
+        return None
+    created, exited, kernel, user = (wintypes.FILETIME() for _ in range(4))
+    try:
+        times = (ctypes.byref(when) for when in (created, exited, kernel, user))
+        if not kernel32.GetProcessTimes(handle, *times):
+            return None
+    finally:
+        kernel32.CloseHandle(handle)
+    ticks = (created.dwHighDateTime << _FILETIME_HALF_BITS) | created.dwLowDateTime
+    return _FILETIME_EPOCH + timedelta(
+        microseconds=ticks // _FILETIME_TICKS_PER_MICROSECOND
+    )
+
+
+def pid_matches_start(
+    pid: Any, started_at: datetime, *, tolerance: timedelta = PID_START_TOLERANCE
+) -> Optional[bool]:
+    """Whether ``pid`` is the live process that started at ``started_at``; None when that cannot be told.
+
+    True when the process is alive (:func:`pid_is_alive`) and started
+    (:func:`process_started_at`) within ``tolerance`` of ``started_at``, either side. False
+    when it is gone, or started further away: its pid now names another process, given it
+    after the first ended or a reboot. None when it is alive but its start cannot be read,
+    so it may be either. Only a True pid may be signalled as the process that started then.
+    ``started_at`` is timezone-aware.
+    """
+    if not pid_is_alive(pid):
+        return False
+    started = process_started_at(pid)
+    if started is None:
+        return None
+    return abs(started - started_at) <= tolerance
 
 
 class SharedCheckout:

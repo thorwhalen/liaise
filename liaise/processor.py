@@ -7,7 +7,8 @@ A :class:`Processor` has six verbs, each with its default in :class:`ClaudeHeadl
 - ``start(job)`` and ``resume(session_id, job)``: spawn a detached run and return its
   :class:`~liaise.model.RunRecord` at once. Both are idempotent on ``job.run_id``.
 - ``status(run)``: never blocks. It refreshes the heartbeat, the status and the end time.
-- ``cancel(run, mode=...)``: interrupt, then terminate. The session stays resumable.
+- ``cancel(run, mode=...)``: interrupt, then terminate. The session stays resumable. Only a
+  process verified as the run's, by when it started, is ever signalled.
 - ``collect(run)``: ``None`` while the run is going, then its
   :class:`~liaise.model.RunResult`, classified by :func:`liaise.errors.classify`.
 
@@ -101,6 +102,9 @@ _CANCEL_REQUESTED_AT = "cancel_requested_at"
 _CANCEL_SIGNAL = "cancel_signal"
 #: When the signal in ``cancel_signal`` was first sent: the kill grace counts from it.
 _CANCEL_SIGNAL_AT = "cancel_signal_at"
+#: When this processor spawned the run's process, by its own clock: the start the run's pid
+#: must match to be taken for the run's process (see :meth:`ClaudeHeadless.status`).
+_SPAWNED_AT = "spawned_at"
 
 
 @dataclass(frozen=True)
@@ -283,18 +287,33 @@ class ClaudeHeadless:
         """``run`` refreshed from its files and process, and saved to its ``record.json``.
 
         ``heartbeat_at`` is the stream's mtime. The run is finished once its stream holds
-        a ``result`` event or its process has exited; ``ended_at`` is then the stream's
-        mtime. Reads files only, so it never blocks. With ``persist=False``, as in a dry
-        run, ``record.json`` is left as it was. A run whose id names another case's record
-        is finished, and nothing is written.
+        a ``result`` event or its process is gone; ``ended_at`` is then the stream's mtime.
+        A run another process started (an earlier tick) is known by its pid, which counts
+        as its process only while that process started when the run was spawned (see
+        :meth:`_process_is_the_run`): a pid a later process was given, after a reboot say,
+        is gone, and a live pid whose start cannot be read is taken to be the run. It reads
+        files and, for such a pid, asks ``ps`` (bounded by a timeout), so it never waits on
+        the run. With ``persist=False``, as in a dry run, ``record.json`` is left as it was.
+        A run whose id names another case's record is finished, and nothing is written.
+        """
+        return self._refreshed(run, persist=persist)[0]
+
+    def _refreshed(
+        self, run: RunRecord, *, persist: bool
+    ) -> tuple[RunRecord, Optional[bool]]:
+        """``run`` refreshed as :meth:`status` says, and :meth:`_process_is_the_run`'s answer.
+
+        That answer is None, too, for a run already finished, whose process is not asked about.
         """
         if self._names_another_case(run):
-            return replace(run, status=FINISHED, ended_at=run.ended_at or _utcnow())
+            finished = replace(run, status=FINISHED, ended_at=run.ended_at or _utcnow())
+            return finished, False
         stream_path = self._stream_path(run)
         heartbeat = _mtime(stream_path)
+        process = None if run.status == FINISHED else self._process_is_the_run(run)
         finished = (
             run.status == FINISHED
-            or not self._is_alive(run)
+            or process is False
             or _read_stream(stream_path).result is not None
         )
         updated = replace(
@@ -303,12 +322,12 @@ class ClaudeHeadless:
             heartbeat_at=heartbeat or run.heartbeat_at,
             ended_at=(run.ended_at or heartbeat or _utcnow()) if finished else None,
         )
-        process = self._children.get(run.run_id)
-        if finished and process is not None and process.poll() is not None:
+        child = self._children.get(run.run_id)
+        if finished and child is not None and child.poll() is not None:
             del self._children[run.run_id]
         if persist:
             self._save(updated)
-        return updated
+        return updated, process
 
     def cancel(
         self,
@@ -327,10 +346,12 @@ class ClaudeHeadless:
         was first requested, the last signal, and when that signal was first sent are kept
         in ``record.json``, so the next tick's call continues the same cancel. ``now`` is
         the cancel's clock (the current UTC time when None). A finished run is returned as
-        it is.
+        it is. Only a process verified as the run's (see :meth:`status`) is signalled: a
+        live pid whose start cannot be read may be another process's, so it is sent nothing,
+        and only the request is recorded.
         """
         require_one_of(mode, CANCEL_MODES, what="cancel mode")
-        current = self.status(run)
+        current, verified = self._refreshed(run, persist=True)
         if current.status == FINISHED:
             return current
         now = now if now is not None else _utcnow()
@@ -339,14 +360,16 @@ class ClaudeHeadless:
         previous = raw.get(_CANCEL_SIGNAL)
         previous_at = _parse_time(raw.get(_CANCEL_SIGNAL_AT)) or requested
         extras = {_CANCEL_REQUESTED_AT: (requested or now).isoformat()}
-        sent = self._send_cancel(
-            current,
-            mode=mode,
-            requested=requested,
-            previous=previous,
-            previous_at=previous_at,
-            now=now,
-        )
+        sent = None
+        if verified:
+            sent = self._send_cancel(
+                current,
+                mode=mode,
+                requested=requested,
+                previous=previous,
+                previous_at=previous_at,
+                now=now,
+            )
         if sent:
             first_sent = previous_at if sent == previous and previous_at else now
             extras[_CANCEL_SIGNAL] = sent
@@ -468,6 +491,7 @@ class ClaudeHeadless:
             session_id=session_id,
             stream_path=str(stream_path),
         )
+        spawned: dict[str, Any] = {}
         try:
             with open(stream_path, "wb") as stdout, open(stderr_path, "wb") as stderr:
                 process = subprocess.Popen(
@@ -488,7 +512,10 @@ class ClaudeHeadless:
         else:
             self._children[job.run_id] = process
             record = replace(record, pid=process.pid)
-        self._save(record)
+            # Stamped just before the spawn, and kept apart from started_at, which the tick
+            # sets to its own clock once the run is in its ledger.
+            spawned[_SPAWNED_AT] = record.started_at.isoformat()
+        self._save(record, extras=spawned)
         return record
 
     def _argv(
@@ -510,16 +537,26 @@ class ClaudeHeadless:
             session_id,
         ]
 
-    def _is_alive(self, run: RunRecord) -> bool:
+    def _process_is_the_run(self, run: RunRecord) -> Optional[bool]:
+        """Whether ``run``'s process is alive and is the run's; None when it lives but cannot be told.
+
+        A process this instance spawned is its ``Popen``: alive until ``poll()`` says it has
+        exited, which also reaps it, and its pid names no other process while it is held.
+        Any other pid, of a run an earlier tick started, is the run's only when
+        :func:`liaise.workspace.pid_matches_start` says so against the spawn time kept in
+        ``record.json``, or the run's recorded start without one: a pid is reused once its
+        process is gone, after a reboot say, so a live pid alone proves nothing.
+        """
         process = self._children.get(run.run_id)
         if process is not None:
             return process.poll() is None
         if run.pid is None:
             return False
         # Imported here to keep processor free of an import-time dependency on workspace.
-        from liaise.workspace import pid_is_alive
+        from liaise.workspace import pid_matches_start
 
-        return pid_is_alive(run.pid)
+        spawned = _parse_time(self._raw_record(run.run_id).get(_SPAWNED_AT))
+        return pid_matches_start(run.pid, spawned or run.started_at)
 
     def _send_cancel(
         self,

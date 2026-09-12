@@ -20,6 +20,7 @@ from pathlib import Path
 
 import pytest
 
+from liaise import workspace as workspace_module
 from liaise.model import Health, Outcome, RunRecord, RunResult
 from liaise.processor import (
     CHILD_ENV_OVERRIDES,
@@ -404,23 +405,94 @@ def test_a_run_that_ignores_sigterm_is_killed_once_the_kill_grace_is_over(tmp_pa
             os.killpg(record.pid, signal.SIGKILL)
 
 
-def test_a_run_started_by_another_process_is_checked_by_its_pid(tmp_path):
-    processor = ClaudeHeadless(runs_dir=tmp_path / "runs")
-    alive = RunRecord(
-        run_id="r-alive",
-        case_id="pat-1",
-        subject="pat",
-        mode="fresh",
-        status="running",
-        started_at=T0,
-        pid=os.getpid(),
-    )
-    exited = subprocess.Popen([sys.executable, "-c", "pass"])
-    exited.wait()  # reaped, so its pid is gone
-    dead = replace(alive, run_id="r-dead", pid=exited.pid)
+#: A child that lives until its stdin closes, so it ends cleanly on every platform.
+_WAITS_FOR_STDIN = "import sys\nsys.stdin.read()\n"
+#: How long before a process started a record says its run did: a pid a later process was given.
+LONG_BEFORE = timedelta(hours=3)
 
-    assert processor.status(alive).status == "running"
-    assert processor.status(dead).status == "finished"
+
+def _waiting_child() -> subprocess.Popen:
+    """A process no run started, leading its own process group on POSIX, as a run does."""
+    group = {} if sys.platform == "win32" else {"start_new_session": True}
+    return subprocess.Popen([sys.executable, "-c", _WAITS_FOR_STDIN], stdin=subprocess.PIPE, **group)
+
+
+def _end(child: subprocess.Popen) -> None:
+    child.stdin.close()
+    child.wait(timeout=WAIT_S)
+
+
+def test_a_run_started_by_another_process_is_checked_by_its_pid_and_its_start(tmp_path, monkeypatch):
+    """S9 #1: a pid is the run's process only while that process started when the run did. A pid
+    given to a later process (after a reboot, say) is no run's; a live pid whose start cannot be
+    read is taken to be the run's, so its run stays in flight."""
+    processor = ClaudeHeadless(runs_dir=tmp_path / "runs")
+    spawned_at = datetime.now(timezone.utc)
+    child = _waiting_child()
+    try:
+        alive = RunRecord(
+            run_id="r-alive",
+            case_id="pat-1",
+            subject="pat",
+            mode="fresh",
+            status="running",
+            started_at=spawned_at,
+            pid=child.pid,
+        )
+        reused = replace(alive, run_id="r-reused", started_at=spawned_at - LONG_BEFORE)
+        exited = subprocess.Popen([sys.executable, "-c", "pass"])
+        exited.wait()  # reaped, so its pid is gone
+        dead = replace(alive, run_id="r-dead", pid=exited.pid)
+
+        assert processor.status(alive).status == "running"
+        assert processor.status(reused).status == "finished"
+        assert processor.status(dead).status == "finished"
+        monkeypatch.setattr(workspace_module, "process_started_at", lambda pid: None)
+        assert processor.status(replace(reused, run_id="r-unknown")).status == "running"
+    finally:
+        _end(child)
+
+
+def test_cancel_sends_nothing_to_a_pid_it_cannot_verify_as_the_runs(tmp_path, monkeypatch):
+    """S9 #1: a live pid whose start cannot be read may be another process's by now: the cancel
+    is recorded, and no signal is sent."""
+    processor = ClaudeHeadless(runs_dir=tmp_path / "runs")
+    child = _waiting_child()
+    try:
+        run = RunRecord(
+            run_id="r-unverified",
+            case_id="pat-1",
+            subject="pat",
+            mode="fresh",
+            status="running",
+            started_at=datetime.now(timezone.utc),
+            pid=child.pid,
+        )
+        monkeypatch.setattr(workspace_module, "process_started_at", lambda pid: None)
+
+        assert processor.cancel(run, mode="now").status == "running"
+
+        record = _raw_record(processor, "r-unverified")
+        assert "cancel_requested_at" in record and "cancel_signal" not in record
+    finally:
+        _end(child)
+
+
+def test_a_spawned_run_keeps_when_it_was_spawned_for_a_later_tick_to_verify_its_pid(tmp_path):
+    """S9 #1: the tick sets a run's start to its own clock, so the spawn time is kept apart."""
+    claude = fake_claude(tmp_path / "claude", scenario="hang", sleep_s=HANG_S)
+    processor = _processor(tmp_path, claude)
+    record = processor.start(_job(tmp_path))
+    try:
+        raw = _raw_record(processor)
+        assert datetime.fromisoformat(raw["spawned_at"]) == record.started_at
+        in_the_ledger = replace(record, started_at=record.started_at - LONG_BEFORE)
+        later_tick = _processor(tmp_path, claude)
+        assert later_tick.status(in_the_ledger).status == "running"  # verified by the spawn time
+        assert "spawned_at" in _raw_record(processor)  # kept across saves
+    finally:
+        processor.cancel(record, mode="now")
+    _wait_finished(processor, record)
 
 
 # ---- ClaudeHeadless: environment, preflight, configuration ----

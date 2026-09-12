@@ -9,16 +9,46 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+import shutil
+import subprocess
+import sys
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
 
-from liaise.workspace import SharedCheckout, pid_is_alive, workspace_for
+from liaise import workspace as workspace_module
+from liaise.workspace import (
+    PID_START_TOLERANCE,
+    SharedCheckout,
+    _parse_etime,
+    pid_is_alive,
+    pid_matches_start,
+    process_started_at,
+    workspace_for,
+)
 
 T0 = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
 LIVE_PID = os.getpid()
 DEAD_PID = 999999999  # not a real pid
+#: When this module was imported: after this process started, and early in its test session.
+IMPORTED_AT = datetime.now(timezone.utc)
+#: How long before this module's import the test process may have started: pytest's own start,
+#: and the collection of the modules before this one.
+SESSION_START_SLACK = timedelta(minutes=1)
+#: How far a start that is read may lie from one measured: ps counts whole seconds, and a child
+#: takes a moment to report itself.
+START_READ_MARGIN = timedelta(seconds=2)
+#: How long a test waits, at most, for a child it started to exit.
+CHILD_WAIT_S = 10.0
+#: A child that says its own pid and when it began, then waits for its stdin to close. Its own
+#: pid, since on Windows a venv's python.exe is a launcher whose child is the interpreter.
+_REPORTS_ITS_START = (
+    "import os, sys\n"
+    "from datetime import datetime, timezone\n"
+    "print(os.getpid(), datetime.now(timezone.utc).isoformat(), flush=True)\n"
+    "sys.stdin.read()\n"
+)
 
 
 @pytest.fixture
@@ -52,6 +82,83 @@ def test_pid_is_alive():
     assert not pid_is_alive(DEAD_PID)
     for not_a_pid in (0, -1, 2**40, True, "123", None, 1.5, [LIVE_PID]):
         assert not pid_is_alive(not_a_pid)
+
+
+# ---- when a process started, and whether a pid is still the process that started then (S9 #1) ----
+
+
+@pytest.mark.parametrize(
+    "text, elapsed",
+    [
+        ("00:07", timedelta(seconds=7)),
+        ("   12:34\n", timedelta(minutes=12, seconds=34)),
+        ("01:02:03", timedelta(hours=1, minutes=2, seconds=3)),
+        ("3-04:05:06", timedelta(days=3, hours=4, minutes=5, seconds=6)),
+        ("56-23:59:59", timedelta(days=56, hours=23, minutes=59, seconds=59)),
+    ],
+    ids=["mm:ss", "padded", "hh:mm:ss", "dd-hh:mm:ss", "the largest of each field"],
+)
+def test_the_elapsed_time_ps_prints_is_read_in_each_of_its_forms(text, elapsed):
+    assert _parse_etime(text) == elapsed
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["", "   ", "7", "07:", "3-05:06", "00:60", "60:00", "1-24:00:00", "ab:cd", "-00:07", "01:02:03:04", "00:07 later"],
+)
+def test_anything_else_is_no_elapsed_time(text):
+    assert _parse_etime(text) is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX: the start is read from ps")
+def test_the_start_of_this_process_is_read_within_its_test_session():
+    started = process_started_at(os.getpid())
+    assert started is not None
+    assert IMPORTED_AT - SESSION_START_SLACK <= started <= IMPORTED_AT + START_READ_MARGIN
+
+
+def test_the_start_of_a_child_is_read_within_seconds_of_when_it_began():
+    """On POSIX from ps, on Windows from GetProcessTimes."""
+    before = datetime.now(timezone.utc)
+    child = subprocess.Popen(
+        [sys.executable, "-c", _REPORTS_ITS_START], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    )
+    try:
+        pid, began = child.stdout.readline().split()
+        started = process_started_at(int(pid))
+    finally:
+        child.stdin.close()
+        child.wait(timeout=CHILD_WAIT_S)
+    assert started is not None
+    assert before - START_READ_MARGIN <= started <= datetime.fromisoformat(began) + START_READ_MARGIN
+
+
+def test_no_live_process_has_a_start():
+    assert process_started_at(DEAD_PID) is None
+    for not_a_pid in (0, -1, 2**40, True, "123", None, 1.5):
+        assert process_started_at(not_a_pid) is None
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="POSIX: the start is read from ps")
+def test_without_ps_a_start_cannot_be_read(monkeypatch):
+    monkeypatch.setattr(shutil, "which", lambda *args, **kwargs: None)
+    assert process_started_at(LIVE_PID) is None
+
+
+def test_a_live_pid_is_the_process_only_when_it_started_within_the_tolerance(monkeypatch):
+    second = timedelta(seconds=1)
+    monkeypatch.setattr(workspace_module, "process_started_at", lambda pid: T0)
+    assert pid_matches_start(LIVE_PID, T0) is True
+    assert pid_matches_start(LIVE_PID, T0 - PID_START_TOLERANCE) is True
+    assert pid_matches_start(LIVE_PID, T0 + PID_START_TOLERANCE) is True
+    assert pid_matches_start(LIVE_PID, T0 - PID_START_TOLERANCE - second) is False  # started later: another process
+    assert pid_matches_start(LIVE_PID, T0 + PID_START_TOLERANCE + second) is False
+    assert pid_matches_start(LIVE_PID, T0 - second, tolerance=timedelta(0)) is False
+    assert pid_matches_start(DEAD_PID, T0) is False
+
+    monkeypatch.setattr(workspace_module, "process_started_at", lambda pid: None)
+    assert pid_matches_start(LIVE_PID, T0) is None  # alive, and which process it is cannot be told
+    assert pid_matches_start(DEAD_PID, T0) is False
 
 
 # ---- the collision check ----

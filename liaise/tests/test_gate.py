@@ -156,6 +156,7 @@ LEAKS = {
     "macos-var-folders-path": ("local path", "The log is at " + "/var" + "/folders/xy/T/app.log"),
     "env-file-path": ("env file", "The key is in " + "app/" + ".env" + "."),
     "private-key": ("private key", "-----BEGIN " + "OPENSSH PRIVATE KEY" + "-----\nb3BlbnNzaC1rZXktdjE\n"),
+    "pgp-private-key": ("private key", "-----BEGIN " + "PGP PRIVATE KEY BLOCK" + "-----\n\nlQOYBGZ\n"),
     "leak-term": ("leak term", "This is on the Example-Internal board."),
 }
 
@@ -236,6 +237,8 @@ def test_leak_terms_match_whole_words_only(text):
         "Copy the " + ".env" + " file from the template.",
         "The direnv file is " + "app/" + ".env" + "rc",
         "-----BEGIN " + "PUBLIC KEY" + "-----",
+        "-----BEGIN " + "PGP PUBLIC KEY BLOCK" + "-----",
+        "-----BEGIN " + "PGP SIGNATURE" + "-----",
         "Call " + "hf_" + "hub_download() for the weights.",
         "Hugs and " + "xox" + "o-xoxo from the team.",
         "The " + "ghp_" + "\n" + "prefix alone is no token.",

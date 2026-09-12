@@ -66,7 +66,7 @@ digest notes: 1
 
 - **Stamps.** `finished` is normal. `running` means a tick is in progress; ticks are short in 0.1, since runs are detached. `interrupted` means a tick started and its process died before it could stamp its end (a shutdown, the job unloaded). A `run_started_at` older than a few schedule intervals (2 minutes by default) means the scheduled job has stopped: check `liaise schedule status`.
 - **Holds.** Each hold's scope, mode, who set it (`operator`, or `auto:<error class>` when `liaise` set it itself) and why.
-- **Runs in flight.** The heartbeat is the last time the run wrote to its stream. The tick stops a run past its `timeout_minutes` (60 by default) and hands the case to the owner as `timed_out`.
+- **Runs in flight.** The heartbeat is the last time the run wrote to its stream. The tick stops a run past its `timeout_minutes` (60 by default) and hands the case to the owner as `timed_out`. It signals a run's process only once it has verified, by the process's start time, that it is the one `liaise` started; one it cannot verify is never signalled, and the run is given up 10 minutes after the stop. A run whose pid names another process by now (after a reboot) is collected at once, usually as `crashed`.
 - **Cases by state**, per subject, with today's dispatches against the daily cap. `needs-owner` is the owner's to-do list.
 - **Unrouted.** Messages that matched a binding but could not be routed, with the reason; see "Why an issue isn't moving".
 - **Drafts waiting for the operator.** Messages `liaise` kept instead of sending: draft reply mode, a gate divert (a leak, deslop, no handle to mention), an escalation, held effects, a failed send. Nothing sends them later: the owner sends what they want by hand. `liaise case show <case>` prints each draft's full text.
@@ -74,7 +74,7 @@ digest notes: 1
 
 ## A notification from liaise
 
-Notifications carry no case text. A push to the owner's ntfy topic, which anyone who knows the topic's name can read, names only the subject, the case, the event (an escalation, a diverted or failed message, a failed deploy, a lost run, an error, the daily cap) and its cause (an error class, the gate filter that diverted a message, a deploy's exit code), and ends `see liaise case show <case>`. Read the details with that command: the drafts with their text, the escalation's reason, the failed deploy's output, and the case's latest entries.
+Notifications carry no case text. A push to the owner's ntfy topic, which anyone who knows the topic's name can read, names only the subject, the case, the event (an escalation, a diverted or failed message, a failed deploy, a lost run, an error, the daily cap) and its cause (an error class, the gate filter that diverted a message, a deploy's exit code), and ends `see liaise case show <case>`. Its title is fixed text with the subject or the case id, never a person's name or address, nor an issue's title. Read the details with that command: the drafts with their text, the escalation's reason, the failed deploy's output, and the case's latest entries.
 
 ## Holds
 
@@ -128,7 +128,7 @@ Start with `liaise run --once --dry-run --subject <slug>`: its plan has a line p
 - **A workspace conflict.** `workspace_conflict: live session <name> in <path>`: a Claude Code session, probably the owner's, is working in the checkout; the case tries again in 10 minutes. `the checkout is locked by run <id>`: another run of the subject holds it.
 - **Not ready yet.** `not ready (waiting, 4m to go)` is the quiet window; `paused (partner asked to wait)` is a `#wait#`.
 - **`needs-owner`.** It waits on the owner. Read the case with `liaise case show <case>` (its drafts, the escalation's reason, a failed deploy's output, its latest entries), act on what it needs, then move it on with `liaise case set-state <case> intake` (see "Moving a case on"). Relabelling the issue, the 0.0.x way, changes nothing: the next tick overwrites the label. A case found `working` with no run in flight lands here too, and the owner hears `run lost`.
-- **Its issue is closed.** `its issue is closed`: a case whose issue was closed is neither started nor nudged. Reopening the issue starts it again, once `liaise` reads it: a closed case's issue is read at most once an hour (`read again in <time>` on the plan line). `its issue could not be read` three ticks in a row sends the case to `needs-owner`, and the owner is told once.
+- **Its issue is closed.** `its issue is closed`: a case whose issue was closed is neither started nor nudged. Reopening the issue starts it again, once `liaise` reads it: a closed case's issue is read at most once an hour (`read again in <time>` on the plan line). `its issue could not be read`: the case waits for the next tick. Only reads that fail for good count (the issue not found, or not permitted): three in a row send the case to `needs-owner`, and the owner is told once. A network that is down or a login that expired never does.
 - **Nothing happens at all.** An old `run_started_at` in `liaise status` means the scheduled job stopped (`liaise schedule status`); `interrupted` means its last tick died. `liaise schedule status` saying `installed (outdated: re-run liaise schedule install)` means the job was installed by 0.0.x and kills the runs its ticks start: install it again.
 
 ## Moving a case on

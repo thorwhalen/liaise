@@ -10,6 +10,7 @@ acquaint is made unimportable, so no test reads real people records.
 from __future__ import annotations
 
 import copy
+import functools
 import json
 import os
 import re
@@ -25,15 +26,17 @@ import pytest
 from correspond.errors import ChannelError
 
 from liaise import tick as tick_module
+from liaise import workspace as workspace_module
 from liaise.cases import case_show_lines, set_case_state
 from liaise.config import ConfigError, GlobalConfig
+from liaise.gate import Divert
 from liaise.github import FakeGitHub, Issue
 from liaise.holds import hold
 from liaise.ledger import Ledger
 from liaise.model import Health, LedgerEntry, Outcome, RunRecord, RunResult
 from liaise.notify import NOTICE_DIVERTED, NOTICE_SEND_FAILED
 from liaise.outcomes import OUTCOME_SCHEMA
-from liaise.processor import RECORD_FILE, ClaudeHeadless, EchoProcessor
+from liaise.processor import RECORD_FILE, STREAM_FILE, ClaudeHeadless, EchoProcessor
 from liaise.subjects import BudgetPolicy, Delivery, Policy, ProcessorConfig, Subject, Workspace
 from liaise.testing import FakeGitHubChannel, demo_registry
 from liaise.tests._fake_claude import fake_claude
@@ -55,9 +58,9 @@ from liaise.tick import (
     run_stamps,
     status_lines,
 )
-from liaise.workspace import SharedCheckout
+from liaise.workspace import PID_START_TOLERANCE, SharedCheckout, pid_is_alive
 
-T0 = datetime(2026, 9, 11, 9, 0, tzinfo=timezone.utc)
+T0 =datetime(2026, 9, 11, 9, 0, tzinfo=timezone.utc)
 NOW = T0 + timedelta(hours=1)
 LATER = NOW + timedelta(minutes=5)
 SLUG = "example-app"
@@ -97,15 +100,18 @@ def no_real_acquaint(monkeypatch):
     monkeypatch.setitem(sys.modules, "acquaint", None)
 
 
-def _subject(workspace: Path, *, reply_mode="direct", delivery=None, budget=None) -> Subject:
+def _subject(
+    workspace: Path, *, reply_mode="direct", delivery=None, budget=None, person="pat", login="pat"
+) -> Subject:
+    """The subject every test ticks: ``person``, GitHub login ``login``, is its partner."""
     return Subject(
         slug=SLUG,
         bindings=(BINDING,),
         policy=Policy(
-            people={"github:pat": "pat"},
-            roles={"pat": "partner"},
+            people={f"github:{login}": person},
+            roles={person: "partner"},
             relays=("github:example-bot",),
-            claim_labels={"partner:pat": "pat"},
+            claim_labels={"partner:pat": person},
             default_reply_mode=reply_mode,
             budget=budget or BudgetPolicy(),
         ),
@@ -154,6 +160,10 @@ class World:
     processor: EchoProcessor = field(default_factory=lambda: EchoProcessor(results={CASE_1: ASKED}))
     store: dict = field(default_factory=dict)
     notes: list = field(default_factory=list)
+    #: The partner the subject knows (their person id and GitHub login), and their issues' title.
+    person: str = "pat"
+    login: str = "pat"
+    issue_title: str = "Export"
 
     @property
     def ledger(self) -> Ledger:
@@ -180,15 +190,13 @@ class World:
         options.update(kwargs)
         return run_once({SLUG: self.subject}, self.store, **options)
 
-    def issue(self, number=12, *, author="pat", minutes=0, labels=("partner:pat",)):
+    def issue(self, number=12, *, author=None, minutes=0, labels=("partner:pat",)):
+        author = self.login if author is None else author
         created = T0 + timedelta(minutes=minutes)
         body = "The export drops the last row."
-        self.github.add_issue(
-            REPO, number, author=author, title="Export", body=body, labels=labels, created_at=created
-        )
-        self.labeler.seed(
-            Issue(REPO, number, "Export", author, body, created, created, "open", labels=tuple(labels))
-        )
+        title = self.issue_title
+        self.github.add_issue(REPO, number, author=author, title=title, body=body, labels=labels, created_at=created)
+        self.labeler.seed(Issue(REPO, number, title, author, body, created, created, "open", labels=tuple(labels)))
 
     def labels(self, number=12):
         return self.labeler.get_issue(REPO, number).labels
@@ -1352,12 +1360,17 @@ def _wait_stopped(processor, run) -> None:
         time.sleep(STOP_POLL_S)
 
 
-def _stop_runs(world) -> None:
-    """Stop every run the world's ClaudeHeadless started, so no fake claude outlives the test."""
+def _stop_runs(world, *, processor=None) -> None:
+    """Stop every run a ClaudeHeadless started, so no fake claude outlives the test.
+
+    ``processor`` is the one that spawned them, the world's when None: it holds each run's
+    process, so its cancel needs no pid to be verified.
+    """
+    processor = processor if processor is not None else world.processor
     for run in world.ledger.runs():
         going = replace(run, status="running")
-        world.processor.cancel(going, mode="now")
-        _wait_stopped(world.processor, going)
+        processor.cancel(going, mode="now")
+        _wait_stopped(processor, going)
 
 
 def test_a_run_first_seen_past_the_lost_run_deadline_is_cancelled_not_given_up(world):
@@ -1437,8 +1450,10 @@ def test_a_cancelled_run_that_stopped_is_collected_past_the_deadline_not_given_u
 def _seed_inbox_case(world) -> str:
     """A case reported through the web inbox alone, working on a run no tick has collected."""
     ledger = world.ledger
-    case = ledger.new_case(SLUG, "webinbox:example-site#r1", reporter="pat", at=T0)
-    message = LedgerEntry(at=T0, kind="message", actor="pat", grade="bound", permission="report", text="No answer.")
+    case = ledger.new_case(SLUG, "webinbox:example-site#r1", reporter=world.person, at=T0)
+    message = LedgerEntry(
+        at=T0, kind="message", actor=world.person, grade="bound", permission="report", text="No answer."
+    )
     ledger.append(case.id, message)
     ledger.transition(case.id, "working", at=NOW, actor="liaise", reason="seeded")
     ledger.save_run(RunRecord(run_id=f"{case.id}-r1", case_id=case.id, subject=SLUG, mode="fresh", status="running", started_at=NOW))
@@ -1486,7 +1501,7 @@ def _poisoned_send_failure(world, tmp_path, monkeypatch):
 def _poisoned_deploy_output(world, tmp_path, monkeypatch):
     body = "import sys\nprint('push refused: ' + " + repr(_poison("DeployOutput")) + ")\nsys.exit(2)\n"
     script = write_executable_script(tmp_path / "deploy", body)
-    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="issue", command=script.as_posix()))
+    world.subject = replace(world.subject, delivery=Delivery(kind="deploy", per="issue", command=script.as_posix()))
     world.processor = EchoProcessor(results={CASE_1: DELIVERED})
     world.issue()
     world.tick()
@@ -1495,7 +1510,7 @@ def _poisoned_deploy_output(world, tmp_path, monkeypatch):
 
 
 def _poisoned_delivery_exception(world, tmp_path, monkeypatch):
-    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="issue", command="deploy"))
+    world.subject = replace(world.subject, delivery=Delivery(kind="deploy", per="issue", command="deploy"))
     world.processor = EchoProcessor(results={CASE_1: DELIVERED})
     world.issue()
     world.tick()
@@ -1584,16 +1599,29 @@ POISONED_PATHS = {
 }
 
 
+#: The partner on every poisoned path: a person id, a GitHub login and an issue title that no
+#: notification may carry (S9 #2), each built by concatenation.
+POISONED_PERSON = "quinn" + "PersonMark"
+POISONED_LOGIN = "quinn" + "-login-mark"
+POISONED_ISSUE_TITLE = "Quinn's " + "IssueTitleMark"
+
+
 @pytest.mark.parametrize("path", sorted(POISONED_PATHS))
 def test_no_operator_notification_carries_what_the_case_holds(world, tmp_path, monkeypatch, path):
-    """S8 #2: an ntfy topic is readable by anyone who knows its name. Every notification names
-    the case and points at `liaise case show`, which shows what the notification left out."""
+    """S8 #2, S9 #2: an ntfy topic is readable by anyone who knows its name. Every notification
+    names the case and points at `liaise case show`, which shows what the notification left out.
+    Its title is held to that too, and neither title nor body names the reporter, their address,
+    or their issue's title."""
+    world.person, world.login, world.issue_title = POISONED_PERSON, POISONED_LOGIN, POISONED_ISSUE_TITLE
+    world.subject = _subject(world.workspace, person=POISONED_PERSON, login=POISONED_LOGIN)
     case_id, kept = POISONED_PATHS[path](world, tmp_path, monkeypatch)
 
+    assert world.case(case_id).reporter == POISONED_PERSON  # the poison is where a notice could take it from
     assert world.notes, f"the {path} path told the operator nothing"
+    marks = (POISON_PREFIX, POISONED_PERSON, POISONED_LOGIN, POISONED_ISSUE_TITLE, str(world.workspace.resolve()))
     for title, body, _ in world.notes:
-        assert POISON_PREFIX not in title and POISON_PREFIX not in body, (title, body)
-        assert str(world.workspace.resolve()) not in body
+        for mark in marks:
+            assert mark not in title and mark not in body, (mark, title, body)
     assert any(f"see liaise case show {case_id}" in body for _, body, _ in world.notes)
     shown = "\n".join(case_show_lines(world.store, case_id))
     for poison in kept:
@@ -1680,14 +1708,14 @@ def test_state_reads_failing_the_limit_in_a_row_hand_the_case_to_the_owner_once(
 
 
 def test_a_state_read_that_succeeds_starts_the_failure_count_again(world):
-    """S8 #3: the limit counts failures in a row."""
+    """S8 #3: the limit counts failures in a row. S9 #3: failures for good, which alone count."""
     _closed_after_intake(world)
     read = world.github.read
     failing = [True]
 
     def flaky(ref, **kwargs):
         if failing[0]:
-            raise ChannelError("could not reach GitHub", kind="network", retryable=True)
+            raise ChannelError("no issue #12 that the gh account can see", kind="not_found")
         return read(ref, **kwargs)
 
     world.github.read = flaky
@@ -1701,3 +1729,229 @@ def test_a_state_read_that_succeeds_starts_the_failure_count_again(world):
 
     assert world.case().state == "intake"
     assert _titled(world, "cannot be read") == 0
+
+
+# ---- S9: the fixes from the adversarial review of the S8 fixes ----
+
+#: A gap no tick ran through: a reboot, or a laptop asleep.
+LONG_GAP = timedelta(hours=3)
+#: How long a run that ended inside its wall clock ran, or wrote its stream for.
+RAN_FOR = timedelta(minutes=5)
+#: How long a test gives a signal it checks was never sent to take effect: a signal is
+#: delivered at once, so this is margin.
+SIGNAL_SETTLE_S = 0.5
+#: How long a test waits, at most, for a process it started to exit once asked.
+BYSTANDER_WAIT_S = 10.0
+#: More state reads failing for a while than the limit counts to.
+TRANSIENT_READ_FAILURES = STATE_READ_FAILURE_LIMIT + 2
+#: A process that lives until its stdin closes, so it ends cleanly on every platform.
+_WAITS_FOR_STDIN = "import sys\nsys.stdin.read()\n"
+
+
+class PidProcessor(EchoProcessor):
+    """Starts runs that keep going, their process recorded as ``pid``: runs a tick started before a reboot."""
+
+    def __init__(self, pid, **kwargs):
+        super().__init__(**kwargs)
+        self.pid = pid
+
+    def start(self, job):
+        return replace(super().start(job), status="running", ended_at=None, pid=self.pid)
+
+    def status(self, run, *, persist=True):
+        return replace(run, status="running", ended_at=None)
+
+
+class EndedEarly(EchoProcessor):
+    """An EchoProcessor whose runs ended RAN_FOR after the start the tick recorded."""
+
+    def status(self, run, *, persist=True):
+        return replace(run, status="finished", ended_at=run.started_at + RAN_FOR)
+
+
+def _bystander() -> subprocess.Popen:
+    """A process the test starts that is no run's: what a recorded pid can name after a reboot.
+
+    On POSIX it leads its own process group, as a run does, so a cancel sent to its pid would
+    reach it.
+    """
+    group = {} if sys.platform == "win32" else {"start_new_session": True}
+    return subprocess.Popen([sys.executable, "-c", _WAITS_FOR_STDIN], stdin=subprocess.PIPE, **group)
+
+
+def _end(process: subprocess.Popen) -> None:
+    process.stdin.close()
+    try:
+        process.wait(timeout=BYSTANDER_WAIT_S)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+
+
+def test_a_pid_another_process_holds_by_now_is_never_signalled_and_its_run_is_collected(world):
+    """S9 #1: a run first seen past its wall clock after a long gap. Its recorded pid now names a
+    process that started long after the run did. The tick sends that process nothing, and collects
+    the run, whose own process is gone, as crashed: it stopped writing well inside its wall clock."""
+    assert abs(datetime.now(timezone.utc) - NOW) > PID_START_TOLERANCE  # the bystander starts apart from the run
+    bystander = _bystander()
+    try:
+        world.processor = PidProcessor(bystander.pid, results={CASE_1: ASKED})
+        world.issue()
+        assert world.tick().dispatched == (RUN_1,)
+        runs_dir = world.tmp_path / "state" / "runs"
+        stream = runs_dir / RUN_1 / STREAM_FILE
+        stream.parent.mkdir(parents=True)
+        stream.write_text(json.dumps({"type": "system", "subtype": "init"}) + "\n")
+        last_write = (NOW + RAN_FOR).timestamp()
+        os.utime(stream, (last_write, last_write))
+        world.processor = ClaudeHeadless(runs_dir=runs_dir, auth_check=None)  # a later tick is another process
+
+        report = world.tick(NOW + LONG_GAP)
+
+        assert report.collected == (RUN_1,)
+        case = world.case()
+        assert (case.state, _collected_error(case)) == ("needs-owner", "crashed")
+        assert _titled(world, "crashed") == 1
+        record = json.loads((runs_dir / RUN_1 / RECORD_FILE).read_text())
+        assert "cancel_requested_at" not in record and "cancel_signal" not in record
+        with pytest.raises(subprocess.TimeoutExpired):
+            bystander.wait(timeout=SIGNAL_SETTLE_S)  # still alive: nothing was sent to it
+    finally:
+        _end(bystander)
+
+
+def test_a_hung_run_whose_process_a_later_tick_verifies_is_still_cancelled(world):
+    """S9 #1: the process a run's pid names, started when the run was spawned, is the run's: a
+    later tick, which did not spawn it, still stops it past its wall clock."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
+    runs_dir = world.tmp_path / "state" / "runs"
+    claude = fake_claude(world.tmp_path / "claude", scenario="hang", sleep_s=HANG_S)
+    spawner = ClaudeHeadless(claude_bin=claude, runs_dir=runs_dir, auth_check=None)
+    world.processor = spawner
+    world.issue()
+    try:
+        assert world.tick().dispatched == (RUN_1,)
+        world.processor = ClaudeHeadless(claude_bin=claude, runs_dir=runs_dir, auth_check=None)
+        cancelled_at = NOW + timedelta(minutes=31)
+
+        late = world.tick(cancelled_at)
+
+        assert late.collected == ()
+        sent = "terminate" if sys.platform == "win32" else "SIGTERM"
+        assert json.loads((runs_dir / RUN_1 / RECORD_FILE).read_text())["cancel_signal"] == sent
+        run = world.ledger.get_run(RUN_1)
+        assert run.cancel_sent_at == cancelled_at
+        _wait_stopped(spawner, run)  # the spawner reaps what the cancel stopped
+
+        done = world.tick(cancelled_at + timedelta(minutes=2))
+
+        assert done.collected == (RUN_1,)
+        case = world.case()
+        assert (case.state, _collected_error(case)) == ("needs-owner", "timed_out")
+    finally:
+        _stop_runs(world, processor=spawner)
+
+
+def test_a_run_whose_start_cannot_be_read_is_never_signalled_and_is_given_up_at_the_deadline(world, monkeypatch):
+    """S9 #1: a live pid whose start cannot be read may be another process's, so it is sent
+    nothing. Its cancel is recorded all the same, and the run keeps its checkout until the
+    lost-run deadline after that cancel, when it is given up."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
+    runs_dir = world.tmp_path / "state" / "runs"
+    record_path = runs_dir / RUN_1 / RECORD_FILE
+    claude = fake_claude(world.tmp_path / "claude", scenario="hang", sleep_s=HANG_S)
+    spawner = ClaudeHeadless(claude_bin=claude, runs_dir=runs_dir, auth_check=None)
+    world.processor = spawner
+    checkout = SharedCheckout(world.workspace, lock_dir=world.tmp_path / "state" / "locks")
+    world.issue()
+    try:
+        assert world.tick().dispatched == (RUN_1,)
+        monkeypatch.setattr(workspace_module, "process_started_at", lambda pid: None)
+        world.processor = ClaudeHeadless(runs_dir=runs_dir, auth_check=None)
+        cancelled_at = NOW + timedelta(minutes=31)
+
+        late = world.tick(cancelled_at)
+
+        assert late.collected == ()
+        assert world.ledger.get_run(RUN_1).cancel_sent_at == cancelled_at
+        assert "cancel_signal" not in json.loads(record_path.read_text())
+        assert world.tick(cancelled_at + LOST_RUN_DEADLINE - timedelta(minutes=1)).collected == ()
+        assert checkout.holder()["run_id"] == RUN_1
+
+        given_up = world.tick(cancelled_at + LOST_RUN_DEADLINE)
+
+        assert given_up.collected == (RUN_1,)
+        assert any("lost-run deadline" in line for line in given_up.plan_lines)
+        case = world.case()
+        assert (case.state, _collected_error(case)) == ("needs-owner", "timed_out")
+        assert "cancel_signal" not in json.loads(record_path.read_text())
+        assert pid_is_alive(world.ledger.get_run(RUN_1).pid)  # never signalled: it still hangs
+    finally:
+        _stop_runs(world, processor=spawner)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        ChannelError("could not reach GitHub", kind="network", retryable=True),
+        ChannelError("gh is not logged in", kind="auth"),
+        RuntimeError("the adapter broke"),
+    ],
+    ids=["network", "auth", "unexpected"],
+)
+def test_state_reads_failing_for_a_while_never_hand_the_case_to_the_owner(world, error):
+    """S9 #3: minutes offline must not send every ready GitHub case to the owner. Only a read that
+    failed for good (the issue not found, or not permitted) counts toward the limit."""
+    world.issue()
+    hold(world.ledger, f"subject:{SLUG}", mode="block", now=T0)
+    world.tick()
+    world.ledger.clear_hold(f"subject:{SLUG}")
+    read = world.github.read
+
+    def failing(ref, **kwargs):
+        if "#" in ref.id:
+            raise error
+        return read(ref, **kwargs)
+
+    world.github.read = failing
+    ticks = [world.tick(LATER + timedelta(minutes=2 * index)) for index in range(TRANSIENT_READ_FAILURES)]
+
+    assert all(report.problems and report.dispatched == () for report in ticks)
+    assert world.case().state == "intake"
+    assert world.ledger.get_issue_check(CASE_1).failures == 0
+    assert _titled(world, "cannot be read") == 0
+    del world.github.read
+    assert world.tick(LATER + timedelta(minutes=2 * TRANSIENT_READ_FAILURES)).dispatched == (RUN_1,)
+
+
+def test_a_run_that_ended_inside_its_wall_clock_keeps_its_outcomes_however_late_it_is_collected(world):
+    """S9 #4: whether a run timed out is judged at its end, not at the tick that first collects it."""
+    world.processor = EndedEarly(results={CASE_1: ASKED})
+    world.issue()
+    world.tick()
+
+    report = world.tick(NOW + LONG_GAP)
+
+    assert report.collected == (RUN_1,)
+    case = world.case()
+    assert (case.state, _collected_error(case)) == ("needs-partner", None)
+    assert [ref.encoded for ref, _ in world.github.sent] == [ISSUE_12]
+    assert _titled(world, "timed_out") == 0
+
+
+def test_a_filter_with_no_name_is_named_by_its_type_so_what_it_is_bound_to_stays_out_of_the_notice(world):
+    """S9 #5: a filter's repr holds what it was bound to, a local path say, and the name of the
+    filter that diverted a message reaches the operator's notification."""
+    rules_path = "/Us" + "ers/someone/liaise/outbound-rules.toml"
+
+    def refuse_by_rules(rules, outbound, ctx):
+        return Divert("refused by the rules")
+
+    world.processor = EchoProcessor(results={CASE_1: _reply_with("Fixed.")})
+    world.issue()
+    world.tick()
+    world.tick(LATER, outbound_filters=(functools.partial(refuse_by_rules, rules_path),))
+
+    ((_, body, _),) = [note for note in world.notes if "waits for you" in note[0]]
+    assert "cause: partial" in body
+    assert all(rules_path not in title and rules_path not in body for title, body, _ in world.notes)

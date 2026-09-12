@@ -14,7 +14,7 @@ import pytest
 
 from liaise.gate import Outbound
 from liaise.model import OUTCOME_KINDS, Case, Outcome
-from liaise.notify import NOTICE_ESCALATION, NOTICE_NO_CHANNEL, notice_body
+from liaise.notify import NOTICE_ESCALATION, NOTICE_NO_CHANNEL, notice_body, notice_title
 from liaise.outcomes import (
     OUTCOME_SCHEMA,
     REQUIRED_FIELD_BY_KIND,
@@ -340,7 +340,9 @@ def test_a_web_inbox_case_with_no_address_to_write_to_becomes_a_draft_for_the_op
             reason="no channel to reach pat",
         ),
     )
-    assert (notify.title, notify.priority) == ("no channel to reach pat", "high")
+    # S9 #2: the title names the case, never the person, as the draft's reason may.
+    assert (notify.title, notify.priority) == ("no channel to reach the reporter of pat-1", "high")
+    assert notify.title == notice_title(NOTICE_NO_CHANNEL, subject="pat", case_ids=("pat-1",))
     assert notify.body == notice_body(NOTICE_NO_CHANNEL, subject="pat", case_ids=("pat-1",), cause="ask")
     assert "One question" not in notify.body  # S8 #2: the draft stays on the case
     assert transition == Transition("pat-1", "needs-partner", "ask")

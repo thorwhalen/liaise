@@ -29,11 +29,12 @@ before sending it.
 channel liaise can post into (GitHub, in v0.1). A case with none, such as one reported
 through a web inbox, is answered at the reporter's notify address when that is on a
 channel that can write to a person (email). Failing both, the message becomes a draft
-for the operator, with a ``no channel to reach <person>`` notification.
+for the operator, held for ``no channel to reach <person>``, and the operator is notified.
 
-**What the operator is told.** A :class:`NotifyOperator` body comes from
-:func:`liaise.notify.notice_body`: the case and the event, never the draft or the reason
-the agent wrote, which stay on the case for ``liaise case show``.
+**What the operator is told.** A :class:`NotifyOperator`'s title and body come from
+:func:`liaise.notify.notice_title` and :func:`liaise.notify.notice_body`: the case and the
+event, never the reporter, the draft or the reason the agent wrote, which stay on the case
+for ``liaise case show``.
 """
 
 from __future__ import annotations
@@ -48,7 +49,12 @@ from correspond.model import ConversationRef
 
 from liaise.gate import Outbound
 from liaise.model import CASE_STATES, OUTCOME_KINDS, Case, Outcome, require_one_of
-from liaise.notify import NOTICE_ESCALATION, NOTICE_NO_CHANNEL, notice_body
+from liaise.notify import (
+    NOTICE_ESCALATION,
+    NOTICE_NO_CHANNEL,
+    notice_body,
+    notice_title,
+)
 from liaise.subjects import Subject
 
 #: Channels whose conversations liaise posts into. A web inbox has no writer.
@@ -351,8 +357,8 @@ def plan_outcomes(
     the case's first conversation on one of ``sending_channels``. Failing that, they go
     to the reporter's first notify address on one of ``address_channels`` (see
     :meth:`~liaise.subjects.Subject.notify_address_for`). Failing both, each becomes a
-    :class:`StoreDraft` with a ``no channel to reach <person>`` :class:`NotifyOperator`.
-    ``now`` stamps the drafts.
+    :class:`StoreDraft` held for ``no channel to reach <person>``, with a
+    :class:`NotifyOperator` that names the case, not the person. ``now`` stamps the drafts.
 
     Raises ``ValueError`` for an outcome kind outside the vocabulary.
     """
@@ -389,16 +395,15 @@ def plan_outcomes(
 
     def send(outcome: Outcome) -> list[Action]:
         if ref is None:
-            headline = f"no channel to reach {person}"
-            body = notice_body(
-                NOTICE_NO_CHANNEL,
-                subject=case.subject,
-                case_ids=(case.id,),
-                cause=outcome.kind,
-            )
+            notice = dict(subject=case.subject, case_ids=(case.id,), cause=outcome.kind)
             return [
-                draft(outcome, reason=headline),
-                NotifyOperator(headline, body, priority=DFLT_OPERATOR_PRIORITY),
+                # The draft's reason names the person: it stays on the case.
+                draft(outcome, reason=f"no channel to reach {person}"),
+                NotifyOperator(
+                    notice_title(NOTICE_NO_CHANNEL, **notice),
+                    notice_body(NOTICE_NO_CHANNEL, **notice),
+                    priority=DFLT_OPERATOR_PRIORITY,
+                ),
             ]
         return [
             Send(
@@ -422,13 +427,12 @@ def plan_outcomes(
         elif kind == "reply":
             actions += send(outcome)
         elif kind == "escalate":
+            notice = dict(subject=case.subject, case_ids=(case.id,))
             actions += [
                 draft(outcome, reason=outcome.reason),
                 NotifyOperator(
-                    f"{case.id} needs you",
-                    notice_body(
-                        NOTICE_ESCALATION, subject=case.subject, case_ids=(case.id,)
-                    ),
+                    notice_title(NOTICE_ESCALATION, **notice),
+                    notice_body(NOTICE_ESCALATION, **notice),
                     priority=DFLT_OPERATOR_PRIORITY,
                 ),
                 transition("needs-owner", outcome),

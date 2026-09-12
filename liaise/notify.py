@@ -9,7 +9,9 @@ it, so :func:`notice_body` is the only builder of a notification's body. It name
 subject, the case, the event and what liaise calls its cause (an error class, a gate
 filter, an exit code), and points at ``liaise case show``. It never carries what an agent
 wrote (a draft, a reason, a summary), a message, or a command's output: those stay on the
-case, where the operator reads them on their own machine.
+case, where the operator reads them on their own machine. :func:`notice_title` is the only
+builder of a title, which goes out with the body: fixed text, the subject's slug and the
+case ids, never a person's name or address, an issue's title or a report's subject.
 """
 
 from __future__ import annotations
@@ -18,9 +20,11 @@ import os
 import urllib.error
 import urllib.request
 from collections.abc import Iterable
+from types import MappingProxyType
 from typing import Optional
 
 from liaise.config import DFLT_NTFY_TOPIC_ENV
+from liaise.errors import ERROR_CLASSES
 from liaise.model import require_one_of
 
 #: M-4: this used to be a second, independent definition of the same default
@@ -59,10 +63,61 @@ NOTICE_EVENTS = (
     NOTICE_DAILY_CAP,
     NOTICE_ISSUE_UNREADABLE,
 )
+#: Each event's notification title, in :func:`notice_title`'s fields: ``{cases}`` (the case
+#: ids, else the subject's slug), ``{subject}`` (the slug) and, for an error alone,
+#: ``{error_class}``. Nothing else ever fills a title.
+NOTICE_TITLES = MappingProxyType(
+    {
+        NOTICE_ESCALATION: "{cases} needs you",
+        NOTICE_NO_CHANNEL: "no channel to reach the reporter of {cases}",
+        NOTICE_DIVERTED: "liaise: a draft for {cases} waits for you",
+        NOTICE_SEND_FAILED: "liaise: a message for {cases} was not sent",
+        NOTICE_EFFECTS_HELD: "liaise: {cases}'s effects are held",
+        NOTICE_DEPLOY_FAILED: "liaise: {cases} landed but did not deploy",
+        NOTICE_DELIVERY_FAILED: "liaise: delivering {cases} failed",
+        NOTICE_RUN_LOST: "liaise: {cases} run lost",
+        NOTICE_RUN_CANCELLED: "liaise: {cases}'s run was cancelled",
+        NOTICE_ERROR: "liaise: {cases} {error_class}",
+        NOTICE_START_REFUSED: "liaise: {cases} needs you before work starts",
+        NOTICE_DAILY_CAP: "liaise: {subject} reached its daily cap",
+        NOTICE_ISSUE_UNREADABLE: "liaise: {cases}'s issue cannot be read",
+    }
+)
 #: Where a notification points the operator for what it leaves out: each case it names,
 #: or the status when it names none.
 CASE_SHOW_POINTER = "see liaise case show {case_id}"
 STATUS_POINTER = "see liaise status"
+
+
+def notice_title(
+    event: str,
+    *,
+    subject: str,
+    case_ids: Iterable[str] = (),
+    cause: Optional[str] = None,
+) -> str:
+    """The title of an operator notification about ``event``: fixed text, the slug, the case ids.
+
+    A title is pushed with its body, and is held to the body's rule and to a narrower one:
+    it never names a person or an address, an issue's title or a report's subject, whatever
+    the event. It is :data:`NOTICE_TITLES`'s text for ``event``, filled with the case ids,
+    or the subject's slug without any. ``cause`` is the one :func:`notice_body` gets: a title
+    names it only for :data:`NOTICE_ERROR`, where it must be one of
+    :data:`liaise.errors.ERROR_CLASSES`, and ignores it for every other event.
+
+    >>> notice_title(NOTICE_ERROR, subject="example-app", case_ids=["example-app-1"],
+    ...     cause="timed_out")
+    'liaise: example-app-1 timed_out'
+
+    Raises ``ValueError`` for an event outside :data:`NOTICE_EVENTS`, and for an error whose
+    cause is not an error class.
+    """
+    require_one_of(event, NOTICE_EVENTS, what="notice event")
+    cases = ", ".join(dict.fromkeys(case_ids)) or subject
+    fields = {"cases": cases, "subject": subject}
+    if event == NOTICE_ERROR:
+        fields["error_class"] = require_one_of(cause, ERROR_CLASSES, what="error class")
+    return NOTICE_TITLES[event].format(**fields)
 
 
 def notice_body(

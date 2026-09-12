@@ -6,9 +6,12 @@ labels::
 
     1. intake     each subject's bindings, through correspond (liaise.intake)
     2. reconcile  each run the tick has not collected: cancelled for a cancel hold or its
-                  wall clock, refreshed, and collected once finished, or given up as
-                  timed_out when it still runs LOST_RUN_DEADLINE after the tick cancelled
-                  it for its wall clock. An error takes its action from liaise.errors; a
+                  wall clock, refreshed, and collected once finished, as timed_out only if
+                  it ended past its wall clock or the tick cancelled it for that; or given
+                  up as timed_out when it still runs LOST_RUN_DEADLINE after the tick
+                  cancelled it for its wall clock. The processor signals a run's process
+                  only once it has verified, by its start, that the pid is still the run's.
+                  An error takes its action from liaise.errors; a
                   success's outcomes are planned (liaise.outcomes) and carried out, every
                   message through the gate (liaise.gate). A deploy per issue runs right
                   after its case's outcomes and batch deploys run last, once per subject;
@@ -128,6 +131,7 @@ from liaise.notify import (
     NOTICE_SEND_FAILED,
     NOTICE_START_REFUSED,
     notice_body,
+    notice_title,
     notify,
 )
 from liaise.outcomes import (
@@ -187,9 +191,13 @@ LOST_RUN_DEADLINE = timedelta(minutes=10)
 #: reopening, and each read costs the issue and its comment pages, so a closed case that is
 #: otherwise ready is not read every tick.
 CLOSED_RECHECK_INTERVAL = timedelta(hours=1)
-#: How many reads of a case's issue state in a row may fail before the case goes to the
-#: owner, who is told once: a deleted or transferred issue never reads again.
+#: How many reads of a case's issue state in a row may fail for good before the case goes
+#: to the owner, who is told once: a deleted or transferred issue never reads again.
 STATE_READ_FAILURE_LIMIT = 3
+#: The kinds of correspond ``ChannelError`` by which a failed state read counts toward that
+#: limit: the issue is not there, or not for this account. Any other failure (the network,
+#: a rate limit, a login, an exception) counts nothing, and the case waits for the next tick.
+PERMANENT_READ_ERRORS = frozenset({"not_found", "permission"})
 #: A deploy that runs the subject's command, and a delivery that stops at a pull request.
 DEPLOY_DELIVERY, PR_ONLY_DELIVERY = DELIVERY_KINDS
 #: A deploy that runs once per tick, after every case of the subject has been collected,
@@ -995,6 +1003,23 @@ class _Tick:
         except Exception as error:  # a notifier must not end the tick
             self.problem(f"notifying the operator failed: {_error_text(error)}")
 
+    def _notice(
+        self,
+        event: str,
+        *,
+        subject: str,
+        case_ids: Iterable[str] = (),
+        cause: Optional[str] = None,
+        priority: str = DFLT_OPERATOR_PRIORITY,
+    ) -> None:
+        """Tell the operator of ``event``, its title and body built by :mod:`liaise.notify` alone."""
+        notice = dict(subject=subject, case_ids=tuple(case_ids), cause=cause)
+        self._notify(
+            notice_title(event, **notice),
+            notice_body(event, **notice),
+            priority=priority,
+        )
+
     def _call(self, verb: str, *args: Any, **kwargs: Any) -> tuple[Any, Optional[str]]:
         """``processor.<verb>(...)``, and the exception it raised as text, if any (#24)."""
         try:
@@ -1109,10 +1134,7 @@ class _Tick:
         )
         self._transition(case.id, NEEDS_OWNER, "run lost: no run of it is in flight")
         if not told:
-            self._notify(
-                f"liaise: {case.id} run lost",
-                notice_body(NOTICE_RUN_LOST, subject=case.subject, case_ids=(case.id,)),
-            )
+            self._notice(NOTICE_RUN_LOST, subject=case.subject, case_ids=(case.id,))
         self._entry(case.id, "run", detail={"event": RUN_LOST})
 
     def _give_up(self, subject: Subject, case: Case, run: RunRecord) -> None:
@@ -1143,6 +1165,24 @@ class _Tick:
             and self.now - run.cancel_sent_at >= self.lost_run_deadline
         )
 
+    def _ran_past_wall_clock(
+        self, run: RunRecord, current: RunRecord, *, wall_clock: timedelta
+    ) -> bool:
+        """Whether a finished run ran past its wall clock, and so is collected as ``timed_out``.
+
+        It did when the tick cancelled it for its wall clock while it still ran, or when it
+        ended past it. It ended at ``current``'s end stamp; one later than the tick's clock
+        (a run that ended while this tick ran) counts as ``now``, and so does none. So a run
+        that ended well inside its wall clock keeps its outcomes however late a tick first
+        collects it, after a reboot or a laptop's sleep.
+        """
+        if run.cancel_sent_at is not None:
+            return True
+        ended = current.ended_at
+        if ended is None or ended.tzinfo is None or ended > self.now:
+            ended = self.now
+        return ended - run.started_at > wall_clock
+
     @staticmethod
     def _in_flight(current: RunRecord, run: RunRecord) -> RunRecord:
         """``current`` as the processor refreshed it, kept running with the ledger's start and cancel."""
@@ -1158,10 +1198,12 @@ class _Tick:
     ) -> tuple[RunRecord, Any, Optional[str]]:
         """Cancel ``run`` for ``hold``, or for its wall clock without one: ``(run, current, failure)``.
 
-        A wall-clock cancel is ``now``, and the first one is stamped on the ``run`` returned
-        as its ``cancel_sent_at``, from which the lost-run deadline counts. A hold's cancel is
-        graceful, and recorded on the case once. A dry run cancels nothing: it refreshes
-        the run, writing nothing.
+        A wall-clock cancel is ``now``, and the first one that finds the run still running is
+        stamped on the ``run`` returned as its ``cancel_sent_at``, from which the lost-run
+        deadline counts. It is stamped whether or not the processor could signal the run: a
+        run whose process cannot be verified is sent nothing, and given up at the deadline.
+        A hold's cancel is graceful, and recorded on the case once. A dry run cancels
+        nothing: it refreshes the run, writing nothing.
         """
         mode = "now" if hold is None else "graceful"
         why = (
@@ -1176,7 +1218,8 @@ class _Tick:
             return run, current, failure
         self.say(f"{label}: {why}: cancelling ({mode})")
         current, failure = self._call("cancel", run, mode=mode)
-        if hold is None and failure is None and run.cancel_sent_at is None:
+        still_running = failure is None and current.status != FINISHED
+        if hold is None and still_running and run.cancel_sent_at is None:
             run = replace(run, cancel_sent_at=self.now)
         if hold is not None and not self._cancelled_for_hold(case, run.run_id):
             self._entry(
@@ -1221,8 +1264,9 @@ class _Tick:
                 self.say(f"{label}: running, heartbeat {age} ago")
             return
         if failure is None:
+            ran_out = self._ran_past_wall_clock(run, current, wall_clock=wall_clock)
             result, failure = self._call(
-                "collect", current, timed_out=timed_out, persist=not self.dry_run
+                "collect", current, timed_out=ran_out, persist=not self.dry_run
             )
             if failure is None and result is None:
                 self.ledger.save_run(self._in_flight(current, run))
@@ -1311,11 +1355,8 @@ class _Tick:
             self._transition(
                 case.id, INTAKE, f"run {run.run_id} was cancelled for a hold"
             )
-            self._notify(
-                f"liaise: {case.id}'s run was cancelled",
-                notice_body(
-                    NOTICE_RUN_CANCELLED, subject=subject.slug, case_ids=(case.id,)
-                ),
+            self._notice(
+                NOTICE_RUN_CANCELLED, subject=subject.slug, case_ids=(case.id,)
             )
         elif error:
             self._apply_error(
@@ -1384,14 +1425,8 @@ class _Tick:
             self._uncount(subject.slug, case_id, uncount_run)
         if action.notify and notify_operator:
             named = error if error in ERROR_ACTIONS else _CRASHED
-            self._notify(
-                f"liaise: {case_id} {named}",
-                notice_body(
-                    NOTICE_ERROR,
-                    subject=subject.slug,
-                    case_ids=(case_id,),
-                    cause=named,
-                ),
+            self._notice(
+                NOTICE_ERROR, subject=subject.slug, case_ids=(case_id,), cause=named
             )
 
     def _uncount(self, slug: str, case_id: str, run_id: str) -> None:
@@ -1512,14 +1547,11 @@ class _Tick:
         if held:
             scopes = ", ".join(dict.fromkeys(held))
             self._transition(case_id, NEEDS_OWNER, f"effects held by {scopes}")
-            self._notify(
-                f"liaise: {case_id}'s effects are held",
-                notice_body(
-                    NOTICE_EFFECTS_HELD,
-                    subject=subject.slug,
-                    case_ids=(case_id,),
-                    cause=_hold_kinds(held),
-                ),
+            self._notice(
+                NOTICE_EFFECTS_HELD,
+                subject=subject.slug,
+                case_ids=(case_id,),
+                cause=_hold_kinds(held),
             )
         elif isinstance(final, _DeliveryGroup):
             pass  # its deploy decides the state
@@ -1589,14 +1621,11 @@ class _Tick:
             self.diverted.append(Diversion(send, decision.diverted))
             self.say(f"{head}: diverted ({decision.diverted}), kept as a draft")
             self.lines += notes
-            self._notify(
-                f"liaise: a draft for {case.id} waits for you",
-                notice_body(
-                    NOTICE_DIVERTED,
-                    subject=subject.slug,
-                    case_ids=(case.id,),
-                    cause=decision.diverted_by,
-                ),
+            self._notice(
+                NOTICE_DIVERTED,
+                subject=subject.slug,
+                case_ids=(case.id,),
+                cause=decision.diverted_by,
             )
             return False
         outbound = decision.send
@@ -1636,14 +1665,11 @@ class _Tick:
                 ),
             )
             self.problem(f"{case.id}: {outbound.purpose} to {outbound.ref}: {reason}")
-            self._notify(
-                f"liaise: a message for {case.id} was not sent",
-                notice_body(
-                    NOTICE_SEND_FAILED,
-                    subject=subject.slug,
-                    case_ids=(case.id,),
-                    cause=failure_kind or SEND_REFUSED_CAUSE,
-                ),
+            self._notice(
+                NOTICE_SEND_FAILED,
+                subject=subject.slug,
+                case_ids=(case.id,),
+                cause=failure_kind or SEND_REFUSED_CAUSE,
             )
             return False
         self._entry(
@@ -1673,14 +1699,11 @@ class _Tick:
                     self._send(subject, send)
                     continue
                 self._hold_send(send, hold)
-                self._notify(
-                    f"liaise: {case.id}'s {purpose} message is held",
-                    notice_body(
-                        NOTICE_EFFECTS_HELD,
-                        subject=subject.slug,
-                        case_ids=(case.id,),
-                        cause=_hold_kinds((hold.scope,)),
-                    ),
+                self._notice(
+                    NOTICE_EFFECTS_HELD,
+                    subject=subject.slug,
+                    case_ids=(case.id,),
+                    cause=_hold_kinds((hold.scope,)),
                 )
             elif isinstance(action, StoreDraft):
                 self._add_draft(case.id, {**action.draft, "outcome": purpose})
@@ -1716,14 +1739,11 @@ class _Tick:
                         f"handing {item.case_id} to the owner failed: "
                         f"{_error_text(stranded)}"
                     )
-            self._notify(
-                f"liaise: delivering {case_ids} failed",
-                notice_body(
-                    NOTICE_DELIVERY_FAILED,
-                    subject=subject.slug,
-                    case_ids=[item.case_id for item in pending],
-                    cause=type(error).__name__,
-                ),
+            self._notice(
+                NOTICE_DELIVERY_FAILED,
+                subject=subject.slug,
+                case_ids=[item.case_id for item in pending],
+                cause=type(error).__name__,
             )
 
     def _run_delivery(
@@ -1776,14 +1796,11 @@ class _Tick:
             self._transition(
                 item.case_id, NEEDS_OWNER, f"deploy failed: {deployed.reason}"
             )
-        self._notify(
-            f"liaise: {case_ids} landed but did not deploy",
-            notice_body(
-                NOTICE_DEPLOY_FAILED,
-                subject=slug,
-                case_ids=[item.case_id for item in pending],
-                cause=", ".join(part for part in (deployed.cause, error) if part),
-            ),
+        self._notice(
+            NOTICE_DEPLOY_FAILED,
+            subject=slug,
+            case_ids=[item.case_id for item in pending],
+            cause=", ".join(part for part in (deployed.cause, error) if part),
         )
 
     def _deploy(self, subject: Subject) -> _Deployed:
@@ -1957,14 +1974,11 @@ class _Tick:
             if self._issue_is_closed(case, label):
                 return
             self._transition(case.id, NEEDS_OWNER, f"cannot start work: {refusal}")
-            self._notify(
-                f"liaise: {case.id} needs you before work starts",
-                notice_body(
-                    NOTICE_START_REFUSED,
-                    subject=subject.slug,
-                    case_ids=(case.id,),
-                    cause=REQUEST_WORK,
-                ),
+            self._notice(
+                NOTICE_START_REFUSED,
+                subject=subject.slug,
+                case_ids=(case.id,),
+                cause=REQUEST_WORK,
             )
             return
         passed.append(f"{case.reporter} may {REQUEST_WORK}")
@@ -2184,12 +2198,22 @@ class _Tick:
     ) -> None:
         """Count a failed read of ``case``'s issue state, and hand the case to the owner at the limit.
 
-        Past :data:`STATE_READ_FAILURE_LIMIT` failures in a row, the case goes to
+        Only a read that failed for good counts: a correspond ``ChannelError`` of a kind in
+        :data:`PERMANENT_READ_ERRORS`. Any other failure, such as a network that is down, a
+        login that expired or an exception, is a problem line, and leaves the count as it
+        was. Past :data:`STATE_READ_FAILURE_LIMIT` failures in a row, the case goes to
         ``needs-owner``, its count starts again, and the owner is told once, of the kind of
         failure only: its message stays in the transition's reason, on the case.
         """
-        failures = check.failures + 1
         why = _error_text(error)
+        if not (
+            isinstance(error, ChannelError) and error.kind in PERMANENT_READ_ERRORS
+        ):
+            self.problem(
+                f"{case.id}: reading {ref} failed: {why}; the case waits for the next tick"
+            )
+            return
+        failures = check.failures + 1
         if failures < STATE_READ_FAILURE_LIMIT:
             self.ledger.save_issue_check(case.id, replace(check, failures=failures))
             self.problem(
@@ -2208,15 +2232,11 @@ class _Tick:
             f"its issue {ref} could not be read {failures} times in a row; the last "
             f"read: {why}",
         )
-        kind = error.kind if isinstance(error, ChannelError) else type(error).__name__
-        self._notify(
-            f"liaise: {case.id}'s issue cannot be read",
-            notice_body(
-                NOTICE_ISSUE_UNREADABLE,
-                subject=case.subject,
-                case_ids=(case.id,),
-                cause=kind,
-            ),
+        self._notice(
+            NOTICE_ISSUE_UNREADABLE,
+            subject=case.subject,
+            case_ids=(case.id,),
+            cause=error.kind,
         )
 
     def _notify_daily_cap(self, subject: Subject, case: Case, *, count: int) -> None:
@@ -2230,14 +2250,11 @@ class _Tick:
             return
         self.ledger.mark_daily_cap_notified(subject.slug, day, at=self.now)
         cap = subject.policy.budget.daily_dispatches
-        self._notify(
-            f"liaise: {subject.slug} reached its daily cap",
-            notice_body(
-                NOTICE_DAILY_CAP,
-                subject=subject.slug,
-                case_ids=(case.id,),
-                cause=f"{count} of {cap} dispatches today",
-            ),
+        self._notice(
+            NOTICE_DAILY_CAP,
+            subject=subject.slug,
+            case_ids=(case.id,),
+            cause=f"{count} of {cap} dispatches today",
             priority=DAILY_CAP_PRIORITY,
         )
 

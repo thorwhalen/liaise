@@ -74,9 +74,12 @@ _EMAIL_PATTERN = (
     rf"@{_DNS_LABEL}(?:\.{_DNS_LABEL}){{0,{_DNS_LABELS_MAX}}}"
     rf"\.[A-Za-z]{{2,{_DNS_LABEL_MAX}}}"
 )
+#: A private key's first line: PEM's ``-----BEGIN ... PRIVATE KEY-----``, its type's words
+#: bounded, or PGP's ``-----BEGIN PGP PRIVATE KEY BLOCK-----``.
 _PRIVATE_KEY_PATTERN = (
-    rf"-----BEGIN (?:[A-Z0-9]{{1,{_KEY_TYPE_WORD_MAX}}} ){{0,{_KEY_TYPE_WORDS_MAX}}}"
-    r"PRIVATE KEY-----"
+    r"-----BEGIN "
+    rf"(?:(?:[A-Z0-9]{{1,{_KEY_TYPE_WORD_MAX}}} ){{0,{_KEY_TYPE_WORDS_MAX}}}PRIVATE KEY"
+    r"|PGP PRIVATE KEY BLOCK)-----"
 )
 #: What :func:`leak_scan` diverts on, as (kind, pattern). Local paths are home
 #: directories on macOS, Linux and Windows (its backslashes single, or doubled as JSON
@@ -195,7 +198,8 @@ def leak_scan(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
     That is an absolute local path (a home directory on macOS, Linux or Windows, written
     with single or JSON-doubled backslashes, a Windows home through a WSL mount, or a
     macOS temporary directory), a path ending in ``.env``, an email address, a private
-    key's ``-----BEGIN ... PRIVATE KEY-----`` line, a token shape (``ghp_``,
+    key's ``-----BEGIN ... PRIVATE KEY-----`` or ``-----BEGIN PGP PRIVATE KEY BLOCK-----``
+    line, a token shape (``ghp_``,
     ``github_pat_``, ``sk-``, ``AKIA``, ``hf_``, ``xoxb-``), or one of
     ``policy.leak_terms`` as a whole word in any case. Tokens are also looked for with the
     text's line breaks removed, so a token wrapped across lines is found. The reason
@@ -346,7 +350,9 @@ def run_gate(
     """
     notes: list[str] = []
     for outbound_filter in outbound_filters:
-        name = getattr(outbound_filter, "__name__", repr(outbound_filter))
+        # By its type when it has no name: a repr can hold what a filter was bound to, such
+        # as a local path, and the name reaches the operator's notification.
+        name = getattr(outbound_filter, "__name__", type(outbound_filter).__name__)
         try:
             verdict = outbound_filter(outbound, ctx)
         except Exception as error:
