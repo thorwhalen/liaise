@@ -117,7 +117,7 @@ Runs are unattended, so a mode that waits for approval would stall them. `auto` 
 - GitHub binding refs are lower-cased when a subject loads, a workaround for correspond comparing them case-sensitively (thorwhalen/correspond#24).
 - On Windows, a `.cmd` shim for `claude` can mangle the quoting of `--json-schema`.
 - A case in `needs-owner` or `deployed` never starts again on its own: the owner moves it on with `liaise case set-state`. Relabelling the issue changes nothing, and the next tick overwrites the label, since labels are projections of the ledger.
-- A case whose GitHub issue is closed, but which is otherwise ready to start, has its issue read again on every tick, so that a reopening is noticed.
+- correspond's GitHub poll reports neither a closing nor a reopening, so an issue's state is learned by reading it, the issue and every page of its comments. A case whose issue was read closed, but which is otherwise ready to start, has it read again at most once an hour, so a reopening can take up to an hour to be noticed.
 
 ## Next steps
 
@@ -127,6 +127,7 @@ These were named when 0.1 was scoped. They are not cuts from it.
 - **Retry and dead-letter handling:** a `stuck` state, and `liaise retry`, for cases that keep failing. A `stuck` state would change the label vocabulary, which 0.1 keeps as 0.0.x had it, so it brings a new label that every subject's repositories must be set up with.
 - **A watcher process, or Claude Code's `SessionEnd` and `StopFailure` hooks:** these would collect a run the moment it ends, not on the next tick.
 - **Triage** (issue #19). The seam is in 0.1, `run_once(..., triage=)`, which groups and orders a subject's ready cases before they start; nothing implements it yet.
+  - If #19 comes to mean one run per group rather than an ordering, `Job.case_id` in the `Processor` protocol would have to change, so decide that before building #19.
 - **A webhook listener:** a GitHub event would start a tick, instead of the schedule.
 - **Candidate delivery:** a preview the partner approves (`approve_candidate`) before it ships. It needs a branch of its own in the tick's `_execute`, which knows only `pr_only` and a deploy, per batch or per issue.
 - **An MCP surface** over the same command tree.

@@ -7,6 +7,7 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise hold SCOPE [--mode MODE] [--reason TEXT]
     liaise unhold SCOPE
     liaise case list [--state STATE]
+    liaise case show CASE_ID
     liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
     liaise subject list
     liaise subject show SLUG
@@ -36,6 +37,7 @@ import functools
 import time
 from collections import ChainMap
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
+from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -67,6 +69,8 @@ from liaise.tick import (
     RunLockHeld,
     Triage,
     WorkspaceFactory,
+    run_lock,
+    run_lock_path,
     run_once,
     status_lines,
 )
@@ -77,7 +81,11 @@ DFLT_LOOP_SECONDS = 60
 #: What ``liaise run`` without ``--once`` returns once it is interrupted.
 STOPPED = "stopped"
 #: How ``liaise subject show`` prints an empty or unset value.
-NONE_SHOWN = "(none)"
+NONE_SHOWN = cases.NONE_SHOWN
+#: What ``liaise case set-state`` says, changing nothing, while a tick holds the run lock.
+TICK_RUNNING = (
+    "a liaise tick is running, so {case_id} was not moved; try again shortly ({busy})"
+)
 
 
 def _expected_errors(*kinds: type[Exception]) -> Callable[[Callable], Callable]:
@@ -424,6 +432,25 @@ def case_list(
 
 
 @_expected_errors(ConfigError, ValueError)
+def case_show(
+    case_id: str,
+    *,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """CASE_ID as the ledger holds it: what a notification from liaise leaves out.
+
+    Its state, the reason of its last escalation, its last failed deploy with the command's
+    output, each draft waiting for you with its text, and its latest entries. A
+    notification names the case and points here: nothing a case holds goes to the
+    notification service. It changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=False)
+    return "\n".join(cases.case_show_lines(ledger_store, case_id))
+
+
+@_expected_errors(ConfigError, ValueError)
 def case_set_state(
     case_id: str,
     state: str,
@@ -441,12 +468,24 @@ def case_set_state(
     recorded on the case, with ``--reason``. The case's GitHub label follows on the next
     tick: a label is a projection of the ledger, so relabelling the issue by hand is
     overwritten. ``--dry-run`` says what would change, and changes nothing.
+
+    The move holds the run lock, so a tick cannot start meanwhile and overwrite it. It does
+    not wait for one: while a tick is running, it refuses in one line and changes nothing.
+    A dry run takes no lock.
     """
     global_config = load_global_config(_root(root))
     ledger_store = _ledger_store(global_config, store, create=not dry_run)
     ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
-    before = ledger.get_case(case_id)
-    moved = cases.set_case_state(ledger, case_id, state, reason=reason, now=now)
+    with ExitStack() as between_ticks:
+        if not dry_run:
+            lock_path = run_lock_path(Path(global_config.state_dir).expanduser())
+            try:
+                between_ticks.enter_context(run_lock(lock_path))
+            except RunLockHeld as busy:
+                message = TICK_RUNNING.format(case_id=case_id, busy=busy)
+                raise cw.CommandError(message) from busy
+        before = ledger.get_case(case_id)
+        moved = cases.set_case_state(ledger, case_id, state, reason=reason, now=now)
     if before is not None and before.state == moved.state:
         return f"{case_id} is already {moved.state}"
     verb = "would move" if dry_run else "moved"
@@ -463,7 +502,7 @@ _dispatch_funcs = {
     "status": status,
     "hold": hold,
     "unhold": unhold,
-    "case": {"list": case_list, "set-state": case_set_state},
+    "case": {"list": case_list, "show": case_show, "set-state": case_set_state},
     "subject": {"list": subject_list, "show": subject_show},
     "setup": setup,
     "migrate-config": migrate_config,
@@ -492,7 +531,7 @@ _SEAMS = {
     "status": ("store", "now"),
     "hold": ("store",),
     "unhold": ("store",),
-    "case": {"list": ("store",), "set-state": ("store", "now")},
+    "case": {"list": ("store",), "show": ("store",), "set-state": ("store", "now")},
     "setup": ("labeler",),
 }
 

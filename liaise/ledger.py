@@ -14,6 +14,7 @@ flat string with no "/", since ``dol.Jsons`` would read one as a subdirectory::
     counter__cases                      the last case number handed out
     daily__<subject>__<YYYY-MM-DD>      that day's dispatches, as 0.0.x kept them
     budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
+    issue_check__<case_id>              an IssueCheck: the tick's reads of the case's issue state
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
 ``repo:example/app`` is stored under ``hold__repo%3Aexample%2Fapp``. The result has
@@ -43,6 +44,7 @@ from liaise.model import (
     INITIAL_CASE_STATE,
     Case,
     Hold,
+    IssueCheck,
     LedgerEntry,
     RunRecord,
     require_one_of,
@@ -371,6 +373,17 @@ class Ledger:
         :meth:`daily_cap_notified` then says so, so they are told once per subject per day.
         """
         self.store[_cap_notice_key(subject, day)] = at.isoformat()
+
+    # ---- reads of a case's issue state ----
+
+    def get_issue_check(self, case_id: str) -> IssueCheck:
+        """The tick's reads of the case's issue state; an empty :class:`IssueCheck` before any."""
+        data = self._get(_key("issue_check", case_id))
+        return IssueCheck() if data is None else IssueCheck.from_dict(data)
+
+    def save_issue_check(self, case_id: str, check: IssueCheck) -> None:
+        """Write ``check``, replacing what the ledger held of the case's issue state reads."""
+        self.store[_key("issue_check", case_id)] = check.to_dict()
 
     # ---- cursors ----
 

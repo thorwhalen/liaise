@@ -14,6 +14,7 @@ built by concatenation, so the no-personal-data guard does not flag this file.
 from __future__ import annotations
 
 import sys
+import time
 import types
 from dataclasses import replace
 from datetime import datetime, timezone
@@ -138,6 +139,7 @@ LEAKS = {
     "root-home-path": ("local path", "It lives in " + "/ro" + "ot/app/config"),
     "windows-home-path": ("local path", "It lives in " + "C:" + "\\Users\\someone\\app"),
     "email": ("email", "Write to " + "someone" + "@" + "example.com" + " for access."),
+    "email-with-a-local-part-past-the-bound": ("email", "Write to " + "some.one" * 12 + "@" + "example.com"),
     "classic-github-token": ("token", "Use " + "ghp_" + "a" * 36),
     "fine-grained-github-token": ("token", "Use " + "github_pat_" + "a" * 40),
     "sk-key": ("token", "Use " + "sk-" + "a" * 24),
@@ -191,6 +193,30 @@ def test_leak_scan_names_every_kind_it_found():
     decision = _gate(text)
     assert decision.diverted == "leak scan: local path, email"
     assert len(decision.notes) == 2
+
+
+#: A message of a million characters and no leak: one unbroken run of the characters an
+#: email's local part may hold, which the unanchored email pattern scanned in quadratic time.
+LONG_WORD = "a-b.c+d%e_" * 100_000
+#: How long the leak scan may take over it; the quadratic pattern took minutes.
+LONG_WORD_SCAN_BOUND_S = 5.0
+
+
+def test_leak_scan_of_a_million_character_word_is_linear():
+    """S8 #6: every pattern is bounded and anchored, so a long word is scanned once."""
+    started = time.perf_counter()
+    decision = run_gate(_outbound(LONG_WORD), _context(), outbound_filters=(leak_scan,))
+    elapsed = time.perf_counter() - started
+    assert decision.diverted is None
+    assert elapsed < LONG_WORD_SCAN_BOUND_S, f"the leak scan took {elapsed:.1f}s"
+
+
+def test_the_decision_names_the_filter_that_diverted():
+    """S8 #2: a notification names the filter, not the reason, which can quote what a filter
+    raised."""
+    assert _gate("Use " + "ghp_" + "b" * 36).diverted_by == "leak_scan"
+    assert _gate(subject=_subject(default_reply_mode="draft")).diverted_by == "reply_mode"
+    assert _gate().diverted_by is None
 
 
 @pytest.mark.parametrize("text", ["The example-internals tab.", "The xexample-internal tab."])
@@ -369,7 +395,9 @@ def test_run_gate_stops_at_the_first_divert_and_keeps_the_notes_so_far():
 
     decision = run_gate(_outbound(), _context(), outbound_filters=(first, second, third))
     assert ran == ["first", ("second", "rewritten")]
-    assert decision == GateDecision(send=None, diverted="second says no", notes=("first note", "second note"))
+    assert decision == GateDecision(
+        send=None, diverted="second says no", notes=("first note", "second note"), diverted_by="second"
+    )
 
 
 def test_run_gate_sends_the_message_as_the_filters_left_it():

@@ -279,7 +279,11 @@ class Health(_Record):
 
 @dataclass(frozen=True)
 class RunRecord(_Record):
-    """A processor run started on a case: how it was started, and where it is now."""
+    """A processor run started on a case: how it was started, and where it is now.
+
+    ``cancel_sent_at`` is when the tick first cancelled the run for passing its wall clock:
+    the lost-run deadline counts from it (see :mod:`liaise.tick`).
+    """
 
     run_id: str
     case_id: str
@@ -292,6 +296,7 @@ class RunRecord(_Record):
     ended_at: Optional[datetime] = None
     session_id: Optional[str] = None
     stream_path: Optional[str] = None
+    cancel_sent_at: Optional[datetime] = None
 
 
 @dataclass(frozen=True)
@@ -306,3 +311,15 @@ class RunResult(_Record):
     error: Optional[str] = None
     session_id: Optional[str] = None
     summary: str = ""
+
+
+@dataclass(frozen=True)
+class IssueCheck(_Record):
+    """The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.
+
+    ``failures`` counts the reads that failed in a row; a read that succeeds sets it back
+    to 0. With no read yet, ``read_at`` is None.
+    """
+
+    read_at: Optional[datetime] = None
+    failures: int = 0

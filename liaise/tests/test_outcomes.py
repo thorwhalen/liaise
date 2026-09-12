@@ -14,6 +14,7 @@ import pytest
 
 from liaise.gate import Outbound
 from liaise.model import OUTCOME_KINDS, Case, Outcome
+from liaise.notify import NOTICE_ESCALATION, NOTICE_NO_CHANNEL, notice_body
 from liaise.outcomes import (
     OUTCOME_SCHEMA,
     REQUIRED_FIELD_BY_KIND,
@@ -254,9 +255,9 @@ def test_escalate_stores_a_draft_notifies_the_operator_and_waits_on_the_owner():
     )
     assert isinstance(notify, NotifyOperator)
     assert (notify.title, notify.priority) == ("pat-1 needs you", "high")
-    assert "why: it costs money" in notify.body
-    assert "draft: This needs a paid plan." in notify.body
-    assert REF in notify.body
+    # S8 #2: the draft and the reason stay on the case; the notification names the case alone
+    assert notify.body == notice_body(NOTICE_ESCALATION, subject="pat", case_ids=("pat-1",))
+    assert "costs money" not in notify.body and "paid plan" not in notify.body
     assert transition == Transition("pat-1", "needs-owner", "it costs money")
 
 
@@ -340,7 +341,8 @@ def test_a_web_inbox_case_with_no_address_to_write_to_becomes_a_draft_for_the_op
         ),
     )
     assert (notify.title, notify.priority) == ("no channel to reach pat", "high")
-    assert "draft: One question." in notify.body
+    assert notify.body == notice_body(NOTICE_NO_CHANNEL, subject="pat", case_ids=("pat-1",), cause="ask")
+    assert "One question" not in notify.body  # S8 #2: the draft stays on the case
     assert transition == Transition("pat-1", "needs-partner", "ask")
 
 

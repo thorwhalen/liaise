@@ -13,7 +13,7 @@ from correspond import listen
 from correspond.model import ConversationRef, Event
 
 from liaise.ledger import Ledger, default_ledger_store
-from liaise.model import Case, Hold, LedgerEntry, RunRecord
+from liaise.model import Case, Hold, IssueCheck, LedgerEntry, RunRecord
 
 T0 = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
 REF = "github:example/app#12"
@@ -281,6 +281,16 @@ def test_the_daily_cap_notice_is_remembered_per_subject_and_day(ledger):
     assert not ledger.daily_cap_notified("example-app", date(2026, 1, 2))
     assert not ledger.daily_cap_notified("example-site", date(2026, 1, 1))
     assert ledger.store == {"budget_notified__example-app__2026-01-01": T0.isoformat()}  # the 0.0.x key shape
+
+
+def test_the_issue_state_reads_of_a_case_are_kept_under_their_own_key(ledger):
+    """S8 #3: the tick's back-off and failure count, kept apart from the case, so a read
+    never touches the case (nor its labels)."""
+    assert ledger.get_issue_check("pat-1") == IssueCheck()
+    ledger.save_issue_check("pat-1", IssueCheck(read_at=T0, failures=2))
+    assert ledger.get_issue_check("pat-1") == IssueCheck(read_at=T0, failures=2)
+    assert ledger.get_issue_check("pat-2") == IssueCheck()
+    assert list(ledger.store) == ["issue_check__pat-1"]
 
 
 # ---- cursors ----

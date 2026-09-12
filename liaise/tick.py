@@ -7,16 +7,18 @@ labels::
     1. intake     each subject's bindings, through correspond (liaise.intake)
     2. reconcile  each run the tick has not collected: cancelled for a cancel hold or its
                   wall clock, refreshed, and collected once finished, or given up as
-                  timed_out LOST_RUN_DEADLINE past its wall clock. An error takes its
-                  action from liaise.errors; a success's outcomes are planned
-                  (liaise.outcomes) and carried out, every message through the gate
-                  (liaise.gate). A deploy per issue runs right after its case's outcomes
-                  and batch deploys run last, once per subject; nothing tells a partner a
-                  change is live before its deploy succeeded. Last, each case left working
-                  with no run in flight, its run lost, goes to needs-owner.
+                  timed_out when it still runs LOST_RUN_DEADLINE after the tick cancelled
+                  it for its wall clock. An error takes its action from liaise.errors; a
+                  success's outcomes are planned (liaise.outcomes) and carried out, every
+                  message through the gate (liaise.gate). A deploy per issue runs right
+                  after its case's outcomes and batch deploys run last, once per subject;
+                  nothing tells a partner a change is live before its deploy succeeded.
+                  Last, each case left working with no run in flight, its run lost, goes
+                  to needs-owner.
     3. start      each ready case, in the order the triage seam gives, that passes holds,
                   authorization, budget, an open GitHub issue, preflight and the workspace
-                  check, as a detached processor run
+                  check, as a detached processor run. A case whose issue was read closed
+                  has it read again at most once per CLOSED_RECHECK_INTERVAL.
     4. nudge      each deployed case its partner has gone quiet on, once, unless its issue
                   is closed
     5. project    the state label of each case this tick touched, and of each whose state
@@ -28,8 +30,8 @@ tick collects it, whatever the processor says, so a run that ended at once (a sp
 failed, an ``EchoProcessor`` run) is still collected, on the next tick. Any exception a
 processor verb raises is a ``crashed`` run, never the tick's end (#24). One case's failure
 is a problem line, never the other cases' end: a checkout release or a deploy that raises
-hands its cases to the owner. A notification about a message kept from the partner never
-carries that message.
+hands its cases to the owner. No operator notification carries anything a case holds: its
+body comes from :func:`liaise.notify.notice_body`, and ``liaise case show`` has the rest.
 
 **Dry run.** The ledger is ``Ledger(ChainMap({}, store))``: every step runs on real state,
 and every write vanishes with the overlay. Nothing is sent (``correspond.send`` gets
@@ -45,10 +47,12 @@ tell a running tick from a finished or an interrupted one. :func:`status_lines` 
 
 from __future__ import annotations
 
+import errno
 import functools
 import os
 import shlex
 import subprocess
+import sys
 import time
 from collections import ChainMap
 from collections.abc import (
@@ -66,7 +70,13 @@ from pathlib import Path
 from typing import Any, Callable, Optional, Union
 from uuid import uuid4
 
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
+
 import correspond
+from correspond.errors import ChannelError
 
 from liaise.access import Resolver, resolve_person
 from liaise.config import ConfigError, GlobalConfig
@@ -99,12 +109,27 @@ from liaise.model import (
     CASE_STATES,
     Case,
     Hold,
+    IssueCheck,
     LedgerEntry,
     Outcome,
     RunRecord,
     RunResult,
 )
-from liaise.notify import notify
+from liaise.notify import (
+    NOTICE_DAILY_CAP,
+    NOTICE_DELIVERY_FAILED,
+    NOTICE_DEPLOY_FAILED,
+    NOTICE_DIVERTED,
+    NOTICE_EFFECTS_HELD,
+    NOTICE_ERROR,
+    NOTICE_ISSUE_UNREADABLE,
+    NOTICE_RUN_CANCELLED,
+    NOTICE_RUN_LOST,
+    NOTICE_SEND_FAILED,
+    NOTICE_START_REFUSED,
+    notice_body,
+    notify,
+)
 from liaise.outcomes import (
     DFLT_OPERATOR_PRIORITY,
     OUTCOME_SCHEMA,
@@ -152,10 +177,19 @@ PROCESSOR_SCOPE = "processor"
 #: preflight, lifting it if preflight passes. A login that has expired where preflight
 #: cannot see it then costs one failed run, and one notification, per interval, not a tick.
 AUTH_PROBE_INTERVAL = timedelta(minutes=30)
-#: How long past its wall clock the tick waits for a run it cancelled to stop. Past that,
-#: the run is finished as ``timed_out`` whether or not its pid is alive, since by then
-#: the pid may be another process's, and its case goes to the owner.
+#: How long after the tick first cancelled a run for passing its wall clock it waits for
+#: the run to stop. A run its processor still reports running by then is finished as
+#: ``timed_out``, sent nothing more (its pid may be another process's by then), and its
+#: case goes to the owner. A run no tick has cancelled is never given up.
 LOST_RUN_DEADLINE = timedelta(minutes=10)
+#: How long a case whose issue was read closed goes before the tick reads its issue again,
+#: to notice a reopening. correspond's GitHub poll reports neither a closing nor a
+#: reopening, and each read costs the issue and its comment pages, so a closed case that is
+#: otherwise ready is not read every tick.
+CLOSED_RECHECK_INTERVAL = timedelta(hours=1)
+#: How many reads of a case's issue state in a row may fail before the case goes to the
+#: owner, who is told once: a deleted or transferred issue never reads again.
+STATE_READ_FAILURE_LIMIT = 3
 #: A deploy that runs the subject's command, and a delivery that stops at a pull request.
 DEPLOY_DELIVERY, PR_ONLY_DELIVERY = DELIVERY_KINDS
 #: A deploy that runs once per tick, after every case of the subject has been collected,
@@ -178,9 +212,8 @@ BUDGET_PURPOSE = "budget"
 NUDGE_PURPOSE = "nudge"
 #: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.
 DAILY_CAP_PRIORITY = "default"
-#: Where a notification about a message kept from the partner points the operator. It
-#: never carries the message, which may hold what the gate kept back.
-SEE_STATUS = "see liaise status"
+#: What a notification names a failed send by when the channel gave no error kind.
+SEND_REFUSED_CAUSE = "refused"
 
 #: What a ``run`` entry records: a start, a start that failed, a collection...
 RUN_STARTED = "started"
@@ -192,11 +225,14 @@ RUN_LOST = "lost"
 #: case whose issue is closed is neither started nor nudged.
 RUN_ISSUE_CLOSED = "issue_closed"
 RUN_ISSUE_REOPENED = "issue_reopened"
+#: ...and a deploy that failed, the tail of its output the entry's text, which ``liaise
+#: case show`` prints and no notification carries.
+RUN_DEPLOY_FAILED = "deploy_failed"
 
 #: How many characters of a message a plan line shows.
 PLAN_TEXT_CHARS = 72
-#: How many characters of a failed deploy's output its reason carries.
-DELIVERY_OUTPUT_CHARS = 300
+#: How many of a failed deploy's last output characters its ``run`` entry keeps.
+DEPLOY_OUTPUT_TAIL_CHARS = 2000
 
 _SECONDS_PER_MINUTE = 60
 _SECONDS_PER_HOUR = 3600
@@ -249,6 +285,18 @@ class _DeliveryGroup:
     deliver: Deliver
     sends: tuple[Send, ...] = ()
     transition: Optional[Transition] = None
+
+
+@dataclass(frozen=True)
+class _Deployed:
+    """How one run of a subject's deploy command went."""
+
+    ok: bool
+    #: Why it failed, for the ledger and the plan, without its output.
+    reason: str = ""
+    #: What a notification may name the failure by: ``exit code 2``, an exception's class.
+    cause: Optional[str] = None
+    output: str = ""
 
 
 @dataclass(frozen=True)
@@ -344,16 +392,13 @@ def _issue_seen_closed(case: Case) -> Optional[bool]:
     return states[-1] if states else None
 
 
-def _kept_message_body(case_id: str, outbound: Outbound, *, reason: str) -> str:
-    """What the operator is told of a message kept from the partner: never its text.
+def _hold_kinds(scopes: Iterable[str]) -> str:
+    """The kinds of hold ``scopes`` are (``subject hold``), as a notification may name them.
 
-    The text may hold what the gate diverted it for, such as a token or a local path, and
-    a notification goes out through a service the operator does not control.
+    Never a scope's value, which for a ``checkout:`` hold is a local path.
     """
-    return (
-        f"case: {case_id}\nto: {outbound.recipient} at {outbound.ref}\nwhy: {reason}\n"
-        f"The message is kept on the case as a draft; {SEE_STATUS}."
-    )
+    kinds = (f"{scope.partition(':')[0]} hold" for scope in scopes)
+    return ", ".join(dict.fromkeys(kinds))
 
 
 def _is_auto(found: Optional[Hold]) -> bool:
@@ -430,6 +475,7 @@ def run_once(
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
     triage: Optional[Triage] = None,
     lost_run_deadline: timedelta = LOST_RUN_DEADLINE,
+    closed_recheck_interval: timedelta = CLOSED_RECHECK_INTERVAL,
 ) -> TickReport:
     """One tick over ``subjects`` (slug to :class:`~liaise.subjects.Subject`), on the ledger ``store``.
 
@@ -450,8 +496,10 @@ def run_once(
 
     ``only`` is a slug or slugs to run alone; an unknown one raises
     :class:`~liaise.config.ConfigError`. ``now`` is the tick's clock (the current UTC
-    time when None). ``lost_run_deadline`` is how long past its wall clock a run that will
-    not stop is waited on (:data:`LOST_RUN_DEADLINE`). Unless ``dry_run``, the tick holds
+    time when None). ``lost_run_deadline`` is how long after the tick cancelled a run for
+    its wall clock a run that will not stop is waited on (:data:`LOST_RUN_DEADLINE`), and
+    ``closed_recheck_interval`` how long a case whose issue was read closed goes before
+    it is read again (:data:`CLOSED_RECHECK_INTERVAL`). Unless ``dry_run``, the tick holds
     the run lock in ``state_dir`` (raising :class:`RunLockHeld` while another tick holds
     it) and stamps its start and end in ``store``.
     """
@@ -484,8 +532,9 @@ def run_once(
         outbound_filters=tuple(outbound_filters),
         triage=triage,
         lost_run_deadline=lost_run_deadline,
+        closed_recheck_interval=closed_recheck_interval,
     )
-    lock = nullcontext() if dry_run else _run_lock(run_lock_path(state_dir))
+    lock = nullcontext() if dry_run else run_lock(run_lock_path(state_dir))
     stamps = nullcontext() if dry_run else _stamp_run(store, now=now)
     with lock, stamps:
         tick.say(f"tick at {now.isoformat()}" + (" [dry run]" if dry_run else ""))
@@ -506,6 +555,22 @@ RUN_STARTED_KEY = "run_started_at"
 RUN_ENDED_KEY = "run_ended_at"
 #: 0.0.3 and earlier kept one stamp: a pass's start, written once the pass had finished.
 LEGACY_LAST_RUN_KEY = "last_run"
+#: The one byte the run lock locks on Windows: past any pid the file holds, since Windows
+#: refuses every other handle a read of a locked byte, and ``liaise status`` reads the pid.
+_WINDOWS_LOCK_OFFSET = 2**20
+_WINDOWS_LOCKED_BYTES = 1
+#: The most bytes of the run lock file read for its pid.
+_LOCK_PID_BYTES = 32
+#: What taking a lock without waiting fails with while another holds it: ``flock`` says
+#: EWOULDBLOCK (EAGAIN), ``msvcrt.locking`` EACCES or EDEADLOCK.
+_LOCK_HELD_ERRNOS = frozenset(
+    {
+        errno.EACCES,
+        errno.EAGAIN,
+        errno.EWOULDBLOCK,
+        getattr(errno, "EDEADLOCK", errno.EDEADLK),
+    }
+)
 
 
 class RunLockHeld(RuntimeError):
@@ -533,56 +598,84 @@ def _lock_owner(lock_path: Path) -> Optional[int]:
     return pid if pid_is_alive(pid) else None
 
 
-@contextmanager
-def _run_lock(lock_path: Path) -> Iterator[None]:
-    """Hold the run lock for one tick, so one tick runs at a time (0.0.x L-3).
+def _try_lock(descriptor: int) -> bool:
+    """Take the OS lock on the open file ``descriptor`` without waiting; False while another holds it.
 
-    A plain pid file, created with ``O_CREAT | O_EXCL``, so finding the lock free and
-    taking it are one step: two ticks starting together cannot both take it. A lock whose
-    process is gone is reclaimed, removed and then created exclusively again, so of two
-    ticks reclaiming it at once only one gets it. On exit the lock is removed only while
-    it still holds this process's pid. It is advisory, which is enough to keep a manual
-    ``liaise run`` from colliding with the scheduled one on the same machine. Raises
-    :class:`RunLockHeld` while a live process holds it.
+    ``flock`` on POSIX, one byte locked with ``msvcrt.locking`` on Windows. Both refuse a
+    second descriptor of the file, in this process or in another, and both go with the
+    process holding them. Any other failure is raised.
     """
-
-    def create() -> bool:
-        """Create the lock holding this process's pid where no file is; False when one is."""
-        try:
-            descriptor = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
-            return False
-        with os.fdopen(descriptor, "w", encoding="utf-8") as lock:
-            lock.write(str(os.getpid()))
-        return True
-
-    def release() -> None:
-        """Remove the lock, unless it holds another pid: a process that took it over since."""
-        try:
-            holder = int(lock_path.read_text(encoding="utf-8").strip())
-        except (OSError, ValueError):
-            return
-        if holder == os.getpid():
-            lock_path.unlink(missing_ok=True)
-
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    if not create():
-        other = _lock_owner(lock_path)
-        if other is not None:
-            raise RunLockHeld(
-                f"another liaise run (pid {other}) is already in progress "
-                f"(lock: {lock_path})"
-            )
-        lock_path.unlink(missing_ok=True)  # left by a process that is gone
-        if not create():
-            raise RunLockHeld(
-                f"another liaise run took over the stale run lock first "
-                f"(lock: {lock_path})"
-            )
     try:
-        yield
+        if sys.platform == "win32":
+            os.lseek(descriptor, _WINDOWS_LOCK_OFFSET, os.SEEK_SET)
+            msvcrt.locking(descriptor, msvcrt.LK_NBLCK, _WINDOWS_LOCKED_BYTES)
+        else:
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as error:
+        if error.errno in _LOCK_HELD_ERRNOS:
+            return False
+        raise
+    return True
+
+
+def _unlock(descriptor: int) -> None:
+    """Release the OS lock :func:`_try_lock` took on ``descriptor``."""
+    if sys.platform == "win32":
+        os.lseek(descriptor, _WINDOWS_LOCK_OFFSET, os.SEEK_SET)
+        msvcrt.locking(descriptor, msvcrt.LK_UNLCK, _WINDOWS_LOCKED_BYTES)
+    else:
+        fcntl.flock(descriptor, fcntl.LOCK_UN)
+
+
+def _pid_in(descriptor: int) -> Optional[int]:
+    """The pid the open lock file ``descriptor`` holds; None when it is empty or unreadable."""
+    try:
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        return int(os.read(descriptor, _LOCK_PID_BYTES).decode("ascii").strip())
+    except (OSError, ValueError):
+        return None
+
+
+def _write_pid(descriptor: int, pid: Optional[int]) -> None:
+    """Make the open lock file ``descriptor`` hold ``pid`` alone, or nothing for None."""
+    os.lseek(descriptor, 0, os.SEEK_SET)
+    os.ftruncate(descriptor, 0)
+    if pid is not None:
+        os.write(descriptor, str(pid).encode("ascii"))
+
+
+@contextmanager
+def run_lock(lock_path: Union[str, os.PathLike]) -> Iterator[None]:
+    """Hold the run lock while the block runs: a tick, or an operator's change between ticks.
+
+    One tick at a time (0.0.x L-3). The lock is an exclusive OS lock on the open lock file
+    (see :func:`_try_lock`), taken without waiting. Finding it free and taking it are one
+    step, and it goes with the process that held it, so no lock is ever stale and none is
+    taken over. While held, the file holds this process's pid, for ``liaise status`` and
+    for another tick's error; it is emptied before the lock is released, and the file is
+    never removed. Raises :class:`RunLockHeld` while another holds the lock, in this
+    process too.
+    """
+    path = Path(lock_path).expanduser()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_RDWR | os.O_CREAT | getattr(os, "O_BINARY", 0))
+    try:
+        if not _try_lock(descriptor):
+            pid = _pid_in(descriptor)
+            holder = (
+                f"another liaise tick (pid {pid})" if pid else "another liaise tick"
+            )
+            raise RunLockHeld(f"{holder} is already in progress (lock: {path})")
+        try:
+            _write_pid(descriptor, os.getpid())
+            yield
+        finally:
+            try:
+                _write_pid(descriptor, None)  # while still held: no pid of a tick gone
+            finally:
+                _unlock(descriptor)
     finally:
-        release()
+        os.close(descriptor)
 
 
 @dataclass(frozen=True)
@@ -795,6 +888,7 @@ class _Tick:
         outbound_filters: tuple[OutboundFilter, ...],
         triage: Optional[Triage],
         lost_run_deadline: timedelta,
+        closed_recheck_interval: timedelta,
     ):
         self.subjects = subjects
         self.ledger = ledger
@@ -812,6 +906,7 @@ class _Tick:
         self.outbound_filters = outbound_filters
         self.triage = triage
         self.lost_run_deadline = lost_run_deadline
+        self.closed_recheck_interval = closed_recheck_interval
         #: Per case, whether its GitHub issue was read closed this tick (None: unreadable).
         self.issue_closed: dict[str, Optional[bool]] = {}
         self.lines: list[str] = []
@@ -1016,22 +1111,24 @@ class _Tick:
         if not told:
             self._notify(
                 f"liaise: {case.id} run lost",
-                f"{case.id} was working, but no run of it is in flight, so it waits for "
-                f"you in needs-owner. Nothing was sent to the partner about it; "
-                f"{SEE_STATUS}, and move it on with liaise case set-state.",
+                notice_body(NOTICE_RUN_LOST, subject=case.subject, case_ids=(case.id,)),
             )
         self._entry(case.id, "run", detail={"event": RUN_LOST})
 
     def _give_up(self, subject: Subject, case: Case, run: RunRecord) -> None:
-        """Finish a run still not stopped by its lost-run deadline, as ``timed_out``.
+        """Finish a run still running the lost-run deadline after its cancel, as ``timed_out``.
 
-        Whether or not its pid is alive: by now that pid may be another process's, so it is
-        sent nothing more. Its case goes to the owner, who is told.
+        Only a run the tick cancelled for its wall clock is given up, and only once its
+        processor still says it is running :data:`LOST_RUN_DEADLINE` after that cancel, so
+        a checkout is never handed on while a run nobody stopped works in it. It is sent
+        nothing more, whether or not its pid is alive: by now that pid may be another
+        process's. Its case goes to the owner, who is told.
         """
-        age = _fmt_age((self.now - run.started_at).total_seconds())
+        since = _fmt_age((self.now - run.cancel_sent_at).total_seconds())
         self.say(
-            f"  run {run.run_id} ({case.id}): still not stopped {age} after it started, "
-            f"past its wall clock and the lost-run deadline: given up as {_TIMED_OUT}"
+            f"  run {run.run_id} ({case.id}): still running {since} after the tick "
+            f"cancelled it for its wall clock, past the lost-run deadline: given up as "
+            f"{_TIMED_OUT}"
         )
         finished = replace(run, status=FINISHED, ended_at=self.now)
         result = RunResult(
@@ -1039,52 +1136,85 @@ class _Tick:
         )
         self._collected(subject, case, finished, result)
 
+    def _cancel_is_overdue(self, run: RunRecord) -> bool:
+        """Whether the tick cancelled ``run`` for its wall clock at least the lost-run deadline ago."""
+        return (
+            run.cancel_sent_at is not None
+            and self.now - run.cancel_sent_at >= self.lost_run_deadline
+        )
+
+    @staticmethod
+    def _in_flight(current: RunRecord, run: RunRecord) -> RunRecord:
+        """``current`` as the processor refreshed it, kept running with the ledger's start and cancel."""
+        return replace(
+            current,
+            status=RUNNING,
+            started_at=run.started_at,
+            cancel_sent_at=run.cancel_sent_at,
+        )
+
+    def _cancel(
+        self, subject: Subject, case: Case, run: RunRecord, *, hold: Optional[Hold]
+    ) -> tuple[RunRecord, Any, Optional[str]]:
+        """Cancel ``run`` for ``hold``, or for its wall clock without one: ``(run, current, failure)``.
+
+        A wall-clock cancel is ``now``, and the first one is stamped on the ``run`` returned
+        as its ``cancel_sent_at``, from which the lost-run deadline counts. A hold's cancel is
+        graceful, and recorded on the case once. A dry run cancels nothing: it refreshes
+        the run, writing nothing.
+        """
+        mode = "now" if hold is None else "graceful"
+        why = (
+            f"past its {subject.policy.budget.timeout_minutes}-minute wall clock"
+            if hold is None
+            else f"held by {hold.scope} ({hold.mode})"
+        )
+        label = f"  run {run.run_id} ({case.id})"
+        if self.dry_run:
+            self.say(f"{label}: {why}: would cancel ({mode})")
+            current, failure = self._call("status", run, persist=False)
+            return run, current, failure
+        self.say(f"{label}: {why}: cancelling ({mode})")
+        current, failure = self._call("cancel", run, mode=mode)
+        if hold is None and failure is None and run.cancel_sent_at is None:
+            run = replace(run, cancel_sent_at=self.now)
+        if hold is not None and not self._cancelled_for_hold(case, run.run_id):
+            self._entry(
+                case.id,
+                "hold",
+                detail={
+                    "scope": hold.scope,
+                    "mode": hold.mode,
+                    "cancelled_run": run.run_id,
+                },
+            )
+        return run, current, failure
+
     def _reconcile_run(self, run: RunRecord) -> None:
         subject = self.subjects[run.subject]
         case = self._case(run.case_id)
-        budget = subject.policy.budget
         label = f"  run {run.run_id} ({case.id})"
-        wall_clock = timedelta(minutes=budget.timeout_minutes)
-        if self.now - run.started_at > wall_clock + self.lost_run_deadline:
-            self._give_up(subject, case, run)
-            return
+        wall_clock = timedelta(minutes=subject.policy.budget.timeout_minutes)
         timed_out = self.now - run.started_at > wall_clock
-        hold = (
-            None
-            if timed_out
-            else blocking_hold(self.ledger, self._scopes(subject, case), for_="running")
-        )
-        if timed_out or hold is not None:
-            mode = "now" if timed_out else "graceful"
-            why = (
-                f"past its {budget.timeout_minutes}-minute wall clock"
-                if timed_out
-                else f"held by {hold.scope} ({hold.mode})"
-            )
-            if self.dry_run:
-                self.say(f"{label}: {why}: would cancel ({mode})")
-                current, failure = self._call("status", run, persist=False)
-            else:
-                self.say(f"{label}: {why}: cancelling ({mode})")
-                current, failure = self._call("cancel", run, mode=mode)
-                if hold is not None and not self._cancelled_for_hold(case, run.run_id):
-                    self._entry(
-                        case.id,
-                        "hold",
-                        detail={
-                            "scope": hold.scope,
-                            "mode": hold.mode,
-                            "cancelled_run": run.run_id,
-                        },
-                    )
-        else:
+        hold: Optional[Hold] = None
+        if timed_out and self._cancel_is_overdue(run):
+            # Its cancel had the lost-run deadline: ask whether it stopped, and send nothing.
             current, failure = self._call("status", run, persist=not self.dry_run)
+            if failure is None and current.status != FINISHED:
+                self._give_up(subject, case, run)
+                return
+        else:
+            if not timed_out:
+                scopes = self._scopes(subject, case)
+                hold = blocking_hold(self.ledger, scopes, for_="running")
+            if timed_out or hold is not None:
+                run, current, failure = self._cancel(subject, case, run, hold=hold)
+            else:
+                current, failure = self._call("status", run, persist=not self.dry_run)
 
         result: Optional[RunResult] = None
         if failure is None and current.status != FINISHED:
-            self.ledger.save_run(
-                replace(current, status=RUNNING, started_at=run.started_at)
-            )
+            self.ledger.save_run(self._in_flight(current, run))
             if not (timed_out or hold is not None):
                 beat = current.heartbeat_at or run.started_at
                 age = _fmt_age((self.now - beat).total_seconds())
@@ -1095,9 +1225,7 @@ class _Tick:
                 "collect", current, timed_out=timed_out, persist=not self.dry_run
             )
             if failure is None and result is None:
-                self.ledger.save_run(
-                    replace(current, status=RUNNING, started_at=run.started_at)
-                )
+                self.ledger.save_run(self._in_flight(current, run))
                 self.say(f"{label}: finished, its result not readable yet")
                 return
         if failure is not None:
@@ -1111,6 +1239,7 @@ class _Tick:
             status=FINISHED,
             started_at=run.started_at,
             ended_at=current.ended_at or self.now,
+            cancel_sent_at=run.cancel_sent_at,
         )
         self._collected(subject, case, finished, result)
 
@@ -1184,8 +1313,9 @@ class _Tick:
             )
             self._notify(
                 f"liaise: {case.id}'s run was cancelled",
-                f"Run {run.run_id} stopped for a cancel hold. Its session is kept, "
-                f"so the case resumes once the hold is lifted.",
+                notice_body(
+                    NOTICE_RUN_CANCELLED, subject=subject.slug, case_ids=(case.id,)
+                ),
             )
         elif error:
             self._apply_error(
@@ -1253,12 +1383,15 @@ class _Tick:
         if not action.counts and uncount_run is not None:
             self._uncount(subject.slug, case_id, uncount_run)
         if action.notify and notify_operator:
-            case = self._case(case_id)
+            named = error if error in ERROR_ACTIONS else _CRASHED
             self._notify(
-                f"liaise: {case_id} {error}",
-                f"{reason}\ncase: {case_id} ({case.state})\n"
-                f"conversations: {', '.join(case.conversations)}\n"
-                f"Nothing was sent to the partner about it.",
+                f"liaise: {case_id} {named}",
+                notice_body(
+                    NOTICE_ERROR,
+                    subject=subject.slug,
+                    case_ids=(case_id,),
+                    cause=named,
+                ),
             )
 
     def _uncount(self, slug: str, case_id: str, run_id: str) -> None:
@@ -1381,8 +1514,12 @@ class _Tick:
             self._transition(case_id, NEEDS_OWNER, f"effects held by {scopes}")
             self._notify(
                 f"liaise: {case_id}'s effects are held",
-                f"Run {run_id} finished, but {scopes} holds its effects. What it would "
-                f"have sent is kept on the case as drafts.",
+                notice_body(
+                    NOTICE_EFFECTS_HELD,
+                    subject=subject.slug,
+                    case_ids=(case_id,),
+                    cause=_hold_kinds(held),
+                ),
             )
         elif isinstance(final, _DeliveryGroup):
             pass  # its deploy decides the state
@@ -1454,7 +1591,12 @@ class _Tick:
             self.lines += notes
             self._notify(
                 f"liaise: a draft for {case.id} waits for you",
-                _kept_message_body(case.id, send, reason=decision.diverted),
+                notice_body(
+                    NOTICE_DIVERTED,
+                    subject=subject.slug,
+                    case_ids=(case.id,),
+                    cause=decision.diverted_by,
+                ),
             )
             return False
         outbound = decision.send
@@ -1466,8 +1608,13 @@ class _Tick:
                 registry=self.registry,
             )
             failure = None if result.ok else (result.error or "the channel refused it")
+            failure_kind = None if result.ok else result.error_kind
         except Exception as error:  # an unknown channel, an adapter that raised
-            result, failure = None, _error_text(error)
+            result, failure, failure_kind = (
+                None,
+                _error_text(error),
+                type(error).__name__,
+            )
         if failure is not None:
             reason = f"send failed: {failure}"
             self._entry(
@@ -1491,7 +1638,12 @@ class _Tick:
             self.problem(f"{case.id}: {outbound.purpose} to {outbound.ref}: {reason}")
             self._notify(
                 f"liaise: a message for {case.id} was not sent",
-                _kept_message_body(case.id, outbound, reason=reason),
+                notice_body(
+                    NOTICE_SEND_FAILED,
+                    subject=subject.slug,
+                    case_ids=(case.id,),
+                    cause=failure_kind or SEND_REFUSED_CAUSE,
+                ),
             )
             return False
         self._entry(
@@ -1523,7 +1675,12 @@ class _Tick:
                 self._hold_send(send, hold)
                 self._notify(
                     f"liaise: {case.id}'s {purpose} message is held",
-                    f"{hold.scope} holds effects; the message is kept as a draft.",
+                    notice_body(
+                        NOTICE_EFFECTS_HELD,
+                        subject=subject.slug,
+                        case_ids=(case.id,),
+                        cause=_hold_kinds((hold.scope,)),
+                    ),
                 )
             elif isinstance(action, StoreDraft):
                 self._add_draft(case.id, {**action.draft, "outcome": purpose})
@@ -1561,9 +1718,12 @@ class _Tick:
                     )
             self._notify(
                 f"liaise: delivering {case_ids} failed",
-                f"{subject.slug}: delivering {case_ids} raised {type(error).__name__}, "
-                f"so it waits for you in needs-owner and nothing more was sent to the "
-                f"partner; {SEE_STATUS}.",
+                notice_body(
+                    NOTICE_DELIVERY_FAILED,
+                    subject=subject.slug,
+                    case_ids=[item.case_id for item in pending],
+                    cause=type(error).__name__,
+                ),
             )
 
     def _run_delivery(
@@ -1577,8 +1737,8 @@ class _Tick:
         """
         slug = subject.slug
         case_ids = ", ".join(item.case_id for item in pending)
-        ok, reason, output = self._deploy(subject)
-        if ok:
+        deployed = self._deploy(subject)
+        if deployed.ok:
             verb = "would run" if self.dry_run else "ran"
             self.say(f"deploy {slug}: {verb} {subject.delivery.command} for {case_ids}")
             for item in pending:
@@ -1588,8 +1748,8 @@ class _Tick:
                 if item.applies_state and transition is not None:
                     self._transition(item.case_id, transition.state, transition.reason)
             return
-        error = classify_delivery_failure(output)
-        self.say(f"deploy {slug}: failed for {case_ids}: {reason}")
+        error = classify_delivery_failure(deployed.output)
+        self.say(f"deploy {slug}: failed for {case_ids}: {deployed.reason}")
         if error is not None:
             action = ERROR_ACTIONS[error]
             placed, _ = auto_hold(
@@ -1603,20 +1763,44 @@ class _Tick:
                     "hold",
                     detail={"scope": placed.scope, "set_by": placed.set_by},
                 )
-            self._transition(item.case_id, NEEDS_OWNER, f"deploy failed: {reason}")
+            self._entry(
+                item.case_id,
+                "run",
+                text=deployed.output[-DEPLOY_OUTPUT_TAIL_CHARS:] or None,
+                detail={
+                    "event": RUN_DEPLOY_FAILED,
+                    "cause": deployed.cause,
+                    "error": error,
+                },
+            )
+            self._transition(
+                item.case_id, NEEDS_OWNER, f"deploy failed: {deployed.reason}"
+            )
         self._notify(
             f"liaise: {case_ids} landed but did not deploy",
-            f"{slug}: {case_ids} landed, but {reason}. Nothing was sent to the "
-            f"partner." + (f" Error class: {error}." if error else ""),
+            notice_body(
+                NOTICE_DEPLOY_FAILED,
+                subject=slug,
+                case_ids=[item.case_id for item in pending],
+                cause=", ".join(part for part in (deployed.cause, error) if part),
+            ),
         )
 
-    def _deploy(self, subject: Subject) -> tuple[bool, str, str]:
-        """Run the subject's deploy command once: ``(ok, reason, output)``."""
+    def _deploy(self, subject: Subject) -> _Deployed:
+        """Run the subject's deploy command once.
+
+        A failure's ``reason`` never quotes the command's output, which the ``run`` entry
+        of each of its cases keeps (see :data:`RUN_DEPLOY_FAILED`).
+        """
         command = subject.delivery.command
         if not command:
-            return False, "no deploy command is configured for this subject", ""
+            return _Deployed(
+                ok=False,
+                reason="no deploy command is configured for this subject",
+                cause="no deploy command",
+            )
         if self.dry_run:
-            return True, "", ""
+            return _Deployed(ok=True)
         path = subject.workspace.path
         try:
             done = subprocess.run(
@@ -1627,16 +1811,21 @@ class _Tick:
                 text=True,
             )
         except (OSError, ValueError, subprocess.TimeoutExpired) as error:
-            return False, f"the deploy command did not finish ({error})", str(error)
+            return _Deployed(
+                ok=False,
+                reason=f"the deploy command did not finish ({type(error).__name__})",
+                cause=type(error).__name__,
+                output=str(error),
+            )
         output = f"{done.stdout or ''}\n{done.stderr or ''}".strip()
         if done.returncode != 0:
-            shown = output[:DELIVERY_OUTPUT_CHARS]
-            return (
-                False,
-                f"the deploy command exited {done.returncode}: {shown}",
-                output,
+            return _Deployed(
+                ok=False,
+                reason=f"the deploy command exited {done.returncode}",
+                cause=f"exit code {done.returncode}",
+                output=output,
             )
-        return True, "", output
+        return _Deployed(ok=True, output=output)
 
     # ---- 3. start ----
 
@@ -1770,7 +1959,12 @@ class _Tick:
             self._transition(case.id, NEEDS_OWNER, f"cannot start work: {refusal}")
             self._notify(
                 f"liaise: {case.id} needs you before work starts",
-                f"{refusal}\nconversations: {', '.join(case.conversations)}",
+                notice_body(
+                    NOTICE_START_REFUSED,
+                    subject=subject.slug,
+                    case_ids=(case.id,),
+                    cause=REQUEST_WORK,
+                ),
             )
             return
         passed.append(f"{case.reporter} may {REQUEST_WORK}")
@@ -1910,36 +2104,58 @@ class _Tick:
     def _issue_is_closed(self, case: Case, label: str) -> bool:
         """Whether ``case`` waits because its GitHub issue is closed, or cannot be read now.
 
-        The issue is read at most once a tick, and only for a case about to start or to be
-        told something (see :meth:`_read_issue_closed`). A case with no GitHub issue never
-        waits for this.
+        The issue is read at most once a tick, only for a case about to start or to be told
+        something, and, once read closed, at most once per ``closed_recheck_interval`` (see
+        :meth:`_read_issue_closed`). A case with no GitHub issue never waits for this.
         """
         if case.id not in self.issue_closed:
             self.issue_closed[case.id] = self._read_issue_closed(case)
         closed = self.issue_closed[case.id]
         if closed is False:
             return False
-        self.say(f"{label}: its issue {'is closed' if closed else 'could not be read'}")
+        if closed is None:
+            self.say(f"{label}: its issue could not be read")
+            return True
+        read_at = self.ledger.get_issue_check(case.id).read_at
+        if read_at is None or read_at == self.now:
+            self.say(f"{label}: its issue is closed")
+        else:
+            ago = _fmt_age((self.now - read_at).total_seconds())
+            due = read_at + self.closed_recheck_interval - self.now
+            self.say(
+                f"{label}: its issue is closed (read {ago} ago; read again in "
+                f"{_fmt_age(due.total_seconds())})"
+            )
         return True
 
     def _read_issue_closed(self, case: Case) -> Optional[bool]:
-        """Whether ``case``'s GitHub issue is closed: True or False, None when it cannot be read.
+        """Whether ``case``'s GitHub issue is closed: True or False, None when it cannot be read now.
 
-        Read with ``correspond.read``, from the opening's ``native["state"]``. The case
-        records a closing once, as a ``run`` entry ``{"closed": True}``, and a reopening as
-        one with ``{"closed": False}``. A read that fails is a problem line.
+        Read with ``correspond.read``, from the opening's ``native["state"]``. A read costs
+        the issue and every page of its comments, and correspond's poll reports neither a
+        closing nor a reopening, so a case recorded closed counts as closed, unread, until
+        ``closed_recheck_interval`` has passed since its last read (kept in the ledger's
+        :class:`~liaise.model.IssueCheck`). The case records a closing once, as a ``run``
+        entry ``{"closed": True}``, and a reopening as one with ``{"closed": False}``. A read
+        that fails is a problem line, and :data:`STATE_READ_FAILURE_LIMIT` of them in a row
+        hand the case to the owner (see :meth:`_state_read_failed`).
         """
         ref = _github_issue_ref(case)
         if ref is None:
             return False
+        check = self.ledger.get_issue_check(case.id)
+        if (
+            _issue_seen_closed(case) is True
+            and check.read_at is not None
+            and self.now - check.read_at < self.closed_recheck_interval
+        ):
+            return True
         try:
             messages = correspond.read(ref, registry=self.registry)
         except Exception as error:  # a channel that fails: the next tick reads it again
-            self.problem(
-                f"{case.id}: reading {ref} failed: {_error_text(error)}; the case waits "
-                f"for the next tick"
-            )
+            self._state_read_failed(case, ref, check, error)
             return None
+        self.ledger.save_issue_check(case.id, IssueCheck(read_at=self.now))
         opening = next(
             (
                 message
@@ -1963,6 +2179,46 @@ class _Tick:
             self.say(f"  case {case.id}: {ref} was reopened")
         return closed
 
+    def _state_read_failed(
+        self, case: Case, ref: str, check: IssueCheck, error: Exception
+    ) -> None:
+        """Count a failed read of ``case``'s issue state, and hand the case to the owner at the limit.
+
+        Past :data:`STATE_READ_FAILURE_LIMIT` failures in a row, the case goes to
+        ``needs-owner``, its count starts again, and the owner is told once, of the kind of
+        failure only: its message stays in the transition's reason, on the case.
+        """
+        failures = check.failures + 1
+        why = _error_text(error)
+        if failures < STATE_READ_FAILURE_LIMIT:
+            self.ledger.save_issue_check(case.id, replace(check, failures=failures))
+            self.problem(
+                f"{case.id}: reading {ref} failed ({failures} in a row): {why}; the case "
+                f"waits for the next tick"
+            )
+            return
+        self.ledger.save_issue_check(case.id, replace(check, failures=0))
+        self.problem(
+            f"{case.id}: reading {ref} failed {failures} times in a row: {why}; the case "
+            f"goes to the owner"
+        )
+        self._transition(
+            case.id,
+            NEEDS_OWNER,
+            f"its issue {ref} could not be read {failures} times in a row; the last "
+            f"read: {why}",
+        )
+        kind = error.kind if isinstance(error, ChannelError) else type(error).__name__
+        self._notify(
+            f"liaise: {case.id}'s issue cannot be read",
+            notice_body(
+                NOTICE_ISSUE_UNREADABLE,
+                subject=case.subject,
+                case_ids=(case.id,),
+                cause=kind,
+            ),
+        )
+
     def _notify_daily_cap(self, subject: Subject, case: Case, *, count: int) -> None:
         """Tell the operator the daily cap holds ``subject``'s work back: once a day (0.0.x M-8).
 
@@ -1976,9 +2232,12 @@ class _Tick:
         cap = subject.policy.budget.daily_dispatches
         self._notify(
             f"liaise: {subject.slug} reached its daily cap",
-            f"{count} of {cap} dispatches used today, so {case.id} waits in budget. "
-            f"Capped cases start again tomorrow; to allow more, raise "
-            f"policy.budget.daily_dispatches in subjects/{subject.slug}.toml.",
+            notice_body(
+                NOTICE_DAILY_CAP,
+                subject=subject.slug,
+                case_ids=(case.id,),
+                cause=f"{count} of {cap} dispatches today",
+            ),
             priority=DAILY_CAP_PRIORITY,
         )
 

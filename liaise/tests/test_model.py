@@ -17,6 +17,7 @@ from liaise.model import (
     Case,
     Health,
     Hold,
+    IssueCheck,
     LedgerEntry,
     Outcome,
     RunRecord,
@@ -145,7 +146,10 @@ RECORDS = [
         ended_at=T0 + timedelta(minutes=5),
         session_id="s1",
         stream_path="r1.jsonl",
+        cancel_sent_at=T0 + timedelta(minutes=4),
     ),
+    IssueCheck(),
+    IssueCheck(read_at=T0, failures=2),
     RunResult(run_id="r2"),
     RunResult(
         run_id="r1",

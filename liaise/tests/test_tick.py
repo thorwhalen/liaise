@@ -13,6 +13,7 @@ import copy
 import json
 import os
 import re
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, field, replace
@@ -24,12 +25,13 @@ import pytest
 from correspond.errors import ChannelError
 
 from liaise import tick as tick_module
-from liaise.cases import set_case_state
+from liaise.cases import case_show_lines, set_case_state
 from liaise.config import ConfigError, GlobalConfig
 from liaise.github import FakeGitHub, Issue
 from liaise.holds import hold
 from liaise.ledger import Ledger
 from liaise.model import Health, LedgerEntry, Outcome, RunRecord, RunResult
+from liaise.notify import NOTICE_DIVERTED, NOTICE_SEND_FAILED
 from liaise.outcomes import OUTCOME_SCHEMA
 from liaise.processor import RECORD_FILE, ClaudeHeadless, EchoProcessor
 from liaise.subjects import BudgetPolicy, Delivery, Policy, ProcessorConfig, Subject, Workspace
@@ -39,13 +41,15 @@ from liaise.tests.conftest import write_executable_script
 from liaise.tick import (
     AUTH_PROBE_INTERVAL,
     BUDGET_MESSAGE,
+    CLOSED_RECHECK_INTERVAL,
     LOST_RUN_DEADLINE,
     NUDGE_MESSAGE,
     RUN_ID_SUFFIX_DIGITS,
-    SEE_STATUS,
+    STATE_READ_FAILURE_LIMIT,
     TRY_IT_MESSAGE,
     RunLockHeld,
     last_run_age,
+    run_lock,
     run_lock_path,
     run_once,
     run_stamps,
@@ -282,6 +286,8 @@ def test_a_dry_run_plans_every_step_and_changes_nothing(world):
     world.issue(13, minutes=1)
     snapshot = copy.deepcopy(world.store)
     labels = (world.labels(12), world.labels(13))
+    lock = run_lock_path(world.config.state_dir)
+    lock_before = lock.read_bytes()  # kept by the real tick: a lock file is never removed (S8 #4)
 
     report = world.tick(LATER + timedelta(minutes=10), dry_run=True)
 
@@ -305,7 +311,7 @@ def test_a_dry_run_plans_every_step_and_changes_nothing(world):
     assert (len(world.processor.jobs), len(world.processor.preflights)) == (1, 1)  # the real tick's only
     assert (world.labels(12), world.labels(13)) == labels
     assert world.notes == []
-    assert not (world.tmp_path / "state" / "run.lock").exists()
+    assert lock.read_bytes() == lock_before
 
 
 # ---- #24: a processor that raises ----
@@ -896,27 +902,33 @@ def test_run_stamps_read_a_legacy_last_run_as_a_finished_run():
 
 
 def test_a_tick_refuses_to_start_while_a_live_process_holds_the_run_lock(world):
-    """0.0.x L-3: one tick at a time. The lock holds this test's own pid, which is alive."""
-    lock = _lock(world, os.getpid())
+    """0.0.x L-3, S8 #4: one tick at a time. The run lock is an OS lock on the lock file, which
+    refuses a second descriptor of it, this process's own included."""
+    lock = run_lock_path(world.config.state_dir)
     world.issue()
-    with pytest.raises(RunLockHeld, match="already in progress"):
-        world.tick()
-    assert (world.processor.jobs, world.store) == ([], {})
-    assert lock.read_text() == str(os.getpid())
+    with run_lock(lock):
+        with pytest.raises(RunLockHeld, match=rf"another liaise tick \(pid {os.getpid()}\) is already in progress"):
+            world.tick()
+        assert (world.processor.jobs, world.store) == ([], {})
+        assert lock.read_text() == str(os.getpid())
+    assert world.tick().dispatched == (RUN_1,)  # free once it is released
 
 
 def test_a_run_lock_left_by_a_dead_process_is_reclaimed(world):
+    """S8 #4: a lock file holding a dead pid, with no OS lock on it, stops nothing. The file is
+    never removed: it is emptied when the tick ends."""
     lock = _lock(world, DEAD_PID)
     world.issue()
     assert world.tick().dispatched == (RUN_1,)
-    assert not lock.exists()  # released once the tick ended
+    assert lock.exists() and lock.read_text() == ""
 
 
 def test_a_dry_run_neither_takes_nor_minds_the_run_lock(world):
-    lock = _lock(world, os.getpid())
+    lock = run_lock_path(world.config.state_dir)
     world.issue()
-    assert world.tick(dry_run=True).dispatched == (RUN_1,)  # a live holder does not stop it
-    assert lock.read_text() == str(os.getpid())
+    with run_lock(lock):
+        assert world.tick(dry_run=True).dispatched == (RUN_1,)  # a held lock does not stop it
+        assert lock.read_text() == str(os.getpid())
 
 
 def test_a_tick_that_raises_still_stamps_its_end_and_releases_the_lock(world, monkeypatch):
@@ -931,7 +943,8 @@ def test_a_tick_that_raises_still_stamps_its_end_and_releases_the_lock(world, mo
     lock_path = run_lock_path(world.config.state_dir)
     assert run_stamps(world.store).started_at == NOW
     assert run_stamps(world.store, lock_path=lock_path).state == "finished"
-    assert not lock_path.exists()
+    with run_lock(lock_path):  # released: it can be taken again
+        pass
 
 
 # ---- S7: the fixes from the adversarial review ----
@@ -968,7 +981,7 @@ def test_a_working_case_with_no_run_in_flight_goes_to_the_owner_once(world):
     (lost,) = [e for e in case.entries if e.kind == "run" and e.detail.get("event") == "lost"]
     assert lost.at == LATER
     ((_, body, _),) = [note for note in world.notes if "run lost" in note[0]]
-    assert SEE_STATUS in body and "liaise case set-state" in body
+    assert f"see liaise case show {CASE_1}" in body
     assert "liaise:needs-owner" in world.labels()
     world.tick(LATER + timedelta(minutes=5))
     assert _titled(world, "run lost") == 1
@@ -1028,8 +1041,8 @@ def test_a_delivery_that_raises_hands_its_cases_to_the_owner_and_the_tick_goes_o
 
 
 def test_a_run_that_will_not_stop_is_given_up_past_the_lost_run_deadline(world):
-    """#2: past its wall clock and LOST_RUN_DEADLINE, a run that ignores every cancel is
-    finished as timed_out, whatever its pid says, and its case goes to the owner."""
+    """#2: LOST_RUN_DEADLINE after the tick cancelled it for its wall clock, a run that ignores
+    every cancel is finished as timed_out, whatever its pid says, and its case goes to the owner."""
     world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
     world.processor = StubbornProcessor()
     world.issue()
@@ -1057,6 +1070,7 @@ def test_the_lost_run_deadline_is_a_keyword_of_the_tick(world):
     world.processor = StubbornProcessor()
     world.issue()
     world.tick()
+    world.tick(NOW + timedelta(minutes=31))  # past its wall clock: cancelled, and the deadline starts
     assert world.tick(NOW + timedelta(minutes=32), lost_run_deadline=timedelta(minutes=1)).collected == (RUN_1,)
 
 
@@ -1131,7 +1145,7 @@ def test_a_closed_issue_is_not_started_until_it_reopens(world):
     assert (world.notes, world.github.sent) == ([], [])
 
     world.github.set_state(REPO, 12, "open")
-    assert world.tick(LATER + timedelta(minutes=10)).dispatched == (RUN_1,)
+    assert world.tick(LATER + CLOSED_RECHECK_INTERVAL).dispatched == (RUN_1,)  # read again once due (S8 #3)
     assert [mark["closed"] for mark in _closed_marks(world.case())] == [True, False]
 
 
@@ -1208,8 +1222,8 @@ def test_a_diverted_message_tells_the_operator_everything_but_its_text(world):
     world.tick(LATER)
 
     ((_, body, _),) = [note for note in world.notes if "waits for you" in note[0]]
-    assert TOKEN_SHAPED not in body and "log in" not in body
-    for part in (CASE_1, "pat", ISSUE_12, "leak scan: token", SEE_STATUS):
+    assert TOKEN_SHAPED not in body and "log in" not in body and ISSUE_12 not in body
+    for part in (f"case: {CASE_1}", f"event: {NOTICE_DIVERTED}", "cause: leak_scan", f"see liaise case show {CASE_1}"):
         assert part in body
 
 
@@ -1223,37 +1237,58 @@ def test_a_failed_send_tells_the_operator_everything_but_its_text(world):
     world.tick(LATER, outbound_filters=())
 
     ((_, body, _),) = [note for note in world.notes if "was not sent" in note[0]]
-    assert TOKEN_SHAPED not in body and "log in" not in body
-    for part in (CASE_1, "pat", ISSUE_12, "send failed", SEE_STATUS):
+    assert TOKEN_SHAPED not in body and "log in" not in body and ISSUE_12 not in body
+    for part in (f"case: {CASE_1}", f"event: {NOTICE_SEND_FAILED}", "cause: auth", f"see liaise case show {CASE_1}"):
         assert part in body
 
 
-def test_the_run_lock_is_created_exclusively(world, monkeypatch):
-    """#11: finding the run lock free and taking it are one step."""
+#: A script that holds the run lock at argv[1], says so, and lets it go once its stdin closes.
+_LOCK_HOLDER = """
+import sys
+from liaise.tick import run_lock
+with run_lock(sys.argv[1]):
+    print("held", flush=True)
+    sys.stdin.read()
+"""
+#: How long a test waits, at most, for the process holding the run lock to exit.
+LOCK_HOLDER_WAIT_S = 10.0
+
+
+def test_a_run_lock_another_process_holds_refuses_a_tick_until_it_lets_go(world):
+    """#11, S8 #4: across processes, as a manual `liaise run` meets the scheduled one."""
     lock = run_lock_path(world.config.state_dir)
-    flags = []
-    real_open = os.open
+    holder = subprocess.Popen(
+        [sys.executable, "-c", _LOCK_HOLDER, str(lock)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
+    )
+    try:
+        assert holder.stdout.readline().strip() == "held"
+        world.issue()
+        with pytest.raises(RunLockHeld, match=rf"another liaise tick \(pid {holder.pid}\)"):
+            world.tick()
+        assert world.processor.jobs == []
+    finally:
+        holder.stdin.close()
+        holder.wait(timeout=LOCK_HOLDER_WAIT_S)
+    assert world.tick().dispatched == (RUN_1,)
 
-    def spy(path, flag, *args, **kwargs):
-        if Path(path) == lock:
-            flags.append(flag)
-        return real_open(path, flag, *args, **kwargs)
 
-    monkeypatch.setattr(os, "open", spy)
-    world.tick()
-    assert flags and all(flag & os.O_CREAT and flag & os.O_EXCL for flag in flags)
-
-
-def test_a_tick_leaves_a_run_lock_another_process_took_over(world, monkeypatch):
-    """#11: releasing the run lock removes it only while it holds this process's pid."""
+def test_an_empty_run_lock_file_that_is_locked_still_blocks(world):
+    """#11, S8 #4: a lock taken before its pid is written (read between another tick's open and
+    its write) is held all the same: the OS lock decides, not what the file holds."""
     lock = run_lock_path(world.config.state_dir)
-
-    def taken_over(self):
-        lock.write_text(str(DEAD_PID))  # another tick reclaimed the lock mid-tick
-
-    monkeypatch.setattr(tick_module._Tick, "project", taken_over)
-    world.tick()
-    assert lock.read_text() == str(DEAD_PID)
+    lock.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(lock, os.O_RDWR | os.O_CREAT)
+    try:
+        assert tick_module._try_lock(descriptor)
+        assert lock.read_text() == ""
+        world.issue()
+        with pytest.raises(RunLockHeld, match="another liaise tick is already in progress"):
+            world.tick()
+        assert world.processor.jobs == []
+    finally:
+        tick_module._unlock(descriptor)
+        os.close(descriptor)
+    assert lock.exists()
 
 
 def test_a_state_the_operator_sets_reaches_the_issue_on_the_next_tick(world):
@@ -1288,3 +1323,378 @@ def test_a_triage_orders_the_ready_cases_and_the_tick_starts_them_in_that_order(
     assert seen == [[CASE_1, "example-app-2"]]
     assert report.dispatched == (_run_id("example-app-2", 1),)  # the concurrent cap starts one
     assert f"  triage {SLUG}: example-app-2, {CASE_1}" in report.plan_lines
+
+
+# ---- S8: the fixes from the adversarial review of the S7 fixes ----
+
+#: How long a test waits, at most, for a fake claude run to stop, and how often it looks.
+STOP_WAIT_S = 10.0
+STOP_POLL_S = 0.05
+#: How long a hung fake claude sleeps: longer than any test waits for it.
+HANG_S = 60.0
+#: How a token-shaped poison starts, and how long it runs after that.
+POISON_PREFIX = "ghp_"
+POISON_TAIL = 36
+
+
+def _poison(tag: str) -> str:
+    """A token-shaped string naming where it was planted, built by concatenation."""
+    return POISON_PREFIX + tag + "0" * (POISON_TAIL - len(tag))
+
+
+def _wait_stopped(processor, run) -> None:
+    deadline = time.monotonic() + STOP_WAIT_S
+    while processor.status(run, persist=False).status != "finished":
+        assert time.monotonic() < deadline, f"run {run.run_id} did not stop"
+        time.sleep(STOP_POLL_S)
+
+
+def _stop_runs(world) -> None:
+    """Stop every run the world's ClaudeHeadless started, so no fake claude outlives the test."""
+    for run in world.ledger.runs():
+        going = replace(run, status="running")
+        world.processor.cancel(going, mode="now")
+        _wait_stopped(world.processor, going)
+
+
+def test_a_run_first_seen_past_the_lost_run_deadline_is_cancelled_not_given_up(world):
+    """S8 #1: no tick ran for longer than the wall clock and the deadline together (a laptop
+    asleep). The first tick to see the run cancels it and keeps it, with its checkout; a later
+    tick collects it once it has stopped, and only then does the checkout go to another case."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
+    claude = fake_claude(world.tmp_path / "claude", scenario="hang", sleep_s=HANG_S)
+    world.processor = ClaudeHeadless(claude_bin=claude, runs_dir=world.tmp_path / "state" / "runs", auth_check=None)
+    checkout = SharedCheckout(world.workspace, lock_dir=world.tmp_path / "state" / "locks")
+    world.issue()
+    try:
+        assert world.tick().dispatched == (RUN_1,)
+        world.issue(13, minutes=1)
+        first_seen = NOW + timedelta(minutes=31) + LOST_RUN_DEADLINE
+
+        late = world.tick(first_seen)
+
+        assert (late.collected, late.dispatched) == ((), ())
+        run = world.ledger.get_run(RUN_1)
+        assert (run.status, run.cancel_sent_at) == ("running", first_seen)
+        assert "cancel_requested_at" in json.loads((world.processor.run_dir(RUN_1) / RECORD_FILE).read_text())
+        assert checkout.holder()["run_id"] == RUN_1
+        assert world.case().state == "working"
+        assert not any("lost-run deadline" in line for line in late.plan_lines)
+
+        _wait_stopped(world.processor, run)  # the cancel stopped the hung run
+        collected = world.tick(first_seen + timedelta(minutes=2))
+
+        assert collected.collected == (RUN_1,)
+        case = world.case()
+        assert (case.state, _collected_error(case)) == ("needs-owner", "timed_out")
+        assert not any("lost-run deadline" in line for line in collected.plan_lines)
+        assert collected.dispatched == (_run_id("example-app-2", 1),)  # the checkout is free only now
+    finally:
+        _stop_runs(world)
+
+
+def test_a_run_is_given_up_only_the_lost_run_deadline_after_the_tick_cancelled_it(world):
+    """S8 #1: the deadline counts from the cancel, not from the start."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
+    world.processor = StubbornProcessor()
+    world.issue()
+    world.tick()
+    first_seen = NOW + timedelta(hours=3)  # long past its wall clock, and never cancelled
+
+    assert world.tick(first_seen).collected == ()
+    assert world.ledger.get_run(RUN_1).cancel_sent_at == first_seen
+    assert world.tick(first_seen + LOST_RUN_DEADLINE - timedelta(minutes=1)).collected == ()
+    assert world.case().state == "working"
+
+    given_up = world.tick(first_seen + LOST_RUN_DEADLINE)
+
+    assert given_up.collected == (RUN_1,)
+    assert any("lost-run deadline" in line for line in given_up.plan_lines)
+    assert world.processor.cancels == [(RUN_1, "now"), (RUN_1, "now")]
+    assert world.ledger.get_run(RUN_1).cancel_sent_at == first_seen  # the first cancel's, kept
+
+
+def test_a_cancelled_run_that_stopped_is_collected_past_the_deadline_not_given_up(world):
+    """S8 #1: past the deadline, a run is given up only while its processor still says it runs;
+    one its cancel stopped is collected as any finished run is."""
+    world.subject = _subject(world.workspace, budget=BudgetPolicy(timeout_minutes=30))
+    world.processor = SlowProcessor()
+    world.issue()
+    world.tick()
+    world.tick(NOW + timedelta(minutes=31))  # cancelled; the run stops, but no tick sees it for a while
+
+    late = world.tick(NOW + timedelta(minutes=31) + LOST_RUN_DEADLINE + timedelta(minutes=5))
+
+    assert late.collected == (RUN_1,)
+    assert not any("lost-run deadline" in line for line in late.plan_lines)
+    assert f"  run {RUN_1} ({CASE_1}): collected, timed_out" in late.plan_lines
+    assert world.processor.cancels == [(RUN_1, "now")]
+
+
+def _seed_inbox_case(world) -> str:
+    """A case reported through the web inbox alone, working on a run no tick has collected."""
+    ledger = world.ledger
+    case = ledger.new_case(SLUG, "webinbox:example-site#r1", reporter="pat", at=T0)
+    message = LedgerEntry(at=T0, kind="message", actor="pat", grade="bound", permission="report", text="No answer.")
+    ledger.append(case.id, message)
+    ledger.transition(case.id, "working", at=NOW, actor="liaise", reason="seeded")
+    ledger.save_run(RunRecord(run_id=f"{case.id}-r1", case_id=case.id, subject=SLUG, mode="fresh", status="running", started_at=NOW))
+    return case.id
+
+
+def _reply_with(text):
+    return RunResult(run_id="", outcomes=(Outcome(kind="reply", text=text),))
+
+
+def _poisoned_escalation(world, tmp_path, monkeypatch):
+    outcome = Outcome(kind="escalate", text="Send " + _poison("EscalationDraft"), reason="Needs " + _poison("EscalationReason"))
+    result = RunResult(run_id="", outcomes=(outcome,), summary="Did " + _poison("Summary"))
+    world.processor = EchoProcessor(results={CASE_1: result})
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+    return CASE_1, (_poison("EscalationDraft"), _poison("EscalationReason"), _poison("Summary"))
+
+
+def _poisoned_no_channel(world, tmp_path, monkeypatch):
+    world.processor = EchoProcessor(default=_reply_with("Fixed: " + _poison("NoChannelDraft")))
+    case_id = _seed_inbox_case(world)
+    world.tick(LATER)
+    return case_id, (_poison("NoChannelDraft"),)
+
+
+def _poisoned_divert(world, tmp_path, monkeypatch):
+    world.processor = EchoProcessor(results={CASE_1: _reply_with("Use " + _poison("DivertedDraft"))})
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+    return CASE_1, (_poison("DivertedDraft"),)
+
+
+def _poisoned_send_failure(world, tmp_path, monkeypatch):
+    world.processor = EchoProcessor(results={CASE_1: _reply_with("Use " + _poison("FailedDraft"))})
+    world.issue()
+    world.tick()
+    world.github.send_error = ChannelError("GitHub refused " + _poison("SendError"), kind="validation")
+    world.tick(LATER, outbound_filters=())  # no gate to divert it first
+    return CASE_1, (_poison("FailedDraft"), _poison("SendError"))
+
+
+def _poisoned_deploy_output(world, tmp_path, monkeypatch):
+    body = "import sys\nprint('push refused: ' + " + repr(_poison("DeployOutput")) + ")\nsys.exit(2)\n"
+    script = write_executable_script(tmp_path / "deploy", body)
+    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="issue", command=script.as_posix()))
+    world.processor = EchoProcessor(results={CASE_1: DELIVERED})
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+    return CASE_1, (_poison("DeployOutput"),)
+
+
+def _poisoned_delivery_exception(world, tmp_path, monkeypatch):
+    world.subject = _subject(world.workspace, delivery=Delivery(kind="deploy", per="issue", command="deploy"))
+    world.processor = EchoProcessor(results={CASE_1: DELIVERED})
+    world.issue()
+    world.tick()
+
+    def explode(self, subject):
+        raise RuntimeError("the runner said " + _poison("DeliveryRaised"))
+
+    monkeypatch.setattr(tick_module._Tick, "_deploy", explode)
+    world.tick(LATER)
+    return CASE_1, (_poison("DeliveryRaised"),)
+
+
+def _poisoned_start_exception(world, tmp_path, monkeypatch):
+    class StartRaises(EchoProcessor):
+        def start(self, job):
+            raise RuntimeError("the spawn said " + _poison("StartRaised"))
+
+    world.processor = StartRaises()
+    world.issue()
+    world.tick()
+    return CASE_1, (_poison("StartRaised"),)
+
+
+def _poisoned_status_exception(world, tmp_path, monkeypatch):
+    world.issue()
+    world.tick()
+
+    def explode(*args, **kwargs):
+        raise OSError("status said " + _poison("StatusRaised"))
+
+    world.processor.status = explode
+    world.tick(LATER)
+    return CASE_1, ()  # a problem line only: nothing of it is kept on the case
+
+
+def _poisoned_held_effects(world, tmp_path, monkeypatch):
+    world.processor = EchoProcessor(results={CASE_1: _reply_with("Use " + _poison("HeldDraft"))})
+    world.issue()
+    world.tick()
+    hold(world.ledger, "checkout:" + str(world.workspace), mode="block", now=NOW)
+    world.tick(LATER)
+    return CASE_1, (_poison("HeldDraft"),)
+
+
+def _poisoned_error_class(world, tmp_path, monkeypatch):
+    world.processor = EchoProcessor(health=Health(ok=False, error="unheard of " + _poison("ErrorClass")))
+    world.issue()
+    world.tick()
+    return CASE_1, (_poison("ErrorClass"),)
+
+
+def _poisoned_state_reads(world, tmp_path, monkeypatch):
+    world.issue()
+    hold(world.ledger, f"subject:{SLUG}", mode="block", now=T0)
+    world.tick()
+    world.ledger.clear_hold(f"subject:{SLUG}")
+    read = world.github.read
+
+    def refuse_issues(ref, **kwargs):
+        if "#" in ref.id:
+            raise ChannelError("the issue is gone: " + _poison("Unreadable"), kind="not_found")
+        return read(ref, **kwargs)
+
+    world.github.read = refuse_issues
+    for attempt in range(STATE_READ_FAILURE_LIMIT):
+        world.tick(LATER + timedelta(minutes=2 * attempt))
+    return CASE_1, (_poison("Unreadable"),)
+
+
+#: Each operator notification that text a case holds could reach, fed a token-shaped poison
+#: where that text comes from: ``(world, tmp_path, monkeypatch) -> (case id, the poisons liaise
+#: case show still shows)``. The run-lost, cancel-hold, refused-start and daily-cap notices
+#: take in no such text.
+POISONED_PATHS = {
+    "escalation draft, reason and summary": _poisoned_escalation,
+    "no channel to reach the reporter": _poisoned_no_channel,
+    "diverted draft": _poisoned_divert,
+    "failed send and its channel error": _poisoned_send_failure,
+    "failed deploy output": _poisoned_deploy_output,
+    "delivery that raised": _poisoned_delivery_exception,
+    "start that raised": _poisoned_start_exception,
+    "status that raised": _poisoned_status_exception,
+    "effects held by a checkout hold": _poisoned_held_effects,
+    "unknown error class": _poisoned_error_class,
+    "unreadable issue state": _poisoned_state_reads,
+}
+
+
+@pytest.mark.parametrize("path", sorted(POISONED_PATHS))
+def test_no_operator_notification_carries_what_the_case_holds(world, tmp_path, monkeypatch, path):
+    """S8 #2: an ntfy topic is readable by anyone who knows its name. Every notification names
+    the case and points at `liaise case show`, which shows what the notification left out."""
+    case_id, kept = POISONED_PATHS[path](world, tmp_path, monkeypatch)
+
+    assert world.notes, f"the {path} path told the operator nothing"
+    for title, body, _ in world.notes:
+        assert POISON_PREFIX not in title and POISON_PREFIX not in body, (title, body)
+        assert str(world.workspace.resolve()) not in body
+    assert any(f"see liaise case show {case_id}" in body for _, body, _ in world.notes)
+    shown = "\n".join(case_show_lines(world.store, case_id))
+    for poison in kept:
+        assert poison in shown
+
+
+def _closed_after_intake(world) -> None:
+    """Issue 12 taken in while a hold kept it from starting; then it is closed, and the hold lifted."""
+    world.issue()
+    hold(world.ledger, f"subject:{SLUG}", mode="block", now=T0)
+    world.tick()
+    world.ledger.clear_hold(f"subject:{SLUG}")
+    world.github.set_state(REPO, 12, "closed")
+
+
+def _counted_reads(world) -> list:
+    """The ids of the conversations read from now on, as correspond hands them to the channel."""
+    reads = []
+    read = world.github.read
+
+    def counting(ref, **kwargs):
+        reads.append(ref.id)
+        return read(ref, **kwargs)
+
+    world.github.read = counting
+    return reads
+
+
+def test_a_closed_ready_case_reads_its_issue_once_per_recheck_interval(world):
+    """S8 #3: a read costs the issue and every page of its comments, and correspond's poll never
+    reports a reopening, so a closed case that is otherwise ready is read once an interval."""
+    _closed_after_intake(world)
+    reads = _counted_reads(world)
+
+    ticks = [world.tick(LATER + timedelta(minutes=2 * index)) for index in range(6)]
+
+    assert all(report.dispatched == () for report in ticks)
+    assert reads == [f"{REPO}#12"]
+    assert f"  case {CASE_1} (intake): its issue is closed (read 2m ago; read again in 58m)" in ticks[1].plan_lines
+    world.github.set_state(REPO, 12, "open")
+    assert world.tick(LATER + CLOSED_RECHECK_INTERVAL - timedelta(minutes=1)).dispatched == ()
+    assert len(reads) == 1
+    assert world.tick(LATER + CLOSED_RECHECK_INTERVAL).dispatched == (RUN_1,)
+    assert len(reads) == 2
+
+
+def test_the_closed_recheck_interval_is_a_keyword_of_the_tick(world):
+    _closed_after_intake(world)
+    reads = _counted_reads(world)
+    interval = timedelta(minutes=5)
+    for minutes in (0, 4, 5):
+        world.tick(LATER + timedelta(minutes=minutes), closed_recheck_interval=interval)
+    assert len(reads) == 2
+
+
+def test_state_reads_failing_the_limit_in_a_row_hand_the_case_to_the_owner_once(world):
+    """S8 #3: a read that always fails (a deleted or transferred issue) is not a problem line
+    every tick forever: the case goes to the owner, who is told once."""
+    world.issue()
+    hold(world.ledger, f"subject:{SLUG}", mode="block", now=T0)
+    world.tick()
+    world.ledger.clear_hold(f"subject:{SLUG}")
+    reads = []
+
+    def refuse(ref, **kwargs):
+        reads.append(ref.id)
+        raise ChannelError("no issue #12 that the gh account can see", kind="not_found")
+
+    world.github.read = refuse
+    for attempt in range(STATE_READ_FAILURE_LIMIT - 1):
+        report = world.tick(LATER + timedelta(minutes=2 * attempt))
+        assert report.problems and world.case().state == "intake"
+    assert _titled(world, "cannot be read") == 0
+
+    world.tick(LATER + timedelta(minutes=2 * STATE_READ_FAILURE_LIMIT))
+
+    assert world.case().state == "needs-owner"
+    ((_, body, _),) = [note for note in world.notes if "cannot be read" in note[0]]
+    assert "cause: not_found" in body and "gh account" not in body
+    for minutes in (10, 20, 30):
+        world.tick(LATER + timedelta(minutes=minutes))
+    assert len(reads) == STATE_READ_FAILURE_LIMIT
+    assert _titled(world, "cannot be read") == 1
+
+
+def test_a_state_read_that_succeeds_starts_the_failure_count_again(world):
+    """S8 #3: the limit counts failures in a row."""
+    _closed_after_intake(world)
+    read = world.github.read
+    failing = [True]
+
+    def flaky(ref, **kwargs):
+        if failing[0]:
+            raise ChannelError("could not reach GitHub", kind="network", retryable=True)
+        return read(ref, **kwargs)
+
+    world.github.read = flaky
+    world.tick(LATER)
+    world.tick(LATER + timedelta(minutes=2))
+    failing[0] = False
+    world.tick(LATER + timedelta(minutes=4))  # read, and closed
+    failing[0] = True
+    world.tick(LATER + timedelta(minutes=4) + CLOSED_RECHECK_INTERVAL)
+    world.tick(LATER + timedelta(minutes=6) + CLOSED_RECHECK_INTERVAL)
+
+    assert world.case().state == "intake"
+    assert _titled(world, "cannot be read") == 0

@@ -30,6 +30,10 @@ channel liaise can post into (GitHub, in v0.1). A case with none, such as one re
 through a web inbox, is answered at the reporter's notify address when that is on a
 channel that can write to a person (email). Failing both, the message becomes a draft
 for the operator, with a ``no channel to reach <person>`` notification.
+
+**What the operator is told.** A :class:`NotifyOperator` body comes from
+:func:`liaise.notify.notice_body`: the case and the event, never the draft or the reason
+the agent wrote, which stay on the case for ``liaise case show``.
 """
 
 from __future__ import annotations
@@ -44,6 +48,7 @@ from correspond.model import ConversationRef
 
 from liaise.gate import Outbound
 from liaise.model import CASE_STATES, OUTCOME_KINDS, Case, Outcome, require_one_of
+from liaise.notify import NOTICE_ESCALATION, NOTICE_NO_CHANNEL, notice_body
 from liaise.subjects import Subject
 
 #: Channels whose conversations liaise posts into. A web inbox has no writer.
@@ -369,15 +374,6 @@ def plan_outcomes(
         )
         return "\n\n".join(part for part in (outcome.text, questions) if part)
 
-    def operator_body(why: str, outcome: Outcome) -> str:
-        lines = (
-            ("why", why),
-            ("draft", text_of(outcome)),
-            ("case", case.id),
-            ("conversations", ", ".join(case.conversations)),
-        )
-        return "\n".join(f"{label}: {value}" for label, value in lines if value)
-
     def draft(outcome: Outcome, *, reason: str) -> StoreDraft:
         return StoreDraft(
             case.id,
@@ -394,17 +390,15 @@ def plan_outcomes(
     def send(outcome: Outcome) -> list[Action]:
         if ref is None:
             headline = f"no channel to reach {person}"
-            why = (
-                f"no conversation on {case.id} can be written to, and {person} has "
-                f"no address on {', '.join(address_channels) or 'any channel'}"
+            body = notice_body(
+                NOTICE_NO_CHANNEL,
+                subject=case.subject,
+                case_ids=(case.id,),
+                cause=outcome.kind,
             )
             return [
                 draft(outcome, reason=headline),
-                NotifyOperator(
-                    headline,
-                    operator_body(why, outcome),
-                    priority=DFLT_OPERATOR_PRIORITY,
-                ),
+                NotifyOperator(headline, body, priority=DFLT_OPERATOR_PRIORITY),
             ]
         return [
             Send(
@@ -432,7 +426,9 @@ def plan_outcomes(
                 draft(outcome, reason=outcome.reason),
                 NotifyOperator(
                     f"{case.id} needs you",
-                    operator_body(outcome.reason, outcome),
+                    notice_body(
+                        NOTICE_ESCALATION, subject=case.subject, case_ids=(case.id,)
+                    ),
                     priority=DFLT_OPERATOR_PRIORITY,
                 ),
                 transition("needs-owner", outcome),

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import sys
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest.mock import patch
@@ -19,10 +20,11 @@ import pytest
 from liaise import cli
 from liaise.github import FakeGitHub
 from liaise.ledger import Ledger
-from liaise.model import CASE_STATES, RunRecord
+from liaise.model import CASE_STATES, LedgerEntry, RunRecord
+from liaise.outcomes import make_draft
 from liaise.processor import EchoProcessor
 from liaise.testing import FakeGitHubChannel, demo_registry
-from liaise.tick import TickReport
+from liaise.tick import TickReport, run_lock, run_lock_path
 
 NOW = datetime(2026, 9, 11, 12, 0, tzinfo=timezone.utc)
 SLUG = "example-app"
@@ -91,7 +93,7 @@ def test_the_command_tree_is_the_0_1_one():
     assert set(commands) == {
         "run", "status", "hold", "unhold", "case", "subject", "setup", "migrate-config", "schedule"
     }
-    assert set(commands["case"]) == {"list", "set-state"}
+    assert set(commands["case"]) == {"list", "show", "set-state"}
     assert set(commands["subject"]) == {"list", "show"}
     assert set(commands["schedule"]) == {"install", "uninstall", "status"}
 
@@ -113,9 +115,12 @@ def test_the_case_commands_take_their_flags_and_hide_their_seams():
     moved = parser.parse_args(["case", "set-state", f"{SLUG}-1", "intake", "--reason", "fixed by hand", "--dry-run"])
     fields = (getattr(moved, "case-id"), moved.state, moved.reason, moved.dry_run)  # cw names a positional so
     assert fields == (f"{SLUG}-1", "intake", "fixed by hand", True)
-    for command, seam in (("list", "--store"), ("set-state", "--store"), ("set-state", "--now")):
+    shown = parser.parse_args(["case", "show", f"{SLUG}-1"])
+    assert getattr(shown, "case-id") == f"{SLUG}-1"
+    positionals = {"list": [], "show": ["x"], "set-state": ["x", "intake"]}
+    for command, seam in (("list", "--store"), ("show", "--store"), ("set-state", "--store"), ("set-state", "--now")):
         with pytest.raises(SystemExit):
-            parser.parse_args(["case", command, *(["x", "intake"] if command == "set-state" else []), seam, "x"])
+            parser.parse_args(["case", command, *positionals[command], seam, "x"])
 
 
 # ---- run ----
@@ -332,6 +337,59 @@ def test_case_set_state_refuses_what_it_cannot_do_in_one_line(root, case_id, sta
     with pytest.raises(cw.CommandError, match=message):
         cli.case_set_state(case_id, state, root=str(root), store=store)
     assert store == before
+
+
+def test_case_set_state_refuses_while_a_tick_holds_the_run_lock(root, tmp_path):
+    """S8 #5: a tick in flight would overwrite the move, so set-state takes the run lock, and
+    does not wait for it. A dry run writes nothing, and needs no lock."""
+    store: dict = {}
+    _seed_cases(store)
+    before = copy.deepcopy(store)
+    with run_lock(run_lock_path(tmp_path / "state")):
+        with pytest.raises(cw.CommandError, match=f"a liaise tick is running, so {SLUG}-1 was not moved; try again"):
+            cli.case_set_state(f"{SLUG}-1", "intake", root=str(root), store=store, now=NOW)
+        assert store == before
+        planned = cli.case_set_state(f"{SLUG}-1", "intake", dry_run=True, root=str(root), store=store, now=NOW)
+        assert planned.startswith(f"would move {SLUG}-1")
+    moved = cli.case_set_state(f"{SLUG}-1", "intake", root=str(root), store=store, now=NOW)
+    assert moved.startswith(f"moved {SLUG}-1 from needs-owner to intake")
+
+
+def test_case_show_prints_what_a_notification_leaves_out(root):
+    """S8 #2: the drafts with their text, the escalation's reason, the failed deploy's output."""
+    store: dict = {}
+    _seed_cases(store)
+    ledger = Ledger(store)
+    case_id = f"{SLUG}-1"
+    draft = make_draft(
+        at=NOW, outcome="escalate", recipient="pat", ref=f"github:{REPO}#1", text="It needs a paid plan.\nGo ahead?", reason="costs money"
+    )
+    ledger.save_case(replace(ledger.get_case(case_id), drafts=(draft,)))
+    outcome = {"kind": "escalate", "questions": [], "reason": "costs money", "run_id": f"{case_id}-r1"}
+    ledger.append(case_id, LedgerEntry(at=NOW, kind="outcome", actor="liaise", text="It needs a paid plan.", detail=outcome))
+    failed = {"event": "deploy_failed", "cause": "exit code 1", "error": None}
+    ledger.append(case_id, LedgerEntry(at=NOW, kind="run", actor="liaise", text="error: push refused", detail=failed))
+
+    lines = cli.case_show(case_id, root=str(root), store=store).splitlines()
+
+    stamp = NOW.isoformat(timespec="seconds")
+    assert lines[:3] == [f"case: {case_id}", f"  subject: {SLUG}", "  state: needs-owner"]
+    assert "last escalation reason: costs money" in lines
+    deploy = lines.index(f"last failed deploy: {stamp} (exit code 1); its output:")
+    assert lines[deploy + 1] == "    error: push refused"
+    drafts = lines.index("drafts waiting for the operator: 1")
+    assert lines[drafts + 1 : drafts + 4] == [
+        f"  {NOW.isoformat()} escalate to github:{REPO}#1: costs money",
+        "    It needs a paid plan.",
+        "    Go ahead?",
+    ]
+    latest = lines.index("latest entries: 3 of 3")  # the seeded transition, the outcome, the failed deploy
+    assert lines[latest + 2] == f"  {stamp} outcome by liaise: kind=escalate, reason=costs money, run_id={case_id}-r1 | It needs a paid plan."
+
+
+def test_case_show_of_a_case_the_ledger_does_not_hold_is_one_line(root):
+    with pytest.raises(cw.CommandError, match=f"no case '{SLUG}-9'"):
+        cli.case_show(f"{SLUG}-9", root=str(root), store={})
 
 
 # ---- the run's other seams (S7 #13, #14) ----
