@@ -1,4 +1,0 @@
-liaise.tests.test_messages
-==========================
-.. automodule:: liaise.tests.test_messages
-   :members:

@@ -5,7 +5,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.intake &mdash; liaise 0.0.3 documentation</title>
+  <title>liaise.intake &mdash; liaise 0.0.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -14,7 +14,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=47de8214"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -48,31 +48,57 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cases.html">liaise.cases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/dispatch.html">liaise.dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/gate.html">liaise.gate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/holds.html">liaise.holds</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/messages.html">liaise.messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/model.html">liaise.model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/projection.html">liaise.projection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/run.html">liaise.run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/readiness.html">liaise.readiness</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/state.html">liaise.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/testing.html">liaise.testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_cli.html">liaise.tests.test_cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_dispatch.html">liaise.tests.test_dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_gate.html">liaise.tests.test_gate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_holds.html">liaise.tests.test_holds</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_messages.html">liaise.tests.test_messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_model.html">liaise.tests.test_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_projection.html">liaise.tests.test_projection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_run.html">liaise.tests.test_run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_readiness.html">liaise.tests.test_readiness</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_state.html">liaise.tests.test_state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/workspace.html">liaise.workspace</a></li>
 </ul>
 
         </div>
@@ -100,200 +126,545 @@
            <div itemprop="articleBody">
              
   <h1>Source code for liaise.intake</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""Intake and readiness (A.3): which issues are the partner's, and when they're ready.</span>
+<span></span><span class="sd">"""Intake: which messages belong to a subject, onto which case, and from whom.</span>
 
-<span class="sd">Everything here is read-only — it answers questions about an :class:`~liaise.github.Issue`</span>
-<span class="sd">and a :class:`~liaise.config.PartnerConfig`. Applying the answer (adding labels on first</span>
-<span class="sd">sight, dispatching a ready issue) is `run.py`'s job (a later issue); this module only</span>
-<span class="sd">computes.</span>
+<span class="sd">:func:`intake` polls a subject's bindings through correspond (adopting a repository's older</span>
+<span class="sd">open issues before its first poll), dedupes on delivery id, and routes each message: onto</span>
+<span class="sd">the case its conversation belongs to, into a new case when a binding matches and the</span>
+<span class="sd">sender may report, or into the unrouted queue with the reason. It writes to the ledger and</span>
+<span class="sd">nowhere else. See its docstring.</span>
 
-<span class="sd">**A caveat about "last edit by the partner".** ``issue.updated_at`` looks like the</span>
-<span class="sd">obvious signal for this — it is not one: GitHub bumps it on *anyone's* comment and on</span>
-<span class="sd">every label change, including `liaise`'s own. Verified on a live issue: the issue's</span>
-<span class="sd">`updatedAt` matched its last comment's `createdAt` to the second, regardless of who</span>
-<span class="sd">posted the comment. Using it here would mean an owner "just thinking out loud" in the</span>
-<span class="sd">thread, or `liaise`'s own two-label-edit-per-transition `set_state` call, resets the</span>
-<span class="sd">partner's own quiet window — exactly the rule A.3 forbids ("the owner commenting is not</span>
-<span class="sd">the partner writing"). There is no clean "the author edited the body at this time"</span>
-<span class="sd">signal available from `gh`'s JSON (the GraphQL `lastEditedAt` field is not among the</span>
-<span class="sd">fields `gh issue view --json` exposes), so :func:`last_partner_activity` only trusts the</span>
-<span class="sd">issue's creation time and the partner's own comments — never `issue.updated_at`.</span>
+<span class="sd">Whether a case is ready to dispatch is :mod:`liaise.readiness`'s question, answered from</span>
+<span class="sd">the case's own entries. It is never answered from a GitHub issue's ``updated_at``, which</span>
+<span class="sd">moves on anyone's activity, liaise's own label changes included (0.0.x H-2).</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChainMap</span><span class="p">,</span> <span class="n">Counter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">PartnerConfig</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">Issue</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond</span><span class="w"> </span><span class="kn">import</span> <span class="n">CorrespondError</span><span class="p">,</span> <span class="n">listen</span><span class="p">,</span> <span class="n">parse_ref</span><span class="p">,</span> <span class="n">read</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Message</span><span class="p">,</span> <span class="n">format_time</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.routing</span><span class="w"> </span><span class="kn">import</span> <span class="n">binding_matches</span>
 
-
-<div class="viewcode-block" id="is_partner_issue">
-<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.is_partner_issue">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">is_partner_issue</span><span class="p">(</span><span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""True when `issue` belongs to `partner`: authored by them, or carrying their label.</span>
-
-<span class="sd">    (a) the author is one of the partner's `github_logins`, or (b) the issue carries the</span>
-<span class="sd">    partner's label (filed on their behalf through the owner's credentials, so the author</span>
-<span class="sd">    is not the partner).</span>
-<span class="sd">    """</span>
-    <span class="k">return</span> <span class="n">issue</span><span class="o">.</span><span class="n">author</span> <span class="ow">in</span> <span class="n">partner</span><span class="o">.</span><span class="n">github_logins</span> <span class="ow">or</span> <span class="n">partner</span><span class="o">.</span><span class="n">label</span> <span class="ow">in</span> <span class="n">issue</span><span class="o">.</span><span class="n">labels</span></div>
-
-
-
-<div class="viewcode-block" id="last_partner_activity">
-<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.last_partner_activity">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">last_partner_activity</span><span class="p">(</span><span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The latest of: the issue's creation, and the partner's own comments.</span>
-
-<span class="sd">    Deliberately never reads `issue.updated_at` — see the module docstring</span>
-<span class="sd">    (H-2): that field moves on anyone's activity, not just the partner's.</span>
-<span class="sd">    Activity by anyone else never contributes here.</span>
-<span class="sd">    """</span>
-    <span class="n">candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">issue</span><span class="o">.</span><span class="n">created_at</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">comment</span> <span class="ow">in</span> <span class="n">issue</span><span class="o">.</span><span class="n">comments</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">comment</span><span class="o">.</span><span class="n">author</span> <span class="ow">in</span> <span class="n">partner</span><span class="o">.</span><span class="n">github_logins</span><span class="p">:</span>
-            <span class="n">candidates</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comment</span><span class="o">.</span><span class="n">created_at</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span></div>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.access</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">AccessDecision</span><span class="p">,</span>
+    <span class="n">Resolver</span><span class="p">,</span>
+    <span class="n">authorize</span><span class="p">,</span>
+    <span class="n">is_relay</span><span class="p">,</span>
+    <span class="n">resolve_person</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CASE_STATES</span><span class="p">,</span>
+    <span class="n">INITIAL_CASE_STATE</span><span class="p">,</span>
+    <span class="n">Case</span><span class="p">,</span>
+    <span class="n">LedgerEntry</span><span class="p">,</span>
+    <span class="n">require_one_of</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">poll_ref</span><span class="p">,</span> <span class="n">ref_key</span>
 
 
+<span class="c1"># ---- intake over correspond (listen, dedupe, route, authorize) ----</span>
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_contains_marker</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">marker</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">marker</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<span class="c1">#: What intake does with an event it takes in (each marks the event seen)...</span>
+<span class="n">TAKEN_ACTIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"opened"</span><span class="p">,</span> <span class="s2">"appended"</span><span class="p">,</span> <span class="s2">"unrouted"</span><span class="p">)</span>
+<span class="c1">#: ...and with one it passes over (neither is marked seen).</span>
+<span class="n">SKIPPED_ACTIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"duplicate"</span><span class="p">,</span> <span class="s2">"ignored"</span><span class="p">)</span>
+<span class="n">INTAKE_ACTIONS</span> <span class="o">=</span> <span class="n">TAKEN_ACTIONS</span> <span class="o">+</span> <span class="n">SKIPPED_ACTIONS</span>
+<span class="c1">#: The actor of an entry for a message the channel's own account wrote.</span>
+<span class="n">SELF_ACTOR</span> <span class="o">=</span> <span class="s2">"self"</span>
+<span class="c1">#: The ``detail["role"]`` of an entry for a message the channel's own account wrote, and</span>
+<span class="c1">#: of one a relay wrote. Neither is attributed to a person, so neither is partner activity.</span>
+<span class="n">SELF_ROLE</span> <span class="o">=</span> <span class="s2">"self"</span>
+<span class="n">RELAY_ROLE</span> <span class="o">=</span> <span class="s2">"relay"</span>
+<span class="c1">#: The actor of the entries intake records itself (an adoption's transition).</span>
+<span class="n">LIAISE_ACTOR</span> <span class="o">=</span> <span class="s2">"liaise"</span>
+<span class="c1">#: The permission an inbound message implies, whether it opens a case or adds to one.</span>
+<span class="n">REPORT_PERMISSION</span> <span class="o">=</span> <span class="s2">"report"</span>
+<span class="c1">#: Where an issue carrying several state labels is adopted: the operator sorts it out.</span>
+<span class="n">AMBIGUOUS_ADOPTION_STATE</span> <span class="o">=</span> <span class="s2">"needs-owner"</span>
+<span class="c1">#: An issue opening in this ``native`` state opens no case.</span>
+<span class="n">CLOSED_STATE</span> <span class="o">=</span> <span class="s2">"closed"</span>
+<span class="c1">#: Conversation kinds whose every message is a thread of its own (a web inbox's reports).</span>
+<span class="n">PER_MESSAGE_CONVERSATION_KINDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"inbox"</span><span class="p">,)</span>
+<span class="c1">#: Channels whose first poll looks back only so far (correspond's GitHub adapter: a day),</span>
+<span class="c1">#: so intake reads a repository's open issues before polling it for the first time.</span>
+<span class="n">ADOPTING_CHANNELS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"github"</span><span class="p">,)</span>
+<span class="c1">#: The kind of conversation whose open issues are read for adoption.</span>
+<span class="n">ADOPTING_CONVERSATION_KIND</span> <span class="o">=</span> <span class="s2">"repository"</span>
+<span class="c1">#: The most open issues one adoption read asks for: one page of GitHub's issue list.</span>
+<span class="n">ADOPTION_READ_LIMIT</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="c1">#: The ``native`` state of an open issue, and how the id of its opening post starts.</span>
+<span class="n">OPEN_STATE</span> <span class="o">=</span> <span class="s2">"open"</span>
+<span class="n">OPENING_ID_PREFIX</span> <span class="o">=</span> <span class="s2">"issue-"</span>
+<span class="c1">#: The kind of event listen gives a new post, and so the event of an adopted one.</span>
+<span class="n">CREATED_EVENT_KIND</span> <span class="o">=</span> <span class="s2">"message.created"</span>
+<span class="c1">#: What the ``opened`` event of an adopted issue adds to its reason.</span>
+<span class="n">ADOPTED_REASON</span> <span class="o">=</span> <span class="s2">"open before the first poll, adopted"</span>
+<span class="c1">#: The ``detail["event"]`` of the ``run`` entry an adopted case gets, stamped when liaise</span>
+<span class="c1">#: adopted it: a case adopted waiting on its partner waits for them to write after it.</span>
+<span class="n">ADOPTED_EVENT</span> <span class="o">=</span> <span class="s2">"adopted"</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_marker_events</span><span class="p">(</span>
-    <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""(timestamp, has_go, has_wait) for the body and every partner comment, time-ordered."""</span>
-    <span class="n">events</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
-
-    <span class="n">body_go</span> <span class="o">=</span> <span class="n">_contains_marker</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">markers</span><span class="o">.</span><span class="n">go</span><span class="p">)</span>
-    <span class="n">body_wait</span> <span class="o">=</span> <span class="n">_contains_marker</span><span class="p">(</span><span class="n">issue</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">markers</span><span class="o">.</span><span class="n">wait</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">body_go</span> <span class="ow">or</span> <span class="n">body_wait</span><span class="p">:</span>
-        <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">issue</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span> <span class="n">body_go</span><span class="p">,</span> <span class="n">body_wait</span><span class="p">))</span>
-
-    <span class="k">for</span> <span class="n">comment</span> <span class="ow">in</span> <span class="n">issue</span><span class="o">.</span><span class="n">comments</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">comment</span><span class="o">.</span><span class="n">author</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">partner</span><span class="o">.</span><span class="n">github_logins</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">go</span> <span class="o">=</span> <span class="n">_contains_marker</span><span class="p">(</span><span class="n">comment</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">markers</span><span class="o">.</span><span class="n">go</span><span class="p">)</span>
-        <span class="n">wait</span> <span class="o">=</span> <span class="n">_contains_marker</span><span class="p">(</span><span class="n">comment</span><span class="o">.</span><span class="n">body</span><span class="p">,</span> <span class="n">partner</span><span class="o">.</span><span class="n">markers</span><span class="o">.</span><span class="n">wait</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">go</span> <span class="ow">or</span> <span class="n">wait</span><span class="p">:</span>
-            <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">comment</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span> <span class="n">go</span><span class="p">,</span> <span class="n">wait</span><span class="p">))</span>
-
-    <span class="n">events</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">events</span>
-
-
-<span class="k">def</span><span class="w"> </span><span class="nf">_marker_state</span><span class="p">(</span>
-    <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Return (timestamp of the last go marker, whether a later wait marker pauses it)."""</span>
-    <span class="n">last_go</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">last_wait</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="k">for</span> <span class="n">ts</span><span class="p">,</span> <span class="n">go</span><span class="p">,</span> <span class="n">wait</span> <span class="ow">in</span> <span class="n">_marker_events</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">go</span><span class="p">:</span>
-            <span class="n">last_go</span> <span class="o">=</span> <span class="n">ts</span>
-        <span class="k">if</span> <span class="n">wait</span><span class="p">:</span>
-            <span class="n">last_wait</span> <span class="o">=</span> <span class="n">ts</span>
-    <span class="n">paused</span> <span class="o">=</span> <span class="n">last_wait</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">last_go</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">last_wait</span> <span class="o">&gt;</span> <span class="n">last_go</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">last_go</span><span class="p">,</span> <span class="n">paused</span>
-
-
-<div class="viewcode-block" id="Readiness">
-<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.Readiness">[docs]</a>
+<div class="viewcode-block" id="IntakeEvent">
+<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.IntakeEvent">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span><span class="w"> </span><span class="nc">Readiness</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The result of :func:`compute_readiness`."""</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">IntakeEvent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What :func:`intake` did with one channel event, and why.</span>
 
-    <span class="n">ready</span><span class="p">:</span> <span class="nb">bool</span>
-    <span class="n">paused</span><span class="p">:</span> <span class="nb">bool</span>
-    <span class="n">last_activity</span><span class="p">:</span> <span class="n">datetime</span>
-    <span class="n">countdown</span><span class="p">:</span> <span class="n">timedelta</span>  <span class="c1"># zero once ready or paused</span>
-    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span></div>
-
-
-
-<div class="viewcode-block" id="compute_readiness">
-<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.compute_readiness">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">compute_readiness</span><span class="p">(</span>
-    <span class="n">issue</span><span class="p">:</span> <span class="n">Issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Readiness</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Is `issue` ready to dispatch, right now?</span>
-
-<span class="sd">    Ready when `now - last_activity &gt;= quiet_minutes`, or when a go marker appeared and</span>
-<span class="sd">    `now - marker_time &gt;= go_minutes`. A wait marker later than the last go marker</span>
-<span class="sd">    suspends the issue until the next go marker, overriding both.</span>
+<span class="sd">    ``action`` is one of :data:`INTAKE_ACTIONS`. ``conversation`` is the one the case is</span>
+<span class="sd">    keyed on (see :func:`case_conversation`), ``author`` the sender's address.</span>
 <span class="sd">    """</span>
-    <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
 
-    <span class="n">last_go</span><span class="p">,</span> <span class="n">paused</span> <span class="o">=</span> <span class="n">_marker_state</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span>
-    <span class="n">activity</span> <span class="o">=</span> <span class="n">last_partner_activity</span><span class="p">(</span><span class="n">issue</span><span class="p">,</span> <span class="n">partner</span><span class="p">)</span>
+    <span class="n">delivery_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">action</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">conversation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">author</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">case_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
 
-    <span class="k">if</span> <span class="n">paused</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Readiness</span><span class="p">(</span>
-            <span class="n">ready</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">paused</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">last_activity</span><span class="o">=</span><span class="n">activity</span><span class="p">,</span>
-            <span class="n">countdown</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-            <span class="n">reason</span><span class="o">=</span><span class="s2">"partner asked to wait"</span><span class="p">,</span>
-        <span class="p">)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">require_one_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">action</span><span class="p">,</span> <span class="n">INTAKE_ACTIONS</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s2">"intake action"</span><span class="p">)</span></div>
 
-    <span class="n">quiet_deadline</span> <span class="o">=</span> <span class="n">activity</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">quiet_minutes</span><span class="p">)</span>
-    <span class="n">go_deadline</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">last_go</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">go_minutes</span><span class="p">)</span> <span class="k">if</span> <span class="n">last_go</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="IntakeReport">
+<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.IntakeReport">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">IntakeReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What one :func:`intake` of a subject took in.</span>
+
+<span class="sd">    ``new_cases`` and ``updated_cases`` are the cases as intake left them (a case opened</span>
+<span class="sd">    this time is only in ``new_cases``). ``unrouted`` holds the fields each unrouted</span>
+<span class="sd">    message was queued with; ``problems`` what stopped a binding or a label from being</span>
+<span class="sd">    read as it should.</span>
+<span class="sd">    """</span>
+
+    <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">events</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">IntakeEvent</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">new_cases</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Case</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">updated_cases</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Case</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">unrouted</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">problems</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+
+<div class="viewcode-block" id="IntakeReport.plan_lines">
+<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.IntakeReport.plan_lines">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plan_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""One line per event taken in, per case, and per problem, under a summary line."""</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">action</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">)</span>
+        <span class="n">taken</span> <span class="o">=</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">action</span> <span class="ow">in</span> <span class="n">TAKEN_ACTIONS</span><span class="p">]</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"intake </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">taken</span><span class="p">)</span><span class="si">}</span><span class="s2"> new event</span><span class="si">{</span><span class="s1">''</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="nb">len</span><span class="p">(</span><span class="n">taken</span><span class="p">)</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'s'</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">skipped</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="n">a</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">SKIPPED_ACTIONS</span> <span class="k">if</span> <span class="n">counts</span><span class="p">[</span><span class="n">a</span><span class="p">]]</span>
+        <span class="k">if</span> <span class="n">skipped</span><span class="p">:</span>
+            <span class="n">head</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">skipped</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">head</span> <span class="o">+</span> <span class="p">(</span><span class="s2">" [dry run]"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">taken</span><span class="p">:</span>
+            <span class="n">outcome</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"unrouted: </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span>
+                <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">action</span> <span class="o">==</span> <span class="s2">"unrouted"</span>
+                <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">action</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">)"</span>
+            <span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">conversation</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">author</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">outcome</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">"  case </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: created, state </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, reporter </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">reporter</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">new_cases</span>
+        <span class="p">]</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s2">"  case </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: updated, state </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">updated_cases</span>
+        <span class="p">]</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  problem: </span><span class="si">{</span><span class="n">problem</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">problems</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">lines</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="case_conversation">
+<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.case_conversation">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">case_conversation</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The encoded conversation ``message``'s case is keyed on.</span>
+
+<span class="sd">    Its own conversation (``github:example/app#12``), except where each message is a</span>
+<span class="sd">    thread of its own. A web inbox's reports all arrive on ``webinbox:&lt;site&gt;``, so each is</span>
+<span class="sd">    keyed ``webinbox:&lt;site&gt;#&lt;report id&gt;`` and opens a case of its own.</span>
+<span class="sd">    """</span>
+    <span class="n">conversation</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">conversation</span>
+    <span class="k">if</span> <span class="n">conversation</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="n">PER_MESSAGE_CONVERSATION_KINDS</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">conversation</span><span class="o">.</span><span class="n">encoded</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">thread_root</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="n">conversation</span><span class="o">.</span><span class="n">encoded</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_poll_refs</span><span class="p">(</span><span class="n">bindings</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""The conversations to poll for ``bindings``, once each, and the bindings that cannot be.</span>
+
+<span class="sd">    Bindings on one conversation (compared as :func:`~liaise.subjects.ref_key` does) are</span>
+<span class="sd">    polled once, on the first binding's spelling.</span>
+<span class="sd">    """</span>
+    <span class="n">refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">problems</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">bindings</span><span class="p">:</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="n">poll_ref</span><span class="p">(</span><span class="n">pattern</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: binding </span><span class="si">{</span><span class="n">pattern</span><span class="si">!r}</span><span class="s2"> has a wildcard in its conversation "</span>
+                <span class="sa">f</span><span class="s2">"part, which intake cannot poll in v0.1; name the conversation "</span>
+                <span class="sa">f</span><span class="s2">"instead. Skipped."</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">refs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">ref_key</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">refs</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">problems</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_label_states</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">,</span> <span class="n">label_prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The case states ``message``'s ``&lt;label_prefix&gt;&lt;state&gt;`` labels name, in label order."""</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">native</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"labels"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">()</span>
+    <span class="n">suffixes</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">label</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">label_prefix</span><span class="p">)</span> <span class="p">:]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">labels</span> <span class="k">if</span> <span class="n">label</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">label_prefix</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">suffixes</span> <span class="k">if</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">CASE_STATES</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_message_entry</span><span class="p">(</span>
+    <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">actor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">decision</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">AccessDecision</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">role</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">LedgerEntry</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The ``message`` entry for ``event``: attributed by ``decision``, or to ``actor`` alone.</span>
+
+<span class="sd">    ``role`` (:data:`SELF_ROLE` or :data:`RELAY_ROLE`) says who an unattributed actor is.</span>
+<span class="sd">    """</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">message</span>
+    <span class="n">detail</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"event"</span><span class="p">:</span> <span class="n">event</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+        <span class="s2">"channel"</span><span class="p">:</span> <span class="n">event</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span>
+        <span class="s2">"message_id"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="s2">"url"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">decision</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">detail</span><span class="p">[</span><span class="s2">"via"</span><span class="p">]</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">via</span>
+    <span class="k">if</span> <span class="n">role</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">detail</span><span class="p">[</span><span class="s2">"role"</span><span class="p">]</span> <span class="o">=</span> <span class="n">role</span>
+    <span class="k">return</span> <span class="n">LedgerEntry</span><span class="p">(</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">edited_at</span> <span class="ow">or</span> <span class="n">message</span><span class="o">.</span><span class="n">sent_at</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="s2">"message"</span><span class="p">,</span>
+        <span class="n">actor</span><span class="o">=</span><span class="n">actor</span><span class="p">,</span>
+        <span class="n">grade</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">grade</span> <span class="k">if</span> <span class="n">decision</span> <span class="k">else</span> <span class="n">message</span><span class="o">.</span><span class="n">authenticity</span><span class="o">.</span><span class="n">grade</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+        <span class="n">permission</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">permission</span> <span class="k">if</span> <span class="n">decision</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">delivery_id</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">delivery_id</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="n">detail</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">ready_by_quiet</span> <span class="o">=</span> <span class="n">now</span> <span class="o">&gt;=</span> <span class="n">quiet_deadline</span>
-    <span class="n">ready_by_go</span> <span class="o">=</span> <span class="n">go_deadline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">now</span> <span class="o">&gt;=</span> <span class="n">go_deadline</span>
 
-    <span class="k">if</span> <span class="n">ready_by_quiet</span> <span class="ow">or</span> <span class="n">ready_by_go</span><span class="p">:</span>
-        <span class="n">reason</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">"go marker"</span>
-            <span class="k">if</span> <span class="n">ready_by_go</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ready_by_quiet</span>
-            <span class="k">else</span> <span class="s2">"quiet window elapsed"</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">Readiness</span><span class="p">(</span>
-            <span class="n">ready</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-            <span class="n">paused</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="n">last_activity</span><span class="o">=</span><span class="n">activity</span><span class="p">,</span>
-            <span class="n">countdown</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span>
-            <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
-        <span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_listen_delivery_id</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The delivery id correspond's GitHub listen gives ``message``, an issue's opening or a comment.</span>
 
-    <span class="n">deadlines</span> <span class="o">=</span> <span class="p">[</span><span class="n">quiet_deadline</span><span class="p">]</span> <span class="o">+</span> <span class="p">([</span><span class="n">go_deadline</span><span class="p">]</span> <span class="k">if</span> <span class="n">go_deadline</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[])</span>
-    <span class="n">countdown</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">deadlines</span><span class="p">)</span> <span class="o">-</span> <span class="n">now</span>
-    <span class="k">return</span> <span class="n">Readiness</span><span class="p">(</span>
-        <span class="n">ready</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">paused</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-        <span class="n">last_activity</span><span class="o">=</span><span class="n">activity</span><span class="p">,</span>
-        <span class="n">countdown</span><span class="o">=</span><span class="n">countdown</span><span class="p">,</span>
-        <span class="n">reason</span><span class="o">=</span><span class="s2">"waiting"</span><span class="p">,</span>
-    <span class="p">)</span></div>
-
-
-
-<div class="viewcode-block" id="find_partner_issues">
-<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.find_partner_issues">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">find_partner_issues</span><span class="p">(</span>
-    <span class="n">gh</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">partner</span><span class="p">:</span> <span class="n">PartnerConfig</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"open"</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Issue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Every open issue belonging to `partner`, oldest first.</span>
-
-<span class="sd">    Queries `gh` once per `github_login` plus once by label (the union `is_partner_issue`</span>
-<span class="sd">    describes), then de-duplicates by issue number.</span>
+<span class="sd">    ``github:owner/repo:issue-&lt;N&gt;@&lt;created_at&gt;`` for an opening, and</span>
+<span class="sd">    ``github:owner/repo:issuecomment-&lt;id&gt;@&lt;updated_at&gt;`` for a comment, built as the</span>
+<span class="sd">    adapter builds them: GitHub's times are whole seconds in UTC, as ``format_time`` writes</span>
+<span class="sd">    them, and a comment never edited has no ``edited_at`` and an ``updated_at`` equal to</span>
+<span class="sd">    its ``created_at``. So a message adopted from a read is the very delivery a poll would</span>
+<span class="sd">    hear.</span>
 <span class="sd">    """</span>
-    <span class="n">seen</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Issue</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">login</span> <span class="ow">in</span> <span class="n">partner</span><span class="o">.</span><span class="n">github_logins</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">gh</span><span class="o">.</span><span class="n">list_issues</span><span class="p">(</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="n">login</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">):</span>
-            <span class="n">seen</span><span class="p">[</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">]</span> <span class="o">=</span> <span class="n">issue</span>
-    <span class="k">for</span> <span class="n">issue</span> <span class="ow">in</span> <span class="n">gh</span><span class="o">.</span><span class="n">list_issues</span><span class="p">(</span><span class="n">partner</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">partner</span><span class="o">.</span><span class="n">label</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">):</span>
-        <span class="n">seen</span><span class="p">[</span><span class="n">issue</span><span class="o">.</span><span class="n">number</span><span class="p">]</span> <span class="o">=</span> <span class="n">issue</span>
-    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span>
-        <span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">seen</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">if</span> <span class="n">is_partner_issue</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">partner</span><span class="p">)),</span>
-        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span>
+    <span class="n">repository</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">conversation</span><span class="o">.</span><span class="n">parent</span> <span class="ow">or</span> <span class="n">message</span><span class="o">.</span><span class="n">conversation</span>
+    <span class="n">is_opening</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">OPENING_ID_PREFIX</span><span class="p">)</span>
+    <span class="n">changed</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">sent_at</span> <span class="k">if</span> <span class="n">is_opening</span> <span class="k">else</span> <span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">edited_at</span> <span class="ow">or</span> <span class="n">message</span><span class="o">.</span><span class="n">sent_at</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repository</span><span class="o">.</span><span class="n">encoded</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">format_time</span><span class="p">(</span><span class="n">changed</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+
+
+<div class="viewcode-block" id="intake">
+<a class="viewcode-back" href="../../module_docs/liaise/intake.html#liaise.intake">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">intake</span><span class="p">(</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">resolver</span><span class="p">:</span> <span class="n">Resolver</span> <span class="o">=</span> <span class="n">resolve_person</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IntakeReport</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Take in what arrived on ``subject``'s bindings since the ledger's cursors.</span>
+
+<span class="sd">    **Polling.** Each conversation the bindings name is polled once, however many</span>
+<span class="sd">    bindings name it, with the ``?conditions`` stripped</span>
+<span class="sd">    (``github:example/app?labels=partner:pat`` polls ``github:example/app``), through</span>
+<span class="sd">    ``correspond.listen`` over the ledger's cursors and ``registry`` (correspond's own</span>
+<span class="sd">    when None). Each message it yields meets every binding. A binding with a wildcard in</span>
+<span class="sd">    its conversation part cannot be polled in v0.1: it is reported in ``problems`` and</span>
+<span class="sd">    skipped. A channel that fails is a problem too, and the other conversations are</span>
+<span class="sd">    still polled.</span>
+
+<span class="sd">    **Adoption, before a first poll.** correspond's GitHub adapter looks back only a day</span>
+<span class="sd">    the first time it polls a repository, so an older open issue would never be heard.</span>
+<span class="sd">    When the ledger holds no cursor for a repository on one of :data:`ADOPTING_CHANNELS`,</span>
+<span class="sd">    intake first reads its open issues (``correspond.read``, the</span>
+<span class="sd">    :data:`ADOPTION_READ_LIMIT` most recent) and takes in each opening post a binding</span>
+<span class="sd">    matches, exactly as the poll would: the same routing, authorization and legacy</span>
+<span class="sd">    adoption, marked seen under the delivery id listen gives that post, so no poll takes</span>
+<span class="sd">    it in again. It then reads each such issue's comments (``correspond.read`` on</span>
+<span class="sd">    ``github:owner/repo#N``) and takes them in the same way, each under the delivery id a</span>
+<span class="sd">    poll would give it, so readiness sees the partner's markers and activity from before</span>
+<span class="sd">    the adoption. When a read fails, that is a problem and the repository is not polled, so its cursor</span>
+<span class="sd">    stays unset and the next intake tries the adoption again.</span>
+
+<span class="sd">    **Routing.** An event with no message is passed over, as is a delivery this intake</span>
+<span class="sd">    already dealt with (a poll hearing an issue adopted moments before). So is one whose</span>
+<span class="sd">    delivery id the ledger has already seen (``duplicate``). Otherwise:</span>
+
+<span class="sd">    - Its conversation belongs to one of this subject's cases: the message becomes a</span>
+<span class="sd">      ``message`` entry on it. A message by the channel's own account (``is_self``) is</span>
+<span class="sd">      recorded with the actor ``self``, and one by a ``policy.relays`` author with its</span>
+<span class="sd">      address as the actor. Each carries its ``detail["role"]`` (``self`` or ``relay``)</span>
+<span class="sd">      and no permission: neither is partner activity, and neither is unrouted. Anyone</span>
+<span class="sd">      else must be authorized to ``report``, or the message is queued as unrouted with</span>
+<span class="sd">      the reason, and no entry.</span>
+<span class="sd">    - A binding matches it (``correspond.routing.binding_matches``): when its sender may</span>
+<span class="sd">      ``report``, a case opens on its conversation with that person as reporter and the</span>
+<span class="sd">      message as its first entry, in ``intake``. Otherwise it is unrouted with the reason.</span>
+<span class="sd">      A closed issue's opening opens no case.</span>
+<span class="sd">    - Neither: it is not this subject's (``ignored``), and it is not marked seen.</span>
+
+<span class="sd">    **Legacy adoption.** An issue opening that already carries a</span>
+<span class="sd">    ``&lt;label_prefix&gt;&lt;state&gt;`` label opens its case in that state rather than ``intake``,</span>
+<span class="sd">    recorded as a transition. One carrying several state labels opens in</span>
+<span class="sd">    ``needs-owner``, with a problem saying why. Either way the case also gets a ``run``</span>
+<span class="sd">    entry, ``{"event": "adopted", "adopted": True}``, stamped ``now``: one adopted in</span>
+<span class="sd">    ``needs-partner`` waits for its partner to write after it (see :mod:`liaise.tick`).</span>
+<span class="sd">    The 0.0.x session id (the ``sessions__&lt;repo&gt;__&lt;n&gt;`` key) is not carried over: that is</span>
+<span class="sd">    out of scope here.</span>
+
+<span class="sd">    **Dry run.** Cursors are not committed, and nothing reaches the ledger's store,</span>
+<span class="sd">    adoptions included: unless the store is already a ``ChainMap`` overlay (as the tick</span>
+<span class="sd">    passes it), intake works on one of its own. Since no cursor is committed, every dry</span>
+<span class="sd">    run before the first real one adopts again.</span>
+
+<span class="sd">    Cursors are kept per conversation, not per subject, so two subjects polling one</span>
+<span class="sd">    conversation would starve each other: :func:`~liaise.subjects.load_subjects` refuses</span>
+<span class="sd">    such a configuration.</span>
+
+<span class="sd">    ``resolver`` maps a sender's address to a person (see :mod:`liaise.access`). ``now``</span>
+<span class="sd">    stamps the inbox records and adoption transitions (default: the current UTC time).</span>
+<span class="sd">    """</span>
+    <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dry_run</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ledger</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="n">ChainMap</span><span class="p">):</span>
+        <span class="n">ledger</span> <span class="o">=</span> <span class="n">Ledger</span><span class="p">(</span><span class="n">ChainMap</span><span class="p">({},</span> <span class="n">ledger</span><span class="o">.</span><span class="n">store</span><span class="p">))</span>
+    <span class="n">where</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">source</span> <span class="ow">or</span> <span class="n">subject</span><span class="o">.</span><span class="n">slug</span>
+    <span class="n">refs</span><span class="p">,</span> <span class="n">problems</span> <span class="o">=</span> <span class="n">_poll_refs</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">bindings</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">)</span>
+    <span class="n">events</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">IntakeEvent</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">unrouted</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">opened</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">touched</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">taken</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>  <span class="c1"># the delivery ids this intake has already dealt with</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">action</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">message</span>
+        <span class="n">taken</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">delivery_id</span><span class="p">)</span>
+        <span class="n">events</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">IntakeEvent</span><span class="p">(</span>
+                <span class="n">delivery_id</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">delivery_id</span><span class="p">,</span>
+                <span class="n">action</span><span class="o">=</span><span class="n">action</span><span class="p">,</span>
+                <span class="n">conversation</span><span class="o">=</span><span class="n">case_conversation</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+                <span class="n">author</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">author</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                <span class="o">**</span><span class="n">fields</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">refuse</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="n">decision</span><span class="p">:</span> <span class="n">AccessDecision</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">message</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"delivery_id"</span><span class="p">:</span> <span class="n">event</span><span class="o">.</span><span class="n">delivery_id</span><span class="p">,</span>
+            <span class="s2">"subject"</span><span class="p">:</span> <span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+            <span class="s2">"author"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">author</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+            <span class="s2">"grade"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">grade</span><span class="p">,</span>
+            <span class="s2">"reason"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span>
+            <span class="s2">"url"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
+            <span class="s2">"conversation"</span><span class="p">:</span> <span class="n">case_conversation</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+            <span class="s2">"at"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">sent_at</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="n">ledger</span><span class="o">.</span><span class="n">add_unrouted</span><span class="p">(</span><span class="o">**</span><span class="n">fields</span><span class="p">)</span>
+        <span class="n">unrouted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span>
+        <span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">"unrouted"</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">reason</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">message</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">author</span><span class="o">.</span><span class="n">address</span>
+        <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">author</span><span class="o">.</span><span class="n">is_self</span><span class="p">:</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="n">_message_entry</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="n">SELF_ACTOR</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">SELF_ROLE</span><span class="p">)</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="s2">"the channel's own account"</span>
+        <span class="k">elif</span> <span class="n">is_relay</span><span class="p">(</span><span class="n">address</span><span class="p">,</span> <span class="n">subject</span><span class="p">):</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="n">_message_entry</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="n">address</span><span class="p">,</span> <span class="n">role</span><span class="o">=</span><span class="n">RELAY_ROLE</span><span class="p">)</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="s2">"a relay"</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">decision</span> <span class="o">=</span> <span class="n">authorize</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">REPORT_PERMISSION</span><span class="p">,</span> <span class="n">resolver</span><span class="o">=</span><span class="n">resolver</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">decision</span><span class="o">.</span><span class="n">allowed</span><span class="p">:</span>
+                <span class="n">refuse</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">decision</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="n">entry</span> <span class="o">=</span> <span class="n">_message_entry</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">person</span><span class="p">,</span> <span class="n">decision</span><span class="o">=</span><span class="n">decision</span><span class="p">)</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">person</span><span class="si">}</span><span class="s2"> via </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">via</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">ledger</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+        <span class="n">touched</span><span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">"appended"</span><span class="p">,</span> <span class="n">case_id</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">open_case</span><span class="p">(</span><span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">adopted</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">message</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="n">authorize</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">REPORT_PERMISSION</span><span class="p">,</span> <span class="n">resolver</span><span class="o">=</span><span class="n">resolver</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">decision</span><span class="o">.</span><span class="n">allowed</span><span class="p">:</span>
+            <span class="n">refuse</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">decision</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">case_conversation</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">new_case</span><span class="p">(</span>
+            <span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span> <span class="n">conversation</span><span class="p">,</span> <span class="n">reporter</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">person</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">sent_at</span>
+        <span class="p">)</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">_message_entry</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">person</span><span class="p">,</span> <span class="n">decision</span><span class="o">=</span><span class="n">decision</span><span class="p">)</span>
+        <span class="n">ledger</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">entry</span><span class="p">)</span>
+        <span class="n">opened</span><span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">states</span> <span class="o">=</span> <span class="n">_label_states</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">subject</span><span class="o">.</span><span class="n">label_prefix</span><span class="p">)</span>
+        <span class="n">labels</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">label_prefix</span> <span class="o">+</span> <span class="n">state</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span><span class="p">)</span>
+        <span class="n">legacy</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">states</span> <span class="ow">and</span> <span class="n">states</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">INITIAL_CASE_STATE</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ledger</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span>
+                <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">AMBIGUOUS_ADOPTION_STATE</span><span class="p">,</span>
+                <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                <span class="n">actor</span><span class="o">=</span><span class="n">LIAISE_ACTOR</span><span class="p">,</span>
+                <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"adopted with several state labels: </span><span class="si">{</span><span class="n">labels</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">conversation</span><span class="si">}</span><span class="s2"> carries several state labels (</span><span class="si">{</span><span class="n">labels</span><span class="si">}</span><span class="s2">); case "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> opened in </span><span class="si">{</span><span class="n">AMBIGUOUS_ADOPTION_STATE</span><span class="si">}</span><span class="s2"> for the operator"</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">legacy</span><span class="p">:</span>
+            <span class="n">ledger</span><span class="o">.</span><span class="n">transition</span><span class="p">(</span>
+                <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">states</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                <span class="n">actor</span><span class="o">=</span><span class="n">LIAISE_ACTOR</span><span class="p">,</span>
+                <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"adopted from the label </span><span class="si">{</span><span class="n">labels</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">legacy</span><span class="p">:</span>
+            <span class="c1"># 0.0.x was running this issue: a case taken over waiting on its partner waits</span>
+            <span class="c1"># for them to write after this, whatever they wrote before.</span>
+            <span class="n">adoption</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
+                <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="s2">"run"</span><span class="p">,</span>
+                <span class="n">actor</span><span class="o">=</span><span class="n">LIAISE_ACTOR</span><span class="p">,</span>
+                <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="n">ADOPTED_EVENT</span><span class="p">,</span> <span class="s2">"adopted"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+            <span class="p">)</span>
+            <span class="n">ledger</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">adoption</span><span class="p">)</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s2"> matched; </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">person</span><span class="si">}</span><span class="s2"> via </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">via</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="n">adopted</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"; </span><span class="si">{</span><span class="n">ADOPTED_REASON</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">"opened"</span><span class="p">,</span> <span class="n">case_id</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">take</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">Event</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">adopted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">if</span> <span class="n">message</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">event</span><span class="o">.</span><span class="n">delivery_id</span> <span class="ow">in</span> <span class="n">taken</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">ledger</span><span class="o">.</span><span class="n">seen</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">delivery_id</span><span class="p">):</span>
+            <span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">"duplicate"</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">case_for_conversation</span><span class="p">(</span><span class="n">case_conversation</span><span class="p">(</span><span class="n">message</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="o">!=</span> <span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"its case belongs to </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">"ignored"</span><span class="p">,</span> <span class="n">case_id</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">pattern</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">subject</span><span class="o">.</span><span class="n">bindings</span> <span class="k">if</span> <span class="n">binding_matches</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">message</span><span class="p">)),</span> <span class="kc">None</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">pattern</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">"ignored"</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">"matches no binding"</span><span class="p">)</span>
+                <span class="k">return</span>
+            <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">native</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state"</span><span class="p">)</span> <span class="o">==</span> <span class="n">CLOSED_STATE</span><span class="p">:</span>
+                <span class="n">record</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">"ignored"</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="s2">"a closed issue opens no case"</span><span class="p">)</span>
+                <span class="k">return</span>
+        <span class="n">ledger</span><span class="o">.</span><span class="n">mark_seen</span><span class="p">(</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">delivery_id</span><span class="p">,</span> <span class="n">channel</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">now</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">append</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">event</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">open_case</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">adopted</span><span class="o">=</span><span class="n">adopted</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">adopt_comments</span><span class="p">(</span><span class="n">opening</span><span class="p">:</span> <span class="n">Message</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Take in the comments on an adopted issue, as the polls since it opened would have.</span>
+
+<span class="sd">        Only while its case is this subject's. Each comment is taken in under the delivery</span>
+<span class="sd">        id a poll gives it, so a poll that hears one later passes it over as a duplicate.</span>
+<span class="sd">        """</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">case_for_conversation</span><span class="p">(</span><span class="n">case_conversation</span><span class="p">(</span><span class="n">opening</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="o">!=</span> <span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="n">opening</span><span class="o">.</span><span class="n">conversation</span><span class="o">.</span><span class="n">channel</span>
+        <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">read</span><span class="p">(</span><span class="n">opening</span><span class="o">.</span><span class="n">conversation</span><span class="o">.</span><span class="n">encoded</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">OPENING_ID_PREFIX</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span>
+                <span class="n">kind</span><span class="o">=</span><span class="n">CREATED_EVENT_KIND</span><span class="p">,</span>
+                <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
+                <span class="n">delivery_id</span><span class="o">=</span><span class="n">_listen_delivery_id</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+                <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">take</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">adopt</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">conversation</span> <span class="o">=</span> <span class="n">parse_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">conversation</span><span class="o">.</span><span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ADOPTING_CHANNELS</span>
+            <span class="ow">or</span> <span class="n">conversation</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="n">ADOPTING_CONVERSATION_KIND</span>
+            <span class="ow">or</span> <span class="n">conversation</span><span class="o">.</span><span class="n">encoded</span> <span class="ow">in</span> <span class="n">ledger</span><span class="o">.</span><span class="n">cursors</span>
+        <span class="p">):</span>
+            <span class="k">return</span>
+        <span class="n">messages</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">ADOPTION_READ_LIMIT</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">messages</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">ADOPTION_READ_LIMIT</span><span class="p">:</span>
+            <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">conversation</span><span class="o">.</span><span class="n">encoded</span><span class="si">}</span><span class="s2"> has </span><span class="si">{</span><span class="n">ADOPTION_READ_LIMIT</span><span class="si">}</span><span class="s2"> or more open "</span>
+                <span class="sa">f</span><span class="s2">"issues; only the </span><span class="si">{</span><span class="n">ADOPTION_READ_LIMIT</span><span class="si">}</span><span class="s2"> most recent were read for adoption"</span>
+            <span class="p">)</span>
+        <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">messages</span><span class="p">:</span>
+            <span class="n">is_opening</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">OPENING_ID_PREFIX</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_opening</span> <span class="ow">or</span> <span class="n">message</span><span class="o">.</span><span class="n">native</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">OPEN_STATE</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">binding_matches</span><span class="p">(</span><span class="n">pattern</span><span class="p">,</span> <span class="n">message</span><span class="p">)</span> <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">subject</span><span class="o">.</span><span class="n">bindings</span><span class="p">):</span>
+                <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">(</span>
+                    <span class="n">kind</span><span class="o">=</span><span class="n">CREATED_EVENT_KIND</span><span class="p">,</span>
+                    <span class="n">channel</span><span class="o">=</span><span class="n">conversation</span><span class="o">.</span><span class="n">channel</span><span class="p">,</span>
+                    <span class="n">delivery_id</span><span class="o">=</span><span class="n">_listen_delivery_id</span><span class="p">(</span><span class="n">message</span><span class="p">),</span>
+                    <span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">take</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">adopted</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="n">adopt_comments</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">refs</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">adopt</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+            <span class="n">stream</span> <span class="o">=</span> <span class="n">listen</span><span class="p">(</span>
+                <span class="n">ref</span><span class="p">,</span> <span class="n">cursors</span><span class="o">=</span><span class="n">ledger</span><span class="o">.</span><span class="n">cursors</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span> <span class="n">commit</span><span class="o">=</span><span class="ow">not</span> <span class="n">dry_run</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="n">stream</span><span class="p">:</span>
+                <span class="n">take</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">CorrespondError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: polling </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">IntakeReport</span><span class="p">(</span>
+        <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+        <span class="n">events</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">events</span><span class="p">),</span>
+        <span class="n">new_cases</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">ledger</span><span class="o">.</span><span class="n">get_case</span><span class="p">,</span> <span class="n">opened</span><span class="p">)),</span>
+        <span class="n">updated_cases</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
+            <span class="n">ledger</span><span class="o">.</span><span class="n">get_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span> <span class="k">for</span> <span class="n">case_id</span> <span class="ow">in</span> <span class="n">touched</span> <span class="k">if</span> <span class="n">case_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">opened</span>
+        <span class="p">),</span>
+        <span class="n">unrouted</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">unrouted</span><span class="p">),</span>
+        <span class="n">problems</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">problems</span><span class="p">),</span>
+        <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 </pre></div>

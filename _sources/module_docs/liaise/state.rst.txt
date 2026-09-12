@@ -1,4 +1,0 @@
-liaise.state
-============
-.. automodule:: liaise.state
-   :members:

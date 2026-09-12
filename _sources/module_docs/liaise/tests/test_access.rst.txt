@@ -1,0 +1,4 @@
+liaise.tests.test_access
+========================
+.. automodule:: liaise.tests.test_access
+   :members:

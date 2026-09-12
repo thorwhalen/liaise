@@ -6,7 +6,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>liaise.notify &mdash; liaise 0.0.3 documentation</title>
+  <title>liaise.notify &mdash; liaise 0.0.4 documentation</title>
       <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
       <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
       <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
@@ -15,7 +15,7 @@
   
       <script src="../../_static/jquery.js?v=5d32c60e"></script>
       <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
-      <script src="../../_static/documentation_options.js?v=47de8214"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
@@ -24,8 +24,8 @@
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="liaise.prompt" href="prompt.html" />
-    <link rel="prev" title="liaise.messages" href="messages.html" /> 
+    <link rel="next" title="liaise.outcomes" href="outcomes.html" />
+    <link rel="prev" title="liaise.model" href="model.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -51,35 +51,66 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../liaise.html">liaise</a></li>
 <li class="toctree-l1"><a class="reference internal" href="__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cases.html">liaise.cases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="cli.html">liaise.cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="config.html">liaise.config</a></li>
-<li class="toctree-l1"><a class="reference internal" href="dispatch.html">liaise.dispatch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gate.html">liaise.gate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="holds.html">liaise.holds</a></li>
 <li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
-<li class="toctree-l1"><a class="reference internal" href="messages.html">liaise.messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">liaise.model</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.notify</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.notify.CASE_SHOW_POINTER"><code class="docutils literal notranslate"><span class="pre">CASE_SHOW_POINTER</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.notify.DFLT_TOPIC_ENV"><code class="docutils literal notranslate"><span class="pre">DFLT_TOPIC_ENV</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.notify.NOTICE_ESCALATION"><code class="docutils literal notranslate"><span class="pre">NOTICE_ESCALATION</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.notify.NOTICE_TITLES"><code class="docutils literal notranslate"><span class="pre">NOTICE_TITLES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.notify.notice_body"><code class="docutils literal notranslate"><span class="pre">notice_body()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.notify.notice_title"><code class="docutils literal notranslate"><span class="pre">notice_title()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="#liaise.notify.notify"><code class="docutils literal notranslate"><span class="pre">notify()</span></code></a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projection.html">liaise.projection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
-<li class="toctree-l1"><a class="reference internal" href="run.html">liaise.run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readiness.html">liaise.readiness</a></li>
 <li class="toctree-l1"><a class="reference internal" href="schedule.html">liaise.schedule</a></li>
-<li class="toctree-l1"><a class="reference internal" href="state.html">liaise.state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">liaise.testing</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_cli.html">liaise.tests.test_cli</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_config.html">liaise.tests.test_config</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tests/test_dispatch.html">liaise.tests.test_dispatch</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_gate.html">liaise.tests.test_gate</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_holds.html">liaise.tests.test_holds</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_intake.html">liaise.tests.test_intake</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tests/test_messages.html">liaise.tests.test_messages</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_model.html">liaise.tests.test_model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_projection.html">liaise.tests.test_projection</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_prompt.html">liaise.tests.test_prompt</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tests/test_run.html">liaise.tests.test_run</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_readiness.html">liaise.tests.test_readiness</a></li>
 <li class="toctree-l1"><a class="reference internal" href="tests/test_schedule.html">liaise.tests.test_schedule</a></li>
-<li class="toctree-l1"><a class="reference internal" href="tests/test_state.html">liaise.tests.test_state</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">liaise.workspace</a></li>
 </ul>
 
         </div>
@@ -108,10 +139,30 @@
              
   <section id="module-liaise.notify">
 <span id="liaise-notify"></span><h1>liaise.notify<a class="headerlink" href="#module-liaise.notify" title="Link to this heading"></a></h1>
-<p>Owner notification (A.7): one function, posting to ntfy, never raising.</p>
+<p>Owner notification (A.7): one function posting to ntfy, and the one builder of what it says.</p>
 <p><cite>liaise</cite> has no owner-facing UI; ntfy (a plain HTTP POST) is the whole channel.
 Silent when unconfigured, because a package should not require a notification
-service just to run its tests or a first <cite>liaise poll</cite>.</p>
+service just to run its tests or a first <cite>liaise run –once –dry-run</cite>.</p>
+<p><strong>No case content goes to the notifier.</strong> Anyone who knows an ntfy topic’s name can read
+it, so <a class="reference internal" href="#liaise.notify.notice_body" title="liaise.notify.notice_body"><code class="xref py py-func docutils literal notranslate"><span class="pre">notice_body()</span></code></a> is the only builder of a notification’s body. It names the
+subject, the case, the event and what liaise calls its cause (an error class, a gate
+filter, an exit code), and points at <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code>. It never carries what an agent
+wrote (a draft, a reason, a summary), a message, or a command’s output: those stay on the
+case, where the operator reads them on their own machine. <a class="reference internal" href="#liaise.notify.notice_title" title="liaise.notify.notice_title"><code class="xref py py-func docutils literal notranslate"><span class="pre">notice_title()</span></code></a> is the only
+builder of a title, which goes out with the body: fixed text, the subject’s slug and the
+case ids, never a person’s name or address, an issue’s title or a report’s subject.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.notify.CASE_SHOW_POINTER">
+<span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">CASE_SHOW_POINTER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'see</span> <span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span> <span class="pre">{case_id}'</span></span><a class="headerlink" href="#liaise.notify.CASE_SHOW_POINTER" title="Link to this definition"></a></dt>
+<dd><p>each case it names,
+or the status when it names none.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Where a notification points the operator for what it leaves out</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.notify.DFLT_TOPIC_ENV">
 <span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">DFLT_TOPIC_ENV</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'LIAISE_NTFY_TOPIC'</span></span><a class="headerlink" href="#liaise.notify.DFLT_TOPIC_ENV" title="Link to this definition"></a></dt>
@@ -126,13 +177,72 @@ just uses it.</p>
 </dl>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.notify.NOTICE_ESCALATION">
+<span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">NOTICE_ESCALATION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'escalation'</span></span><a class="headerlink" href="#liaise.notify.NOTICE_ESCALATION" title="Link to this definition"></a></dt>
+<dd><p>The events an operator notification is about, as its body names them.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.notify.NOTICE_TITLES">
+<span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">NOTICE_TITLES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'escalation':</span> <span class="pre">'{cases}</span> <span class="pre">needs</span> <span class="pre">you',</span> <span class="pre">'no</span> <span class="pre">channel</span> <span class="pre">to</span> <span class="pre">reach</span> <span class="pre">the</span> <span class="pre">reporter':</span> <span class="pre">'no</span> <span class="pre">channel</span> <span class="pre">to</span> <span class="pre">reach</span> <span class="pre">the</span> <span class="pre">reporter</span> <span class="pre">of</span> <span class="pre">{cases}',</span> <span class="pre">'message</span> <span class="pre">diverted</span> <span class="pre">by</span> <span class="pre">the</span> <span class="pre">gate':</span> <span class="pre">'liaise:</span> <span class="pre">a</span> <span class="pre">draft</span> <span class="pre">for</span> <span class="pre">{cases}</span> <span class="pre">waits</span> <span class="pre">for</span> <span class="pre">you',</span> <span class="pre">'send</span> <span class="pre">failed':</span> <span class="pre">'liaise:</span> <span class="pre">a</span> <span class="pre">message</span> <span class="pre">for</span> <span class="pre">{cases}</span> <span class="pre">was</span> <span class="pre">not</span> <span class="pre">sent',</span> <span class="pre">'effects</span> <span class="pre">held':</span> <span class="pre">&quot;liaise:</span> <span class="pre">{cases}'s</span> <span class="pre">effects</span> <span class="pre">are</span> <span class="pre">held&quot;,</span> <span class="pre">'deploy</span> <span class="pre">failed':</span> <span class="pre">'liaise:</span> <span class="pre">{cases}</span> <span class="pre">landed</span> <span class="pre">but</span> <span class="pre">did</span> <span class="pre">not</span> <span class="pre">deploy',</span> <span class="pre">'delivery</span> <span class="pre">raised</span> <span class="pre">an</span> <span class="pre">exception':</span> <span class="pre">'liaise:</span> <span class="pre">delivering</span> <span class="pre">{cases}</span> <span class="pre">failed',</span> <span class="pre">'run</span> <span class="pre">lost':</span> <span class="pre">'liaise:</span> <span class="pre">{cases}</span> <span class="pre">run</span> <span class="pre">lost',</span> <span class="pre">'run</span> <span class="pre">cancelled</span> <span class="pre">for</span> <span class="pre">a</span> <span class="pre">hold':</span> <span class="pre">&quot;liaise:</span> <span class="pre">{cases}'s</span> <span class="pre">run</span> <span class="pre">was</span> <span class="pre">cancelled&quot;,</span> <span class="pre">'error':</span> <span class="pre">'liaise:</span> <span class="pre">{cases}</span> <span class="pre">{error_class}',</span> <span class="pre">'start</span> <span class="pre">refused':</span> <span class="pre">'liaise:</span> <span class="pre">{cases}</span> <span class="pre">needs</span> <span class="pre">you</span> <span class="pre">before</span> <span class="pre">work</span> <span class="pre">starts',</span> <span class="pre">'daily</span> <span class="pre">cap</span> <span class="pre">reached':</span> <span class="pre">'liaise:</span> <span class="pre">{subject}</span> <span class="pre">reached</span> <span class="pre">its</span> <span class="pre">daily</span> <span class="pre">cap',</span> <span class="pre">'issue</span> <span class="pre">state</span> <span class="pre">unreadable':</span> <span class="pre">&quot;liaise:</span> <span class="pre">{cases}'s</span> <span class="pre">issue</span> <span class="pre">cannot</span> <span class="pre">be</span> <span class="pre">read&quot;})</span></span><a class="headerlink" href="#liaise.notify.NOTICE_TITLES" title="Link to this definition"></a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">{cases}</span></code> (the case
+ids, else the subject’s slug), <code class="docutils literal notranslate"><span class="pre">{subject}</span></code> (the slug) and, for an error alone,
+<code class="docutils literal notranslate"><span class="pre">{error_class}</span></code>. Nothing else ever fills a title.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Each event’s notification title, in <a class="reference internal" href="#liaise.notify.notice_title" title="liaise.notify.notice_title"><code class="xref py py-func docutils literal notranslate"><span class="pre">notice_title()</span></code></a>’s fields</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.notify.notice_body">
+<span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">notice_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../_modules/liaise/notify.html#notice_body"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.notify.notice_body" title="Link to this definition"></a></dt>
+<dd><p>The body of an operator notification about <code class="docutils literal notranslate"><span class="pre">event</span></code>: nothing a case holds.</p>
+<p>A line each for the subject’s slug, the case ids (a batch deploy has several), the
+event (one of <code class="xref py py-data docutils literal notranslate"><span class="pre">NOTICE_EVENTS</span></code>) and its <code class="docutils literal notranslate"><span class="pre">cause</span></code> when there is one, then a
+<a class="reference internal" href="#liaise.notify.CASE_SHOW_POINTER" title="liaise.notify.CASE_SHOW_POINTER"><code class="xref py py-data docutils literal notranslate"><span class="pre">CASE_SHOW_POINTER</span></code></a> per case, or <code class="xref py py-data docutils literal notranslate"><span class="pre">STATUS_POINTER</span></code> without one. <code class="docutils literal notranslate"><span class="pre">cause</span></code> is
+a name liaise gives the cause: an error class, a gate filter, an exit code, a hold’s
+scope kind. Callers never pass text an agent wrote, a message, or a command’s output.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">notice_body</span><span class="p">(</span><span class="n">NOTICE_ERROR</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="s2">"example-app"</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">case_ids</span><span class="o">=</span><span class="p">[</span><span class="s2">"example-app-1"</span><span class="p">],</span> <span class="n">cause</span><span class="o">=</span><span class="s2">"timed_out"</span><span class="p">))</span>
+<span class="go">subject: example-app</span>
+<span class="go">case: example-app-1</span>
+<span class="go">event: error</span>
+<span class="go">cause: timed_out</span>
+<span class="go">see liaise case show example-app-1</span>
+</pre></div>
+</div>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for an event outside <code class="xref py py-data docutils literal notranslate"><span class="pre">NOTICE_EVENTS</span></code>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.notify.notice_title">
+<span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">notice_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">event</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_ids</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cause</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="../../_modules/liaise/notify.html#notice_title"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.notify.notice_title" title="Link to this definition"></a></dt>
+<dd><p>The title of an operator notification about <code class="docutils literal notranslate"><span class="pre">event</span></code>: fixed text, the slug, the case ids.</p>
+<p>A title is pushed with its body, and is held to the body’s rule and to a narrower one:
+it never names a person or an address, an issue’s title or a report’s subject, whatever
+the event. It is <a class="reference internal" href="#liaise.notify.NOTICE_TITLES" title="liaise.notify.NOTICE_TITLES"><code class="xref py py-data docutils literal notranslate"><span class="pre">NOTICE_TITLES</span></code></a>’s text for <code class="docutils literal notranslate"><span class="pre">event</span></code>, filled with the case ids,
+or the subject’s slug without any. <code class="docutils literal notranslate"><span class="pre">cause</span></code> is the one <a class="reference internal" href="#liaise.notify.notice_body" title="liaise.notify.notice_body"><code class="xref py py-func docutils literal notranslate"><span class="pre">notice_body()</span></code></a> gets: a title
+names it only for <code class="xref py py-data docutils literal notranslate"><span class="pre">NOTICE_ERROR</span></code>, where it must be one of
+<code class="xref py py-data docutils literal notranslate"><span class="pre">liaise.errors.ERROR_CLASSES</span></code>, and ignores it for every other event.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">notice_title</span><span class="p">(</span><span class="n">NOTICE_ERROR</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="s2">"example-app"</span><span class="p">,</span> <span class="n">case_ids</span><span class="o">=</span><span class="p">[</span><span class="s2">"example-app-1"</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">cause</span><span class="o">=</span><span class="s2">"timed_out"</span><span class="p">)</span>
+<span class="go">'liaise: example-app-1 timed_out'</span>
+</pre></div>
+</div>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for an event outside <code class="xref py py-data docutils literal notranslate"><span class="pre">NOTICE_EVENTS</span></code>, and for an error whose
+cause is not an error class.</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.notify.notify">
 <span class="sig-prename descclassname"><span class="pre">liaise.notify.</span></span><span class="sig-name descname"><span class="pre">notify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topic_env</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'LIAISE_NTFY_TOPIC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'https://ntfy.sh'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../_modules/liaise/notify.html#notify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.notify.notify" title="Link to this definition"></a></dt>
 <dd><p>POST <cite>body</cite> to the ntfy topic named by the <cite>topic_env</cite> environment variable.</p>
 <p>Returns whether it actually sent. No-ops (returns False) when <cite>topic_env</cite>
 is unset. Never raises — a notification failure must not take down a run
-that otherwise succeeded.</p>
+that otherwise succeeded. Build <cite>body</cite> with <a class="reference internal" href="#liaise.notify.notice_body" title="liaise.notify.notice_body"><code class="xref py py-func docutils literal notranslate"><span class="pre">notice_body()</span></code></a>.</p>
 </dd></dl>
 
 </section>
@@ -141,8 +251,8 @@ that otherwise succeeded.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="messages.html" class="btn btn-neutral float-left" title="liaise.messages" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="prompt.html" class="btn btn-neutral float-right" title="liaise.prompt" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="model.html" class="btn btn-neutral float-left" title="liaise.model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="outcomes.html" class="btn btn-neutral float-right" title="liaise.outcomes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

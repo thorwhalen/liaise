@@ -1,0 +1,342 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.testing &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="liaise.tests" href="tests.html" />
+    <link rel="prev" title="liaise.subjects" href="subjects.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.testing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.DFLT_GITHUB_CHANNEL"><code class="docutils literal notranslate"><span class="pre">DFLT_GITHUB_CHANNEL</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.DFLT_SITE_SECRET"><code class="docutils literal notranslate"><span class="pre">DFLT_SITE_SECRET</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.add_comment"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.add_comment()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.add_issue"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.add_issue()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.capabilities"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.capabilities</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.parse_ref"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.parse_ref()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.poll"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.poll()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.read"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.read()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.send"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.send()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.set_state"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.set_state()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.ISSUE_STATES"><code class="docutils literal notranslate"><span class="pre">ISSUE_STATES</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.NATIVE_FIELDS"><code class="docutils literal notranslate"><span class="pre">NATIVE_FIELDS</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.SELF_LOGIN"><code class="docutils literal notranslate"><span class="pre">SELF_LOGIN</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.add_webinbox_report"><code class="docutils literal notranslate"><span class="pre">add_webinbox_report()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.testing.demo_registry"><code class="docutils literal notranslate"><span class="pre">demo_registry()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">liaise.testing</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/module_docs/liaise/testing.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-liaise.testing">
+<span id="liaise-testing"></span><h1>liaise.testing<a class="headerlink" href="#module-liaise.testing" title="Link to this heading"></a></h1>
+<p>Fakes shipped with liaise: for its tests, and for the one-command smoke test.</p>
+<p><a class="reference internal" href="#liaise.testing.FakeGitHubChannel" title="liaise.testing.FakeGitHubChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FakeGitHubChannel</span></code></a> is a correspond channel adapter held in memory. Its references,
+messages, delivery ids and events have the shapes correspond’s GitHub adapter gives them,
+so <a class="reference internal" href="intake.html#liaise.intake.intake" title="liaise.intake.intake"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.intake.intake()</span></code></a> cannot tell the two apart, and nothing it does leaves the
+process. <a class="reference internal" href="#liaise.testing.add_webinbox_report" title="liaise.testing.add_webinbox_report"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_webinbox_report()</span></code></a> stores a report in correspond’s own <code class="docutils literal notranslate"><span class="pre">WebInbox</span></code>
+exactly as its collector stores one. <a class="reference internal" href="#liaise.testing.demo_registry" title="liaise.testing.demo_registry"><code class="xref py py-func docutils literal notranslate"><span class="pre">demo_registry()</span></code></a> puts the two together as the
+channel registry <code class="docutils literal notranslate"><span class="pre">correspond.listen</span></code> and <code class="docutils literal notranslate"><span class="pre">correspond.send</span></code> take.</p>
+<p>Every value here is fictional: the partner <code class="docutils literal notranslate"><span class="pre">pat</span></code>, the repository <code class="docutils literal notranslate"><span class="pre">example/app</span></code>, the
+site <code class="docutils literal notranslate"><span class="pre">example-site</span></code> and the relay <code class="docutils literal notranslate"><span class="pre">example-bot</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span><span class="w"> </span><span class="nn">correspond</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">github</span> <span class="o">=</span> <span class="n">FakeGitHubChannel</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">_</span> <span class="o">=</span> <span class="n">github</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"example/app"</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="n">author</span><span class="o">=</span><span class="s2">"pat"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Export"</span><span class="p">,</span> <span class="n">body</span><span class="o">=</span><span class="s2">"The export drops a row."</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"partner:pat"</span><span class="p">],</span> <span class="n">created_at</span><span class="o">=</span><span class="s2">"2026-09-11T09:00:00Z"</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">events</span> <span class="o">=</span> <span class="n">correspond</span><span class="o">.</span><span class="n">listen</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="s2">"github:example/app"</span><span class="p">,</span> <span class="n">cursors</span><span class="o">=</span><span class="p">{},</span> <span class="n">registry</span><span class="o">=</span><span class="n">demo_registry</span><span class="p">(</span><span class="n">github</span><span class="o">=</span><span class="n">github</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="p">[(</span><span class="n">e</span><span class="o">.</span><span class="n">delivery_id</span><span class="p">,</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">native</span><span class="p">[</span><span class="s2">"labels"</span><span class="p">])</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">events</span><span class="p">]</span>
+<span class="go">[('github:example/app:issue-12@2026-09-11T09:00:00Z', ['partner:pat'])]</span>
+</pre></div>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.testing.DFLT_GITHUB_CHANNEL">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">DFLT_GITHUB_CHANNEL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'github'</span></span><a class="headerlink" href="#liaise.testing.DFLT_GITHUB_CHANNEL" title="Link to this definition"></a></dt>
+<dd><p>correspond’s own adapter’s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The name a fake GitHub channel registers under</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.testing.DFLT_SITE_SECRET">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">DFLT_SITE_SECRET</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'example-site-secret'</span></span><a class="headerlink" href="#liaise.testing.DFLT_SITE_SECRET" title="Link to this definition"></a></dt>
+<dd><p>What the fake web inbox’s host application signs its logged-in users with.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">FakeGitHubChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'github'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">timedelta</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable[[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">~datetime.datetime]</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">_utc_now&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel" title="Link to this definition"></a></dt>
+<dd><p>GitHub issues held in memory, as a correspond channel that reads, listens and sends.</p>
+<p>Seed it with <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.add_issue" title="liaise.testing.FakeGitHubChannel.add_issue"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_issue()</span></code></a> and <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.add_comment" title="liaise.testing.FakeGitHubChannel.add_comment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_comment()</span></code></a>; <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.poll" title="liaise.testing.FakeGitHubChannel.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a> yields what was
+added after its cursor, in the order it was added. A real send is recorded in <code class="docutils literal notranslate"><span class="pre">sent</span></code>
+as <code class="docutils literal notranslate"><span class="pre">(ref,</span> <span class="pre">draft)</span></code> and posted as the channel’s own (<code class="docutils literal notranslate"><span class="pre">is_self</span></code>) at <code class="docutils literal notranslate"><span class="pre">clock()</span></code>, so
+the next poll yields it, as GitHub’s would. Set <code class="docutils literal notranslate"><span class="pre">send_error</span></code> to a
+<code class="docutils literal notranslate"><span class="pre">correspond.ChannelError</span></code> and every real send raises it, which <code class="docutils literal notranslate"><span class="pre">correspond.send</span></code>
+turns into a failed result.</p>
+<p><code class="docutils literal notranslate"><span class="pre">lookback</span></code> makes a first poll (one without a cursor) skip what last changed more
+than that long before <code class="docutils literal notranslate"><span class="pre">clock()</span></code>, as correspond’s GitHub adapter looks back only
+<code class="docutils literal notranslate"><span class="pre">LISTEN_LOOKBACK</span></code>. With None, the default, a first poll yields everything.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.add_comment">
+<span class="sig-name descname"><span class="pre">add_comment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edited_at</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Message</span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel.add_comment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.add_comment" title="Link to this definition"></a></dt>
+<dd><p>Seed a comment on the seeded issue <code class="docutils literal notranslate"><span class="pre">repo#number</span></code>; the next poll yields it.</p>
+<p><code class="docutils literal notranslate"><span class="pre">edited_at</span></code>, when the comment was edited, becomes its <code class="docutils literal notranslate"><span class="pre">edited_at</span></code>, and its
+delivery id ends with it, as correspond’s GitHub adapter ends one with the
+comment’s <code class="docutils literal notranslate"><span class="pre">updated_at</span></code>. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when that issue was never seeded.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.add_issue">
+<span class="sig-name descname"><span class="pre">add_issue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">author</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Sequence</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grade</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Grade</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">Grade.PLATFORM</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'open'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_self</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Message</span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel.add_issue"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.add_issue" title="Link to this definition"></a></dt>
+<dd><p>Seed the opening post of issue <code class="docutils literal notranslate"><span class="pre">repo#number</span></code>; the next poll yields it.</p>
+<p>The message carries <code class="docutils literal notranslate"><span class="pre">native</span></code> <code class="docutils literal notranslate"><span class="pre">number</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">labels</span></code> and <code class="docutils literal notranslate"><span class="pre">state</span></code>.
+Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for an issue already seeded.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.capabilities">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">capabilities</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Capabilities</span></span><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.capabilities" title="Link to this definition"></a></dt>
+<dd><p>Read, listen and send on issues, graded <code class="docutils literal notranslate"><span class="pre">platform</span></code>, as GitHub’s are.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.parse_ref">
+<span class="sig-name descname"><span class="pre">parse_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConversationRef</span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel.parse_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.parse_ref" title="Link to this definition"></a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">owner/repo</span></code> or <code class="docutils literal notranslate"><span class="pre">owner/repo#N</span></code>, lower-cased, as correspond’s GitHub adapter parses them.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.poll">
+<span class="sig-name descname"><span class="pre">poll</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ConversationRef</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Iterator</span><span class="p"><span class="pre">[</span></span><span class="pre">Event</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel.poll"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.poll" title="Link to this definition"></a></dt>
+<dd><p>Events for what was added after <code class="docutils literal notranslate"><span class="pre">cursor</span></code> (opaque), in the order it was added.</p>
+<p>A repository’s poll yields its issue openings and comments; an issue’s poll only
+that issue’s comments, as correspond’s GitHub adapter does. Delivery ids are
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;:owner/repo:issue-&lt;N&gt;&#64;&lt;created_at&gt;</span></code> and
+<code class="docutils literal notranslate"><span class="pre">&lt;name&gt;:owner/repo:issuecomment-&lt;id&gt;&#64;&lt;updated_at&gt;</span></code>. A first poll with a
+<code class="docutils literal notranslate"><span class="pre">lookback</span></code> yields only what changed within it.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.read">
+<span class="sig-name descname"><span class="pre">read</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ConversationRef</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">since</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Message</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel.read"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.read" title="Link to this definition"></a></dt>
+<dd><p>An issue’s opening and comments; for a repository, its open issues’ openings.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.send">
+<span class="sig-name descname"><span class="pre">send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ConversationRef</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draft</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Draft</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">SendResult</span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel.send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.send" title="Link to this definition"></a></dt>
+<dd><p>Comment on an issue; on a repository, open an issue (<code class="docutils literal notranslate"><span class="pre">title</span></code> required).</p>
+<p>A dry run returns the plan and records nothing.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.set_state">
+<span class="sig-name descname"><span class="pre">set_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Message</span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#FakeGitHubChannel.set_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.set_state" title="Link to this definition"></a></dt>
+<dd><p>Close or reopen the seeded issue <code class="docutils literal notranslate"><span class="pre">repo#number</span></code>, as someone on GitHub would.</p>
+<p><code class="docutils literal notranslate"><span class="pre">state</span></code> is one of <a class="reference internal" href="#liaise.testing.ISSUE_STATES" title="liaise.testing.ISSUE_STATES"><code class="xref py py-data docutils literal notranslate"><span class="pre">ISSUE_STATES</span></code></a>. The opening’s <code class="docutils literal notranslate"><span class="pre">native[&quot;state&quot;]</span></code>
+changes, so a read of the issue, or of the repository’s open issues, sees it. A
+poll yields nothing for it, as correspond’s GitHub adapter hears an older issue’s
+changes only through its comments. Returns the opening as it is now; raises
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for an unknown state or an issue never seeded.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.testing.ISSUE_STATES">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">ISSUE_STATES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('open',</span> <span class="pre">'closed')</span></span><a class="headerlink" href="#liaise.testing.ISSUE_STATES" title="Link to this definition"></a></dt>
+<dd><p>The states an issue is in, as GitHub names them (see <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.set_state" title="liaise.testing.FakeGitHubChannel.set_state"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FakeGitHubChannel.set_state()</span></code></a>).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.testing.NATIVE_FIELDS">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">NATIVE_FIELDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('number',</span> <span class="pre">'title',</span> <span class="pre">'labels',</span> <span class="pre">'state')</span></span><a class="headerlink" href="#liaise.testing.NATIVE_FIELDS" title="Link to this definition"></a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">native</span></code> fields an issue opening carries. Comments carry none.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.testing.SELF_LOGIN">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">SELF_LOGIN</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'liaise-bot'</span></span><a class="headerlink" href="#liaise.testing.SELF_LOGIN" title="Link to this definition"></a></dt>
+<dd><p>The login a fake GitHub channel’s own sends go out under (<code class="docutils literal notranslate"><span class="pre">FakeGitHub</span></code>’s, too).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.testing.add_webinbox_report">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">add_webinbox_report</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inbox</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">WebInbox</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">received_at</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">email</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">page</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'example-site-secret'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#add_webinbox_report"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.add_webinbox_report" title="Link to this definition"></a></dt>
+<dd><p>Store a report for <code class="docutils literal notranslate"><span class="pre">site</span></code> in <code class="docutils literal notranslate"><span class="pre">inbox</span></code> exactly as correspond’s collector stores one.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">user</span></code>, the report carries an identity the site’s host application signed with
+<code class="docutils literal notranslate"><span class="pre">secret</span></code> (correspond’s <code class="docutils literal notranslate"><span class="pre">sign_identity</span></code>), checked as the collector checks it, so it
+is <code class="docutils literal notranslate"><span class="pre">bound</span></code> and its author’s address is <code class="docutils literal notranslate"><span class="pre">webinbox:&lt;user&gt;</span></code>. Without <code class="docutils literal notranslate"><span class="pre">user</span></code> it is
+<code class="docutils literal notranslate"><span class="pre">claimed</span></code>, and its author is only the <code class="docutils literal notranslate"><span class="pre">name</span></code> typed. The report’s id starts with
+<code class="docutils literal notranslate"><span class="pre">received_at</span></code>, so reports poll in time order; its event’s delivery id is
+<code class="docutils literal notranslate"><span class="pre">webinbox:&lt;site&gt;:&lt;id&gt;</span></code>. Returns the stored record.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.testing.demo_registry">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">demo_registry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">github</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#liaise.testing.FakeGitHubChannel" title="liaise.testing.FakeGitHubChannel"><span class="pre">FakeGitHubChannel</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">webinbox</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">WebInbox</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="../../_modules/liaise/testing.html#demo_registry"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.demo_registry" title="Link to this definition"></a></dt>
+<dd><p>A correspond channel registry of fakes: <code class="docutils literal notranslate"><span class="pre">{&quot;github&quot;:</span> <span class="pre">...,</span> <span class="pre">&quot;webinbox&quot;:</span> <span class="pre">...}</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">github</span></code> defaults to an empty <a class="reference internal" href="#liaise.testing.FakeGitHubChannel" title="liaise.testing.FakeGitHubChannel"><code class="xref py py-class docutils literal notranslate"><span class="pre">FakeGitHubChannel</span></code></a>, <code class="docutils literal notranslate"><span class="pre">webinbox</span></code> to
+correspond’s <code class="docutils literal notranslate"><span class="pre">WebInbox(store={},</span> <span class="pre">blobs={})</span></code>: both in memory.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="subjects.html" class="btn btn-neutral float-left" title="liaise.subjects" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="tests.html" class="btn btn-neutral float-right" title="liaise.tests" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

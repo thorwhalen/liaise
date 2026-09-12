@@ -1,0 +1,4 @@
+liaise.tests.test_smoke
+=======================
+.. automodule:: liaise.tests.test_smoke
+   :members:

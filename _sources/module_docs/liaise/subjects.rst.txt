@@ -1,0 +1,4 @@
+liaise.subjects
+===============
+.. automodule:: liaise.subjects
+   :members:

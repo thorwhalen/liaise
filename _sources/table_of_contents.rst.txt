@@ -4,28 +4,54 @@
 
    module_docs/liaise
    module_docs/liaise/__main__
+   module_docs/liaise/access
+   module_docs/liaise/cases
    module_docs/liaise/cli
    module_docs/liaise/config
-   module_docs/liaise/dispatch
+   module_docs/liaise/errors
+   module_docs/liaise/gate
    module_docs/liaise/github
+   module_docs/liaise/holds
    module_docs/liaise/intake
-   module_docs/liaise/messages
+   module_docs/liaise/ledger
+   module_docs/liaise/migrate
+   module_docs/liaise/model
    module_docs/liaise/notify
+   module_docs/liaise/outcomes
+   module_docs/liaise/processor
+   module_docs/liaise/projection
    module_docs/liaise/prompt
-   module_docs/liaise/run
+   module_docs/liaise/readiness
    module_docs/liaise/schedule
-   module_docs/liaise/state
+   module_docs/liaise/subjects
+   module_docs/liaise/testing
    module_docs/liaise/tests
+   module_docs/liaise/tests/_fake_claude
    module_docs/liaise/tests/conftest
+   module_docs/liaise/tests/test_access
+   module_docs/liaise/tests/test_cli
    module_docs/liaise/tests/test_config
-   module_docs/liaise/tests/test_dispatch
    module_docs/liaise/tests/test_docs
+   module_docs/liaise/tests/test_errors
+   module_docs/liaise/tests/test_gate
    module_docs/liaise/tests/test_github
+   module_docs/liaise/tests/test_holds
    module_docs/liaise/tests/test_intake
-   module_docs/liaise/tests/test_messages
+   module_docs/liaise/tests/test_ledger
+   module_docs/liaise/tests/test_migrate
+   module_docs/liaise/tests/test_model
    module_docs/liaise/tests/test_no_personal_data
    module_docs/liaise/tests/test_notify
+   module_docs/liaise/tests/test_outcomes
+   module_docs/liaise/tests/test_processor
+   module_docs/liaise/tests/test_projection
    module_docs/liaise/tests/test_prompt
-   module_docs/liaise/tests/test_run
+   module_docs/liaise/tests/test_readiness
    module_docs/liaise/tests/test_schedule
-   module_docs/liaise/tests/test_state
+   module_docs/liaise/tests/test_smoke
+   module_docs/liaise/tests/test_subjects
+   module_docs/liaise/tests/test_testing
+   module_docs/liaise/tests/test_tick
+   module_docs/liaise/tests/test_workspace
+   module_docs/liaise/tick
+   module_docs/liaise/workspace

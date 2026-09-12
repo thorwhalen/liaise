@@ -1,0 +1,562 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.gate &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.gate</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.gate</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The outbound gate: the checks a message passes before liaise sends it.</span>
+
+<span class="sd">A processor run reports outcomes, :mod:`liaise.outcomes` plans them into actions, and</span>
+<span class="sd">each :class:`~liaise.outcomes.Send` among those is an :class:`Outbound` that the tick</span>
+<span class="sd">hands to :func:`run_gate` before anything reaches a channel. The gate runs</span>
+<span class="sd">:data:`DFLT_OUTBOUND_FILTERS`, in this order:</span>
+
+<span class="sd">1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode.</span>
+<span class="sd">2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, a</span>
+<span class="sd">   ``.env`` path, an email address, a private key, a token (wrapped across lines or not)</span>
+<span class="sd">   or one of ``policy.leak_terms``. It never redacts.</span>
+<span class="sd">3. :func:`writing_card`: a note with the recipient's acquaint writing card.</span>
+<span class="sd">4. :func:`deslop`: nothing acquaint's style lint finds machine-sounding.</span>
+<span class="sd">5. :func:`notify_recipient`: on GitHub, the message starts with ``@&lt;login&gt;``, since</span>
+<span class="sd">   GitHub notifies only the people a comment mentions.</span>
+
+<span class="sd">A filter is ``(outbound, ctx) -&gt; Pass | Divert``. A :class:`Pass` hands the message,</span>
+<span class="sd">possibly rewritten, to the next filter; only :func:`notify_recipient` rewrites. The</span>
+<span class="sd">first :class:`Divert` ends the gate: the message is not sent, and goes to the operator</span>
+<span class="sd">instead. Notes accumulate across the filters that ran. acquaint is optional</span>
+<span class="sd">(``liaise[people]``): without it, or for a person it does not know, filters 3 and 4</span>
+<span class="sd">add a note and let the message through.</span>
+
+<span class="sd">The gate only decides. The tick sends :attr:`GateDecision.send`, or stores the diverted</span>
+<span class="sd">message on the case as a draft (see :func:`liaise.outcomes.make_draft`) and notifies</span>
+<span class="sd">the operator.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Case</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span>
+
+<span class="c1">#: The reply mode in which liaise sends nothing without the operator.</span>
+<span class="n">DRAFT_REPLY_MODE</span> <span class="o">=</span> <span class="s2">"draft"</span>
+<span class="c1">#: The channel whose messages must @mention their recipient to reach them.</span>
+<span class="n">MENTION_CHANNEL</span> <span class="o">=</span> <span class="s2">"github"</span>
+
+<span class="c1">#: The token shapes :func:`leak_scan` diverts on, each without the word boundary it starts</span>
+<span class="c1">#: at: the GitHub (``ghp_`` and its siblings, ``github_pat_``), ``sk-`` API key, AWS access</span>
+<span class="c1">#: key, Hugging Face (``hf_``) and Slack (``xoxb-`` and its siblings) shapes.</span>
+<span class="n">_TOKEN_SHAPES</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"gh[pousr]_[A-Za-z0-9]{20,}"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"github_pat_\w{20,}"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"sk-[\w-]{20,}"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"AKIA[0-9A-Z]</span><span class="si">{16}</span><span class="s2">\b"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"hf_[A-Za-z0-9]{30,}"</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s2">"xox[baprs]-[A-Za-z0-9-]{10,}"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1">#: The most characters an email address's local part holds (RFC 5321), a DNS label</span>
+<span class="c1">#: holds, and labels a domain name holds.</span>
+<span class="n">_EMAIL_LOCAL_MAX</span> <span class="o">=</span> <span class="mi">64</span>
+<span class="n">_DNS_LABEL_MAX</span> <span class="o">=</span> <span class="mi">63</span>
+<span class="n">_DNS_LABELS_MAX</span> <span class="o">=</span> <span class="mi">127</span>
+<span class="c1">#: How many words may name a private key's type (``ENCRYPTED``, ``OPENSSH``), and how long</span>
+<span class="c1">#: each may be.</span>
+<span class="n">_KEY_TYPE_WORDS_MAX</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="n">_KEY_TYPE_WORD_MAX</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">_EMAIL_LOCAL_CHAR</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">"[\w.%+-]"</span>
+<span class="n">_DNS_LABEL</span> <span class="o">=</span> <span class="sa">rf</span><span class="s2">"[A-Za-z0-9-]</span><span class="se">{{</span><span class="s2">1,</span><span class="si">{</span><span class="n">_DNS_LABEL_MAX</span><span class="si">}</span><span class="se">}}</span><span class="s2">"</span>
+<span class="c1">#: An email address. Its local part is anchored where it starts and bounded, so a long run</span>
+<span class="c1">#: of word characters is tried once, not once per character, which made the scan quadratic</span>
+<span class="c1">#: in its length. A local part longer than the bound is still found, from its last</span>
+<span class="c1">#: character. Each domain label and the label count are bounded too.</span>
+<span class="n">_EMAIL_PATTERN</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sa">rf</span><span class="s2">"(?:(?&lt;!</span><span class="si">{</span><span class="n">_EMAIL_LOCAL_CHAR</span><span class="si">}</span><span class="s2">)</span><span class="si">{</span><span class="n">_EMAIL_LOCAL_CHAR</span><span class="si">}</span><span class="se">{{</span><span class="s2">1,</span><span class="si">{</span><span class="n">_EMAIL_LOCAL_MAX</span><span class="si">}</span><span class="se">}}</span><span class="s2">"</span>
+    <span class="sa">rf</span><span class="s2">"|</span><span class="si">{</span><span class="n">_EMAIL_LOCAL_CHAR</span><span class="si">}</span><span class="s2">)"</span>
+    <span class="sa">rf</span><span class="s2">"@</span><span class="si">{</span><span class="n">_DNS_LABEL</span><span class="si">}</span><span class="s2">(?:\.</span><span class="si">{</span><span class="n">_DNS_LABEL</span><span class="si">}</span><span class="s2">)</span><span class="se">{{</span><span class="s2">0,</span><span class="si">{</span><span class="n">_DNS_LABELS_MAX</span><span class="si">}</span><span class="se">}}</span><span class="s2">"</span>
+    <span class="sa">rf</span><span class="s2">"\.[A-Za-z]</span><span class="se">{{</span><span class="s2">2,</span><span class="si">{</span><span class="n">_DNS_LABEL_MAX</span><span class="si">}</span><span class="se">}}</span><span class="s2">"</span>
+<span class="p">)</span>
+<span class="c1">#: A private key's first line: PEM's ``-----BEGIN ... PRIVATE KEY-----``, its type's words</span>
+<span class="c1">#: bounded, or PGP's ``-----BEGIN PGP PRIVATE KEY BLOCK-----``.</span>
+<span class="n">_PRIVATE_KEY_PATTERN</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"-----BEGIN "</span>
+    <span class="sa">rf</span><span class="s2">"(?:(?:[A-Z0-9]</span><span class="se">{{</span><span class="s2">1,</span><span class="si">{</span><span class="n">_KEY_TYPE_WORD_MAX</span><span class="si">}</span><span class="se">}}</span><span class="s2"> )</span><span class="se">{{</span><span class="s2">0,</span><span class="si">{</span><span class="n">_KEY_TYPE_WORDS_MAX</span><span class="si">}</span><span class="se">}}</span><span class="s2">PRIVATE KEY"</span>
+    <span class="sa">r</span><span class="s2">"|PGP PRIVATE KEY BLOCK)-----"</span>
+<span class="p">)</span>
+<span class="c1">#: What :func:`leak_scan` diverts on, as (kind, pattern). Local paths are home</span>
+<span class="c1">#: directories on macOS, Linux and Windows (its backslashes single, or doubled as JSON</span>
+<span class="c1">#: writes them), a Windows home through a WSL mount, and macOS's temporary directories.</span>
+<span class="c1">#: An env file is a path ending in ``.env``. No pattern has an unbounded quantifier ahead</span>
+<span class="c1">#: of a character it requires, so the scan stays linear in the message's length.</span>
+<span class="n">_LEAK_PATTERNS</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="p">(</span><span class="s2">"local path"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?&lt;![\w.~-])/(?:Users|home|root)/"</span><span class="p">)),</span>
+    <span class="p">(</span>
+        <span class="s2">"local path"</span><span class="p">,</span>
+        <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\b[A-Za-z]:(?:</span><span class="se">\\</span><span class="s2">{1,2}|/)Users(?:</span><span class="se">\\</span><span class="s2">{1,2}|/)"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">),</span>
+    <span class="p">),</span>
+    <span class="p">(</span><span class="s2">"local path"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?&lt;![\w.~-])/mnt/[A-Za-z]/Users/"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">"local path"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?&lt;![\w.~-])/(?:private/var|var/folders)/"</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">"env file"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?&lt;=[</span><span class="se">\\</span><span class="s2">/])\.env(?![\w-]|\.\w)"</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">"email"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">_EMAIL_PATTERN</span><span class="p">)),</span>
+    <span class="p">(</span><span class="s2">"private key"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">_PRIVATE_KEY_PATTERN</span><span class="p">)),</span>
+    <span class="o">*</span><span class="p">((</span><span class="s2">"token"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"\b</span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span> <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">_TOKEN_SHAPES</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="c1">#: The token shapes as :func:`leak_scan` looks for them in the text with its line breaks</span>
+<span class="c1">#: removed, so a token wrapped across lines is still found. Their word boundary is checked</span>
+<span class="c1">#: against the message itself, since removing a line break can glue a word to a token.</span>
+<span class="n">_UNWRAPPED_TOKEN_PATTERNS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">_TOKEN_SHAPES</span><span class="p">)</span>
+<span class="c1">#: The characters that break a line, and one that continues a word.</span>
+<span class="n">_LINE_BREAKS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span>
+<span class="n">_WORD_CHAR</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\w"</span><span class="p">)</span>
+<span class="c1">#: A GitHub login: letters, digits and hyphens, at most 39 characters.</span>
+<span class="n">_GITHUB_LOGIN_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[A-Za-z0-9][A-Za-z0-9-]{0,38}"</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Outbound">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.Outbound">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Outbound</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A message liaise would send: ``text`` for ``recipient`` (a person id) at ``ref``.</span>
+
+<span class="sd">    ``ref`` is the encoded conversation or address it goes to</span>
+<span class="sd">    (``github:example/app#12``), and ``channel`` that ref's channel. ``purpose`` is the</span>
+<span class="sd">    outcome kind it carries out (``ask``, ``reply``, ``propose``, ``deliver``).</span>
+<span class="sd">    """</span>
+
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">recipient</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<div class="viewcode-block" id="GateContext">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.GateContext">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GateContext</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What the filters may consult: the subject and its policy, the case, the time."""</span>
+
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span>
+    <span class="n">case</span><span class="p">:</span> <span class="n">Case</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span></div>
+
+
+
+<div class="viewcode-block" id="Pass">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.Pass">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Pass</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A filter's verdict to go on, with ``outbound`` as the filter left it."""</span>
+
+    <span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="Divert">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.Divert">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Divert</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A filter's verdict to send nothing and hand the message to the operator."""</span>
+
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span></div>
+
+
+
+<span class="c1">#: ``(outbound, ctx) -&gt; Pass | Divert``: one check of the gate.</span>
+<span class="n">OutboundFilter</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Outbound</span><span class="p">,</span> <span class="n">GateContext</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]]</span>
+
+
+<div class="viewcode-block" id="GateDecision">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.GateDecision">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GateDecision</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What :func:`run_gate` decided: ``send`` a message, or why it was ``diverted``.</span>
+
+<span class="sd">    Exactly one of ``send`` (the message as the filters left it) and ``diverted`` (the</span>
+<span class="sd">    reason) is set. ``notes`` holds the notes of every filter that ran, in order.</span>
+<span class="sd">    ``diverted_by`` names the filter that diverted, as an operator notification may say it:</span>
+<span class="sd">    the reason can quote what a filter raised.</span>
+<span class="sd">    """</span>
+
+    <span class="n">send</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Outbound</span><span class="p">]</span>
+    <span class="n">diverted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">diverted_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_acquaint_failure</span><span class="p">(</span><span class="n">error</span><span class="p">:</span> <span class="ne">Exception</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">error</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"acquaint could not be imported (</span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">); install liaise[people]"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span>
+
+
+<span class="c1"># ---- the filters, in their default order ----</span>
+
+
+<div class="viewcode-block" id="reply_mode">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.reply_mode">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reply_mode</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Divert when the recipient's reply mode is ``draft``.</span>
+
+<span class="sd">    The mode is the person's ``policy.reply_modes`` override, else the subject's</span>
+<span class="sd">    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`).</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">reply_mode_for</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="p">)</span> <span class="o">==</span> <span class="n">DRAFT_REPLY_MODE</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span><span class="s2">"draft reply mode"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="leak_scan">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.leak_scan">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">leak_scan</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""On a public channel, divert a message holding what must not be made public.</span>
+
+<span class="sd">    That is an absolute local path (a home directory on macOS, Linux or Windows, written</span>
+<span class="sd">    with single or JSON-doubled backslashes, a Windows home through a WSL mount, or a</span>
+<span class="sd">    macOS temporary directory), a path ending in ``.env``, an email address, a private</span>
+<span class="sd">    key's ``-----BEGIN ... PRIVATE KEY-----`` or ``-----BEGIN PGP PRIVATE KEY BLOCK-----``</span>
+<span class="sd">    line, a token shape (``ghp_``,</span>
+<span class="sd">    ``github_pat_``, ``sk-``, ``AKIA``, ``hf_``, ``xoxb-``), or one of</span>
+<span class="sd">    ``policy.leak_terms`` as a whole word in any case. Tokens are also looked for with the</span>
+<span class="sd">    text's line breaks removed, so a token wrapped across lines is found. The reason</span>
+<span class="sd">    names each kind found and the notes say where, never what. It never redacts: a leak</span>
+<span class="sd">    is for the operator to fix. A channel outside ``policy.public_channels`` passes</span>
+<span class="sd">    unscanned.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">without_line_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""``text`` without its line breaks, and where each character left was in ``text``."""</span>
+        <span class="n">kept</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">char</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_LINE_BREAKS</span><span class="p">]</span>
+        <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">kept</span><span class="p">),</span> <span class="n">kept</span>
+
+    <span class="n">policy</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">policy</span>
+    <span class="k">if</span> <span class="n">outbound</span><span class="o">.</span><span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">policy</span><span class="o">.</span><span class="n">public_channels</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">outbound</span><span class="o">.</span><span class="n">text</span>
+    <span class="n">unwrapped</span><span class="p">,</span> <span class="n">positions</span> <span class="o">=</span> <span class="n">without_line_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_LEAK_PATTERNS</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">unwrapped_starts</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">positions</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
+        <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_UNWRAPPED_TOKEN_PATTERNS</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">"token"</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">unwrapped_starts</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_WORD_CHAR</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="p">]</span>
+    <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">"leak term"</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">policy</span><span class="o">.</span><span class="n">leak_terms</span>
+        <span class="k">if</span> <span class="n">term</span>
+        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span>
+            <span class="sa">rf</span><span class="s2">"(?&lt;!\w)</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">term</span><span class="p">)</span><span class="si">}</span><span class="s2">(?!\w)"</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
+        <span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>  <span class="c1"># a token on one line is found by both scans</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">hits</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+    <span class="n">kinds</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">kind</span> <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"leak scan: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"leak scan: </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> at character </span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">hit</span><span class="p">:</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="p">),</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="writing_card">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.writing_card">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">writing_card</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Pass</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Note the recipient's acquaint writing card, for the ledger and the next run.</span>
+
+<span class="sd">    Calls ``acquaint.brief(recipient, purpose=purpose)`` and notes its summary. It never</span>
+<span class="sd">    diverts and never raises: without acquaint, or when acquaint fails (an unknown</span>
+<span class="sd">    person raises ``AcquaintError``), the note says why the card is unavailable.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">acquaint</span>
+
+        <span class="n">card</span> <span class="o">=</span> <span class="n">acquaint</span><span class="o">.</span><span class="n">brief</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="p">,</span> <span class="n">purpose</span><span class="o">=</span><span class="n">outbound</span><span class="o">.</span><span class="n">purpose</span><span class="p">)</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="n">card</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary"</span><span class="p">)</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"brief for </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># acquaint missing, or failing for this person</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"writing card unavailable: </span><span class="si">{</span><span class="n">_acquaint_failure</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="p">(</span><span class="n">note</span><span class="p">,))</span>
+    <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">"writing card: </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">"</span><span class="p">,))</span></div>
+
+
+
+<div class="viewcode-block" id="deslop">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.deslop">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">deslop</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Divert a message acquaint's style lint finds machine-sounding for its recipient.</span>
+
+<span class="sd">    Calls ``acquaint.style_lint(text, recipient=recipient)``. When that is not ``ok``,</span>
+<span class="sd">    the message is diverted, with each enforced finding as a note. Without acquaint, or</span>
+<span class="sd">    when acquaint fails, the note says why and the message goes on. It never raises.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">acquaint</span>
+
+        <span class="n">lint</span> <span class="o">=</span> <span class="n">acquaint</span><span class="o">.</span><span class="n">style_lint</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">recipient</span><span class="o">=</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="p">)</span>
+        <span class="n">ok</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">lint</span><span class="p">[</span><span class="s2">"ok"</span><span class="p">])</span>
+        <span class="n">findings</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"deslop: </span><span class="si">{</span><span class="n">finding</span><span class="p">[</span><span class="s1">'tier'</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">finding</span><span class="p">[</span><span class="s1">'rule'</span><span class="p">]</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">finding</span><span class="p">[</span><span class="s1">'message'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">" (…</span><span class="si">{</span><span class="n">finding</span><span class="p">[</span><span class="s1">'excerpt'</span><span class="p">]</span><span class="si">}</span><span class="s2">…)"</span> <span class="k">if</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"excerpt"</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">finding</span> <span class="ow">in</span> <span class="n">lint</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"findings"</span><span class="p">,</span> <span class="p">())</span>
+            <span class="k">if</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"enforced"</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># acquaint missing, or failing for this person</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"deslop unavailable: </span><span class="si">{</span><span class="n">_acquaint_failure</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="p">(</span><span class="n">note</span><span class="p">,))</span>
+    <span class="k">if</span> <span class="n">ok</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"deslop: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">findings</span><span class="p">)</span><span class="si">}</span><span class="s2"> enforced finding(s)"</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="n">findings</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="notify_recipient">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.notify_recipient">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">notify_recipient</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""On GitHub, make the message start with an ``@mention`` of its recipient.</span>
+
+<span class="sd">    GitHub notifies only the people a comment mentions, and an issue an app files</span>
+<span class="sd">    subscribes its partner to nothing. The login is the first valid one among the</span>
+<span class="sd">    recipient's ``github:`` addresses, best first (see</span>
+<span class="sd">    :meth:`~liaise.subjects.Subject.notify_addresses_for`). A missing mention is</span>
+<span class="sd">    prefixed, the one rewrite the gate makes. A recipient with no GitHub address is</span>
+<span class="sd">    diverted. Other channels pass unchanged.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">outbound</span><span class="o">.</span><span class="n">channel</span> <span class="o">!=</span> <span class="n">MENTION_CHANNEL</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+    <span class="n">addresses</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">notify_addresses_for</span><span class="p">(</span>
+        <span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="n">MENTION_CHANNEL</span>
+    <span class="p">)</span>
+    <span class="n">logins</span> <span class="o">=</span> <span class="p">(</span><span class="n">address</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span> <span class="k">for</span> <span class="n">address</span> <span class="ow">in</span> <span class="n">addresses</span><span class="p">)</span>
+    <span class="n">login</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">name</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">logins</span> <span class="k">if</span> <span class="n">_GITHUB_LOGIN_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">name</span><span class="p">)),</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">login</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no handle to notify </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"@</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">login</span><span class="p">)</span><span class="si">}</span><span class="s2">(?![\w-])"</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+    <span class="n">mentioned</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">"@</span><span class="si">{</span><span class="n">login</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">mentioned</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">"added the mention @</span><span class="si">{</span><span class="n">login</span><span class="si">}</span><span class="s2">"</span><span class="p">,))</span></div>
+
+
+
+<span class="c1">#: The gate's filters, in the order they run. The order is part of the design, not a</span>
+<span class="c1">#: setting: a draft is diverted before anything else looks at it.</span>
+<span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">reply_mode</span><span class="p">,</span>
+    <span class="n">leak_scan</span><span class="p">,</span>
+    <span class="n">writing_card</span><span class="p">,</span>
+    <span class="n">deslop</span><span class="p">,</span>
+    <span class="n">notify_recipient</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="run_gate">
+<a class="viewcode-back" href="../../module_docs/liaise/gate.html#liaise.run_gate">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">run_gate</span><span class="p">(</span>
+    <span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GateDecision</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Run ``outbound`` through ``outbound_filters`` in order, stopping at the first divert.</span>
+
+<span class="sd">    Each :class:`Pass` hands its message, possibly rewritten, to the next filter. The</span>
+<span class="sd">    first :class:`Divert` ends the gate with nothing to send. Notes accumulate across</span>
+<span class="sd">    the filters that ran. The gate fails closed: a filter that raises, or returns</span>
+<span class="sd">    anything but a ``Pass`` or a ``Divert``, diverts the message with a reason naming it.</span>
+<span class="sd">    """</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">outbound_filter</span> <span class="ow">in</span> <span class="n">outbound_filters</span><span class="p">:</span>
+        <span class="c1"># By its type when it has no name: a repr can hold what a filter was bound to, such</span>
+        <span class="c1"># as a local path, and the name reaches the operator's notification.</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">outbound_filter</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">outbound_filter</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">verdict</span> <span class="o">=</span> <span class="n">outbound_filter</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">verdict</span> <span class="o">=</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">verdict</span><span class="p">,</span> <span class="n">Pass</span><span class="p">):</span>
+            <span class="n">notes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">verdict</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
+            <span class="n">outbound</span> <span class="o">=</span> <span class="n">verdict</span><span class="o">.</span><span class="n">outbound</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">verdict</span><span class="p">,</span> <span class="n">Divert</span><span class="p">):</span>
+            <span class="n">kind</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">verdict</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="n">verdict</span> <span class="o">=</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> returned </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">, not Pass or Divert"</span><span class="p">)</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">verdict</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">GateDecision</span><span class="p">(</span>
+            <span class="n">send</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diverted</span><span class="o">=</span><span class="n">verdict</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span> <span class="n">diverted_by</span><span class="o">=</span><span class="n">name</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">GateDecision</span><span class="p">(</span><span class="n">send</span><span class="o">=</span><span class="n">outbound</span><span class="p">,</span> <span class="n">diverted</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">))</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

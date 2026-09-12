@@ -1,0 +1,4 @@
+liaise.tests.test_holds
+=======================
+.. automodule:: liaise.tests.test_holds
+   :members:

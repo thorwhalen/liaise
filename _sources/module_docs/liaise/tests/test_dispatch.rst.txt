@@ -1,4 +1,0 @@
-liaise.tests.test_dispatch
-==========================
-.. automodule:: liaise.tests.test_dispatch
-   :members:

@@ -1,0 +1,238 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.errors &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="liaise.gate" href="gate.html" />
+    <link rel="prev" title="liaise.config" href="config.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">liaise.config</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.errors</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.DFLT_QUOTA_DEFER"><code class="docutils literal notranslate"><span class="pre">DFLT_QUOTA_DEFER</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.ErrorAction"><code class="docutils literal notranslate"><span class="pre">ErrorAction</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.StreamSummary"><code class="docutils literal notranslate"><span class="pre">StreamSummary</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.classify"><code class="docutils literal notranslate"><span class="pre">classify()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.classify_delivery_failure"><code class="docutils literal notranslate"><span class="pre">classify_delivery_failure()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.defer_until"><code class="docutils literal notranslate"><span class="pre">defer_until()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.parse_stream"><code class="docutils literal notranslate"><span class="pre">parse_stream()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.errors.reset_time"><code class="docutils literal notranslate"><span class="pre">reset_time()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">liaise.errors</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/module_docs/liaise/errors.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-liaise.errors">
+<span id="liaise-errors"></span><h1>liaise.errors<a class="headerlink" href="#module-liaise.errors" title="Link to this heading"></a></h1>
+<p>Processor error taxonomy (design §3.6): classify how a run ended, and what the tick does.</p>
+<p>A run is classified from its <cite>claude</cite> stream-JSON output. Structured fields are checked
+before strings, and the first match wins, so a run that failed authentication and then
+crashed is <cite>auth_expired</cite>, whose action (hold the processor, count no dispatch) is the right
+one. A run whose final result is a success is never classified by strings it happens to
+contain.</p>
+<p><code class="xref py py-data docutils literal notranslate"><span class="pre">ERROR_ACTIONS</span></code> is the single source of truth for what each class does to a case;
+the tick consults it and decides nothing about error classes on its own.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.errors.DFLT_QUOTA_DEFER">
+<span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">DFLT_QUOTA_DEFER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.timedelta(seconds=1800)</span></span><a class="headerlink" href="#liaise.errors.DFLT_QUOTA_DEFER" title="Link to this definition"></a></dt>
+<dd><p>Fallbacks and caps for deferrals, named rather than inlined.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.errors.ErrorAction">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">ErrorAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auto_hold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defer</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">timedelta</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/liaise/errors.html#ErrorAction"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.errors.ErrorAction" title="Link to this definition"></a></dt>
+<dd><p>What the tick does with a case whose run ended in one error class.</p>
+<p><cite>state</cite> is the case’s next state, or None to leave it unchanged; <cite>intake</cite> makes the
+case dispatchable again (its session id stays, so the next dispatch resumes).
+<cite>counts</cite> is whether the run counts against the daily dispatch cap.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.errors.StreamSummary">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">StreamSummary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">api_errors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">event_count</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/liaise/errors.html#StreamSummary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.errors.StreamSummary" title="Link to this definition"></a></dt>
+<dd><p>What classification and collection need from one run’s stream-JSON output.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.errors.classify">
+<span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">classify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">summary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#liaise.errors.StreamSummary" title="liaise.errors.StreamSummary"><span class="pre">StreamSummary</span></a></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">stderr_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timed_out</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">has_outcomes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/liaise/errors.html#classify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.errors.classify" title="Link to this definition"></a></dt>
+<dd><p>The error class of a finished run, or None for a success with valid outcomes.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.errors.classify_delivery_failure">
+<span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">classify_delivery_failure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/liaise/errors.html#classify_delivery_failure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.errors.classify_delivery_failure" title="Link to this definition"></a></dt>
+<dd><p><cite>effect_blocked</cite> when a failed delivery says it was refused (CI minutes, billing, 403).</p>
+<p>None for any other failure, which the tick reconciles to <cite>needs-owner</cite> as 0.0.x did.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.errors.defer_until">
+<span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">defer_until</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attempt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rate_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/liaise/errors.html#defer_until"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.errors.defer_until" title="Link to this definition"></a></dt>
+<dd><p>When a case whose run ended in <cite>error</cite> may be dispatched again, or None for no deferral.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.errors.parse_stream">
+<span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">parse_stream</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lines</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#liaise.errors.StreamSummary" title="liaise.errors.StreamSummary"><span class="pre">StreamSummary</span></a></span></span><a class="reference internal" href="../../_modules/liaise/errors.html#parse_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.errors.parse_stream" title="Link to this definition"></a></dt>
+<dd><p>Read stream-JSON lines: the final <cite>result</cite> event, the last rate-limit info, retry errors.</p>
+<p>Lines that are blank, not JSON, or not objects are skipped: a stream cut off mid-line
+by a kill must still yield whatever came before it.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.errors.reset_time">
+<span class="sig-prename descclassname"><span class="pre">liaise.errors.</span></span><span class="sig-name descname"><span class="pre">reset_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rate_limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Mapping</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">datetime</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/liaise/errors.html#reset_time"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.errors.reset_time" title="Link to this definition"></a></dt>
+<dd><p>When a rejected quota resets, from <cite>rate_limit_info.resets_at</cite> (epoch or ISO), if given.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="config.html" class="btn btn-neutral float-left" title="liaise.config" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="gate.html" class="btn btn-neutral float-right" title="liaise.gate" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,4 +1,0 @@
-liaise.tests.test_state
-=======================
-.. automodule:: liaise.tests.test_state
-   :members:

@@ -1,0 +1,4 @@
+liaise.tests.test_cli
+=====================
+.. automodule:: liaise.tests.test_cli
+   :members:

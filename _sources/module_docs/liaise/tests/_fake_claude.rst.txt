@@ -1,0 +1,4 @@
+liaise.tests._fake_claude
+=========================
+.. automodule:: liaise.tests._fake_claude
+   :members:

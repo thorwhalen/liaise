@@ -1,0 +1,4 @@
+liaise.tests.test_tick
+======================
+.. automodule:: liaise.tests.test_tick
+   :members:

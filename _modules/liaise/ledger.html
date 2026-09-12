@@ -1,0 +1,657 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.ledger &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.ledger</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.ledger</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The ledger: liaise's own record of what it has seen, opened, decided and started.</span>
+
+<span class="sd">One :class:`Ledger` over one ``MutableMapping``: the store seam. The default is</span>
+<span class="sd">:func:`default_ledger_store`, JSON files under ``&lt;state_dir&gt;/ledger``. Every key is a</span>
+<span class="sd">flat string with no "/", since ``dol.Jsons`` would read one as a subdirectory::</span>
+
+<span class="sd">    inbox__&lt;sha1(delivery_id)[:16]&gt;     {delivery_id, channel, kind, at}; presence means seen</span>
+<span class="sd">    case__&lt;case_id&gt;                     a Case</span>
+<span class="sd">    conversation__&lt;encoded ref&gt;         the id of the case that conversation belongs to</span>
+<span class="sd">    run__&lt;run_id&gt;                       a RunRecord</span>
+<span class="sd">    hold__&lt;scope&gt;                       a Hold</span>
+<span class="sd">    unrouted__&lt;sha1(delivery_id)[:16]&gt;  {delivery_id, subject, author, grade, reason, url, at}</span>
+<span class="sd">    cursor__&lt;encoded ref&gt;               a channel cursor (see Ledger.cursors)</span>
+<span class="sd">    counter__cases                      the last case number handed out</span>
+<span class="sd">    daily__&lt;subject&gt;__&lt;YYYY-MM-DD&gt;      that day's dispatches, as 0.0.x kept them</span>
+<span class="sd">    budget_notified__&lt;subject&gt;__&lt;day&gt;   when the operator heard that day's cap was reached</span>
+<span class="sd">    issue_check__&lt;case_id&gt;              an IssueCheck: the tick's reads of the case's issue state</span>
+
+<span class="sd">The variable parts (ids, refs, scopes) are percent-encoded, so the scope</span>
+<span class="sd">``repo:example/app`` is stored under ``hold__repo%3Aexample%2Fapp``. The result has</span>
+<span class="sd">no "/", no ":" (which a Windows filename cannot hold), and decodes back exactly.</span>
+
+<span class="sd">**Dry runs.** Wrap the store as ``ChainMap({}, store)``. Reads see the real ledger,</span>
+<span class="sd">while writes land in the dict in front and vanish with it. A delete there cannot</span>
+<span class="sd">reach the store behind, so it leaves a ``None`` tombstone that every read treats as</span>
+<span class="sd">absent.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">MutableMapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cached_property</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">quote</span><span class="p">,</span> <span class="n">unquote</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">CASE_STATES</span><span class="p">,</span>
+    <span class="n">INITIAL_CASE_STATE</span><span class="p">,</span>
+    <span class="n">Case</span><span class="p">,</span>
+    <span class="n">Hold</span><span class="p">,</span>
+    <span class="n">IssueCheck</span><span class="p">,</span>
+    <span class="n">LedgerEntry</span><span class="p">,</span>
+    <span class="n">RunRecord</span><span class="p">,</span>
+    <span class="n">require_one_of</span><span class="p">,</span>
+    <span class="n">to_jsonable</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#: The ledger's directory under `state_dir`.</span>
+<span class="n">DFLT_LEDGER_SUBDIR</span> <span class="o">=</span> <span class="s2">"ledger"</span>
+<span class="c1">#: How many hex digits of a delivery id's sha1 inbox and unrouted keys keep.</span>
+<span class="n">DFLT_DIGEST_LENGTH</span> <span class="o">=</span> <span class="mi">16</span>
+
+<span class="n">_SEP</span> <span class="o">=</span> <span class="s2">"__"</span>
+<span class="n">_CASE_COUNTER_KEY</span> <span class="o">=</span> <span class="s2">"counter__cases"</span>
+
+
+<div class="viewcode-block" id="default_ledger_store">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.default_ledger_store">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_ledger_store</span><span class="p">(</span>
+    <span class="n">state_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The default ledger store: one JSON file per key in ``&lt;state_dir&gt;/ledger``.</span>
+
+<span class="sd">    Creates the directory, since ``dol.Jsons`` will not create one on write.</span>
+<span class="sd">    """</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">dol</span>
+
+    <span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="o">/</span> <span class="n">DFLT_LEDGER_SUBDIR</span>
+    <span class="n">root</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dol</span><span class="o">.</span><span class="n">Jsons</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span><span class="p">))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_escape</span><span class="p">(</span><span class="n">part</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">quote</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">part</span><span class="p">),</span> <span class="n">safe</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_key</span><span class="p">(</span><span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">parts</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">_SEP</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">prefix</span><span class="p">,</span> <span class="o">*</span><span class="nb">map</span><span class="p">(</span><span class="n">_escape</span><span class="p">,</span> <span class="n">parts</span><span class="p">)))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_digest</span><span class="p">(</span><span class="n">delivery_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">delivery_id</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="n">DFLT_DIGEST_LENGTH</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_day_stamp</span><span class="p">(</span><span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``day`` as ``YYYY-MM-DD``: a datetime counts as its date, a string is kept."""</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">day</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+        <span class="n">day</span> <span class="o">=</span> <span class="n">day</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">day</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">day</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">day</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_daily_key</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">_key</span><span class="p">(</span><span class="s2">"daily"</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">_day_stamp</span><span class="p">(</span><span class="n">day</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_cap_notice_key</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">_key</span><span class="p">(</span><span class="s2">"budget_notified"</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="n">_day_stamp</span><span class="p">(</span><span class="n">day</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_delete</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Delete ``key``, leaving a ``None`` tombstone where a lower layer still holds it."""</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">if</span> <span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># a ChainMap whose lower layer has it</span>
+        <span class="n">store</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">_PrefixView</span><span class="p">(</span><span class="n">MutableMapping</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The store's ``&lt;prefix&gt;__&lt;escaped key&gt;`` entries, as a mapping of the plain keys."""</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store</span> <span class="o">=</span> <span class="n">store</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_head</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">_SEP</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_stored_key</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_head</span> <span class="o">+</span> <span class="n">_escape</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_stored_key</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_store</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_stored_key</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__delitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="n">_delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_store</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_stored_key</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">for</span> <span class="n">stored</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_store</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">stored</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_head</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">stored</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">yield</span> <span class="n">unquote</span><span class="p">(</span><span class="n">stored</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_head</span><span class="p">)</span> <span class="p">:])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="mi">1</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="bp">self</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="Ledger">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Ledger</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What liaise has seen, its cases, runs and holds, the unrouted queue and the cursors.</span>
+
+<span class="sd">    ``store`` is any ``MutableMapping`` of JSON-ready values: a ``dict`` in tests,</span>
+<span class="sd">    :func:`default_ledger_store` for real, ``ChainMap({}, store)`` for a dry run. The</span>
+<span class="sd">    ledger keeps no state of its own, so two ledgers over one store agree.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">store</span>
+
+    <span class="c1"># ---- inbox: every channel event, deduplicated on its delivery id ----</span>
+
+<div class="viewcode-block" id="Ledger.seen">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.seen">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">seen</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">delivery_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the event with ``delivery_id`` has already been taken in."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"inbox"</span><span class="p">,</span> <span class="n">_digest</span><span class="p">(</span><span class="n">delivery_id</span><span class="p">)))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Ledger.mark_seen">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.mark_seen">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_seen</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">delivery_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Record the event with ``delivery_id`` as taken in, so :meth:`seen` dedupes it."""</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"delivery_id"</span><span class="p">:</span> <span class="n">delivery_id</span><span class="p">,</span>
+            <span class="s2">"channel"</span><span class="p">:</span> <span class="n">channel</span><span class="p">,</span>
+            <span class="s2">"kind"</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span>
+            <span class="s2">"at"</span><span class="p">:</span> <span class="n">at</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"inbox"</span><span class="p">,</span> <span class="n">_digest</span><span class="p">(</span><span class="n">delivery_id</span><span class="p">))]</span> <span class="o">=</span> <span class="n">to_jsonable</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ---- cases ----</span>
+
+<div class="viewcode-block" id="Ledger.new_case">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.new_case">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_case</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">conversation</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">reporter</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Case</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Open a case on ``conversation`` (an encoded ref), numbered ``&lt;subject&gt;-&lt;n&gt;``.</span>
+
+<span class="sd">        The case starts in ``intake``. Raises ``ValueError``, handing out no number, when</span>
+<span class="sd">        the conversation already belongs to a case: its messages go to that case.</span>
+<span class="sd">        """</span>
+        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"conversation"</span><span class="p">,</span> <span class="n">conversation</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"conversation </span><span class="si">{</span><span class="n">conversation</span><span class="si">!r}</span><span class="s2"> already belongs to case </span><span class="si">{</span><span class="n">owner</span><span class="si">!r}</span><span class="s2">; "</span>
+                <span class="sa">f</span><span class="s2">"append to that case instead of opening another"</span>
+            <span class="p">)</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_CASE_COUNTER_KEY</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"case"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">number</span> <span class="o">+=</span> <span class="mi">1</span>  <span class="c1"># never overwrite a case, even if the counter was lost</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_CASE_COUNTER_KEY</span><span class="p">]</span> <span class="o">=</span> <span class="n">number</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="n">Case</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">subject</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
+            <span class="n">conversations</span><span class="o">=</span><span class="p">(</span><span class="n">conversation</span><span class="p">,),</span>
+            <span class="n">reporter</span><span class="o">=</span><span class="n">reporter</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">INITIAL_CASE_STATE</span><span class="p">,</span>
+            <span class="n">created_at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span>
+            <span class="n">updated_at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_case</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">case</span></div>
+
+
+<div class="viewcode-block" id="Ledger.get_case">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.get_case">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Case</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The case with ``case_id``, or None."""</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"case"</span><span class="p">,</span> <span class="n">case_id</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Case</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.save_case">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.save_case">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Write ``case``, and index each of its conversations to it.</span>
+
+<span class="sd">        Raises ``ValueError``, writing nothing, when one of its conversations belongs</span>
+<span class="sd">        to another case.</span>
+<span class="sd">        """</span>
+        <span class="n">unindexed</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">conversations</span><span class="p">:</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"conversation"</span><span class="p">,</span> <span class="n">ref</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">unindexed</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">owner</span> <span class="o">!=</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"conversation </span><span class="si">{</span><span class="n">ref</span><span class="si">!r}</span><span class="s2"> belongs to case </span><span class="si">{</span><span class="n">owner</span><span class="si">!r}</span><span class="s2">, not </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">!r}</span><span class="s2">"</span>
+                <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"case"</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">unindexed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"conversation"</span><span class="p">,</span> <span class="n">ref</span><span class="p">)]</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span></div>
+
+
+<div class="viewcode-block" id="Ledger.cases">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.cases">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cases</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Case</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Every case, or those of ``subject`` and/or in ``state``, in no set order."""</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">require_one_of</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">CASE_STATES</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s2">"case state"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="k">case</span>
+            <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">Case</span><span class="o">.</span><span class="n">from_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="s2">"case"</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">subject</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="o">==</span> <span class="n">subject</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="n">state</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">case</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">state</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.case_for_conversation">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.case_for_conversation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">case_for_conversation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">encoded_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Case</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The case ``encoded_ref`` belongs to, or None."""</span>
+        <span class="n">case_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"conversation"</span><span class="p">,</span> <span class="n">encoded_ref</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">case_id</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.add_conversation">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.add_conversation">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_conversation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">encoded_ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Case</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Attach ``encoded_ref`` to the case, indexing it. Idempotent."""</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">encoded_ref</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">conversations</span><span class="p">:</span>
+            <span class="n">case</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">conversations</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">case</span><span class="o">.</span><span class="n">conversations</span><span class="p">,</span> <span class="n">encoded_ref</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_case</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">case</span></div>
+
+
+<div class="viewcode-block" id="Ledger.append">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.append">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">entry</span><span class="p">:</span> <span class="n">LedgerEntry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Case</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Append ``entry`` to the case's history and save it."""</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span><span class="o">.</span><span class="n">with_entry</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_case</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">case</span></div>
+
+
+<div class="viewcode-block" id="Ledger.transition">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.transition">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">transition</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+        <span class="n">actor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Case</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Move the case to ``state``, recording a ``transition`` entry.</span>
+
+<span class="sd">        Raises ``ValueError``, writing nothing, for a state outside ``CASE_STATES``.</span>
+<span class="sd">        """</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span><span class="o">.</span><span class="n">with_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span> <span class="n">actor</span><span class="o">=</span><span class="n">actor</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">save_case</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">case</span></div>
+
+
+    <span class="c1"># ---- runs ----</span>
+
+<div class="viewcode-block" id="Ledger.save_run">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.save_run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">RunRecord</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Write ``record``, replacing any earlier record of that run."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"run"</span><span class="p">,</span> <span class="n">record</span><span class="o">.</span><span class="n">run_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Ledger.get_run">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.get_run">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RunRecord</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The record of the run ``run_id``, or None."""</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"run"</span><span class="p">,</span> <span class="n">run_id</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">RunRecord</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.runs">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.runs">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">runs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">status</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">RunRecord</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Every run record, or those with ``status``, in no set order."""</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="n">record</span>
+            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="nb">map</span><span class="p">(</span><span class="n">RunRecord</span><span class="o">.</span><span class="n">from_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="s2">"run"</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">record</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="n">status</span>
+        <span class="p">)</span></div>
+
+
+    <span class="c1"># ---- holds ----</span>
+
+<div class="viewcode-block" id="Ledger.set_hold">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.set_hold">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_hold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hold</span><span class="p">:</span> <span class="n">Hold</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Put ``hold`` on its scope, replacing any hold already there."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"hold"</span><span class="p">,</span> <span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="p">)]</span> <span class="o">=</span> <span class="n">hold</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Ledger.get_hold">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.get_hold">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_hold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Hold</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The hold on ``scope``, or None."""</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"hold"</span><span class="p">,</span> <span class="n">scope</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Hold</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.clear_hold">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.clear_hold">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clear_hold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Lift the hold on ``scope``. A scope with no hold is left as it is."""</span>
+        <span class="n">_delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="n">_key</span><span class="p">(</span><span class="s2">"hold"</span><span class="p">,</span> <span class="n">scope</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Ledger.holds">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.holds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">holds</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Hold</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Every hold, in no set order."""</span>
+        <span class="k">return</span> <span class="nb">map</span><span class="p">(</span><span class="n">Hold</span><span class="o">.</span><span class="n">from_dict</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="s2">"hold"</span><span class="p">))</span></div>
+
+
+    <span class="c1"># ---- the unrouted queue ----</span>
+
+<div class="viewcode-block" id="Ledger.add_unrouted">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.add_unrouted">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_unrouted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Queue a message that matched a binding but failed resolution, grade or permission.</span>
+
+<span class="sd">        The fields are the spec's ``delivery_id, subject, author, grade, reason, url,</span>
+<span class="sd">        at``; only ``delivery_id`` is required, since the queue is keyed and</span>
+<span class="sd">        deduplicated on it.</span>
+<span class="sd">        """</span>
+        <span class="n">delivery_id</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"delivery_id"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">delivery_id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">"add_unrouted needs a delivery_id: the unrouted queue is keyed, "</span>
+                <span class="sa">f</span><span class="s2">"and deduplicated, on it (got the fields: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">fields</span><span class="p">))</span><span class="si">}</span><span class="s2">)"</span>
+            <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"unrouted"</span><span class="p">,</span> <span class="n">_digest</span><span class="p">(</span><span class="n">delivery_id</span><span class="p">))]</span> <span class="o">=</span> <span class="n">to_jsonable</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.unrouted">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.unrouted">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unrouted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Every queued unrouted message, as a fresh dict, in no set order."""</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="s2">"unrouted"</span><span class="p">))</span></div>
+
+
+    <span class="c1"># ---- daily dispatch counters ----</span>
+
+<div class="viewcode-block" id="Ledger.daily_count">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.daily_count">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">daily_count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""How many dispatches ``subject`` had on ``day`` (a date, or ``YYYY-MM-DD``)."""</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">day</span><span class="p">))</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.increment_daily">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.increment_daily">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">increment_daily</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Count one more dispatch for ``subject`` on ``day``, returning the new count."""</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">daily_count</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">day</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">day</span><span class="p">)]</span> <span class="o">=</span> <span class="n">count</span>
+        <span class="k">return</span> <span class="n">count</span></div>
+
+
+<div class="viewcode-block" id="Ledger.decrement_daily">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.decrement_daily">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decrement_daily</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Take back one dispatch counted for ``subject`` on ``day``, returning the new count.</span>
+
+<span class="sd">        For a run that turned out not to count against the cap, such as one that found the</span>
+<span class="sd">        login expired. A day with no dispatches stays at zero, and nothing is written.</span>
+<span class="sd">        """</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">daily_count</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">day</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_daily_key</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">day</span><span class="p">)]</span> <span class="o">=</span> <span class="n">count</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">count</span> <span class="o">-</span> <span class="mi">1</span></div>
+
+
+<div class="viewcode-block" id="Ledger.daily_cap_notified">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.daily_cap_notified">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">daily_cap_notified</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the operator has been told that ``subject`` reached its cap on ``day``."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_cap_notice_key</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">day</span><span class="p">))</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="Ledger.mark_daily_cap_notified">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.mark_daily_cap_notified">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">mark_daily_cap_notified</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">day</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">date</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Record that the operator was told, ``at``, that ``subject`` reached its cap on ``day``.</span>
+
+<span class="sd">        :meth:`daily_cap_notified` then says so, so they are told once per subject per day.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_cap_notice_key</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">day</span><span class="p">)]</span> <span class="o">=</span> <span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span></div>
+
+
+    <span class="c1"># ---- reads of a case's issue state ----</span>
+
+<div class="viewcode-block" id="Ledger.get_issue_check">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.get_issue_check">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_issue_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">IssueCheck</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The tick's reads of the case's issue state; an empty :class:`IssueCheck` before any."""</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"issue_check"</span><span class="p">,</span> <span class="n">case_id</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">IssueCheck</span><span class="p">()</span> <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">IssueCheck</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.save_issue_check">
+<a class="viewcode-back" href="../../module_docs/liaise/ledger.html#liaise.Ledger.save_issue_check">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_issue_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check</span><span class="p">:</span> <span class="n">IssueCheck</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Write ``check``, replacing what the ledger held of the case's issue state reads."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"issue_check"</span><span class="p">,</span> <span class="n">case_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">check</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
+
+
+    <span class="c1"># ---- cursors ----</span>
+
+    <span class="nd">@cached_property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">cursors</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The channel cursors, keyed by encoded conversation ref.</span>
+
+<span class="sd">        Hand it to correspond as ``listen(ref, cursors=ledger.cursors)``.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">_PrefixView</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="s2">"cursor"</span><span class="p">)</span>
+
+    <span class="c1"># ---- store access ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="n">prefix</span> <span class="o">+</span> <span class="n">_SEP</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">head</span><span class="p">):</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">value</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Case</span><span class="p">:</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no case </span><span class="si">{</span><span class="n">case_id</span><span class="si">!r}</span><span class="s2"> in the ledger"</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">case</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

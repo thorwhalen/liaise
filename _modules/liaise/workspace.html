@@ -1,0 +1,562 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.workspace &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.workspace</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.workspace</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""The checkout a subject's runs share: one run at a time, and never beside a live session.</span>
+
+<span class="sd">v0.1 has one kind of workspace (seam 5 in the design): the subject's own checkout,</span>
+<span class="sd">shared by its runs. Two checks keep a run from trampling other work there:</span>
+
+<span class="sd">- **The lock.** :meth:`SharedCheckout.acquire` writes</span>
+<span class="sd">  ``&lt;lock_dir&gt;/&lt;sha1(resolved path)[:16]&gt;.lock``, the JSON ``{pid, run_id, path, at}``.</span>
+<span class="sd">  A different run is refused while the holder's pid is alive, and a lock whose pid is</span>
+<span class="sd">  dead is reclaimed. Like the run lock of 0.0.x it is advisory, which is enough to keep</span>
+<span class="sd">  one machine's runs from colliding.</span>
+<span class="sd">- **The collision check.** :meth:`SharedCheckout.conflict` reads Claude Code's session</span>
+<span class="sd">  records (``~/.claude/sessions/*.json`` by default) and reports a live session, not one</span>
+<span class="sd">  of liaise's own runs, whose ``cwd`` is the checkout or inside it: someone working</span>
+<span class="sd">  there by hand.</span>
+
+<span class="sd">Paths are compared resolved (``~`` expanded, symlinks followed) and on path-part</span>
+<span class="sd">boundaries, so ``.../app`` never matches ``.../app2``.</span>
+
+<span class="sd">It also says whether a pid still names a given process (:func:`pid_matches_start`): a pid</span>
+<span class="sd">is reused once its process is gone, after a reboot say, so a live pid alone proves nothing.</span>
+
+<span class="sd">The named replacement is a worktree per run, which would come in at :func:`workspace_for`.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">platform</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span>
+
+<span class="c1">#: Where Claude Code keeps one JSON record per session.</span>
+<span class="n">DFLT_SESSIONS_DIR</span> <span class="o">=</span> <span class="s2">"~/.claude/sessions"</span>
+<span class="c1">#: The workspace locks' directory under ``state_dir``.</span>
+<span class="n">DFLT_LOCKS_SUBDIR</span> <span class="o">=</span> <span class="s2">"locks"</span>
+<span class="c1">#: How many hex digits of the resolved path's sha1 a lock file's name keeps.</span>
+<span class="n">DFLT_LOCK_DIGEST_LENGTH</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">LOCK_SUFFIX</span> <span class="o">=</span> <span class="s2">".lock"</span>
+<span class="c1">#: How far a process's start may lie from the start recorded for it, either side, for its</span>
+<span class="c1">#: pid to be taken for that process (see :func:`pid_matches_start`). A process that started</span>
+<span class="c1">#: further away is another one, which was given the pid after the first was gone.</span>
+<span class="n">PID_START_TOLERANCE</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="c1">#: The command that reports a process's elapsed time on POSIX, and how many seconds it is</span>
+<span class="c1">#: given to answer.</span>
+<span class="n">PS_COMMAND</span> <span class="o">=</span> <span class="s2">"ps"</span>
+<span class="n">PS_TIMEOUT_S</span> <span class="o">=</span> <span class="mf">5.0</span>
+
+<span class="c1">#: A pid is a positive signed 32-bit int on every platform liaise runs on.</span>
+<span class="n">_MAX_PID</span> <span class="o">=</span> <span class="mi">2</span><span class="o">**</span><span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="c1">#: The Windows access right that lets a handle query a process and nothing more.</span>
+<span class="n">_PROCESS_QUERY_LIMITED_INFORMATION</span> <span class="o">=</span> <span class="mh">0x1000</span>
+<span class="c1">#: What ``ps -o etime=`` prints, on macOS and Linux alike: ``[[dd-]hh:]mm:ss``.</span>
+<span class="n">_ETIME_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?:(?:([0-9]+)-)?([0-9]+):)?([0-9]+):([0-9]+)"</span><span class="p">)</span>
+<span class="n">_SECONDS_PER_MINUTE</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">_MINUTES_PER_HOUR</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="n">_HOURS_PER_DAY</span> <span class="o">=</span> <span class="mi">24</span>
+<span class="c1">#: Windows counts a FILETIME in 100-nanosecond ticks from 1601, UTC, in two 32-bit halves.</span>
+<span class="n">_FILETIME_EPOCH</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">1601</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="n">_FILETIME_TICKS_PER_MICROSECOND</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">_FILETIME_HALF_BITS</span> <span class="o">=</span> <span class="mi">32</span>
+
+
+<div class="viewcode-block" id="resolve_checkout">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.resolve_checkout">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">resolve_checkout</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``path`` in the one form checkouts are compared in: ``~`` expanded, absolute, resolved.</span>
+
+<span class="sd">    :mod:`liaise.holds` spells ``checkout:&lt;path&gt;`` scopes with it too, so a hold set on</span>
+<span class="sd">    one spelling of a checkout applies to every other.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span></div>
+
+
+
+<span class="c1">#: What ``GetExitCodeProcess`` reports for a process that has not exited yet.</span>
+<span class="n">_STILL_ACTIVE</span> <span class="o">=</span> <span class="mi">259</span>
+
+
+<div class="viewcode-block" id="pid_is_alive">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.pid_is_alive">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pid_is_alive</span><span class="p">(</span><span class="n">pid</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether ``pid`` names a live process. Never sends it a real signal.</span>
+
+<span class="sd">    Anything but a positive int in pid range is no live process, so a malformed session</span>
+<span class="sd">    record or lock never raises here. On POSIX this is ``os.kill(pid, 0)``, which delivers</span>
+<span class="sd">    nothing. On Windows ``os.kill`` would terminate the process instead, so the check</span>
+<span class="sd">    opens a query-only handle, and then asks for its exit code. Opening the handle is not</span>
+<span class="sd">    enough: Windows keeps an exited process openable while anyone still holds a handle to</span>
+<span class="sd">    it, such as the ``Popen`` that started it. Such a process is alive only if its exit</span>
+<span class="sd">    code is still ``STILL_ACTIVE``. ``liaise.run._pid_is_alive``, retired with that module,</span>
+<span class="sd">    lacked this check.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_pid</span><span class="p">(</span><span class="n">pid</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">platform</span><span class="o">.</span><span class="n">system</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"Windows"</span><span class="p">:</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
+        <span class="kn">from</span><span class="w"> </span><span class="nn">ctypes</span><span class="w"> </span><span class="kn">import</span> <span class="n">wintypes</span>
+
+        <span class="n">kernel32</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">kernel32</span>
+        <span class="n">handle</span> <span class="o">=</span> <span class="n">kernel32</span><span class="o">.</span><span class="n">OpenProcess</span><span class="p">(</span><span class="n">_PROCESS_QUERY_LIMITED_INFORMATION</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">handle</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="n">wintypes</span><span class="o">.</span><span class="n">DWORD</span><span class="p">()</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">kernel32</span><span class="o">.</span><span class="n">GetExitCodeProcess</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">code</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># cannot tell; an openable process counts as alive</span>
+            <span class="k">return</span> <span class="n">code</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">_STILL_ACTIVE</span>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="n">kernel32</span><span class="o">.</span><span class="n">CloseHandle</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">kill</span><span class="p">(</span><span class="n">pid</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">ProcessLookupError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">except</span> <span class="ne">PermissionError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>  <span class="c1"># it exists, it is just not ours to signal</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_pid</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether ``value`` is a positive int in pid range (a bool is not)."""</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">value</span> <span class="o">&lt;=</span> <span class="n">_MAX_PID</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="process_started_at">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.process_started_at">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">process_started_at</span><span class="p">(</span><span class="n">pid</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""When the process ``pid`` started, in UTC; None when that cannot be determined.</span>
+
+<span class="sd">    None, never an exception, for anything but a pid in range, a process that is gone, or a</span>
+<span class="sd">    system that does not say. On POSIX it is now less the elapsed time ``ps -o etime=``</span>
+<span class="sd">    reports, to the second, which reads the same on macOS and Linux and involves no time</span>
+<span class="sd">    zone; ``ps`` is found on ``PATH``, else on the system's default path, and given</span>
+<span class="sd">    :data:`PS_TIMEOUT_S` to answer. On Windows it is the creation time ``GetProcessTimes``</span>
+<span class="sd">    reads through a query-only handle.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">_is_pid</span><span class="p">(</span><span class="n">pid</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span> <span class="o">==</span> <span class="s2">"win32"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_windows_process_started_at</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_posix_process_started_at</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_posix_process_started_at</span><span class="p">(</span><span class="n">pid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]:</span>
+    <span class="n">ps</span> <span class="o">=</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="n">PS_COMMAND</span><span class="p">)</span> <span class="ow">or</span> <span class="n">shutil</span><span class="o">.</span><span class="n">which</span><span class="p">(</span><span class="n">PS_COMMAND</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">defpath</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ps</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">done</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">ps</span><span class="p">,</span> <span class="s2">"-o"</span><span class="p">,</span> <span class="s2">"etime="</span><span class="p">,</span> <span class="s2">"-p"</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">pid</span><span class="p">)],</span>
+            <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span>
+            <span class="n">capture_output</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">timeout</span><span class="o">=</span><span class="n">PS_TIMEOUT_S</span><span class="p">,</span>
+            <span class="n">check</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">SubprocessError</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">elapsed</span> <span class="o">=</span> <span class="n">_parse_etime</span><span class="p">(</span><span class="n">done</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span> <span class="k">if</span> <span class="n">done</span><span class="o">.</span><span class="n">returncode</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">elapsed</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span> <span class="o">-</span> <span class="n">elapsed</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_parse_etime</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">timedelta</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The elapsed time ``ps -o etime=`` printed as ``[[dd-]hh:]mm:ss``; None for anything else.</span>
+
+<span class="sd">    &gt;&gt;&gt; _parse_etime(" 3-04:05:06")</span>
+<span class="sd">    datetime.timedelta(days=3, seconds=14706)</span>
+<span class="sd">    """</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">_ETIME_PATTERN</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+    <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">days</span><span class="p">,</span> <span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">part</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">match</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span>
+    <span class="n">has_days</span> <span class="o">=</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">seconds</span> <span class="o">&gt;=</span> <span class="n">_SECONDS_PER_MINUTE</span>
+        <span class="ow">or</span> <span class="n">minutes</span> <span class="o">&gt;=</span> <span class="n">_MINUTES_PER_HOUR</span>
+        <span class="ow">or</span> <span class="p">(</span><span class="n">has_days</span> <span class="ow">and</span> <span class="n">hours</span> <span class="o">&gt;=</span> <span class="n">_HOURS_PER_DAY</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days</span><span class="p">,</span> <span class="n">hours</span><span class="o">=</span><span class="n">hours</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="n">seconds</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_windows_process_started_at</span><span class="p">(</span><span class="n">pid</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]:</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">ctypes</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">ctypes</span><span class="w"> </span><span class="kn">import</span> <span class="n">wintypes</span>
+
+    <span class="n">kernel32</span> <span class="o">=</span> <span class="n">ctypes</span><span class="o">.</span><span class="n">windll</span><span class="o">.</span><span class="n">kernel32</span>
+    <span class="n">handle</span> <span class="o">=</span> <span class="n">kernel32</span><span class="o">.</span><span class="n">OpenProcess</span><span class="p">(</span><span class="n">_PROCESS_QUERY_LIMITED_INFORMATION</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="n">pid</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">created</span><span class="p">,</span> <span class="n">exited</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">user</span> <span class="o">=</span> <span class="p">(</span><span class="n">wintypes</span><span class="o">.</span><span class="n">FILETIME</span><span class="p">()</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="p">(</span><span class="n">ctypes</span><span class="o">.</span><span class="n">byref</span><span class="p">(</span><span class="n">when</span><span class="p">)</span> <span class="k">for</span> <span class="n">when</span> <span class="ow">in</span> <span class="p">(</span><span class="n">created</span><span class="p">,</span> <span class="n">exited</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">user</span><span class="p">))</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">kernel32</span><span class="o">.</span><span class="n">GetProcessTimes</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="o">*</span><span class="n">times</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="n">kernel32</span><span class="o">.</span><span class="n">CloseHandle</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+    <span class="n">ticks</span> <span class="o">=</span> <span class="p">(</span><span class="n">created</span><span class="o">.</span><span class="n">dwHighDateTime</span> <span class="o">&lt;&lt;</span> <span class="n">_FILETIME_HALF_BITS</span><span class="p">)</span> <span class="o">|</span> <span class="n">created</span><span class="o">.</span><span class="n">dwLowDateTime</span>
+    <span class="k">return</span> <span class="n">_FILETIME_EPOCH</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span>
+        <span class="n">microseconds</span><span class="o">=</span><span class="n">ticks</span> <span class="o">//</span> <span class="n">_FILETIME_TICKS_PER_MICROSECOND</span>
+    <span class="p">)</span>
+
+
+<div class="viewcode-block" id="pid_matches_start">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.pid_matches_start">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">pid_matches_start</span><span class="p">(</span>
+    <span class="n">pid</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">started_at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">tolerance</span><span class="p">:</span> <span class="n">timedelta</span> <span class="o">=</span> <span class="n">PID_START_TOLERANCE</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Whether ``pid`` is the live process that started at ``started_at``; None when that cannot be told.</span>
+
+<span class="sd">    True when the process is alive (:func:`pid_is_alive`) and started</span>
+<span class="sd">    (:func:`process_started_at`) within ``tolerance`` of ``started_at``, either side. False</span>
+<span class="sd">    when it is gone, or started further away: its pid now names another process, given it</span>
+<span class="sd">    after the first ended or a reboot. None when it is alive but its start cannot be read,</span>
+<span class="sd">    so it may be either. Only a True pid may be signalled as the process that started then.</span>
+<span class="sd">    ``started_at`` is timezone-aware.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">pid_is_alive</span><span class="p">(</span><span class="n">pid</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">started</span> <span class="o">=</span> <span class="n">process_started_at</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">started</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="nb">abs</span><span class="p">(</span><span class="n">started</span> <span class="o">-</span> <span class="n">started_at</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">tolerance</span></div>
+
+
+
+<div class="viewcode-block" id="SharedCheckout">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.SharedCheckout">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SharedCheckout</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""One checkout shared by a subject's runs: its lock, and the live sessions inside it.</span>
+
+<span class="sd">    ``path`` is resolved once (see :func:`resolve_checkout`). ``lock_dir`` holds one lock</span>
+<span class="sd">    file per checkout. ``sessions_dir`` is where Claude Code keeps its session records</span>
+<span class="sd">    (:data:`DFLT_SESSIONS_DIR` when None). ``own_pids`` are the pids of liaise's own</span>
+<span class="sd">    runs, whose sessions are never a conflict.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">lock_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">],</span>
+        <span class="n">sessions_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">own_pids</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">resolve_checkout</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lock_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">lock_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sessions_dir</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span>
+            <span class="n">DFLT_SESSIONS_DIR</span> <span class="k">if</span> <span class="n">sessions_dir</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sessions_dir</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">own_pids</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">own_pids</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span><span class="si">!r}</span><span class="s2">)"</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">lock_path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""This checkout's lock file: ``&lt;lock_dir&gt;/&lt;sha1(resolved path)[:16]&gt;.lock``."""</span>
+        <span class="n">digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">fsencode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock_dir</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">digest</span><span class="p">[:</span><span class="n">DFLT_LOCK_DIGEST_LENGTH</span><span class="p">]</span><span class="si">}{</span><span class="n">LOCK_SUFFIX</span><span class="si">}</span><span class="s2">"</span>
+
+    <span class="c1"># ---- the collision check ----</span>
+
+<div class="viewcode-block" id="SharedCheckout.conflict">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.SharedCheckout.conflict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">conflict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""``live session &lt;name&gt; in &lt;cwd&gt;`` when another live session works in the checkout.</span>
+
+<span class="sd">        A session record conflicts when its ``pid`` is alive and not in ``own_pids``, and</span>
+<span class="sd">        its ``cwd`` is the checkout or a path inside it. The first such record, in file</span>
+<span class="sd">        name order, is reported by its ``name``, else its ``sessionId``. None when there</span>
+<span class="sd">        is none. A missing directory, an unreadable or malformed record, or a ``cwd`` that</span>
+<span class="sd">        is not absolute never conflicts and never raises.</span>
+<span class="sd">        """</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">records</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">paths</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sessions_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.json"</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">record</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+                <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                    <span class="k">yield</span> <span class="n">record</span>
+
+        <span class="k">def</span><span class="w"> </span><span class="nf">inside</span><span class="p">(</span><span class="n">cwd</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cwd</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">cwd</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">False</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">where</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">cwd</span><span class="p">)</span>
+                <span class="k">return</span> <span class="n">where</span><span class="o">.</span><span class="n">is_absolute</span><span class="p">()</span> <span class="ow">and</span> <span class="n">where</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span><span class="o">.</span><span class="n">is_relative_to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">RuntimeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+                <span class="k">return</span> <span class="kc">False</span>
+
+        <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">():</span>
+            <span class="n">pid</span><span class="p">,</span> <span class="n">cwd</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pid"</span><span class="p">),</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"cwd"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">pid_is_alive</span><span class="p">(</span><span class="n">pid</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pid</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">own_pids</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">inside</span><span class="p">(</span><span class="n">cwd</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sessionId"</span><span class="p">)</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"pid </span><span class="si">{</span><span class="n">pid</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"live session </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">cwd</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="kc">None</span></div>
+
+
+    <span class="c1"># ---- the lock ----</span>
+
+<div class="viewcode-block" id="SharedCheckout.holder">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.SharedCheckout.holder">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">holder</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""The lock's record, ``{pid, run_id, path, at}``, or None when there is no readable lock.</span>
+
+<span class="sd">        The holder's pid may be dead: :meth:`acquire` reclaims such a lock.</span>
+<span class="sd">        """</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lock_path</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">))</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">record</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="SharedCheckout.acquire">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.SharedCheckout.acquire">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">acquire</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pid</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Take the checkout's lock for ``run_id``, held while ``pid`` lives; False when refused.</span>
+
+<span class="sd">        Refused only while a different run holds the lock and its pid is alive. A lock</span>
+<span class="sd">        left by a dead pid, or one that cannot be read, is reclaimed. The same run</span>
+<span class="sd">        acquiring again succeeds and rewrites the lock, which is how a lock taken before</span>
+<span class="sd">        a run starts moves to the run's own pid once it has one.</span>
+<span class="sd">        """</span>
+        <span class="n">holder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">holder</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">holder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="n">holder</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"run_id"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">run_id</span>
+            <span class="ow">and</span> <span class="n">pid_is_alive</span><span class="p">(</span><span class="n">holder</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pid"</span><span class="p">))</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"pid"</span><span class="p">:</span> <span class="n">pid</span><span class="p">,</span>
+            <span class="s2">"run_id"</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span>
+            <span class="s2">"path"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">),</span>
+            <span class="s2">"at"</span><span class="p">:</span> <span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="p">}</span>
+        <span class="n">lock_path</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lock_path</span>
+        <span class="n">lock_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">staged</span> <span class="o">=</span> <span class="n">lock_path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lock_path</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span><span class="si">}</span><span class="s2">.tmp"</span><span class="p">)</span>
+        <span class="n">staged</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">record</span><span class="p">),</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">staged</span><span class="p">,</span> <span class="n">lock_path</span><span class="p">)</span>  <span class="c1"># so a reader never sees half a lock</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="SharedCheckout.release">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.SharedCheckout.release">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">release</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Remove the lock if ``run_id`` holds it; True when it was removed."""</span>
+        <span class="n">holder</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">holder</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">holder</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"run_id"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">run_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lock_path</span><span class="o">.</span><span class="n">unlink</span><span class="p">()</span>
+        <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">True</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="workspace_for">
+<a class="viewcode-back" href="../../module_docs/liaise/workspace.html#liaise.workspace.workspace_for">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">workspace_for</span><span class="p">(</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">lock_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">],</span>
+    <span class="n">sessions_dir</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">own_pids</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SharedCheckout</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The shared checkout ``subject`` works in, or None when its file names no workspace path.</span>
+
+<span class="sd">    ``lock_dir``, ``sessions_dir`` and ``own_pids`` go to :class:`SharedCheckout`.</span>
+<span class="sd">    """</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">workspace</span><span class="o">.</span><span class="n">path</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">SharedCheckout</span><span class="p">(</span>
+        <span class="n">path</span><span class="p">,</span> <span class="n">lock_dir</span><span class="o">=</span><span class="n">lock_dir</span><span class="p">,</span> <span class="n">sessions_dir</span><span class="o">=</span><span class="n">sessions_dir</span><span class="p">,</span> <span class="n">own_pids</span><span class="o">=</span><span class="n">own_pids</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

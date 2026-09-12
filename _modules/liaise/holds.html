@@ -1,0 +1,467 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.holds &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.holds</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.holds</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Holds: stops on work, by scope, set by the operator or by the tick itself.</span>
+
+<span class="sd">A hold sits on one scope and stops the work that falls under it. The scopes::</span>
+
+<span class="sd">    global              everything</span>
+<span class="sd">    processor           the processor, for every subject</span>
+<span class="sd">    effect:&lt;kind&gt;       one kind of effect of finished work, such as effect:deploy</span>
+<span class="sd">    subject:&lt;slug&gt;      one subject</span>
+<span class="sd">    person:&lt;id&gt;         one person's cases</span>
+<span class="sd">    repo:&lt;owner/repo&gt;   one repository</span>
+<span class="sd">    checkout:&lt;path&gt;     one checkout, in any spelling (compared resolved)</span>
+
+<span class="sd">Its mode says what it stops (see :data:`BLOCKING_MODES`):</span>
+
+<span class="sd">- ``block``: no new starts. Running runs continue and are collected, and the effects of</span>
+<span class="sd">  their outcomes wait on the case until unhold.</span>
+<span class="sd">- ``drain``: no new starts. In-flight work finishes, and its effects execute.</span>
+<span class="sd">- ``cancel``: no new starts. Running runs are cancelled gracefully, so they can resume,</span>
+<span class="sd">  and effects wait.</span>
+
+<span class="sd">Operator notifications always go out, whatever the mode.</span>
+
+<span class="sd">The tick asks :func:`blocking_hold` before starting a case (before budget and preflight),</span>
+<span class="sd">before executing a finished run's effects, and about each running run. When several</span>
+<span class="sd">holds apply it gets the most specific one, the narrowest reason there is.</span>
+
+<span class="sd">The holds the tick sets itself (``processor`` on ``config_error`` or ``auth_expired``,</span>
+<span class="sd">``effect:deploy`` on ``effect_blocked``) come from :func:`auto_hold`, recorded with</span>
+<span class="sd">``set_by="auto:&lt;error class&gt;"``, which also says whether it placed a new hold.</span>
+<span class="sd">:func:`release_auto_holds` lifts those, and never an operator's hold.</span>
+
+<span class="sd">Everything goes through a :class:`~liaise.ledger.Ledger`, so a dry-run ledger</span>
+<span class="sd">(``Ledger(ChainMap({}, store))``) holds and lifts without touching the real one.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">HOLD_MODES</span><span class="p">,</span> <span class="n">Hold</span><span class="p">,</span> <span class="n">require_one_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.workspace</span><span class="w"> </span><span class="kn">import</span> <span class="n">resolve_checkout</span>
+
+<span class="c1">#: Every kind of scope. ``global`` and ``processor`` stand alone; the rest are ``kind:value``.</span>
+<span class="n">SCOPE_KINDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"global"</span><span class="p">,</span> <span class="s2">"subject"</span><span class="p">,</span> <span class="s2">"person"</span><span class="p">,</span> <span class="s2">"repo"</span><span class="p">,</span> <span class="s2">"checkout"</span><span class="p">,</span> <span class="s2">"processor"</span><span class="p">,</span> <span class="s2">"effect"</span><span class="p">)</span>
+<span class="c1">#: The scope kinds that take no value.</span>
+<span class="n">BARE_SCOPE_KINDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"global"</span><span class="p">,</span> <span class="s2">"processor"</span><span class="p">)</span>
+<span class="c1">#: Scope kinds from the most specific to the broadest: the order :func:`blocking_hold` prefers.</span>
+<span class="n">SCOPE_SPECIFICITY</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"checkout"</span><span class="p">,</span>
+    <span class="s2">"repo"</span><span class="p">,</span>
+    <span class="s2">"person"</span><span class="p">,</span>
+    <span class="s2">"subject"</span><span class="p">,</span>
+    <span class="s2">"effect"</span><span class="p">,</span>
+    <span class="s2">"processor"</span><span class="p">,</span>
+    <span class="s2">"global"</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="c1">#: For each check :func:`blocking_hold` makes, the hold modes that stop it: any hold stops</span>
+<span class="c1">#: a start, ``drain`` lets the effects of in-flight work execute, and only ``cancel``</span>
+<span class="c1">#: stops a run already going.</span>
+<span class="n">BLOCKING_MODES</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"start"</span><span class="p">:</span> <span class="n">HOLD_MODES</span><span class="p">,</span>
+        <span class="s2">"effect"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"block"</span><span class="p">,</span> <span class="s2">"cancel"</span><span class="p">),</span>
+        <span class="s2">"running"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"cancel"</span><span class="p">,),</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">DFLT_HOLD_MODE</span> <span class="o">=</span> <span class="s2">"block"</span>
+<span class="c1">#: Who :func:`hold` records as having set a hold, unless told otherwise.</span>
+<span class="n">DFLT_SET_BY</span> <span class="o">=</span> <span class="s2">"operator"</span>
+<span class="c1">#: How ``set_by`` starts on a hold the tick set itself: ``auto:&lt;error class&gt;``.</span>
+<span class="n">AUTO_SET_BY_PREFIX</span> <span class="o">=</span> <span class="s2">"auto:"</span>
+
+<span class="n">_VALUE_PLACEHOLDERS</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"subject"</span><span class="p">:</span> <span class="s2">"&lt;slug&gt;"</span><span class="p">,</span>
+        <span class="s2">"person"</span><span class="p">:</span> <span class="s2">"&lt;id&gt;"</span><span class="p">,</span>
+        <span class="s2">"repo"</span><span class="p">:</span> <span class="s2">"&lt;owner/repo&gt;"</span><span class="p">,</span>
+        <span class="s2">"checkout"</span><span class="p">:</span> <span class="s2">"&lt;path&gt;"</span><span class="p">,</span>
+        <span class="s2">"effect"</span><span class="p">:</span> <span class="s2">"&lt;kind&gt;"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">_ACCEPTED_FORMS</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="n">kind</span> <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">BARE_SCOPE_KINDS</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">_VALUE_PLACEHOLDERS</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">SCOPE_KINDS</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="parse_scope">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.parse_scope">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_scope</span><span class="p">(</span><span class="n">scope</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""``(kind, value)`` for a hold scope; the value is None for ``global`` and ``processor``.</span>
+
+<span class="sd">    &gt;&gt;&gt; parse_scope("effect:deploy")</span>
+<span class="sd">    ('effect', 'deploy')</span>
+<span class="sd">    &gt;&gt;&gt; parse_scope("global")</span>
+<span class="sd">    ('global', None)</span>
+
+<span class="sd">    Only the first ``:`` separates, so a value may hold more (a Windows checkout path).</span>
+<span class="sd">    Raises ``ValueError`` naming the accepted forms for anything else.</span>
+<span class="sd">    """</span>
+    <span class="n">kind</span><span class="p">,</span> <span class="n">separator</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">scope</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scope</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="s2">""</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">3</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">BARE_SCOPE_KINDS</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">separator</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">kind</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">_VALUE_PLACEHOLDERS</span> <span class="ow">and</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">kind</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"hold scope </span><span class="si">{</span><span class="n">scope</span><span class="si">!r}</span><span class="s2"> is not one of the accepted forms: </span><span class="si">{</span><span class="n">_ACCEPTED_FORMS</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="canonical_scope">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.canonical_scope">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">canonical_scope</span><span class="p">(</span><span class="n">scope</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``scope`` as holds are stored and matched: validated, and a checkout path resolved.</span>
+
+<span class="sd">    Raises ``ValueError`` as :func:`parse_scope` does.</span>
+<span class="sd">    """</span>
+    <span class="n">kind</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">parse_scope</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">kind</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"checkout"</span><span class="p">:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">resolve_checkout</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="hold">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.hold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hold</span><span class="p">(</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
+    <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_HOLD_MODE</span><span class="p">,</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">set_by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_SET_BY</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Hold</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Put a ``mode`` hold on ``scope``, replacing any hold already there, and return it.</span>
+
+<span class="sd">    Raises ``ValueError``, writing nothing, for a scope outside the accepted forms or a</span>
+<span class="sd">    mode outside ``HOLD_MODES``.</span>
+<span class="sd">    """</span>
+    <span class="n">new</span> <span class="o">=</span> <span class="n">Hold</span><span class="p">(</span>
+        <span class="n">scope</span><span class="o">=</span><span class="n">canonical_scope</span><span class="p">(</span><span class="n">scope</span><span class="p">),</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+        <span class="n">set_by</span><span class="o">=</span><span class="n">set_by</span><span class="p">,</span>
+        <span class="n">set_at</span><span class="o">=</span><span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">ledger</span><span class="o">.</span><span class="n">set_hold</span><span class="p">(</span><span class="n">new</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">new</span></div>
+
+
+
+<div class="viewcode-block" id="unhold">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.unhold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">unhold</span><span class="p">(</span><span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span> <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Lift the hold on ``scope``, whoever set it; True when there was one.</span>
+
+<span class="sd">    Raises ``ValueError`` for a scope outside the accepted forms.</span>
+<span class="sd">    """</span>
+    <span class="n">scope</span> <span class="o">=</span> <span class="n">canonical_scope</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">ledger</span><span class="o">.</span><span class="n">get_hold</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">ledger</span><span class="o">.</span><span class="n">clear_hold</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+
+<div class="viewcode-block" id="scopes_for">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.scopes_for">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">scopes_for</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">person</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">repo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">checkout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">effect</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">processor</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The scopes a piece of work falls under, most specific first and ``global`` last.</span>
+
+<span class="sd">    One scope per argument given, plus ``processor`` unless ``processor=False`` (for an</span>
+<span class="sd">    effect the processor has no part in), plus ``global``.</span>
+
+<span class="sd">    &gt;&gt;&gt; scopes_for(person="pat", effect="deploy")</span>
+<span class="sd">    ('person:pat', 'effect:deploy', 'processor', 'global')</span>
+
+<span class="sd">    Raises ``ValueError`` for an empty value.</span>
+<span class="sd">    """</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"checkout"</span><span class="p">:</span> <span class="n">checkout</span><span class="p">,</span>
+        <span class="s2">"repo"</span><span class="p">:</span> <span class="n">repo</span><span class="p">,</span>
+        <span class="s2">"person"</span><span class="p">:</span> <span class="n">person</span><span class="p">,</span>
+        <span class="s2">"subject"</span><span class="p">:</span> <span class="n">subject</span><span class="p">,</span>
+        <span class="s2">"effect"</span><span class="p">:</span> <span class="n">effect</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">scopes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">SCOPE_SPECIFICITY</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"processor"</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">processor</span><span class="p">:</span>
+                <span class="n">scopes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kind</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">BARE_SCOPE_KINDS</span><span class="p">:</span>
+            <span class="n">scopes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kind</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">values</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">scopes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">canonical_scope</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">values</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">scopes</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="blocking_hold">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.blocking_hold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">blocking_hold</span><span class="p">(</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span> <span class="n">scopes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">for_</span><span class="p">:</span> <span class="nb">str</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Hold</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The most specific hold on one of ``scopes`` that stops ``for_``, or None.</span>
+
+<span class="sd">    ``for_`` is the check, one of :data:`BLOCKING_MODES`:</span>
+
+<span class="sd">    - ``"start"``: may a new run start? Any hold stops it.</span>
+<span class="sd">    - ``"effect"``: may a finished run's effects execute? ``block`` and ``cancel`` keep</span>
+<span class="sd">      them waiting, while ``drain`` lets them go.</span>
+<span class="sd">    - ``"running"``: must a running run be cancelled? Only ``cancel`` says so.</span>
+
+<span class="sd">    Build ``scopes`` with :func:`scopes_for`. Raises ``ValueError`` for an unknown check or</span>
+<span class="sd">    a scope outside the accepted forms.</span>
+<span class="sd">    """</span>
+    <span class="n">check</span> <span class="o">=</span> <span class="n">require_one_of</span><span class="p">(</span><span class="n">for_</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">BLOCKING_MODES</span><span class="p">),</span> <span class="n">what</span><span class="o">=</span><span class="s2">"hold check"</span><span class="p">)</span>
+    <span class="n">modes</span> <span class="o">=</span> <span class="n">BLOCKING_MODES</span><span class="p">[</span><span class="n">check</span><span class="p">]</span>
+    <span class="n">held</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">ledger</span><span class="o">.</span><span class="n">get_hold</span><span class="p">,</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="n">canonical_scope</span><span class="p">,</span> <span class="n">scopes</span><span class="p">)))</span>
+    <span class="n">stopping</span> <span class="o">=</span> <span class="p">[</span><span class="n">found</span> <span class="k">for</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">held</span> <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">found</span><span class="o">.</span><span class="n">mode</span> <span class="ow">in</span> <span class="n">modes</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">min</span><span class="p">(</span>
+        <span class="n">stopping</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">found</span><span class="p">:</span> <span class="n">SCOPE_SPECIFICITY</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">parse_scope</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">scope</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span>
+        <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="AutoHold">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.AutoHold">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AutoHold</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""What :func:`auto_hold` did: the hold now in force on the scope, and whether it is new."""</span>
+
+    <span class="n">hold</span><span class="p">:</span> <span class="n">Hold</span>
+    <span class="c1">#: True when the scope had no hold before. False when an earlier automatic hold was</span>
+    <span class="c1">#: replaced, or an operator's hold was kept. The tick tells the operator only when True.</span>
+    <span class="n">created</span><span class="p">:</span> <span class="nb">bool</span></div>
+
+
+
+<div class="viewcode-block" id="auto_hold">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.auto_hold">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">auto_hold</span><span class="p">(</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span> <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">error_class</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AutoHold</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Block ``scope`` because the tick met ``error_class``: the hold in force, and whether it is new.</span>
+
+<span class="sd">    The hold is recorded with ``set_by="auto:&lt;error_class&gt;"``, so</span>
+<span class="sd">    :func:`release_auto_holds` can lift it, and it replaces an earlier automatic hold. An</span>
+<span class="sd">    operator's hold already on the scope is kept, unchanged, and returned instead:</span>
+<span class="sd">    replacing it would let a later release lift the operator's hold.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">error_class</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"auto_hold needs the error class that caused it, as in "</span>
+            <span class="s2">"error_class='auth_expired'"</span>
+        <span class="p">)</span>
+    <span class="n">existing</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">get_hold</span><span class="p">(</span><span class="n">canonical_scope</span><span class="p">(</span><span class="n">scope</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_is_auto</span><span class="p">(</span><span class="n">existing</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">AutoHold</span><span class="p">(</span><span class="n">existing</span><span class="p">,</span> <span class="n">created</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">placed</span> <span class="o">=</span> <span class="n">hold</span><span class="p">(</span>
+        <span class="n">ledger</span><span class="p">,</span>
+        <span class="n">scope</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s2">"block"</span><span class="p">,</span>
+        <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"set automatically after </span><span class="si">{</span><span class="n">error_class</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">set_by</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">AUTO_SET_BY_PREFIX</span><span class="si">}{</span><span class="n">error_class</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">AutoHold</span><span class="p">(</span><span class="n">placed</span><span class="p">,</span> <span class="n">created</span><span class="o">=</span><span class="n">existing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="release_auto_holds">
+<a class="viewcode-back" href="../../module_docs/liaise/holds.html#liaise.release_auto_holds">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">release_auto_holds</span><span class="p">(</span><span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span> <span class="n">scope</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Hold</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Lift the tick's own hold on ``scope`` and return what was lifted; an operator's stays.</span>
+
+<span class="sd">    For the tick to call once the cause has cleared, as when preflight passes again after</span>
+<span class="sd">    ``auth_expired``.</span>
+<span class="sd">    """</span>
+    <span class="n">scope</span> <span class="o">=</span> <span class="n">canonical_scope</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+    <span class="n">existing</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">get_hold</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_is_auto</span><span class="p">(</span><span class="n">existing</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">ledger</span><span class="o">.</span><span class="n">clear_hold</span><span class="p">(</span><span class="n">scope</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[</span><span class="n">existing</span><span class="p">]</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_is_auto</span><span class="p">(</span><span class="n">found</span><span class="p">:</span> <span class="n">Hold</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">set_by</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">AUTO_SET_BY_PREFIX</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

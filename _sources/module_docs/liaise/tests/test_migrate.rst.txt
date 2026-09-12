@@ -1,0 +1,4 @@
+liaise.tests.test_migrate
+=========================
+.. automodule:: liaise.tests.test_migrate
+   :members:

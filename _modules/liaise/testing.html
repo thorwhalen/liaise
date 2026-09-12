@@ -1,0 +1,794 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.testing &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.testing</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.testing</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Fakes shipped with liaise: for its tests, and for the one-command smoke test.</span>
+
+<span class="sd">:class:`FakeGitHubChannel` is a correspond channel adapter held in memory. Its references,</span>
+<span class="sd">messages, delivery ids and events have the shapes correspond's GitHub adapter gives them,</span>
+<span class="sd">so :func:`liaise.intake.intake` cannot tell the two apart, and nothing it does leaves the</span>
+<span class="sd">process. :func:`add_webinbox_report` stores a report in correspond's own ``WebInbox``</span>
+<span class="sd">exactly as its collector stores one. :func:`demo_registry` puts the two together as the</span>
+<span class="sd">channel registry ``correspond.listen`` and ``correspond.send`` take.</span>
+
+<span class="sd">Every value here is fictional: the partner ``pat``, the repository ``example/app``, the</span>
+<span class="sd">site ``example-site`` and the relay ``example-bot``.</span>
+
+<span class="sd">&gt;&gt;&gt; import correspond</span>
+<span class="sd">&gt;&gt;&gt; github = FakeGitHubChannel()</span>
+<span class="sd">&gt;&gt;&gt; _ = github.add_issue(</span>
+<span class="sd">...     "example/app", 12, author="pat", title="Export", body="The export drops a row.",</span>
+<span class="sd">...     labels=["partner:pat"], created_at="2026-09-11T09:00:00Z",</span>
+<span class="sd">... )</span>
+<span class="sd">&gt;&gt;&gt; events = correspond.listen(</span>
+<span class="sd">...     "github:example/app", cursors={}, registry=demo_registry(github=github)</span>
+<span class="sd">... )</span>
+<span class="sd">&gt;&gt;&gt; [(e.delivery_id, e.message.native["labels"]) for e in events]</span>
+<span class="sd">[('github:example/app:issue-12@2026-09-11T09:00:00Z', ['partner:pat'])]</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.channels.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_BODY_CHARS</span><span class="p">,</span> <span class="n">MAX_TITLE_CHARS</span><span class="p">,</span> <span class="n">REF_RE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.channels.webinbox</span><span class="w"> </span><span class="kn">import</span> <span class="n">Site</span><span class="p">,</span> <span class="n">WebInbox</span><span class="p">,</span> <span class="n">sign_identity</span><span class="p">,</span> <span class="n">verify_identity</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ChannelError</span><span class="p">,</span> <span class="n">InvalidRef</span><span class="p">,</span> <span class="n">NotSupported</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">Account</span><span class="p">,</span>
+    <span class="n">Authenticity</span><span class="p">,</span>
+    <span class="n">Capabilities</span><span class="p">,</span>
+    <span class="n">ChannelIdentity</span><span class="p">,</span>
+    <span class="n">ConversationRef</span><span class="p">,</span>
+    <span class="n">Draft</span><span class="p">,</span>
+    <span class="n">Event</span><span class="p">,</span>
+    <span class="n">Grade</span><span class="p">,</span>
+    <span class="n">HistoryDepth</span><span class="p">,</span>
+    <span class="n">Message</span><span class="p">,</span>
+    <span class="n">SendResult</span><span class="p">,</span>
+    <span class="n">Support</span><span class="p">,</span>
+    <span class="n">format_time</span><span class="p">,</span>
+    <span class="n">parse_time</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.ops</span><span class="w"> </span><span class="kn">import</span> <span class="n">window</span><span class="p">,</span> <span class="n">with_final_cursor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">FakeGitHub</span>
+
+<span class="c1">#: The name a fake GitHub channel registers under: correspond's own adapter's.</span>
+<span class="n">DFLT_GITHUB_CHANNEL</span> <span class="o">=</span> <span class="s2">"github"</span>
+<span class="c1">#: The login a fake GitHub channel's own sends go out under (``FakeGitHub``'s, too).</span>
+<span class="n">SELF_LOGIN</span> <span class="o">=</span> <span class="n">FakeGitHub</span><span class="o">.</span><span class="n">SELF_AUTHOR</span>
+<span class="c1">#: What the fake web inbox's host application signs its logged-in users with.</span>
+<span class="n">DFLT_SITE_SECRET</span> <span class="o">=</span> <span class="s2">"example-site-secret"</span>
+<span class="c1">#: The ``native`` fields an issue opening carries. Comments carry none.</span>
+<span class="n">NATIVE_FIELDS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"number"</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">,</span> <span class="s2">"labels"</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">)</span>
+<span class="c1">#: The states an issue is in, as GitHub names them (see :meth:`FakeGitHubChannel.set_state`).</span>
+<span class="n">ISSUE_STATES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"open"</span><span class="p">,</span> <span class="s2">"closed"</span><span class="p">)</span>
+
+<span class="n">_URL_ROOT</span> <span class="o">=</span> <span class="s2">"https://github.com"</span>
+<span class="n">_OPENING</span><span class="p">,</span> <span class="n">_COMMENT</span> <span class="o">=</span> <span class="s2">"issue"</span><span class="p">,</span> <span class="s2">"issuecomment"</span>
+<span class="n">_CURSOR_PREFIX</span> <span class="o">=</span> <span class="s2">"seq-"</span>
+<span class="n">_EVIDENCE</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"attested_by"</span><span class="p">:</span> <span class="s2">"liaise.testing, in memory"</span><span class="p">}</span>
+<span class="c1">#: How many hex digits of a digest end a seeded report's id, as the collector's random ones do.</span>
+<span class="n">_REPORT_SUFFIX_DIGITS</span> <span class="o">=</span> <span class="mi">8</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_utc_now</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">microsecond</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_Post</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A seeded or sent post: its place in arrival order, how its delivery id ends, and when it changed."""</span>
+
+    <span class="n">seq</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">message</span><span class="p">:</span> <span class="n">Message</span>
+    <span class="n">changed_at</span><span class="p">:</span> <span class="n">datetime</span>
+
+
+<div class="viewcode-block" id="FakeGitHubChannel">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">FakeGitHubChannel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""GitHub issues held in memory, as a correspond channel that reads, listens and sends.</span>
+
+<span class="sd">    Seed it with :meth:`add_issue` and :meth:`add_comment`; :meth:`poll` yields what was</span>
+<span class="sd">    added after its cursor, in the order it was added. A real send is recorded in ``sent``</span>
+<span class="sd">    as ``(ref, draft)`` and posted as the channel's own (``is_self``) at ``clock()``, so</span>
+<span class="sd">    the next poll yields it, as GitHub's would. Set ``send_error`` to a</span>
+<span class="sd">    ``correspond.ChannelError`` and every real send raises it, which ``correspond.send``</span>
+<span class="sd">    turns into a failed result.</span>
+
+<span class="sd">    ``lookback`` makes a first poll (one without a cursor) skip what last changed more</span>
+<span class="sd">    than that long before ``clock()``, as correspond's GitHub adapter looks back only</span>
+<span class="sd">    ``LISTEN_LOOKBACK``. With None, the default, a first poll yields everything.</span>
+<span class="sd">    """</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_GITHUB_CHANNEL</span><span class="p">,</span>
+        <span class="n">lookback</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">timedelta</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">clock</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="n">_utc_now</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="o">=</span> <span class="n">lookback</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clock</span> <span class="o">=</span> <span class="n">clock</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">ConversationRef</span><span class="p">,</span> <span class="n">Draft</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">send_error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ChannelError</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_posts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">_Post</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Message</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_comment_ids</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">capabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Capabilities</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Read, listen and send on issues, graded ``platform``, as GitHub's are."""</span>
+        <span class="k">return</span> <span class="n">Capabilities</span><span class="p">(</span>
+            <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">read</span><span class="o">=</span><span class="n">Support</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span>
+            <span class="n">listen</span><span class="o">=</span><span class="n">Support</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span>
+            <span class="n">send</span><span class="o">=</span><span class="n">Support</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span>
+            <span class="n">initiate</span><span class="o">=</span><span class="n">Support</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span>
+            <span class="n">reply</span><span class="o">=</span><span class="n">Support</span><span class="o">.</span><span class="n">PARTIAL</span><span class="p">,</span>
+            <span class="n">history_depth</span><span class="o">=</span><span class="n">HistoryDepth</span><span class="o">.</span><span class="n">FULL</span><span class="p">,</span>
+            <span class="n">listen_modes</span><span class="o">=</span><span class="p">(</span><span class="s2">"poll"</span><span class="p">,),</span>
+            <span class="n">grades</span><span class="o">=</span><span class="p">(</span><span class="n">Grade</span><span class="o">.</span><span class="n">PLATFORM</span><span class="p">,),</span>
+            <span class="n">max_text_length</span><span class="o">=</span><span class="n">MAX_BODY_CHARS</span><span class="p">,</span>
+            <span class="n">max_title_length</span><span class="o">=</span><span class="n">MAX_TITLE_CHARS</span><span class="p">,</span>
+            <span class="n">formats</span><span class="o">=</span><span class="p">(</span><span class="s2">"markdown"</span><span class="p">,),</span>
+            <span class="n">native_fields</span><span class="o">=</span><span class="n">NATIVE_FIELDS</span><span class="p">,</span>
+            <span class="n">notes</span><span class="o">=</span><span class="p">(</span>
+                <span class="s2">"in memory: nothing leaves the process"</span><span class="p">,</span>
+                <span class="s2">"reply_to is refused on issues, whose comments are flat, as on GitHub"</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+<div class="viewcode-block" id="FakeGitHubChannel.parse_ref">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel.parse_ref">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">parse_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConversationRef</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""``owner/repo`` or ``owner/repo#N``, lower-cased, as correspond's GitHub adapter parses them."""</span>
+        <span class="n">match</span> <span class="o">=</span> <span class="n">REF_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="nb">id</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">match</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRef</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> references are </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:owner/repo or "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:owner/repo#number, not </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="nb">id</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+        <span class="n">repository</span> <span class="o">=</span> <span class="n">ConversationRef</span><span class="p">(</span>
+            <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="nb">id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">'owner'</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">'repo'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"repository"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">match</span><span class="p">[</span><span class="s2">"number"</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">repository</span>
+        <span class="k">return</span> <span class="n">ConversationRef</span><span class="p">(</span>
+            <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="nb">id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="p">[</span><span class="s1">'number'</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">parent</span><span class="o">=</span><span class="n">repository</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+    <span class="c1"># ---- seeding ----</span>
+
+<div class="viewcode-block" id="FakeGitHubChannel.add_issue">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel.add_issue">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_issue</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">author</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">labels</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+        <span class="n">created_at</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">grade</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Grade</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Grade</span><span class="o">.</span><span class="n">PLATFORM</span><span class="p">,</span>
+        <span class="n">state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"open"</span><span class="p">,</span>
+        <span class="n">is_self</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Seed the opening post of issue ``repo#number``; the next poll yields it.</span>
+
+<span class="sd">        The message carries ``native`` ``number``, ``title``, ``labels`` and ``state``.</span>
+<span class="sd">        Raises ``ValueError`` for an issue already seeded.</span>
+<span class="sd">        """</span>
+        <span class="n">repository</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_repository</span><span class="p">(</span><span class="n">repo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2"> is already seeded"</span><span class="p">)</span>
+        <span class="n">created</span> <span class="o">=</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">created_at</span><span class="p">)</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_OPENING</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">ConversationRef</span><span class="p">(</span>
+                <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                <span class="n">kind</span><span class="o">=</span><span class="s2">"issue"</span><span class="p">,</span>
+                <span class="n">parent</span><span class="o">=</span><span class="n">repository</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">author</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_identity</span><span class="p">(</span><span class="n">author</span><span class="p">,</span> <span class="n">is_self</span><span class="o">=</span><span class="n">is_self</span><span class="p">),</span>
+            <span class="n">authenticity</span><span class="o">=</span><span class="n">Authenticity</span><span class="p">(</span><span class="n">grade</span><span class="o">=</span><span class="n">grade</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">_EVIDENCE</span><span class="p">),</span>
+            <span class="n">sent_at</span><span class="o">=</span><span class="n">created</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+            <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+            <span class="n">body_format</span><span class="o">=</span><span class="s2">"markdown"</span><span class="p">,</span>
+            <span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_URL_ROOT</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">/issues/</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">native</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">"number"</span><span class="p">:</span> <span class="n">number</span><span class="p">,</span>
+                <span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span>
+                <span class="s2">"labels"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span>
+                <span class="s2">"state"</span><span class="p">:</span> <span class="n">state</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="p">[(</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">number</span><span class="p">)]</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_post</span><span class="p">(</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">changed_at</span><span class="o">=</span><span class="n">created</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">message</span></div>
+
+
+<div class="viewcode-block" id="FakeGitHubChannel.add_comment">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel.add_comment">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_comment</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">author</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">body</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">created_at</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+        <span class="n">edited_at</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">is_self</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Seed a comment on the seeded issue ``repo#number``; the next poll yields it.</span>
+
+<span class="sd">        ``edited_at``, when the comment was edited, becomes its ``edited_at``, and its</span>
+<span class="sd">        delivery id ends with it, as correspond's GitHub adapter ends one with the</span>
+<span class="sd">        comment's ``updated_at``. Raises ``ValueError`` when that issue was never seeded.</span>
+<span class="sd">        """</span>
+        <span class="n">repository</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_repository</span><span class="p">(</span><span class="n">repo</span><span class="p">)</span>
+        <span class="n">opening</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="o">.</span><span class="n">get</span><span class="p">((</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">number</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">opening</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"no issue </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2"> to comment on; "</span>
+                <span class="sa">f</span><span class="s2">"seed it with add_issue first"</span>
+            <span class="p">)</span>
+        <span class="n">comment_id</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_comment_ids</span><span class="p">)</span>
+        <span class="n">created</span> <span class="o">=</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">created_at</span><span class="p">)</span>
+        <span class="n">edited</span> <span class="o">=</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">edited_at</span><span class="p">)</span> <span class="k">if</span> <span class="n">edited_at</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">Message</span><span class="p">(</span>
+            <span class="nb">id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_COMMENT</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">comment_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">ConversationRef</span><span class="p">(</span>
+                <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">opening</span><span class="o">.</span><span class="n">conversation</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="n">repository</span>
+            <span class="p">),</span>
+            <span class="n">author</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_identity</span><span class="p">(</span><span class="n">author</span><span class="p">,</span> <span class="n">is_self</span><span class="o">=</span><span class="n">is_self</span><span class="p">),</span>
+            <span class="n">authenticity</span><span class="o">=</span><span class="n">Authenticity</span><span class="p">(</span><span class="n">grade</span><span class="o">=</span><span class="n">Grade</span><span class="o">.</span><span class="n">PLATFORM</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="n">_EVIDENCE</span><span class="p">),</span>
+            <span class="n">sent_at</span><span class="o">=</span><span class="n">created</span><span class="p">,</span>
+            <span class="n">edited_at</span><span class="o">=</span><span class="n">edited</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+            <span class="n">body</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+            <span class="n">body_format</span><span class="o">=</span><span class="s2">"markdown"</span><span class="p">,</span>
+            <span class="n">url</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">opening</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">_COMMENT</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">comment_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_post</span><span class="p">(</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">changed_at</span><span class="o">=</span><span class="n">edited</span> <span class="ow">or</span> <span class="n">created</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">message</span></div>
+
+
+<div class="viewcode-block" id="FakeGitHubChannel.set_state">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel.set_state">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Message</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Close or reopen the seeded issue ``repo#number``, as someone on GitHub would.</span>
+
+<span class="sd">        ``state`` is one of :data:`ISSUE_STATES`. The opening's ``native["state"]``</span>
+<span class="sd">        changes, so a read of the issue, or of the repository's open issues, sees it. A</span>
+<span class="sd">        poll yields nothing for it, as correspond's GitHub adapter hears an older issue's</span>
+<span class="sd">        changes only through its comments. Returns the opening as it is now; raises</span>
+<span class="sd">        ``ValueError`` for an unknown state or an issue never seeded.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ISSUE_STATES</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"issue state </span><span class="si">{</span><span class="n">state</span><span class="si">!r}</span><span class="s2"> is not one of: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ISSUE_STATES</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+        <span class="n">repository</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_repository</span><span class="p">(</span><span class="n">repo</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="n">opening</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">opening</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"no issue </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">repository</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2"> to set the state of; "</span>
+                <span class="sa">f</span><span class="s2">"seed it with add_issue first"</span>
+            <span class="p">)</span>
+        <span class="n">changed</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">opening</span><span class="p">,</span> <span class="n">native</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">opening</span><span class="o">.</span><span class="n">native</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">state</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">changed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_posts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">replace</span><span class="p">(</span><span class="n">post</span><span class="p">,</span> <span class="n">message</span><span class="o">=</span><span class="n">changed</span><span class="p">)</span> <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">message</span> <span class="ow">is</span> <span class="n">opening</span> <span class="k">else</span> <span class="n">post</span>
+            <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_posts</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">changed</span></div>
+
+
+    <span class="c1"># ---- reading and listening ----</span>
+
+<div class="viewcode-block" id="FakeGitHubChannel.read">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel.read">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ref</span><span class="p">:</span> <span class="n">ConversationRef</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">since</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Message</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""An issue's opening and comments; for a repository, its open issues' openings."""</span>
+        <span class="n">repo</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">"#"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">number</span><span class="p">:</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">message</span>
+                <span class="k">for</span> <span class="p">(</span><span class="n">owner_repo</span><span class="p">,</span> <span class="n">_</span><span class="p">),</span> <span class="n">message</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">owner_repo</span> <span class="o">==</span> <span class="n">repo</span> <span class="ow">and</span> <span class="n">message</span><span class="o">.</span><span class="n">native</span><span class="p">[</span><span class="s2">"state"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"open"</span>
+            <span class="p">]</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">number</span><span class="p">))</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_not_found</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">messages</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">post</span><span class="o">.</span><span class="n">message</span>
+                <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_posts</span>
+                <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">repo</span> <span class="o">==</span> <span class="n">repo</span> <span class="ow">and</span> <span class="n">post</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="k">return</span> <span class="n">window</span><span class="p">(</span><span class="n">messages</span><span class="p">,</span> <span class="n">since</span><span class="o">=</span><span class="n">since</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="FakeGitHubChannel.poll">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel.poll">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">poll</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ref</span><span class="p">:</span> <span class="n">ConversationRef</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">cursor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">limit</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Event</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Events for what was added after ``cursor`` (opaque), in the order it was added.</span>
+
+<span class="sd">        A repository's poll yields its issue openings and comments; an issue's poll only</span>
+<span class="sd">        that issue's comments, as correspond's GitHub adapter does. Delivery ids are</span>
+<span class="sd">        ``&lt;name&gt;:owner/repo:issue-&lt;N&gt;@&lt;created_at&gt;`` and</span>
+<span class="sd">        ``&lt;name&gt;:owner/repo:issuecomment-&lt;id&gt;@&lt;updated_at&gt;``. A first poll with a</span>
+<span class="sd">        ``lookback`` yields only what changed within it.</span>
+<span class="sd">        """</span>
+        <span class="n">after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_position</span><span class="p">(</span><span class="n">cursor</span><span class="p">)</span>
+        <span class="n">horizon</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">lookback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">cursor</span>
+            <span class="k">else</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="n">repo</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">"#"</span><span class="p">)</span>
+        <span class="n">posts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">post</span>
+            <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_posts</span>
+            <span class="k">if</span> <span class="n">post</span><span class="o">.</span><span class="n">seq</span> <span class="o">&gt;</span> <span class="n">after</span>
+            <span class="ow">and</span> <span class="p">(</span><span class="n">horizon</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">post</span><span class="o">.</span><span class="n">changed_at</span> <span class="o">&gt;=</span> <span class="n">horizon</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">post</span><span class="o">.</span><span class="n">repo</span> <span class="o">==</span> <span class="n">repo</span>
+            <span class="ow">and</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="n">number</span>
+                <span class="ow">or</span> <span class="p">(</span>
+                    <span class="n">post</span><span class="o">.</span><span class="n">number</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">number</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="n">post</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_COMMENT</span><span class="si">}</span><span class="s2">-"</span><span class="p">)</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">limited</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">limit</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">posts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">limit</span>
+        <span class="k">if</span> <span class="n">limit</span><span class="p">:</span>
+            <span class="n">posts</span> <span class="o">=</span> <span class="n">posts</span><span class="p">[:</span><span class="n">limit</span><span class="p">]</span>
+        <span class="n">events</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">Event</span><span class="p">(</span>
+                <span class="n">kind</span><span class="o">=</span><span class="s2">"message.created"</span><span class="p">,</span>
+                <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">delivery_id</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">post</span><span class="o">.</span><span class="n">repo</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">post</span><span class="o">.</span><span class="n">key</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                <span class="n">cursor</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_CURSOR_PREFIX</span><span class="si">}{</span><span class="n">post</span><span class="o">.</span><span class="n">seq</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+                <span class="n">message</span><span class="o">=</span><span class="n">post</span><span class="o">.</span><span class="n">message</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="n">posts</span>
+        <span class="p">]</span>
+        <span class="n">latest</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">after</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">post</span><span class="o">.</span><span class="n">seq</span> <span class="k">for</span> <span class="n">post</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_posts</span><span class="p">)])</span>
+        <span class="n">final</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">limited</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_CURSOR_PREFIX</span><span class="si">}{</span><span class="n">latest</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">with_final_cursor</span><span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="n">final</span><span class="p">)</span></div>
+
+
+    <span class="c1"># ---- writing ----</span>
+
+<div class="viewcode-block" id="FakeGitHubChannel.send">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.FakeGitHubChannel.send">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="n">ConversationRef</span><span class="p">,</span> <span class="n">draft</span><span class="p">:</span> <span class="n">Draft</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SendResult</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Comment on an issue; on a repository, open an issue (``title`` required).</span>
+
+<span class="sd">        A dry run returns the plan and records nothing.</span>
+<span class="sd">        """</span>
+        <span class="n">repo</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">id</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">"#"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">number</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_issue</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">draft</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">draft</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ChannelError</span><span class="p">(</span>
+                <span class="s2">"a comment has no title; leave it out"</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"validation"</span>
+            <span class="p">)</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"action"</span><span class="p">:</span> <span class="s2">"comment"</span><span class="p">,</span>
+            <span class="s2">"target"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="s2">"request"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"POST repos/</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/issues/</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">/comments"</span><span class="p">,</span>
+            <span class="s2">"reply_to"</span><span class="p">:</span> <span class="n">draft</span><span class="o">.</span><span class="n">reply_to</span><span class="p">,</span>
+            <span class="s2">"body"</span><span class="p">:</span> <span class="n">draft</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_planned</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_send_error</span><span class="p">()</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">number</span><span class="p">))</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">_not_found</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">draft</span><span class="o">.</span><span class="n">reply_to</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupported</span><span class="p">(</span>
+                <span class="s2">"reply"</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">alternatives</span><span class="o">=</span><span class="p">(</span>
+                    <span class="s2">"issue and pull request comments are flat: quote the message you answer"</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_comment</span><span class="p">(</span>
+            <span class="n">repo</span><span class="p">,</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">number</span><span class="p">),</span>
+            <span class="n">author</span><span class="o">=</span><span class="n">SELF_LOGIN</span><span class="p">,</span>
+            <span class="n">body</span><span class="o">=</span><span class="n">draft</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">created_at</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="p">(),</span>
+            <span class="n">is_self</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sent</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">draft</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_open_issue</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="n">ConversationRef</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">draft</span><span class="p">:</span> <span class="n">Draft</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SendResult</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">title</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ChannelError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"opening an issue in </span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2"> needs a title"</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"validation"</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">draft</span><span class="o">.</span><span class="n">reply_to</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">NotSupported</span><span class="p">(</span>
+                <span class="s2">"reply"</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+                <span class="n">alternatives</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">"comment on the issue: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">:owner/repo#N"</span><span class="p">,),</span>
+            <span class="p">)</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"action"</span><span class="p">:</span> <span class="s2">"open an issue"</span><span class="p">,</span>
+            <span class="s2">"request"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"POST repos/</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">/issues"</span><span class="p">,</span>
+            <span class="s2">"title"</span><span class="p">:</span> <span class="n">draft</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="s2">"body"</span><span class="p">:</span> <span class="n">draft</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_planned</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="n">plan</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_raise_send_error</span><span class="p">()</span>
+        <span class="n">number</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">max</span><span class="p">((</span><span class="n">n</span> <span class="k">for</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_openings</span> <span class="k">if</span> <span class="n">r</span> <span class="o">==</span> <span class="n">repo</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_issue</span><span class="p">(</span>
+            <span class="n">repo</span><span class="p">,</span>
+            <span class="n">number</span><span class="p">,</span>
+            <span class="n">author</span><span class="o">=</span><span class="n">SELF_LOGIN</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">draft</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">body</span><span class="o">=</span><span class="n">draft</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">created_at</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">clock</span><span class="p">(),</span>
+            <span class="n">is_self</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_sent</span><span class="p">(</span>
+            <span class="n">ref</span><span class="p">,</span> <span class="n">draft</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">plan</span><span class="p">,</span> <span class="n">conversation</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">conversation</span><span class="o">.</span><span class="n">encoded</span>
+        <span class="p">)</span>
+
+    <span class="c1"># ---- plumbing ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_repository</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConversationRef</span><span class="p">:</span>
+        <span class="n">ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parse_ref</span><span class="p">(</span><span class="n">repo</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">parent</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"name the repository as owner/repo, not </span><span class="si">{</span><span class="n">repo</span><span class="si">!r}</span><span class="s2">: the issue number "</span>
+                <span class="sa">f</span><span class="s2">"is an argument of its own"</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ref</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_identity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">login</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">is_self</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ChannelIdentity</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ChannelIdentity</span><span class="p">(</span>
+            <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">native_id</span><span class="o">=</span><span class="n">login</span><span class="p">,</span>
+            <span class="n">handle</span><span class="o">=</span><span class="n">login</span><span class="p">,</span>
+            <span class="n">is_bot</span><span class="o">=</span><span class="n">login</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"[bot]"</span><span class="p">),</span>
+            <span class="n">is_self</span><span class="o">=</span><span class="n">is_self</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_post</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">changed_at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">@</span><span class="si">{</span><span class="n">format_time</span><span class="p">(</span><span class="n">changed_at</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">post</span> <span class="o">=</span> <span class="n">_Post</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_posts</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">changed_at</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_posts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">post</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cursor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">cursor</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="n">digits</span> <span class="o">=</span> <span class="n">cursor</span><span class="o">.</span><span class="n">removeprefix</span><span class="p">(</span><span class="n">_CURSOR_PREFIX</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">digits</span> <span class="o">==</span> <span class="n">cursor</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">digits</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">ChannelError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">cursor</span><span class="si">!r}</span><span class="s2"> is not a </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> listen cursor"</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="s2">"validation"</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">digits</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_raise_send_error</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_error</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">send_error</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_not_found</span><span class="p">(</span><span class="n">repo</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">ChannelError</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">ChannelError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"no issue, pull request or discussion #</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2"> in </span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2"> that the gh "</span>
+            <span class="sa">f</span><span class="s2">"account can see"</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"not_found"</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_planned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="n">ConversationRef</span><span class="p">,</span> <span class="n">plan</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SendResult</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">SendResult</span><span class="p">(</span>
+            <span class="n">ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">ref</span><span class="o">.</span><span class="n">encoded</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">"send"</span><span class="p">,</span>
+            <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_sent</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">ref</span><span class="p">:</span> <span class="n">ConversationRef</span><span class="p">,</span>
+        <span class="n">draft</span><span class="p">:</span> <span class="n">Draft</span><span class="p">,</span>
+        <span class="n">message</span><span class="p">:</span> <span class="n">Message</span><span class="p">,</span>
+        <span class="n">plan</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">conversation</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SendResult</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sent</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">ref</span><span class="p">,</span> <span class="n">draft</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">SendResult</span><span class="p">(</span>
+            <span class="n">ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">conversation</span><span class="o">=</span><span class="n">conversation</span> <span class="ow">or</span> <span class="n">ref</span><span class="o">.</span><span class="n">encoded</span><span class="p">,</span>
+            <span class="n">operation</span><span class="o">=</span><span class="s2">"send"</span><span class="p">,</span>
+            <span class="n">message_id</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">url</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
+            <span class="n">account</span><span class="o">=</span><span class="n">Account</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">SELF_LOGIN</span><span class="p">,</span> <span class="n">acts_as</span><span class="o">=</span><span class="s2">"user"</span><span class="p">),</span>
+            <span class="n">plan</span><span class="o">=</span><span class="n">plan</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="demo_registry">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.demo_registry">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">demo_registry</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">github</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">FakeGitHubChannel</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">webinbox</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">WebInbox</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""A correspond channel registry of fakes: ``{"github": ..., "webinbox": ...}``.</span>
+
+<span class="sd">    ``github`` defaults to an empty :class:`FakeGitHubChannel`, ``webinbox`` to</span>
+<span class="sd">    correspond's ``WebInbox(store={}, blobs={})``: both in memory.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"github"</span><span class="p">:</span> <span class="n">FakeGitHubChannel</span><span class="p">()</span> <span class="k">if</span> <span class="n">github</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">github</span><span class="p">,</span>
+        <span class="s2">"webinbox"</span><span class="p">:</span> <span class="n">WebInbox</span><span class="p">(</span><span class="n">store</span><span class="o">=</span><span class="p">{},</span> <span class="n">blobs</span><span class="o">=</span><span class="p">{})</span> <span class="k">if</span> <span class="n">webinbox</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">webinbox</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="add_webinbox_report">
+<a class="viewcode-back" href="../../module_docs/liaise/testing.html#liaise.testing.add_webinbox_report">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">add_webinbox_report</span><span class="p">(</span>
+    <span class="n">inbox</span><span class="p">:</span> <span class="n">WebInbox</span><span class="p">,</span>
+    <span class="n">site</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">received_at</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">email</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">page</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">context</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">secret</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_SITE_SECRET</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Store a report for ``site`` in ``inbox`` exactly as correspond's collector stores one.</span>
+
+<span class="sd">    With ``user``, the report carries an identity the site's host application signed with</span>
+<span class="sd">    ``secret`` (correspond's ``sign_identity``), checked as the collector checks it, so it</span>
+<span class="sd">    is ``bound`` and its author's address is ``webinbox:&lt;user&gt;``. Without ``user`` it is</span>
+<span class="sd">    ``claimed``, and its author is only the ``name`` typed. The report's id starts with</span>
+<span class="sd">    ``received_at``, so reports poll in time order; its event's delivery id is</span>
+<span class="sd">    ``webinbox:&lt;site&gt;:&lt;id&gt;``. Returns the stored record.</span>
+<span class="sd">    """</span>
+    <span class="n">site_config</span> <span class="o">=</span> <span class="n">Site</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">site</span><span class="p">,</span> <span class="n">secret</span><span class="o">=</span><span class="n">secret</span><span class="p">)</span>  <span class="c1"># refuses a malformed site name</span>
+    <span class="n">received</span> <span class="o">=</span> <span class="n">parse_time</span><span class="p">(</span><span class="n">received_at</span><span class="p">)</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+    <span class="n">moment</span> <span class="o">=</span> <span class="n">received</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">user</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">identity</span> <span class="o">=</span> <span class="n">sign_identity</span><span class="p">(</span>
+            <span class="n">secret</span><span class="p">,</span> <span class="n">site</span><span class="p">,</span> <span class="n">user</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">,</span> <span class="n">email</span><span class="o">=</span><span class="n">email</span><span class="p">,</span> <span class="n">issued_at</span><span class="o">=</span><span class="n">moment</span>
+        <span class="p">)</span>
+        <span class="n">authenticity</span> <span class="o">=</span> <span class="n">verify_identity</span><span class="p">(</span><span class="n">identity</span><span class="p">,</span> <span class="n">site</span><span class="o">=</span><span class="n">site_config</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">moment</span><span class="p">)</span>
+        <span class="n">author</span> <span class="o">=</span> <span class="n">ChannelIdentity</span><span class="p">(</span>
+            <span class="n">channel</span><span class="o">=</span><span class="n">WebInbox</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">native_id</span><span class="o">=</span><span class="n">user</span><span class="p">,</span> <span class="n">display_name</span><span class="o">=</span><span class="n">name</span> <span class="ow">or</span> <span class="kc">None</span>
+        <span class="p">)</span>
+        <span class="n">contact</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span> <span class="s2">"signed"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">authenticity</span> <span class="o">=</span> <span class="n">Authenticity</span><span class="p">(</span>
+            <span class="n">grade</span><span class="o">=</span><span class="n">Grade</span><span class="o">.</span><span class="n">CLAIMED</span><span class="p">,</span> <span class="n">evidence</span><span class="o">=</span><span class="p">{</span><span class="s2">"reason"</span><span class="p">:</span> <span class="s2">"no signed identity"</span><span class="p">}</span>
+        <span class="p">)</span>
+        <span class="n">author</span> <span class="o">=</span> <span class="n">ChannelIdentity</span><span class="p">(</span><span class="n">channel</span><span class="o">=</span><span class="n">WebInbox</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">native_id</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">display_name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">contact</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"email"</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span> <span class="s2">"signed"</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+    <span class="n">stamp</span> <span class="o">=</span> <span class="n">format_time</span><span class="p">(</span><span class="n">received</span><span class="p">)</span>
+    <span class="n">digest</span> <span class="o">=</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">sha1</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">site</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">stamp</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="n">record</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">received</span><span class="si">:</span><span class="s2">%Y%m%dT%H%M%S%fZ</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">digest</span><span class="p">[:</span><span class="n">_REPORT_SUFFIX_DIGITS</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="s2">"site"</span><span class="p">:</span> <span class="n">site</span><span class="p">,</span>
+        <span class="s2">"received_at"</span><span class="p">:</span> <span class="n">stamp</span><span class="p">,</span>
+        <span class="s2">"text"</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span>
+        <span class="s2">"page"</span><span class="p">:</span> <span class="n">page</span><span class="p">,</span>
+        <span class="s2">"context"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">(</span><span class="n">context</span><span class="p">),</span>
+        <span class="s2">"contact"</span><span class="p">:</span> <span class="n">contact</span><span class="p">,</span>
+        <span class="s2">"author"</span><span class="p">:</span> <span class="n">author</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+        <span class="s2">"authenticity"</span><span class="p">:</span> <span class="n">authenticity</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+        <span class="s2">"attachments"</span><span class="p">:</span> <span class="p">[],</span>
+    <span class="p">}</span>
+    <span class="n">inbox</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">site</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">record</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">.json"</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span>
+    <span class="k">return</span> <span class="n">record</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

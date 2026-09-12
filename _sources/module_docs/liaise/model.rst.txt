@@ -1,0 +1,4 @@
+liaise.model
+============
+.. automodule:: liaise.model
+   :members:

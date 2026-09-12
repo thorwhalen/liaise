@@ -1,0 +1,647 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.outcomes &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/access.html">liaise.access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../module_docs/liaise/workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">liaise.outcomes</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for liaise.outcomes</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Outcomes: what a processor run reports, checked, then planned into actions.</span>
+
+<span class="sd">A run reports its result as structured output in the shape of :data:`OUTCOME_SCHEMA`,</span>
+<span class="sd">which the processor passes to ``claude --json-schema``: a ``summary``, and one or more</span>
+<span class="sd">outcomes, each a ``kind`` from the closed vocabulary :data:`~liaise.model.OUTCOME_KINDS`</span>
+<span class="sd">with its ``text``, ``questions`` and ``reason``.</span>
+
+<span class="sd">- :func:`parse_outcomes` checks that output and returns its</span>
+<span class="sd">  :class:`~liaise.model.Outcome` records, or raises ``ValueError`` listing every problem.</span>
+<span class="sd">- :func:`normalize` makes each ``decline`` an ``escalate``.</span>
+<span class="sd">- :func:`plan_outcomes` turns a case's outcomes into actions, in outcome order:</span>
+
+<span class="sd">  - ``ask``: :class:`Send` the text and the numbered questions, then</span>
+<span class="sd">    :class:`Transition` to ``needs-partner``;</span>
+<span class="sd">  - ``reply``: :class:`Send`;</span>
+<span class="sd">  - ``escalate``, and ``decline``: :class:`StoreDraft`, :class:`NotifyOperator` at high</span>
+<span class="sd">    priority, then :class:`Transition` to ``needs-owner``;</span>
+<span class="sd">  - ``propose``: :class:`Send`, then :class:`Transition` to ``needs-partner``;</span>
+<span class="sd">  - ``deliver``: :class:`Deliver` as the subject's ``delivery`` says, :class:`Send` the</span>
+<span class="sd">    "try it" text, then :class:`Transition` to ``deployed``;</span>
+<span class="sd">  - ``defer``: :class:`Defer`;</span>
+<span class="sd">  - ``note``: :class:`DigestNote`.</span>
+
+<span class="sd">Planning is pure: it reads the case and the subject and does nothing. The tick executes</span>
+<span class="sd">the actions in order, and passes each :class:`Send` through :func:`liaise.gate.run_gate`</span>
+<span class="sd">before sending it.</span>
+
+<span class="sd">**Where a Send goes.** To the case's reporter, at the case's first conversation on a</span>
+<span class="sd">channel liaise can post into (GitHub, in v0.1). A case with none, such as one reported</span>
+<span class="sd">through a web inbox, is answered at the reporter's notify address when that is on a</span>
+<span class="sd">channel that can write to a person (email). Failing both, the message becomes a draft</span>
+<span class="sd">for the operator, held for ``no channel to reach &lt;person&gt;``, and the operator is notified.</span>
+
+<span class="sd">**What the operator is told.** A :class:`NotifyOperator`'s title and body come from</span>
+<span class="sd">:func:`liaise.notify.notice_title` and :func:`liaise.notify.notice_body`: the case and the</span>
+<span class="sd">event, never the reporter, the draft or the reason the agent wrote, which stay on the case</span>
+<span class="sd">for ``liaise case show``.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConversationRef</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">Outbound</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">CASE_STATES</span><span class="p">,</span> <span class="n">OUTCOME_KINDS</span><span class="p">,</span> <span class="n">Case</span><span class="p">,</span> <span class="n">Outcome</span><span class="p">,</span> <span class="n">require_one_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">NOTICE_ESCALATION</span><span class="p">,</span>
+    <span class="n">NOTICE_NO_CHANNEL</span><span class="p">,</span>
+    <span class="n">notice_body</span><span class="p">,</span>
+    <span class="n">notice_title</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span>
+
+<span class="c1">#: Channels whose conversations liaise posts into. A web inbox has no writer.</span>
+<span class="n">DFLT_SENDING_CHANNELS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"github"</span><span class="p">,)</span>
+<span class="c1">#: Channels that can write to a person's address (``email:&lt;address&gt;``), not only into a</span>
+<span class="c1">#: conversation. GitHub is not one: a ``github:&lt;login&gt;`` handle cannot be messaged.</span>
+<span class="n">DFLT_ADDRESS_CHANNELS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"email"</span><span class="p">,)</span>
+<span class="c1">#: The ntfy priority of an operator notification that needs the operator to act.</span>
+<span class="n">DFLT_OPERATOR_PRIORITY</span> <span class="o">=</span> <span class="s2">"high"</span>
+
+<span class="c1">#: The field each outcome kind cannot do without. :func:`parse_outcomes` enforces it</span>
+<span class="c1">#: and :data:`OUTCOME_SCHEMA` states it.</span>
+<span class="n">REQUIRED_FIELD_BY_KIND</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"ask"</span><span class="p">:</span> <span class="s2">"questions"</span><span class="p">,</span>
+        <span class="s2">"reply"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span>
+        <span class="s2">"escalate"</span><span class="p">:</span> <span class="s2">"reason"</span><span class="p">,</span>
+        <span class="s2">"propose"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span>
+        <span class="s2">"deliver"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span>
+        <span class="s2">"decline"</span><span class="p">:</span> <span class="s2">"reason"</span><span class="p">,</span>
+        <span class="s2">"defer"</span><span class="p">:</span> <span class="s2">"reason"</span><span class="p">,</span>
+        <span class="s2">"note"</span><span class="p">:</span> <span class="s2">"text"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+
+<span class="c1">#: The JSON Schema of a run's structured result, passed to ``claude --json-schema``.</span>
+<span class="n">OUTCOME_SCHEMA</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"object"</span><span class="p">,</span>
+    <span class="s2">"properties"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"outcomes"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"array"</span><span class="p">,</span>
+            <span class="s2">"minItems"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"items"</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"object"</span><span class="p">,</span>
+                <span class="s2">"properties"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"kind"</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"string"</span><span class="p">,</span>
+                        <span class="s2">"enum"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">OUTCOME_KINDS</span><span class="p">),</span>
+                        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"What to do. Each kind needs one field: "</span>
+                        <span class="o">+</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> needs </span><span class="si">{</span><span class="n">field</span><span class="si">}</span><span class="s2">"</span>
+                            <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">REQUIRED_FIELD_BY_KIND</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                        <span class="p">)</span>
+                        <span class="o">+</span> <span class="s2">"."</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">"text"</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"string"</span><span class="p">,</span>
+                        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"The message to the partner. For escalate "</span>
+                        <span class="s2">"and decline, a draft the operator may send; for note, the "</span>
+                        <span class="s2">"line for the operator's digest."</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">"questions"</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"array"</span><span class="p">,</span>
+                        <span class="s2">"items"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"string"</span><span class="p">},</span>
+                        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"For ask: each question, with the default "</span>
+                        <span class="s2">"you will take if it goes unanswered."</span><span class="p">,</span>
+                    <span class="p">},</span>
+                    <span class="s2">"reason"</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"string"</span><span class="p">,</span>
+                        <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"Why, for the operator: what an escalate, "</span>
+                        <span class="s2">"decline or defer is waiting on."</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">},</span>
+                <span class="s2">"required"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"kind"</span><span class="p">],</span>
+                <span class="s2">"additionalProperties"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="s2">"summary"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"type"</span><span class="p">:</span> <span class="s2">"string"</span><span class="p">,</span>
+            <span class="s2">"description"</span><span class="p">:</span> <span class="s2">"What this run did, in a sentence or two, for the operator."</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">},</span>
+    <span class="s2">"required"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"outcomes"</span><span class="p">],</span>
+    <span class="s2">"additionalProperties"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">_RESULT_FIELDS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">OUTCOME_SCHEMA</span><span class="p">[</span><span class="s2">"properties"</span><span class="p">])</span>
+<span class="n">_OUTCOME_FIELDS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">OUTCOME_SCHEMA</span><span class="p">[</span><span class="s2">"properties"</span><span class="p">][</span><span class="s2">"outcomes"</span><span class="p">][</span><span class="s2">"items"</span><span class="p">][</span><span class="s2">"properties"</span><span class="p">])</span>
+
+
+<span class="c1"># ---- actions: what the tick executes, in order ----</span>
+
+
+<div class="viewcode-block" id="Send">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.Send">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Send</span><span class="p">(</span><span class="n">Outbound</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Send ``text`` to ``recipient`` at ``ref``. Every Send is the Outbound the gate checks."""</span></div>
+
+
+
+<div class="viewcode-block" id="Transition">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.Transition">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Transition</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Move the case to ``state``, recording ``reason``."""</span>
+
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">state</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">require_one_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="n">CASE_STATES</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s2">"case state"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="NotifyOperator">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.NotifyOperator">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NotifyOperator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Tell the operator, as :func:`liaise.notify.notify` does."""</span>
+
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">body</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">priority</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"default"</span></div>
+
+
+
+<div class="viewcode-block" id="StoreDraft">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.StoreDraft">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">StoreDraft</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Keep ``draft`` (see :func:`make_draft`) in the case's ``drafts`` for the operator."""</span>
+
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">draft</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="Deliver">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.Deliver">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Deliver</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Deliver the case's work as the subject's ``delivery`` says."""</span>
+
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">per</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<div class="viewcode-block" id="Defer">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.Defer">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Defer</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Put the case aside for ``reason``."""</span>
+
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<div class="viewcode-block" id="DigestNote">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.DigestNote">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DigestNote</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Add ``text`` to the operator's digest."""</span>
+
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span></div>
+
+
+
+<span class="c1">#: What :func:`plan_outcomes` returns a list of.</span>
+<span class="n">Action</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="n">Send</span><span class="p">,</span> <span class="n">Transition</span><span class="p">,</span> <span class="n">NotifyOperator</span><span class="p">,</span> <span class="n">StoreDraft</span><span class="p">,</span> <span class="n">Deliver</span><span class="p">,</span> <span class="n">Defer</span><span class="p">,</span> <span class="n">DigestNote</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="make_draft">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.make_draft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">make_draft</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+    <span class="n">outcome</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">recipient</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""One item of a case's ``drafts``: a message held for the operator.</span>
+
+<span class="sd">    This is the one shape every draft has, JSON-ready:</span>
+
+<span class="sd">    - ``at``: when it was held, as ISO-8601;</span>
+<span class="sd">    - ``outcome``: the outcome kind it carries out (``ask``, ``escalate``, ...);</span>
+<span class="sd">    - ``recipient``: the person id it is for;</span>
+<span class="sd">    - ``ref``: the encoded conversation or address it would go to, or None when nothing</span>
+<span class="sd">      can reach the recipient;</span>
+<span class="sd">    - ``text``: the message, as it would be sent;</span>
+<span class="sd">    - ``reason``: why it was held (an escalation's reason, a gate divert, no channel);</span>
+<span class="sd">    - ``notes``: the gate's notes on it, in order.</span>
+
+<span class="sd">    &gt;&gt;&gt; from datetime import datetime, timezone</span>
+<span class="sd">    &gt;&gt;&gt; make_draft(at=datetime(2026, 9, 11, tzinfo=timezone.utc), outcome="reply",</span>
+<span class="sd">    ...     recipient="pat", ref="github:example/app#12", text="Fixed.",</span>
+<span class="sd">    ...     reason="draft reply mode")  # doctest: +NORMALIZE_WHITESPACE</span>
+<span class="sd">    {'at': '2026-09-11T00:00:00+00:00', 'outcome': 'reply', 'recipient': 'pat',</span>
+<span class="sd">     'ref': 'github:example/app#12', 'text': 'Fixed.', 'reason': 'draft reply mode',</span>
+<span class="sd">     'notes': []}</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"at"</span><span class="p">:</span> <span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(),</span>
+        <span class="s2">"outcome"</span><span class="p">:</span> <span class="n">outcome</span><span class="p">,</span>
+        <span class="s2">"recipient"</span><span class="p">:</span> <span class="n">recipient</span><span class="p">,</span>
+        <span class="s2">"ref"</span><span class="p">:</span> <span class="n">ref</span><span class="p">,</span>
+        <span class="s2">"text"</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span>
+        <span class="s2">"reason"</span><span class="p">:</span> <span class="n">reason</span><span class="p">,</span>
+        <span class="s2">"notes"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="parse_outcomes">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.parse_outcomes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_outcomes</span><span class="p">(</span><span class="n">structured_output</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Outcome</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The outcomes of a run's structured output, checked against :data:`OUTCOME_SCHEMA`.</span>
+
+<span class="sd">    Beyond the schema, each kind must carry the field :data:`REQUIRED_FIELD_BY_KIND`</span>
+<span class="sd">    names: an ``ask`` its questions, a ``reply`` its text, and so on. A ``decline`` is</span>
+<span class="sd">    kept as reported (:func:`plan_outcomes` normalizes it). Raises ``ValueError``</span>
+<span class="sd">    listing every problem found, not only the first.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structured_output</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"invalid structured output: expected an object with 'outcomes', got "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">structured_output</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="n">keys</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span> <span class="n">keys</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">outcome_problems</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">where</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> must be an object, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">return</span>
+        <span class="n">unknown</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">item</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_OUTCOME_FIELDS</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> has unknown key(s) </span><span class="si">{</span><span class="n">names</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">; an outcome has only "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">names</span><span class="p">(</span><span class="n">_OUTCOME_FIELDS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+        <span class="n">kind</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"kind"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.kind is missing"</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">OUTCOME_KINDS</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.kind </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2"> is not one of: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTCOME_KINDS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"text"</span><span class="p">,</span> <span class="s2">"reason"</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+                <span class="k">yield</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> must be a string"</span>
+        <span class="n">questions</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"questions"</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">questions</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">question</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">question</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">question</span> <span class="ow">in</span> <span class="n">questions</span>
+        <span class="p">):</span>
+            <span class="k">yield</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">.questions must be a list of non-empty strings"</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="n">OUTCOME_KINDS</span><span class="p">:</span>
+            <span class="n">required</span> <span class="o">=</span> <span class="n">REQUIRED_FIELD_BY_KIND</span><span class="p">[</span><span class="n">kind</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">required</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">value</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
+                <span class="k">yield</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> needs a non-empty </span><span class="si">{</span><span class="n">required</span><span class="si">}</span><span class="s2">"</span>
+
+    <span class="n">problems</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">unknown</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">structured_output</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_RESULT_FIELDS</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+        <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"unknown key(s) </span><span class="si">{</span><span class="n">names</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2">; the result has only "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">names</span><span class="p">(</span><span class="n">_RESULT_FIELDS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">structured_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"summary must be a string"</span><span class="p">)</span>
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">structured_output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outcomes"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">raw</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"outcomes is missing: report at least one outcome"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"outcomes must be a list, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="n">raw</span><span class="p">:</span>
+        <span class="n">problems</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"outcomes is empty: report at least one outcome"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">raw</span><span class="p">):</span>
+            <span class="n">problems</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">outcome_problems</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"outcomes[</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">]"</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">problems</span><span class="p">:</span>
+        <span class="n">listed</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- </span><span class="si">{</span><span class="n">problem</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">problem</span> <span class="ow">in</span> <span class="n">problems</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"invalid structured output:</span><span class="se">\n</span><span class="si">{</span><span class="n">listed</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">Outcome</span><span class="p">(</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">],</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+            <span class="n">questions</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"questions"</span><span class="p">,</span> <span class="p">())),</span>
+            <span class="n">reason</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reason"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">raw</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="normalize">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.normalize">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="n">outcomes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Outcome</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Outcome</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``outcomes`` with each ``decline`` made an ``escalate``, its reason ``decline: &lt;reason&gt;``.</span>
+
+<span class="sd">    A refusal reaches the operator before it reaches the partner. Every other outcome</span>
+<span class="sd">    is returned as it was.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="n">replace</span><span class="p">(</span>
+            <span class="n">outcome</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="s2">"escalate"</span><span class="p">,</span>
+            <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"decline: </span><span class="si">{</span><span class="n">outcome</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">reason</span> <span class="k">else</span> <span class="s2">"decline"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">"decline"</span>
+        <span class="k">else</span> <span class="n">outcome</span>
+        <span class="k">for</span> <span class="n">outcome</span> <span class="ow">in</span> <span class="n">outcomes</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="plan_outcomes">
+<a class="viewcode-back" href="../../module_docs/liaise/outcomes.html#liaise.plan_outcomes">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">plan_outcomes</span><span class="p">(</span>
+    <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span>
+    <span class="n">outcomes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Outcome</span><span class="p">],</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+    <span class="n">sending_channels</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_SENDING_CHANNELS</span><span class="p">,</span>
+    <span class="n">address_channels</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_ADDRESS_CHANNELS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Action</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The actions that carry out ``outcomes`` on ``case``, one group per outcome, in order.</span>
+
+<span class="sd">    The module docstring lists what each kind plans; ``decline`` is planned as</span>
+<span class="sd">    ``escalate`` (see :func:`normalize`). Messages are for ``case.reporter``, and go to</span>
+<span class="sd">    the case's first conversation on one of ``sending_channels``. Failing that, they go</span>
+<span class="sd">    to the reporter's first notify address on one of ``address_channels`` (see</span>
+<span class="sd">    :meth:`~liaise.subjects.Subject.notify_address_for`). Failing both, each becomes a</span>
+<span class="sd">    :class:`StoreDraft` held for ``no channel to reach &lt;person&gt;``, with a</span>
+<span class="sd">    :class:`NotifyOperator` that names the case, not the person. ``now`` stamps the drafts.</span>
+
+<span class="sd">    Raises ``ValueError`` for an outcome kind outside the vocabulary.</span>
+<span class="sd">    """</span>
+    <span class="n">person</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">reporter</span>
+    <span class="n">conversations</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">ref</span>
+        <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">conversations</span>
+        <span class="k">if</span> <span class="n">ConversationRef</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span><span class="o">.</span><span class="n">channel</span> <span class="ow">in</span> <span class="n">sending_channels</span>
+    <span class="p">)</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">conversations</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="n">subject</span><span class="o">.</span><span class="n">notify_address_for</span><span class="p">(</span>
+        <span class="n">person</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="n">address_channels</span>
+    <span class="p">)</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">ConversationRef</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span><span class="o">.</span><span class="n">channel</span> <span class="k">if</span> <span class="n">ref</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">text_of</span><span class="p">(</span><span class="n">outcome</span><span class="p">:</span> <span class="n">Outcome</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">questions</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">number</span><span class="si">}</span><span class="s2">. </span><span class="si">{</span><span class="n">question</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">for</span> <span class="n">number</span><span class="p">,</span> <span class="n">question</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">outcome</span><span class="o">.</span><span class="n">questions</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">part</span> <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="p">(</span><span class="n">outcome</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">questions</span><span class="p">)</span> <span class="k">if</span> <span class="n">part</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">draft</span><span class="p">(</span><span class="n">outcome</span><span class="p">:</span> <span class="n">Outcome</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StoreDraft</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">StoreDraft</span><span class="p">(</span>
+            <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="n">make_draft</span><span class="p">(</span>
+                <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+                <span class="n">outcome</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+                <span class="n">recipient</span><span class="o">=</span><span class="n">person</span><span class="p">,</span>
+                <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+                <span class="n">text</span><span class="o">=</span><span class="n">text_of</span><span class="p">(</span><span class="n">outcome</span><span class="p">),</span>
+                <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+            <span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">send</span><span class="p">(</span><span class="n">outcome</span><span class="p">:</span> <span class="n">Outcome</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Action</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">ref</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">notice</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">case_ids</span><span class="o">=</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,),</span> <span class="n">cause</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">kind</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="c1"># The draft's reason names the person: it stays on the case.</span>
+                <span class="n">draft</span><span class="p">(</span><span class="n">outcome</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">"no channel to reach </span><span class="si">{</span><span class="n">person</span><span class="si">}</span><span class="s2">"</span><span class="p">),</span>
+                <span class="n">NotifyOperator</span><span class="p">(</span>
+                    <span class="n">notice_title</span><span class="p">(</span><span class="n">NOTICE_NO_CHANNEL</span><span class="p">,</span> <span class="o">**</span><span class="n">notice</span><span class="p">),</span>
+                    <span class="n">notice_body</span><span class="p">(</span><span class="n">NOTICE_NO_CHANNEL</span><span class="p">,</span> <span class="o">**</span><span class="n">notice</span><span class="p">),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="n">DFLT_OPERATOR_PRIORITY</span><span class="p">,</span>
+                <span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">Send</span><span class="p">(</span>
+                <span class="n">case_id</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+                <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
+                <span class="n">recipient</span><span class="o">=</span><span class="n">person</span><span class="p">,</span>
+                <span class="n">purpose</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+                <span class="n">text</span><span class="o">=</span><span class="n">text_of</span><span class="p">(</span><span class="n">outcome</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">transition</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">outcome</span><span class="p">:</span> <span class="n">Outcome</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Transition</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Transition</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">outcome</span><span class="o">.</span><span class="n">reason</span> <span class="ow">or</span> <span class="n">outcome</span><span class="o">.</span><span class="n">kind</span><span class="p">)</span>
+
+    <span class="n">actions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Action</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">outcome</span> <span class="ow">in</span> <span class="n">normalize</span><span class="p">(</span><span class="n">outcomes</span><span class="p">):</span>
+        <span class="n">kind</span> <span class="o">=</span> <span class="n">outcome</span><span class="o">.</span><span class="n">kind</span>
+        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"ask"</span><span class="p">,</span> <span class="s2">"propose"</span><span class="p">):</span>
+            <span class="n">actions</span> <span class="o">+=</span> <span class="p">[</span><span class="o">*</span><span class="n">send</span><span class="p">(</span><span class="n">outcome</span><span class="p">),</span> <span class="n">transition</span><span class="p">(</span><span class="s2">"needs-partner"</span><span class="p">,</span> <span class="n">outcome</span><span class="p">)]</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"reply"</span><span class="p">:</span>
+            <span class="n">actions</span> <span class="o">+=</span> <span class="n">send</span><span class="p">(</span><span class="n">outcome</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"escalate"</span><span class="p">:</span>
+            <span class="n">notice</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">case_ids</span><span class="o">=</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,))</span>
+            <span class="n">actions</span> <span class="o">+=</span> <span class="p">[</span>
+                <span class="n">draft</span><span class="p">(</span><span class="n">outcome</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">reason</span><span class="p">),</span>
+                <span class="n">NotifyOperator</span><span class="p">(</span>
+                    <span class="n">notice_title</span><span class="p">(</span><span class="n">NOTICE_ESCALATION</span><span class="p">,</span> <span class="o">**</span><span class="n">notice</span><span class="p">),</span>
+                    <span class="n">notice_body</span><span class="p">(</span><span class="n">NOTICE_ESCALATION</span><span class="p">,</span> <span class="o">**</span><span class="n">notice</span><span class="p">),</span>
+                    <span class="n">priority</span><span class="o">=</span><span class="n">DFLT_OPERATOR_PRIORITY</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">transition</span><span class="p">(</span><span class="s2">"needs-owner"</span><span class="p">,</span> <span class="n">outcome</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"deliver"</span><span class="p">:</span>
+            <span class="n">delivery</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">delivery</span>
+            <span class="n">actions</span> <span class="o">+=</span> <span class="p">[</span>
+                <span class="n">Deliver</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">delivery</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span> <span class="n">delivery</span><span class="o">.</span><span class="n">per</span><span class="p">,</span> <span class="n">delivery</span><span class="o">.</span><span class="n">command</span><span class="p">),</span>
+                <span class="o">*</span><span class="n">send</span><span class="p">(</span><span class="n">outcome</span><span class="p">),</span>
+                <span class="n">transition</span><span class="p">(</span><span class="s2">"deployed"</span><span class="p">,</span> <span class="n">outcome</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"defer"</span><span class="p">:</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Defer</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">outcome</span><span class="o">.</span><span class="n">reason</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"note"</span><span class="p">:</span>
+            <span class="n">actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DigestNote</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">outcome</span><span class="o">.</span><span class="n">text</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"cannot plan outcome kind </span><span class="si">{</span><span class="n">kind</span><span class="si">!r}</span><span class="s2">: not one of "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">OUTCOME_KINDS</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">actions</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

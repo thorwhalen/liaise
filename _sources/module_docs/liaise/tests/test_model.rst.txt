@@ -1,0 +1,4 @@
+liaise.tests.test_model
+=======================
+.. automodule:: liaise.tests.test_model
+   :members:

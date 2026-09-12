@@ -1,0 +1,263 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>liaise.access &mdash; liaise 0.0.4 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+      <link rel="stylesheet" type="text/css" href="../../_static/graphviz.css?v=4ae1632d" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/toggleprompt.js?v=d7ede5d2"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=f281be69"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="liaise.cases" href="cases.html" />
+    <link rel="prev" title="liaise.__main__" href="__main__.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            liaise
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../liaise.html">liaise</a></li>
+<li class="toctree-l1"><a class="reference internal" href="__main__.html">liaise.__main__</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">liaise.access</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.ALLOWED"><code class="docutils literal notranslate"><span class="pre">ALLOWED</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.AccessDecision"><code class="docutils literal notranslate"><span class="pre">AccessDecision</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.Resolver"><code class="docutils literal notranslate"><span class="pre">Resolver</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.UNTRUSTED_CLAIM"><code class="docutils literal notranslate"><span class="pre">UNTRUSTED_CLAIM</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.VIA_HANDLE"><code class="docutils literal notranslate"><span class="pre">VIA_HANDLE</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.authorize"><code class="docutils literal notranslate"><span class="pre">authorize()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.is_relay"><code class="docutils literal notranslate"><span class="pre">is_relay()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="#liaise.access.resolve_person"><code class="docutils literal notranslate"><span class="pre">resolve_person()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="cases.html">liaise.cases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="cli.html">liaise.cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="config.html">liaise.config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">liaise.errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="gate.html">liaise.gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="github.html">liaise.github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="holds.html">liaise.holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="intake.html">liaise.intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ledger.html">liaise.ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="migrate.html">liaise.migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">liaise.model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="notify.html">liaise.notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processor.html">liaise.processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="projection.html">liaise.projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="prompt.html">liaise.prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readiness.html">liaise.readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="schedule.html">liaise.schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="subjects.html">liaise.subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">liaise.testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests.html">liaise.tests</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/_fake_claude.html">liaise.tests._fake_claude</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/conftest.html">liaise.tests.conftest</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_access.html">liaise.tests.test_access</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_cli.html">liaise.tests.test_cli</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_config.html">liaise.tests.test_config</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_docs.html">liaise.tests.test_docs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_errors.html">liaise.tests.test_errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_gate.html">liaise.tests.test_gate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_github.html">liaise.tests.test_github</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_holds.html">liaise.tests.test_holds</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_intake.html">liaise.tests.test_intake</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_ledger.html">liaise.tests.test_ledger</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_migrate.html">liaise.tests.test_migrate</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_model.html">liaise.tests.test_model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_no_personal_data.html">liaise.tests.test_no_personal_data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_notify.html">liaise.tests.test_notify</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_outcomes.html">liaise.tests.test_outcomes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_processor.html">liaise.tests.test_processor</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_projection.html">liaise.tests.test_projection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_prompt.html">liaise.tests.test_prompt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_readiness.html">liaise.tests.test_readiness</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_schedule.html">liaise.tests.test_schedule</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_smoke.html">liaise.tests.test_smoke</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_subjects.html">liaise.tests.test_subjects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_testing.html">liaise.tests.test_testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_tick.html">liaise.tests.test_tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tests/test_workspace.html">liaise.tests.test_workspace</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tick.html">liaise.tick</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workspace.html">liaise.workspace</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">liaise</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">liaise.access</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/module_docs/liaise/access.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-liaise.access">
+<span id="liaise-access"></span><h1>liaise.access<a class="headerlink" href="#module-liaise.access" title="Link to this heading"></a></h1>
+<p>Identity and access: who a message is from, and whether they may do what it asks.</p>
+<p><strong>Resolving a sender.</strong> <a class="reference internal" href="#liaise.access.resolve_person" title="liaise.access.resolve_person"><code class="xref py py-func docutils literal notranslate"><span class="pre">resolve_person()</span></code></a> maps a channel address (<code class="docutils literal notranslate"><span class="pre">github:pat</span></code>)
+to a person id. It looks in the subject’s <code class="docutils literal notranslate"><span class="pre">policy.people</span></code> first, then in acquaint’s
+people records when acquaint is installed (<code class="docutils literal notranslate"><span class="pre">liaise[people]</span></code>). Any failure there
+resolves to nobody; it never raises.</p>
+<p><strong>Label-as-claim.</strong> A routing label is only a claim, since anyone who can label an
+issue can write one. <a class="reference internal" href="#liaise.access.authorize" title="liaise.access.authorize"><code class="xref py py-func docutils literal notranslate"><span class="pre">authorize()</span></code></a> attributes a message:</p>
+<ol class="arabic simple">
+<li><p>to its author, by handle, when the author resolves to a person with a role on the
+subject, whatever labels the message carries;</p></li>
+<li><p>otherwise to the person a <code class="docutils literal notranslate"><span class="pre">policy.claim_labels</span></code> label names, but only when the
+author is one of <code class="docutils literal notranslate"><span class="pre">policy.relays</span></code> (an app filing issues for its users), and at
+the relay’s own authenticity grade;</p></li>
+<li><p>otherwise to no one. A claim label from any other author is refused as
+<code class="docutils literal notranslate"><span class="pre">label</span> <span class="pre">claim</span> <span class="pre">by</span> <span class="pre">an</span> <span class="pre">untrusted</span> <span class="pre">author</span></code>.</p></li>
+</ol>
+<p>The attributed person’s role must grant the permission, at a grade <code class="docutils literal notranslate"><span class="pre">policy.grades</span></code>
+accepts for it.</p>
+<p><strong>Addresses compare without regard to case</strong> (see <a class="reference internal" href="subjects.html#liaise.subjects.address_key" title="liaise.subjects.address_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.subjects.address_key()</span></code></a>),
+in <code class="docutils literal notranslate"><span class="pre">policy.people</span></code> and <code class="docutils literal notranslate"><span class="pre">policy.relays</span></code> alike: GitHub logins are case-insensitive, so
+<code class="docutils literal notranslate"><span class="pre">github:Pat</span></code> is the person <code class="docutils literal notranslate"><span class="pre">github:pat</span></code> is.</p>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.access.ALLOWED">
+<span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">ALLOWED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'allowed'</span></span><a class="headerlink" href="#liaise.access.ALLOWED" title="Link to this definition"></a></dt>
+<dd><p>The reason of a decision that allows.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.access.AccessDecision">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">AccessDecision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">person</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">role</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grade</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permission</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">via</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/liaise/access.html#AccessDecision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.access.AccessDecision" title="Link to this definition"></a></dt>
+<dd><p>What <a class="reference internal" href="#liaise.access.authorize" title="liaise.access.authorize"><code class="xref py py-func docutils literal notranslate"><span class="pre">authorize()</span></code></a> decided about one message, and why.</p>
+<p><code class="docutils literal notranslate"><span class="pre">person</span></code> is who the message was attributed to (for a refusal, its resolved author,
+if any). <code class="docutils literal notranslate"><span class="pre">via</span></code> says how: <code class="docutils literal notranslate"><span class="pre">handle</span></code>, <code class="docutils literal notranslate"><span class="pre">relay-label</span></code>, or <code class="docutils literal notranslate"><span class="pre">none</span></code> when the
+decision attributes it to no one.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.access.Resolver">
+<span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">Resolver</span></span><a class="headerlink" href="#liaise.access.Resolver" title="Link to this definition"></a></dt>
+<dd><p>the identity-resolver seam.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(address,</span> <span class="pre">subject)</span> <span class="pre">-&gt;</span> <span class="pre">person</span> <span class="pre">id</span> <span class="pre">or</span> <span class="pre">None</span></code></p>
+</dd>
+</dl>
+<p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code>[[<code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code>, <a class="reference internal" href="subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a>], <code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code> | <code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code>]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.access.UNTRUSTED_CLAIM">
+<span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">UNTRUSTED_CLAIM</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'label</span> <span class="pre">claim</span> <span class="pre">by</span> <span class="pre">an</span> <span class="pre">untrusted</span> <span class="pre">author'</span></span><a class="headerlink" href="#liaise.access.UNTRUSTED_CLAIM" title="Link to this definition"></a></dt>
+<dd><p>Why <a class="reference internal" href="#liaise.access.authorize" title="liaise.access.authorize"><code class="xref py py-func docutils literal notranslate"><span class="pre">authorize()</span></code></a> refused a message. A role or grade refusal names the role,
+grade and permission instead.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.access.VIA_HANDLE">
+<span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">VIA_HANDLE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'handle'</span></span><a class="headerlink" href="#liaise.access.VIA_HANDLE" title="Link to this definition"></a></dt>
+<dd><p>How an <a class="reference internal" href="#liaise.access.AccessDecision" title="liaise.access.AccessDecision"><code class="xref py py-class docutils literal notranslate"><span class="pre">AccessDecision</span></code></a> attributed its person.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.access.authorize">
+<span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">authorize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">message:</span> <span class="pre">~correspond.model.Message,</span> <span class="pre">subject:</span> <span class="pre">~liaise.subjects.Subject,</span> <span class="pre">permission:</span> <span class="pre">str,</span> <span class="pre">*,</span> <span class="pre">resolver:</span> <span class="pre">~typing.Callable[[str,</span> <span class="pre">~liaise.subjects.Subject],</span> <span class="pre">str</span> <span class="pre">|</span> <span class="pre">None]</span> <span class="pre">=</span> <span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#liaise.access.AccessDecision" title="liaise.access.AccessDecision"><span class="pre">AccessDecision</span></a></span></span><a class="reference internal" href="../../_modules/liaise/access.html#authorize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.access.authorize" title="Link to this definition"></a></dt>
+<dd><p>Whether <code class="docutils literal notranslate"><span class="pre">message</span></code> may exercise <code class="docutils literal notranslate"><span class="pre">permission</span></code> on <code class="docutils literal notranslate"><span class="pre">subject</span></code>, by the label-as-claim rule.</p>
+<p>See the module docstring for the rule. <code class="docutils literal notranslate"><span class="pre">resolver</span></code> maps the author’s address to a
+person id (default <a class="reference internal" href="#liaise.access.resolve_person" title="liaise.access.resolve_person"><code class="xref py py-func docutils literal notranslate"><span class="pre">resolve_person()</span></code></a>). Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for a permission
+outside <a class="reference internal" href="model.html#liaise.model.PERMISSIONS" title="liaise.model.PERMISSIONS"><code class="xref py py-data docutils literal notranslate"><span class="pre">PERMISSIONS</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.access.is_relay">
+<span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">is_relay</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><span class="pre">Subject</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="../../_modules/liaise/access.html#is_relay"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.access.is_relay" title="Link to this definition"></a></dt>
+<dd><p>Whether <code class="docutils literal notranslate"><span class="pre">address</span></code> is one of <code class="docutils literal notranslate"><span class="pre">subject</span></code>’s <code class="docutils literal notranslate"><span class="pre">policy.relays</span></code>, compared without regard to case.</p>
+<p>A relay’s routing labels count as claims (see <a class="reference internal" href="#liaise.access.authorize" title="liaise.access.authorize"><code class="xref py py-func docutils literal notranslate"><span class="pre">authorize()</span></code></a>), and its comments on
+a case are recorded as the relay’s own, not as any person’s.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.access.resolve_person">
+<span class="sig-prename descclassname"><span class="pre">liaise.access.</span></span><span class="sig-name descname"><span class="pre">resolve_person</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">address</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><span class="pre">Subject</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span></span><a class="reference internal" href="../../_modules/liaise/access.html#resolve_person"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.access.resolve_person" title="Link to this definition"></a></dt>
+<dd><p>The person id <code class="docutils literal notranslate"><span class="pre">address</span></code> belongs to on <code class="docutils literal notranslate"><span class="pre">subject</span></code>, or None.</p>
+<p><code class="docutils literal notranslate"><span class="pre">policy.people</span></code> first, matched without regard to case. Otherwise, when acquaint
+imports, <code class="docutils literal notranslate"><span class="pre">acquaint.resolve</span></code>, trusted only when it is <code class="docutils literal notranslate"><span class="pre">ok</span></code> with exactly one match.
+A missing or broken acquaint, or any error it raises, resolves to None.</p>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="__main__.html" class="btn btn-neutral float-left" title="liaise.__main__" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="cases.html" class="btn btn-neutral float-right" title="liaise.cases" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p></p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

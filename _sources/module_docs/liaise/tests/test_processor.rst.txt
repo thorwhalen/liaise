@@ -1,0 +1,4 @@
+liaise.tests.test_processor
+===========================
+.. automodule:: liaise.tests.test_processor
+   :members:
