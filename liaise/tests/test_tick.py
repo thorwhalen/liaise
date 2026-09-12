@@ -1242,12 +1242,14 @@ def test_a_failed_send_tells_the_operator_everything_but_its_text(world):
         assert part in body
 
 
-#: A script that holds the run lock at argv[1], says so, and lets it go once its stdin closes.
+#: A script that holds the run lock at argv[1], says so with its own pid, and lets it go once
+#: its stdin closes. Its own pid, because on Windows a venv's python.exe is a launcher that
+#: runs the interpreter as a child, so the pid `Popen` reports is not the lock holder's.
 _LOCK_HOLDER = """
-import sys
+import os, sys
 from liaise.tick import run_lock
 with run_lock(sys.argv[1]):
-    print("held", flush=True)
+    print("held", os.getpid(), flush=True)
     sys.stdin.read()
 """
 #: How long a test waits, at most, for the process holding the run lock to exit.
@@ -1261,9 +1263,10 @@ def test_a_run_lock_another_process_holds_refuses_a_tick_until_it_lets_go(world)
         [sys.executable, "-c", _LOCK_HOLDER, str(lock)], stdin=subprocess.PIPE, stdout=subprocess.PIPE, text=True
     )
     try:
-        assert holder.stdout.readline().strip() == "held"
+        said, holder_pid = holder.stdout.readline().split()
+        assert said == "held"
         world.issue()
-        with pytest.raises(RunLockHeld, match=rf"another liaise tick \(pid {holder.pid}\)"):
+        with pytest.raises(RunLockHeld, match=rf"another liaise tick \(pid {holder_pid}\)"):
             world.tick()
         assert world.processor.jobs == []
     finally:
