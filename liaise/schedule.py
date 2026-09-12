@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -27,6 +28,13 @@ DFLT_INTERVAL_MINUTES = 2
 DFLT_LAUNCHD_DIR = Path.home() / "Library" / "LaunchAgents"
 DFLT_LAUNCHD_LOG_DIR = Path.home() / "Library" / "Logs"
 DFLT_SYSTEMD_DIR = Path.home() / ".config" / "systemd" / "user"
+
+#: What a job file carries so the detached runs a tick starts outlive that tick. A job
+#: installed by 0.0.x has neither, and must be installed again.
+LAUNCHD_DETACH_SETTING = re.compile(r"<key>AbandonProcessGroup</key>\s*<true/>")
+SYSTEMD_DETACH_SETTING = re.compile(r"^\s*KillMode\s*=\s*process\s*$", re.MULTILINE)
+#: How :func:`schedule_status` says the installed job is such a job.
+OUTDATED_SCHEDULE_NOTE = "outdated: re-run liaise schedule install"
 
 
 def job_environment(
@@ -86,6 +94,8 @@ def _plist_xml(
         f"        <key>{esc(k)}</key>\n        <string>{esc(v)}</string>"
         for k, v in env.items()
     )
+    # AbandonProcessGroup: the tick starts processor runs detached and exits at once;
+    # without it launchd kills those runs along with the job's process group (§3.5).
     return f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -105,6 +115,8 @@ def _plist_xml(
     <integer>{interval_seconds}</integer>
     <key>RunAtLoad</key>
     <false/>
+    <key>AbandonProcessGroup</key>
+    <true/>
     <key>StandardOutPath</key>
     <string>{esc(log_path)}</string>
     <key>StandardErrorPath</key>
@@ -117,11 +129,13 @@ def _plist_xml(
 def _systemd_unit_text(*, program_args: list[str], env: dict[str, str]) -> str:
     exec_start = " ".join(program_args)
     env_lines = "\n".join(f'Environment="{k}={v}"' for k, v in env.items())
+    # KillMode=process: like launchd's AbandonProcessGroup, so detached runs outlive the tick.
     return f"""[Unit]
 Description=liaise run --once
 
 [Service]
 Type=oneshot
+KillMode=process
 {env_lines}
 ExecStart={exec_start}
 """
@@ -301,6 +315,14 @@ def uninstall_schedule(
     raise NotImplementedError(f"no scheduler support for {system!r}")
 
 
+def _detaches_runs(path: Path, setting: re.Pattern) -> bool:
+    """Whether the job file at ``path`` carries ``setting``; False for a file that cannot be read."""
+    try:
+        return setting.search(path.read_text(encoding="utf-8")) is not None
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
 def schedule_status(
     *,
     system: Optional[str] = None,
@@ -309,18 +331,27 @@ def schedule_status(
     label: str = DFLT_LAUNCHD_LABEL,
     unit: str = DFLT_SYSTEMD_UNIT,
 ) -> str:
-    """Whether the scheduled job is installed, and where."""
+    """Whether the scheduled job is installed, where, and whether it is outdated.
+
+    ``installed (outdated: re-run liaise schedule install)`` for a job that would kill the
+    detached runs its tick starts: a plist without ``AbandonProcessGroup``, or a service
+    unit without ``KillMode=process``, as a job installed by 0.0.x is. The files are only
+    read; the scheduler itself is never asked.
+    """
     system = system or platform.system()
     if system == "Darwin":
         path = (
             Path(launchd_dir) if launchd_dir else DFLT_LAUNCHD_DIR
         ) / f"{label}.plist"
+        job_file, setting = path, LAUNCHD_DETACH_SETTING
     elif system == "Linux":
-        path = (
-            Path(systemd_dir) if systemd_dir else DFLT_SYSTEMD_DIR
-        ) / f"{unit}.timer"
+        systemd_dir = Path(systemd_dir) if systemd_dir else DFLT_SYSTEMD_DIR
+        path = systemd_dir / f"{unit}.timer"
+        job_file, setting = systemd_dir / f"{unit}.service", SYSTEMD_DETACH_SETTING
     else:
         raise NotImplementedError(f"no scheduler support for {system!r}")
-    return (
-        f"installed: {path}" if path.exists() else f"not installed (expected at {path})"
-    )
+    if not path.exists():
+        return f"not installed (expected at {path})"
+    if not _detaches_runs(job_file, setting):
+        return f"installed ({OUTDATED_SCHEDULE_NOTE}): {path}"
+    return f"installed: {path}"

@@ -12,6 +12,8 @@ from pathlib import Path
 import pytest
 
 from liaise.schedule import (
+    DFLT_LAUNCHD_LABEL,
+    DFLT_SYSTEMD_UNIT,
     install_schedule,
     job_environment,
     schedule_status,
@@ -55,6 +57,8 @@ def test_install_launchd_writes_a_plist_with_environment_snapshot(tmp_path):
     assert "<key>EnvironmentVariables</key>" in content
     assert "<key>PATH</key>" in content
     assert "<key>StartInterval</key>" in content
+    # detached processor runs must outlive the tick that started them
+    assert "<key>AbandonProcessGroup</key>\n    <true/>" in content
 
 
 def test_install_systemd_writes_service_and_timer_with_environment_snapshot(tmp_path):
@@ -65,6 +69,7 @@ def test_install_systemd_writes_service_and_timer_with_environment_snapshot(tmp_
     service_text = service_path.read_text()
     assert "ExecStart=" in service_text
     assert 'Environment="PATH=' in service_text
+    assert "KillMode=process" in service_text  # same reason as AbandonProcessGroup
 
     timer_text = timer_path.read_text()
     assert "OnUnitActiveSec=" in timer_text
@@ -99,3 +104,39 @@ def test_uninstall_is_idempotent(tmp_path):
     launchd_dir = tmp_path / "LaunchAgents"
     uninstall_schedule(system="Darwin", launchd_dir=launchd_dir, load=False)  # nothing installed
     uninstall_schedule(system="Darwin", launchd_dir=launchd_dir, load=False)  # still fine
+
+
+# ---- a job installed before 0.1 (S7 #10) ----
+
+#: A plist as 0.0.x wrote it: no AbandonProcessGroup, so launchd kills the runs a tick detaches.
+OLD_PLIST = """<?xml version="1.0" encoding="UTF-8"?>
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.liaise.run</string>
+    <key>StartInterval</key>
+    <integer>120</integer>
+</dict>
+</plist>
+"""
+OUTDATED = "installed (outdated: re-run liaise schedule install): "
+
+
+def test_schedule_status_says_a_plist_without_abandon_process_group_is_outdated(tmp_path):
+    launchd_dir = tmp_path / "LaunchAgents"
+    launchd_dir.mkdir()
+    (launchd_dir / f"{DFLT_LAUNCHD_LABEL}.plist").write_text(OLD_PLIST)
+    assert schedule_status(system="Darwin", launchd_dir=launchd_dir).startswith(OUTDATED)
+
+    install_schedule(system="Darwin", launchd_dir=launchd_dir, launchd_log_dir=tmp_path / "Logs", load=False)
+    assert schedule_status(system="Darwin", launchd_dir=launchd_dir).startswith("installed: ")
+
+
+def test_schedule_status_says_a_unit_without_kill_mode_process_is_outdated(tmp_path):
+    systemd_dir = tmp_path / "systemd" / "user"
+    install_schedule(system="Linux", systemd_dir=systemd_dir, load=False)
+    assert schedule_status(system="Linux", systemd_dir=systemd_dir).startswith("installed: ")
+
+    service = systemd_dir / f"{DFLT_SYSTEMD_UNIT}.service"
+    service.write_text(service.read_text().replace("KillMode=process\n", ""))
+    assert schedule_status(system="Linux", systemd_dir=systemd_dir).startswith(OUTDATED)
