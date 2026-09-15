@@ -18,6 +18,7 @@ counter__cases                      the last case number handed out
 daily__<subject>__<YYYY-MM-DD>      that day's dispatches, as 0.0.x kept them
 budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
 issue_check__<case_id>              an IssueCheck: the tick's reads of the case's issue state
+message__<message_id>               an OutboundMessage: one sent or held outside any case
 ```
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
@@ -31,9 +32,11 @@ absent.
 
 ### Module Attributes
 
-| [`DFLT_LEDGER_SUBDIR`](#liaise.ledger.DFLT_LEDGER_SUBDIR)   | The ledger's directory under `state_dir`.                                 |
-|-----------------------------------------------------------------------|---------------------------------------------------------------------------|
-| [`DFLT_DIGEST_LENGTH`](#liaise.ledger.DFLT_DIGEST_LENGTH)   | How many hex digits of a delivery id's sha1 inbox and unrouted keys keep. |
+| [`DFLT_LEDGER_SUBDIR`](#liaise.ledger.DFLT_LEDGER_SUBDIR)    | The ledger's directory under `state_dir`.                                 |
+|------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| [`DFLT_DIGEST_LENGTH`](#liaise.ledger.DFLT_DIGEST_LENGTH)    | How many hex digits of a delivery id's sha1 inbox and unrouted keys keep. |
+| [`MESSAGE_ID_INFIX`](#liaise.ledger.MESSAGE_ID_INFIX)      | `example-app-m1f3a9c2e`.                                                  |
+| [`MESSAGE_ID_HEX_DIGITS`](#liaise.ledger.MESSAGE_ID_HEX_DIGITS) | How many hex digits a message id's random part has.                       |
 
 ### Functions
 
@@ -160,6 +163,13 @@ The tick’s reads of the case’s issue state; an empty `IssueCheck` before any
 * **Return type:**
   [`IssueCheck`](liaise.model.html.md#liaise.model.IssueCheck)
 
+#### get_message(message_id)
+
+The message outside a case with `message_id`, or None.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`OutboundMessage`](liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### get_run(run_id)
 
 The record of the run `run_id`, or None.
@@ -197,6 +207,15 @@ Record the event with `delivery_id` as taken in, so [`seen()`](#liaise.ledger.Le
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+#### messages(, subject=None, state=None)
+
+Every message outside a case, or those of `subject`, or in `state`; in no set order.
+
+Raises `ValueError` for a state outside [`MESSAGE_STATES`](liaise.model.html.md#liaise.model.MESSAGE_STATES).
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`OutboundMessage`](liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### new_case(subject, conversation, , reporter, at)
 
 Open a case on `conversation` (an encoded ref), numbered `<subject>-<n>`.
@@ -206,6 +225,15 @@ the conversation already belongs to a case: its messages go to that case.
 
 * **Return type:**
   [`Case`](liaise.model.html.md#liaise.model.Case)
+
+#### new_message_id(subject)
+
+A fresh `<subject>-m<hex>` id for a message outside a case, unused in the ledger.
+
+The hex part is random, not counted, so two agents sending at once need no lock.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 #### runs(, status=None)
 
@@ -227,6 +255,13 @@ to another case.
 #### save_issue_check(case_id, check)
 
 Write `check`, replacing what the ledger held of the case’s issue state reads.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### save_message(message)
+
+Write `message`, replacing what the ledger held under its id.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -267,6 +302,17 @@ Every queued unrouted message, as a fresh dict, in no set order.
 
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
+### liaise.ledger.MESSAGE_ID_HEX_DIGITS *= 8*
+
+How many hex digits a message id’s random part has.
+
+### liaise.ledger.MESSAGE_ID_INFIX *= '-m'*
+
+`example-app-m1f3a9c2e`.
+
+* **Type:**
+  What joins a subject’s slug to the hex of a message id
 
 ### liaise.ledger.default_ledger_store(state_dir)
 

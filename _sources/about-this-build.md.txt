@@ -5,7 +5,7 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-09-15 14:30 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/14a62fd36f4cc10cc3e15c03789eb639428a3fcb"><code>14a62fd</code></a> on branch <code>main</code>, for **liaise 0.1.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-15 15:07 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb"><code>b1fd353</code></a> on branch <code>main</code>, for **liaise 0.1.2** (from <code>pyproject.toml</code>).
 
 :::{note}
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -15,7 +15,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/liaise/commit/14a62fd36f4cc10cc3e15c03789eb639428a3fcb"><code>14a62fd36f4cc10cc3e15c03789eb639428a3fcb</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/liaise/commit/b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb"><code>b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
@@ -26,9 +26,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | | |
 |---|---|
 | Repository | <code>thorwhalen/liaise</code> |
-| Run | <a href="https://github.com/thorwhalen/liaise/actions/runs/34981862981">34981862981</a> |
+| Run | <a href="https://github.com/thorwhalen/liaise/actions/runs/34986124721">34986124721</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>14a62fd36f4cc10cc3e15c03789eb639428a3fcb</code> (in the history of the built commit) |
+| Event commit | <code>b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -53,13 +53,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.1/">0.1.1</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/liaise/0.1.2/">0.1.2</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 14a62fd36f4cc10cc3e15c03789eb639428a3fcb
+git checkout b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

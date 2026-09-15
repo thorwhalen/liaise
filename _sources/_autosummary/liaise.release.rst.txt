@@ -9,6 +9,9 @@ liaise.release
    .. autosummary::
    
       DFLT_REFUSAL
+      DELIVER_PURPOSE
+      DRAFT_ENTRY_KIND
+      GITHUB_CHANNEL
    
    .. rubric:: Functions
 
@@ -16,10 +19,20 @@ liaise.release
    
       error_text
       gate_and_send
+      github_repo
+      release_draft
+      sendable_ref
    
    .. rubric:: Classes
 
    .. autosummary::
    
+      DraftOutcome
       SendAttempt
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      DraftSentNotRecorded
    

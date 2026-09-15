@@ -14,6 +14,7 @@ liaise.model
       OUTCOME_KINDS
       PERMISSIONS
       HOLD_MODES
+      MESSAGE_STATES
    
    .. rubric:: Functions
 
@@ -32,6 +33,7 @@ liaise.model
       Hold
       IssueCheck
       LedgerEntry
+      OutboundMessage
       Outcome
       RunRecord
       RunResult

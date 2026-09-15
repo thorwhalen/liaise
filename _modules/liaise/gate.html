@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../../_static/documentation_options.js?v=92734c54"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -718,8 +718,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">hands to :func:`run_gate` before anything reaches a channel. The gate runs</span>
 <span class="sd">:data:`DFLT_OUTBOUND_FILTERS`, in this order:</span>
 
-<span class="sd">1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode, unless</span>
-<span class="sd">   the operator released it.</span>
+<span class="sd">1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode, nor any</span>
+<span class="sd">   message outside a case, unless the operator released it.</span>
 <span class="sd">2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, a</span>
 <span class="sd">   ``.env`` path, an email address, a private key, a token (wrapped across lines or not)</span>
 <span class="sd">   or one of ``policy.leak_terms``. It never redacts.</span>
@@ -762,6 +762,11 @@ window.runMermaid = runMermaid;</script>
 
 <span class="c1">#: The reply mode in which liaise sends nothing without the operator.</span>
 <span class="n">DRAFT_REPLY_MODE</span> <span class="o">=</span> <span class="s2">"draft"</span>
+<span class="c1">#: Why :func:`reply_mode` holds a message outside a case, and how its release note names it.</span>
+<span class="n">OUTSIDE_A_CASE</span> <span class="o">=</span> <span class="s2">"a message outside a case"</span>
+<span class="n">CASELESS_REASON</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTSIDE_A_CASE</span><span class="si">}</span><span class="s2"> waits for the operator"</span>
+<span class="c1">#: Why :func:`reply_mode` holds a message in draft reply mode, and its release note's name.</span>
+<span class="n">DRAFT_REPLY_REASON</span> <span class="o">=</span> <span class="s2">"draft reply mode"</span>
 <span class="c1">#: The channel whose messages must @mention their recipient to reach them.</span>
 <span class="n">MENTION_CHANNEL</span> <span class="o">=</span> <span class="s2">"github"</span>
 
@@ -790,37 +795,44 @@ window.runMermaid = runMermaid;</script>
 
 <div class="viewcode-block" id="Outbound">
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.Outbound">[docs]</a>
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Outbound</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""A message liaise would send: ``text`` for ``recipient`` (a person id) at ``ref``.</span>
 
-<span class="sd">    ``ref`` is the encoded conversation or address it goes to</span>
-<span class="sd">    (``github:example/app#12``), and ``channel`` that ref's channel. ``purpose`` is the</span>
-<span class="sd">    outcome kind it carries out (``ask``, ``reply``, ``propose``, ``deliver``).</span>
+<span class="sd">    ``ref`` is the encoded conversation or address it goes to (``github:example/app#12``,</span>
+<span class="sd">    or ``github:example/app`` to open an issue there), and ``channel`` is that ref's</span>
+<span class="sd">    channel. ``purpose`` is the outcome kind it carries out (``ask``, ``reply``,</span>
+<span class="sd">    ``propose``, ``deliver``). ``title`` is the title of the issue it opens, when it opens</span>
+<span class="sd">    one; the leak scan judges it with the text. ``case_id`` is the case the message belongs</span>
+<span class="sd">    to, or None for a message an agent sends outside any case (``liaise message send``).</span>
 <span class="sd">    """</span>
 
-    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">channel</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">recipient</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span></div>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">case_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
 <div class="viewcode-block" id="GateContext">
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.GateContext">[docs]</a>
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GateContext</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""What the filters may consult: the subject and its policy, the case, the time.</span>
 
-<span class="sd">    ``approval`` is the operator's release of this message (``liaise case send-draft``).</span>
-<span class="sd">    It is None for every message the tick sends on its own.</span>
+<span class="sd">    ``case`` is the case the message belongs to, or None for a message outside any case.</span>
+<span class="sd">    The subject is the subject either way, so its policy, leak terms, public channels and</span>
+<span class="sd">    people all apply; no filter of the 0.1 gate reads the case. ``approval`` is the</span>
+<span class="sd">    operator's release of this message (``liaise case send-draft``, ``liaise message</span>
+<span class="sd">    send-draft``), and is None for every message sent without one.</span>
 <span class="sd">    """</span>
 
     <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span>
-    <span class="n">case</span><span class="p">:</span> <span class="n">Case</span>
     <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">case</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Case</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
@@ -882,21 +894,29 @@ window.runMermaid = runMermaid;</script>
 <div class="viewcode-block" id="reply_mode">
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.reply_mode">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">reply_mode</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Divert when the recipient's reply mode is ``draft``, unless the operator released it.</span>
+<span class="w">    </span><span class="sd">"""Divert what waits for the operator: a message in ``draft`` reply mode, or outside a case.</span>
 
 <span class="sd">    The mode is the person's ``policy.reply_modes`` override, else the subject's</span>
-<span class="sd">    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`). In</span>
-<span class="sd">    ``draft`` mode, a message with the operator's :class:`~liaise.model.Approval` on</span>
-<span class="sd">    ``ctx.approval`` passes, with a note saying who released it and when. The approval</span>
-<span class="sd">    settles this filter alone; the filters after it judge the message as they would any</span>
-<span class="sd">    other.</span>
+<span class="sd">    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`). A message</span>
+<span class="sd">    outside any case (``ctx.case`` None) waits whatever the mode. Its sender chose where it</span>
+<span class="sd">    goes and to whom, so a sender who picks a person in ``direct`` mode must not reach an</span>
+<span class="sd">    audience that way. Until the gate can tell who reads a conversation and what the sender</span>
+<span class="sd">    had read (liaise discussion 32, §5.3 and §6), only the operator releases it.</span>
+
+<span class="sd">    A message with the operator's :class:`~liaise.model.Approval` on ``ctx.approval``</span>
+<span class="sd">    passes, with a note saying who released it and when. The approval settles this filter</span>
+<span class="sd">    alone; the filters after it judge the message as they would any other.</span>
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">reply_mode_for</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="p">)</span> <span class="o">!=</span> <span class="n">DRAFT_REPLY_MODE</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">OUTSIDE_A_CASE</span><span class="p">,</span> <span class="n">CASELESS_REASON</span>
+    <span class="k">elif</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">reply_mode_for</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="p">)</span> <span class="o">==</span> <span class="n">DRAFT_REPLY_MODE</span><span class="p">:</span>
+        <span class="n">name</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">DRAFT_REPLY_REASON</span><span class="p">,</span> <span class="n">DRAFT_REPLY_REASON</span>
+    <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
     <span class="n">approval</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">approval</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">approval</span><span class="p">,</span> <span class="n">Approval</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span><span class="s2">"draft reply mode"</span><span class="p">)</span>
-    <span class="n">note</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"draft reply mode: released by </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">by</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
+    <span class="n">note</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: released by </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">by</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
     <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="p">(</span><span class="n">note</span><span class="p">,))</span></div>
 
 
@@ -915,8 +935,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ``policy.leak_terms`` as a whole word in any case. Tokens are also looked for with the</span>
 <span class="sd">    text's line breaks removed, so a token wrapped across lines is found. The reason</span>
 <span class="sd">    names each kind found and the notes say where, never what. It never redacts: a leak</span>
-<span class="sd">    is for the operator to fix. A channel outside ``policy.public_channels`` passes</span>
-<span class="sd">    unscanned.</span>
+<span class="sd">    is for the operator to fix. A title is scanned the same way, and its notes say "of the</span>
+<span class="sd">    title". A channel outside ``policy.public_channels`` passes unscanned.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">without_line_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
@@ -924,42 +944,48 @@ window.runMermaid = runMermaid;</script>
         <span class="n">kept</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">char</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_LINE_BREAKS</span><span class="p">]</span>
         <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">kept</span><span class="p">),</span> <span class="n">kept</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">hits_in</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Each ``(kind, start)`` of what must not be made public in ``text``, once each."""</span>
+        <span class="n">unwrapped</span><span class="p">,</span> <span class="n">positions</span> <span class="o">=</span> <span class="n">without_line_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_LEAK_PATTERNS</span>
+            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">unwrapped_starts</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">positions</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
+            <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_UNWRAPPED_TOKEN_PATTERNS</span>
+            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">"token"</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">unwrapped_starts</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_WORD_CHAR</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="p">]</span>
+        <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">"leak term"</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">policy</span><span class="o">.</span><span class="n">leak_terms</span>
+            <span class="k">if</span> <span class="n">term</span>
+            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span>
+                <span class="sa">rf</span><span class="s2">"(?&lt;!\w)</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">term</span><span class="p">)</span><span class="si">}</span><span class="s2">(?!\w)"</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
+            <span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>  <span class="c1"># a token on one line is found by both scans</span>
+
     <span class="n">policy</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">policy</span>
     <span class="k">if</span> <span class="n">outbound</span><span class="o">.</span><span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">policy</span><span class="o">.</span><span class="n">public_channels</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
-    <span class="n">text</span> <span class="o">=</span> <span class="n">outbound</span><span class="o">.</span><span class="n">text</span>
-    <span class="n">unwrapped</span><span class="p">,</span> <span class="n">positions</span> <span class="o">=</span> <span class="n">without_line_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="n">found</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
-        <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_LEAK_PATTERNS</span>
-        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="p">]</span>
-    <span class="n">unwrapped_starts</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">positions</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
-        <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_UNWRAPPED_TOKEN_PATTERNS</span>
-        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">)</span>
-    <span class="p">)</span>
-    <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
-        <span class="p">(</span><span class="s2">"token"</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">unwrapped_starts</span>
-        <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_WORD_CHAR</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
-    <span class="p">]</span>
-    <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
-        <span class="p">(</span><span class="s2">"leak term"</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
-        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">policy</span><span class="o">.</span><span class="n">leak_terms</span>
-        <span class="k">if</span> <span class="n">term</span>
-        <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span>
-            <span class="sa">rf</span><span class="s2">"(?&lt;!\w)</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">term</span><span class="p">)</span><span class="si">}</span><span class="s2">(?!\w)"</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
-        <span class="p">)</span>
-    <span class="p">]</span>
-    <span class="n">hits</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>  <span class="c1"># a token on one line is found by both scans</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">hits</span><span class="p">:</span>
+    <span class="n">places</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">""</span><span class="p">,</span> <span class="n">hits_in</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">))]</span>
+    <span class="k">if</span> <span class="n">outbound</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
+        <span class="n">places</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">" of the title"</span><span class="p">,</span> <span class="n">hits_in</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">title</span><span class="p">)))</span>
+    <span class="n">kinds</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">kind</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">hits</span> <span class="ow">in</span> <span class="n">places</span> <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">kinds</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
-    <span class="n">kinds</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">kind</span> <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">"leak scan: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"leak scan: </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> at character </span><span class="si">{</span><span class="n">start</span><span class="si">}</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"leak scan: </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> at character </span><span class="si">{</span><span class="n">start</span><span class="si">}{</span><span class="n">where</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">for</span> <span class="n">where</span><span class="p">,</span> <span class="n">hits</span> <span class="ow">in</span> <span class="n">places</span>
             <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">hit</span><span class="p">:</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="p">),</span>
     <span class="p">)</span></div>

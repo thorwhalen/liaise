@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../../_static/documentation_options.js?v=92734c54"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -822,6 +822,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">CASE_STATES</span><span class="p">,</span>
+    <span class="n">MESSAGE_HELD</span><span class="p">,</span>
     <span class="n">Case</span><span class="p">,</span>
     <span class="n">Hold</span><span class="p">,</span>
     <span class="n">IssueCheck</span><span class="p">,</span>
@@ -848,6 +849,7 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outcomes</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DFLT_OPERATOR_PRIORITY</span><span class="p">,</span>
+    <span class="n">HELD_REASON_PREFIX</span><span class="p">,</span>
     <span class="n">OUTCOME_SCHEMA</span><span class="p">,</span>
     <span class="n">Action</span><span class="p">,</span>
     <span class="n">Defer</span><span class="p">,</span>
@@ -972,9 +974,6 @@ window.runMermaid = runMermaid;</script>
 <span class="c1">#: triage seam (#19). The tick starts the cases group by group, each group in its order,</span>
 <span class="c1">#: and a case left out is not started this tick. None keeps the tick's own order.</span>
 <span class="n">Triage</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Case</span><span class="p">]],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Case</span><span class="p">]]]</span>
-<span class="c1">#: How a draft kept because a hold kept its effects waiting begins its reason, before the</span>
-<span class="c1">#: hold's scope: ``held: effect:deploy``.</span>
-<span class="n">HELD_REASON_PREFIX</span> <span class="o">=</span> <span class="s2">"held: "</span>
 
 
 <div class="viewcode-block" id="Diversion">
@@ -1595,6 +1594,20 @@ window.runMermaid = runMermaid;</script>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">to</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
+
+    <span class="n">heading</span> <span class="o">=</span> <span class="s2">"messages outside a case held for the operator"</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">held</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+            <span class="n">ledger</span><span class="o">.</span><span class="n">messages</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">MESSAGE_HELD</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">updated_at</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># a record this liaise cannot read</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">heading</span><span class="si">}</span><span class="s2">: unreadable (</span><span class="si">{</span><span class="n">_error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">heading</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">held</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">message</span> <span class="ow">in</span> <span class="n">held</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
 
     <span class="n">notes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
         <span class="p">(</span>

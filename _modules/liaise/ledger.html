@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../../_static/documentation_options.js?v=92734c54"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -728,6 +728,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    daily__&lt;subject&gt;__&lt;YYYY-MM-DD&gt;      that day's dispatches, as 0.0.x kept them</span>
 <span class="sd">    budget_notified__&lt;subject&gt;__&lt;day&gt;   when the operator heard that day's cap was reached</span>
 <span class="sd">    issue_check__&lt;case_id&gt;              an IssueCheck: the tick's reads of the case's issue state</span>
+<span class="sd">    message__&lt;message_id&gt;               an OutboundMessage: one sent or held outside any case</span>
 
 <span class="sd">The variable parts (ids, refs, scopes) are percent-encoded, so the scope</span>
 <span class="sd">``repo:example/app`` is stored under ``hold__repo%3Aexample%2Fapp``. The result has</span>
@@ -751,14 +752,17 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">quote</span><span class="p">,</span> <span class="n">unquote</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="kn">import</span> <span class="n">uuid4</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">CASE_STATES</span><span class="p">,</span>
     <span class="n">INITIAL_CASE_STATE</span><span class="p">,</span>
+    <span class="n">MESSAGE_STATES</span><span class="p">,</span>
     <span class="n">Case</span><span class="p">,</span>
     <span class="n">Hold</span><span class="p">,</span>
     <span class="n">IssueCheck</span><span class="p">,</span>
     <span class="n">LedgerEntry</span><span class="p">,</span>
+    <span class="n">OutboundMessage</span><span class="p">,</span>
     <span class="n">RunRecord</span><span class="p">,</span>
     <span class="n">require_one_of</span><span class="p">,</span>
     <span class="n">to_jsonable</span><span class="p">,</span>
@@ -768,6 +772,10 @@ window.runMermaid = runMermaid;</script>
 <span class="n">DFLT_LEDGER_SUBDIR</span> <span class="o">=</span> <span class="s2">"ledger"</span>
 <span class="c1">#: How many hex digits of a delivery id's sha1 inbox and unrouted keys keep.</span>
 <span class="n">DFLT_DIGEST_LENGTH</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="c1">#: What joins a subject's slug to the hex of a message id: ``example-app-m1f3a9c2e``.</span>
+<span class="n">MESSAGE_ID_INFIX</span> <span class="o">=</span> <span class="s2">"-m"</span>
+<span class="c1">#: How many hex digits a message id's random part has.</span>
+<span class="n">MESSAGE_ID_HEX_DIGITS</span> <span class="o">=</span> <span class="mi">8</span>
 
 <span class="n">_SEP</span> <span class="o">=</span> <span class="s2">"__"</span>
 <span class="n">_CASE_COUNTER_KEY</span> <span class="o">=</span> <span class="s2">"counter__cases"</span>
@@ -1179,6 +1187,57 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">save_issue_check</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">check</span><span class="p">:</span> <span class="n">IssueCheck</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Write ``check``, replacing what the ledger held of the case's issue state reads."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"issue_check"</span><span class="p">,</span> <span class="n">case_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">check</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
+
+
+    <span class="c1"># ---- messages outside a case ----</span>
+
+<div class="viewcode-block" id="Ledger.new_message_id">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.new_message_id">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">new_message_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""A fresh ``&lt;subject&gt;-m&lt;hex&gt;`` id for a message outside a case, unused in the ledger.</span>
+
+<span class="sd">        The hex part is random, not counted, so two agents sending at once need no lock.</span>
+<span class="sd">        """</span>
+        <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+            <span class="n">hex_part</span> <span class="o">=</span> <span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span><span class="p">[:</span><span class="n">MESSAGE_ID_HEX_DIGITS</span><span class="p">]</span>
+            <span class="n">message_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">subject</span><span class="si">}{</span><span class="n">MESSAGE_ID_INFIX</span><span class="si">}{</span><span class="n">hex_part</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"message"</span><span class="p">,</span> <span class="n">message_id</span><span class="p">))</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">message_id</span></div>
+
+
+<div class="viewcode-block" id="Ledger.save_message">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.save_message">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="n">OutboundMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Write ``message``, replacing what the ledger held under its id."""</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"message"</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="Ledger.get_message">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.get_message">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">OutboundMessage</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The message outside a case with ``message_id``, or None."""</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get</span><span class="p">(</span><span class="n">_key</span><span class="p">(</span><span class="s2">"message"</span><span class="p">,</span> <span class="n">message_id</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">OutboundMessage</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.messages">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.messages">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">messages</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">OutboundMessage</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Every message outside a case, or those of ``subject``, or in ``state``; in no set order.</span>
+
+<span class="sd">        Raises ``ValueError`` for a state outside :data:`~liaise.model.MESSAGE_STATES`.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">require_one_of</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">MESSAGE_STATES</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s2">"message state"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="s2">"message"</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">=</span> <span class="n">OutboundMessage</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">subject</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">subject</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">state</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">yield</span> <span class="n">message</span></div>
 
 
     <span class="c1"># ---- cursors ----</span>

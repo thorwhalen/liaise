@@ -18,6 +18,7 @@
 - [liaise.github](_autosummary/liaise.github.html.md): The GitHub seam: one protocol, two implementations.
 - [liaise.holds](_autosummary/liaise.holds.html.md): Holds: stops on work, by scope, set by the operator or by the tick itself.
 - [liaise.ledger](_autosummary/liaise.ledger.html.md): The ledger: liaise’s own record of what it has seen, opened, decided and started.
+- [liaise.messages](_autosummary/liaise.messages.html.md): Messages outside a case: what an agent says to a person on its own initiative, through the gate.
 - [liaise.migrate](_autosummary/liaise.migrate.html.md): Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.
 - [liaise.model](_autosummary/liaise.model.html.md): The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.
 - [liaise.outcomes](_autosummary/liaise.outcomes.html.md): Outcomes: what a processor run reports, checked, then planned into actions.
@@ -32,7 +33,7 @@
 - [liaise.tick](_autosummary/liaise.tick.html.md): The tick: one pass of liaise 0.1’s loop (design §3.1).
 - [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 - [For AI agents](ai-agents.html.md): `liaise` ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 14:30 UTC** from commit <a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 15:07 UTC** from commit <a href="https://github.com/tho...
 
 ---
 

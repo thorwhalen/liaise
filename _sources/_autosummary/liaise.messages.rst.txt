@@ -1,0 +1,35 @@
+liaise.messages
+===============
+
+.. automodule:: liaise.messages
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      MESSAGE_PURPOSES
+      DFLT_SENDER
+      OPERATOR_ACTOR
+      SEND_REFUSED_CAUSE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      find_message
+      held_message
+      message_draft
+      message_lines
+      message_show_lines
+      reject_message
+      send_held_message
+      send_message
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      MessageRelease
+      MessageSent
+   

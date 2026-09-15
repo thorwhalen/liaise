@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../_static/documentation_options.js?v=92734c54"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.errors" href="liaise.errors.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -327,6 +327,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.github.html">liaise.github</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
@@ -413,8 +414,8 @@ each <a class="reference internal" href="liaise.outcomes.html#liaise.outcomes.Se
 hands to <a class="reference internal" href="#liaise.gate.run_gate" title="liaise.gate.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_gate()</span></code></a> before anything reaches a channel. The gate runs
 <a class="reference internal" href="#liaise.gate.DFLT_OUTBOUND_FILTERS" title="liaise.gate.DFLT_OUTBOUND_FILTERS"><code class="xref py py-data docutils literal notranslate"><span class="pre">DFLT_OUTBOUND_FILTERS</span></code></a>, in this order:</p>
 <ol class="arabic simple">
-<li><p><a class="reference internal" href="#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">reply_mode()</span></code></a>: nothing goes directly to a person in <code class="docutils literal notranslate"><span class="pre">draft</span></code> reply mode, unless
-the operator released it.</p></li>
+<li><p><a class="reference internal" href="#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">reply_mode()</span></code></a>: nothing goes directly to a person in <code class="docutils literal notranslate"><span class="pre">draft</span></code> reply mode, nor any
+message outside a case, unless the operator released it.</p></li>
 <li><p><a class="reference internal" href="#liaise.gate.leak_scan" title="liaise.gate.leak_scan"><code class="xref py py-func docutils literal notranslate"><span class="pre">leak_scan()</span></code></a>: on a public channel, nothing holding an absolute local path, a
 <code class="docutils literal notranslate"><span class="pre">.env</span></code> path, an email address, a private key, a token (wrapped across lines or not)
 or one of <code class="docutils literal notranslate"><span class="pre">policy.leak_terms</span></code>. It never redacts.</p></li>
@@ -439,6 +440,12 @@ final text, with their <a class="reference internal" href="liaise.model.html#lia
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.gate.DRAFT_REPLY_MODE" title="liaise.gate.DRAFT_REPLY_MODE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DRAFT_REPLY_MODE</span></code></a></p></td>
 <td><p>The reply mode in which liaise sends nothing without the operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.gate.OUTSIDE_A_CASE" title="liaise.gate.OUTSIDE_A_CASE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OUTSIDE_A_CASE</span></code></a></p></td>
+<td><p>Why <a class="reference internal" href="#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">reply_mode()</span></code></a> holds a message outside a case, and how its release note names it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.gate.DRAFT_REPLY_REASON" title="liaise.gate.DRAFT_REPLY_REASON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DRAFT_REPLY_REASON</span></code></a></p></td>
+<td><p>Why <a class="reference internal" href="#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">reply_mode()</span></code></a> holds a message in draft reply mode, and its release note's name.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.gate.MENTION_CHANNEL" title="liaise.gate.MENTION_CHANNEL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MENTION_CHANNEL</span></code></a></p></td>
 <td><p>The channel whose messages must &#64;mention their recipient to reach them.</p></td>
@@ -465,7 +472,7 @@ final text, with their <a class="reference internal" href="liaise.model.html#lia
 <td><p>On GitHub, make the message start with an <code class="docutils literal notranslate"><span class="pre">&#64;mention</span></code> of its recipient.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reply_mode</span></code></a>(outbound, ctx)</p></td>
-<td><p>Divert when the recipient's reply mode is <code class="docutils literal notranslate"><span class="pre">draft</span></code>, unless the operator released it.</p></td>
+<td><p>Divert what waits for the operator: a message in <code class="docutils literal notranslate"><span class="pre">draft</span></code> reply mode, or outside a case.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.gate.run_gate" title="liaise.gate.run_gate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_gate</span></code></a>(outbound, ctx, *[, outbound_filters])</p></td>
 <td><p>Run <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through <code class="docutils literal notranslate"><span class="pre">outbound_filters</span></code> in order, stopping at the first divert.</p></td>
@@ -482,13 +489,13 @@ final text, with their <a class="reference internal" href="liaise.model.html#lia
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.gate.Divert" title="liaise.gate.Divert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Divert</span></code></a>(reason[, notes])</p></td>
 <td><p>A filter's verdict to send nothing and hand the message to the operator.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.gate.GateContext" title="liaise.gate.GateContext"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GateContext</span></code></a>(subject, case, now[, approval])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.gate.GateContext" title="liaise.gate.GateContext"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GateContext</span></code></a>(*, subject, now[, case, approval])</p></td>
 <td><p>What the filters may consult: the subject and its policy, the case, the time.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.gate.GateDecision" title="liaise.gate.GateDecision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GateDecision</span></code></a>(send, diverted[, notes, ...])</p></td>
 <td><p>What <a class="reference internal" href="#liaise.gate.run_gate" title="liaise.gate.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_gate()</span></code></a> decided: <code class="docutils literal notranslate"><span class="pre">send</span></code> a message, or why it was <code class="docutils literal notranslate"><span class="pre">diverted</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.gate.Outbound" title="liaise.gate.Outbound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Outbound</span></code></a>(case_id, ref, channel, recipient, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.gate.Outbound" title="liaise.gate.Outbound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Outbound</span></code></a>(*, ref, channel, recipient, ...[, ...])</p></td>
 <td><p>A message liaise would send: <code class="docutils literal notranslate"><span class="pre">text</span></code> for <code class="docutils literal notranslate"><span class="pre">recipient</span></code> (a person id) at <code class="docutils literal notranslate"><span class="pre">ref</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.gate.Pass" title="liaise.gate.Pass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pass</span></code></a>(outbound[, notes])</p></td>
@@ -510,6 +517,12 @@ setting: a draft is diverted before anything else looks at it.</p>
 <dd><p>The reply mode in which liaise sends nothing without the operator.</p>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.gate.DRAFT_REPLY_REASON">
+<span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">DRAFT_REPLY_REASON</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'draft</span> <span class="pre">reply</span> <span class="pre">mode'</span></span><a class="headerlink" href="#liaise.gate.DRAFT_REPLY_REASON" title="Link to this definition">#</a></dt>
+<dd><p>Why <a class="reference internal" href="#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">reply_mode()</span></code></a> holds a message in draft reply mode, and its release note’s name.</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.gate.Divert">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">Divert</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reason</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#Divert"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.Divert" title="Link to this definition">#</a></dt>
@@ -521,11 +534,14 @@ setting: a draft is diverted before anything else looks at it.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.gate.GateContext">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">GateContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.GateContext" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">GateContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.GateContext" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What the filters may consult: the subject and its policy, the case, the time.</p>
-<p><code class="docutils literal notranslate"><span class="pre">approval</span></code> is the operator’s release of this message (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code>).
-It is None for every message the tick sends on its own.</p>
+<p><code class="docutils literal notranslate"><span class="pre">case</span></code> is the case the message belongs to, or None for a message outside any case.
+The subject is the subject either way, so its policy, leak terms, public channels and
+people all apply; no filter of the 0.1 gate reads the case. <code class="docutils literal notranslate"><span class="pre">approval</span></code> is the
+operator’s release of this message (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code>, <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">message</span>
+<span class="pre">send-draft</span></code>), and is None for every message sent without one.</p>
 <dl class="field-list simple">
 </dl>
 </dd></dl>
@@ -549,14 +565,23 @@ the reason can quote what a filter raised.</p>
 <dd><p>The channel whose messages must &#64;mention their recipient to reach them.</p>
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.gate.OUTSIDE_A_CASE">
+<span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">OUTSIDE_A_CASE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'a</span> <span class="pre">message</span> <span class="pre">outside</span> <span class="pre">a</span> <span class="pre">case'</span></span><a class="headerlink" href="#liaise.gate.OUTSIDE_A_CASE" title="Link to this definition">#</a></dt>
+<dd><p>Why <a class="reference internal" href="#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">reply_mode()</span></code></a> holds a message outside a case, and how its release note names it.</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.gate.Outbound">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">Outbound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purpose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#Outbound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.Outbound" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">Outbound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purpose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#Outbound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.Outbound" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A message liaise would send: <code class="docutils literal notranslate"><span class="pre">text</span></code> for <code class="docutils literal notranslate"><span class="pre">recipient</span></code> (a person id) at <code class="docutils literal notranslate"><span class="pre">ref</span></code>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">ref</span></code> is the encoded conversation or address it goes to
-(<code class="docutils literal notranslate"><span class="pre">github:example/app#12</span></code>), and <code class="docutils literal notranslate"><span class="pre">channel</span></code> that ref’s channel. <code class="docutils literal notranslate"><span class="pre">purpose</span></code> is the
-outcome kind it carries out (<code class="docutils literal notranslate"><span class="pre">ask</span></code>, <code class="docutils literal notranslate"><span class="pre">reply</span></code>, <code class="docutils literal notranslate"><span class="pre">propose</span></code>, <code class="docutils literal notranslate"><span class="pre">deliver</span></code>).</p>
+<p><code class="docutils literal notranslate"><span class="pre">ref</span></code> is the encoded conversation or address it goes to (<code class="docutils literal notranslate"><span class="pre">github:example/app#12</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">github:example/app</span></code> to open an issue there), and <code class="docutils literal notranslate"><span class="pre">channel</span></code> is that ref’s
+channel. <code class="docutils literal notranslate"><span class="pre">purpose</span></code> is the outcome kind it carries out (<code class="docutils literal notranslate"><span class="pre">ask</span></code>, <code class="docutils literal notranslate"><span class="pre">reply</span></code>,
+<code class="docutils literal notranslate"><span class="pre">propose</span></code>, <code class="docutils literal notranslate"><span class="pre">deliver</span></code>). <code class="docutils literal notranslate"><span class="pre">title</span></code> is the title of the issue it opens, when it opens
+one; the leak scan judges it with the text. <code class="docutils literal notranslate"><span class="pre">case_id</span></code> is the case the message belongs
+to, or None for a message an agent sends outside any case (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">message</span> <span class="pre">send</span></code>).</p>
 <dl class="field-list simple">
 </dl>
 </dd></dl>
@@ -609,8 +634,8 @@ line, a token shape (<code class="docutils literal notranslate"><span class="pre
 <code class="docutils literal notranslate"><span class="pre">policy.leak_terms</span></code> as a whole word in any case. Tokens are also looked for with the
 text’s line breaks removed, so a token wrapped across lines is found. The reason
 names each kind found and the notes say where, never what. It never redacts: a leak
-is for the operator to fix. A channel outside <code class="docutils literal notranslate"><span class="pre">policy.public_channels</span></code> passes
-unscanned.</p>
+is for the operator to fix. A title is scanned the same way, and its notes say “of the
+title”. A channel outside <code class="docutils literal notranslate"><span class="pre">policy.public_channels</span></code> passes unscanned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="#liaise.gate.Pass" title="liaise.gate.Pass"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pass</span></code></a>, <a class="reference internal" href="#liaise.gate.Divert" title="liaise.gate.Divert"><code class="xref py py-class docutils literal notranslate"><span class="pre">Divert</span></code></a>]</span></p>
@@ -638,13 +663,16 @@ diverted. Other channels pass unchanged.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.gate.reply_mode">
 <span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">reply_mode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#reply_mode"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.reply_mode" title="Link to this definition">#</a></dt>
-<dd><p>Divert when the recipient’s reply mode is <code class="docutils literal notranslate"><span class="pre">draft</span></code>, unless the operator released it.</p>
+<dd><p>Divert what waits for the operator: a message in <code class="docutils literal notranslate"><span class="pre">draft</span></code> reply mode, or outside a case.</p>
 <p>The mode is the person’s <code class="docutils literal notranslate"><span class="pre">policy.reply_modes</span></code> override, else the subject’s
-<code class="docutils literal notranslate"><span class="pre">default_reply_mode</span></code> (see <a class="reference internal" href="liaise.subjects.html#liaise.subjects.Subject.reply_mode_for" title="liaise.subjects.Subject.reply_mode_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reply_mode_for()</span></code></a>). In
-<code class="docutils literal notranslate"><span class="pre">draft</span></code> mode, a message with the operator’s <a class="reference internal" href="liaise.model.html#liaise.model.Approval" title="liaise.model.Approval"><code class="xref py py-class docutils literal notranslate"><span class="pre">Approval</span></code></a> on
-<code class="docutils literal notranslate"><span class="pre">ctx.approval</span></code> passes, with a note saying who released it and when. The approval
-settles this filter alone; the filters after it judge the message as they would any
-other.</p>
+<code class="docutils literal notranslate"><span class="pre">default_reply_mode</span></code> (see <a class="reference internal" href="liaise.subjects.html#liaise.subjects.Subject.reply_mode_for" title="liaise.subjects.Subject.reply_mode_for"><code class="xref py py-meth docutils literal notranslate"><span class="pre">reply_mode_for()</span></code></a>). A message
+outside any case (<code class="docutils literal notranslate"><span class="pre">ctx.case</span></code> None) waits whatever the mode. Its sender chose where it
+goes and to whom, so a sender who picks a person in <code class="docutils literal notranslate"><span class="pre">direct</span></code> mode must not reach an
+audience that way. Until the gate can tell who reads a conversation and what the sender
+had read (liaise discussion 32, §5.3 and §6), only the operator releases it.</p>
+<p>A message with the operator’s <a class="reference internal" href="liaise.model.html#liaise.model.Approval" title="liaise.model.Approval"><code class="xref py py-class docutils literal notranslate"><span class="pre">Approval</span></code></a> on <code class="docutils literal notranslate"><span class="pre">ctx.approval</span></code>
+passes, with a note saying who released it and when. The approval settles this filter
+alone; the filters after it judge the message as they would any other.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="#liaise.gate.Pass" title="liaise.gate.Pass"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pass</span></code></a>, <a class="reference internal" href="#liaise.gate.Divert" title="liaise.gate.Divert"><code class="xref py py-class docutils literal notranslate"><span class="pre">Divert</span></code></a>]</span></p>
@@ -732,10 +760,12 @@ person raises <code class="docutils literal notranslate"><span class="pre">Acqua
     <ul class="pst-show_toc_level nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.DFLT_OUTBOUND_FILTERS"><code class="docutils literal notranslate"><span class="pre">DFLT_OUTBOUND_FILTERS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.DRAFT_REPLY_MODE"><code class="docutils literal notranslate"><span class="pre">DRAFT_REPLY_MODE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.DRAFT_REPLY_REASON"><code class="docutils literal notranslate"><span class="pre">DRAFT_REPLY_REASON</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.Divert"><code class="docutils literal notranslate"><span class="pre">Divert</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.GateContext"><code class="docutils literal notranslate"><span class="pre">GateContext</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.GateDecision"><code class="docutils literal notranslate"><span class="pre">GateDecision</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.MENTION_CHANNEL"><code class="docutils literal notranslate"><span class="pre">MENTION_CHANNEL</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.OUTSIDE_A_CASE"><code class="docutils literal notranslate"><span class="pre">OUTSIDE_A_CASE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.Outbound"><code class="docutils literal notranslate"><span class="pre">Outbound</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.OutboundFilter"><code class="docutils literal notranslate"><span class="pre">OutboundFilter</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.gate.Pass"><code class="docutils literal notranslate"><span class="pre">Pass</span></code></a></li>

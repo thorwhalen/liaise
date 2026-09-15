@@ -14,6 +14,12 @@ liaise case show CASE_ID
 liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
 liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
 liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
+liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
+    [--purpose PURPOSE] [--dry-run]
+liaise message list [--state STATE]
+liaise message show MESSAGE_ID
+liaise message send-draft MESSAGE_ID [--edit] [--dry-run]
+liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
 liaise subject list
 liaise subject show SLUG
 liaise setup SUBJECT
@@ -37,17 +43,19 @@ traceback.
 
 ### Module Attributes
 
-| [`DFLT_LOOP_SECONDS`](#liaise.cli.DFLT_LOOP_SECONDS)   | Seconds between two ticks of `liaise run` without `--once`.                                    |
-|----------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| [`STOPPED`](#liaise.cli.STOPPED)             | What `liaise run` without `--once` returns once it is interrupted.                             |
-| [`NONE_SHOWN`](#liaise.cli.NONE_SHOWN)          | How `liaise subject show` prints an empty or unset value.                                      |
-| [`TICK_RUNNING`](#liaise.cli.TICK_RUNNING)        | What a case command that writes says, changing nothing, while a tick holds the run lock.       |
-| [`EDITOR_ENV_VARS`](#liaise.cli.EDITOR_ENV_VARS)     | The environment variables that name the operator's editor, the first one set winning.          |
-| [`DFLT_EDITOR`](#liaise.cli.DFLT_EDITOR)         | The editor `liaise case send-draft --edit` opens when no variable names one.                   |
-| [`DRAFT_FILE_NAME`](#liaise.cli.DRAFT_FILE_NAME)     | The file `--edit` puts the draft in, inside a temporary directory of its own.                  |
-| [`CONFIRM_PROMPT`](#liaise.cli.CONFIRM_PROMPT)      | What `liaise case send-draft` asks at the terminal, and the answers that send.                 |
-| [`DIVERTED_EXIT_CODE`](#liaise.cli.DIVERTED_EXIT_CODE)  | the message is held for the operator, as `liaise vet` is planned to say (discussion 32, §5.8). |
-| [`NO_TERMINAL`](#liaise.cli.NO_TERMINAL)         | Why `liaise case send-draft` sends nothing without a terminal to ask at.                       |
+| [`DFLT_LOOP_SECONDS`](#liaise.cli.DFLT_LOOP_SECONDS)   | Seconds between two ticks of `liaise run` without `--once`.                                             |
+|----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| [`STOPPED`](#liaise.cli.STOPPED)             | What `liaise run` without `--once` returns once it is interrupted.                                      |
+| [`NONE_SHOWN`](#liaise.cli.NONE_SHOWN)          | How `liaise subject show` prints an empty or unset value.                                               |
+| [`TICK_RUNNING`](#liaise.cli.TICK_RUNNING)        | What a command that writes a case or a message says, changing nothing, while a tick holds the run lock. |
+| [`STDIN_FILE_NAME`](#liaise.cli.STDIN_FILE_NAME)     | The `--text-file` that reads a message's text from standard input.                                      |
+| [`TITLE_LINE_PREFIX`](#liaise.cli.TITLE_LINE_PREFIX)   | a first line, then a rule.                                                                              |
+| [`EDITOR_ENV_VARS`](#liaise.cli.EDITOR_ENV_VARS)     | The environment variables that name the operator's editor, the first one set winning.                   |
+| [`DFLT_EDITOR`](#liaise.cli.DFLT_EDITOR)         | The editor `liaise case send-draft --edit` opens when no variable names one.                            |
+| [`DRAFT_FILE_NAME`](#liaise.cli.DRAFT_FILE_NAME)     | The file `--edit` puts the draft in, inside a temporary directory of its own.                           |
+| [`CONFIRM_PROMPT`](#liaise.cli.CONFIRM_PROMPT)      | What `liaise case send-draft` asks at the terminal, and the answers that send.                          |
+| [`DIVERTED_EXIT_CODE`](#liaise.cli.DIVERTED_EXIT_CODE)  | the message is held for the operator, as `liaise vet` is planned to say (discussion 32, §5.8).          |
+| [`NO_TERMINAL`](#liaise.cli.NO_TERMINAL)         | Why `send-draft` sends nothing without a terminal to ask at.                                            |
 
 ### Functions
 
@@ -60,6 +68,11 @@ traceback.
 | [`confirm_at_terminal`](#liaise.cli.confirm_at_terminal)(preview)                       | Show `preview` and ask, at the operator's terminal, whether to send it; True for yes.        |
 | [`edit_in_editor`](#liaise.cli.edit_in_editor)(text)                               | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.             |
 | [`hold`](#liaise.cli.hold)(scope, \*[, mode, reason, root, store])       | Stop work in SCOPE until `liaise unhold`.                                                    |
+| [`message_list`](#liaise.cli.message_list)(\*[, state, root, store])             | Every message sent or held outside a case, a line each: id, state, and where it goes.        |
+| [`message_reject_draft`](#liaise.cli.message_reject_draft)(message_id, \*[, ...])        | Decline a held message, recording `--reason`.                                                |
+| [`message_send`](#liaise.cli.message_send)(recipient, \*[, ref, text, ...])      | Send a message to PERSON outside any case, through the gate, or hold it for the operator.    |
+| [`message_send_draft`](#liaise.cli.message_send_draft)(message_id, \*[, edit, ...])    | Send a held message you approved, through the gate, as `liaise case send-draft` does.        |
+| [`message_show`](#liaise.cli.message_show)(message_id, \*[, root, store])        | MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.     |
 | [`migrate_config`](#liaise.cli.migrate_config)(\*[, root, apply])                  | Derive 0.1 subject files from a 0.0.x configuration, and print the plan.                     |
 | [`run`](#liaise.cli.run)(\*[, root, once, dry_run, subject, ...])       | One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.     |
 | [`schedule_install`](#liaise.cli.schedule_install)(\*[, root, ...])                  | Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux).          |
@@ -104,17 +117,29 @@ The environment variables that name the operator’s editor, the first one set w
 
 How `liaise subject show` prints an empty or unset value.
 
-### liaise.cli.NO_TERMINAL *= 'liaise case send-draft sends a draft only once you confirm it at a terminal, and there is no terminal here, so nothing was sent: run it in your own shell (--dry-run asks nothing)'*
+### liaise.cli.NO_TERMINAL *= 'a held message is sent only once you confirm it at a terminal, and there is no terminal here, so nothing was sent: run it in your own shell (--dry-run asks nothing)'*
 
-Why `liaise case send-draft` sends nothing without a terminal to ask at.
+Why `send-draft` sends nothing without a terminal to ask at.
+
+### liaise.cli.STDIN_FILE_NAME *= '-'*
+
+The `--text-file` that reads a message’s text from standard input.
 
 ### liaise.cli.STOPPED *= 'stopped'*
 
 What `liaise run` without `--once` returns once it is interrupted.
 
-### liaise.cli.TICK_RUNNING *= 'a liaise tick is running, so {case_id} was not {done}; try again shortly ({busy})'*
+### liaise.cli.TICK_RUNNING *= 'a liaise tick is running, so {what} was not {done}; try again shortly ({busy})'*
 
-What a case command that writes says, changing nothing, while a tick holds the run lock.
+What a command that writes a case or a message says, changing nothing, while a tick
+holds the run lock.
+
+### liaise.cli.TITLE_LINE_PREFIX *= 'Title: '*
+
+a first line, then a rule.
+
+* **Type:**
+  How `--edit` sets a message’s title apart from its text
 
 ### liaise.cli.case_list(, state=None, root=None, store=None)
 
@@ -230,6 +255,70 @@ SCOPE is `global`, `processor`, `effect:<kind>`, `subject:<slug>`,
 default) starts nothing new and keeps a finished run’s messages as drafts; `drain`
 starts nothing new and lets work already running finish and send; `cancel` also
 stops running runs, which stay resumable.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_list(, state=None, root=None, store=None)
+
+Every message sent or held outside a case, a line each: id, state, and where it goes.
+
+`--state held` lists what waits on you. It changes nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_reject_draft(message_id, , reason='', dry_run=False, root=None, store=None, now=None)
+
+Decline a held message, recording `--reason`.
+
+Nothing is sent: the message is recorded as rejected, with its reason and its text. It
+holds the run lock. `--dry-run` changes nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_send(recipient, , ref='', text='', text_file='', title='', purpose='ask', dry_run=False, root=None, registry=None, store=None, now=None, notify_fn=None)
+
+Send a message to PERSON outside any case, through the gate, or hold it for the operator.
+
+`--ref` is the conversation it goes to, and a subject must bind it: an issue
+(`github:example/app#12`), or a repository with `--title` to open an issue. That
+subject’s policy judges it, through the filters every message passes: reply mode, the
+leak scan (of the title too), the writing card, deslop and the mention. The text is
+`--text` or `--text-file` (`-` reads standard input). `--purpose` is `ask`,
+the default, `reply` or `propose`.
+
+In 0.1 the message is held for the operator: its sender chose where it goes, and only
+the operator’s release lets such a message out. A hold on the subject, the person or
+the repository keeps it too. It is recorded with its reason, the operator is told a
+message waits (never what it says), and the command exits 2, or 1 when its channel
+refused it. The operator sends it with `liaise message send-draft`, and the gate
+judges it again then. Nothing opens a case or sets a label. `--dry-run` judges and
+plans, and records and tells nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_send_draft(message_id, , edit=False, dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
+
+Send a held message you approved, through the gate, as `liaise case send-draft` does.
+
+The gate judges it again with your approval recorded, and `--edit` opens it in your
+editor first. It shows where the message goes, the verdict and the exact text, and sends
+once you answer `y` at a terminal. A message the gate diverts stays held with the
+reason and exits 2; one its channel refuses exits 1. `--dry-run` judges and plans,
+asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps
+the message waiting.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_show(message_id, , root=None, store=None)
+
+MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.
+
+It changes nothing.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

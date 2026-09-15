@@ -12,6 +12,8 @@ liaise.cli
       STOPPED
       NONE_SHOWN
       TICK_RUNNING
+      STDIN_FILE_NAME
+      TITLE_LINE_PREFIX
       EDITOR_ENV_VARS
       DFLT_EDITOR
       DRAFT_FILE_NAME
@@ -31,6 +33,11 @@ liaise.cli
       confirm_at_terminal
       edit_in_editor
       hold
+      message_list
+      message_reject_draft
+      message_send
+      message_send_draft
+      message_show
       migrate_config
       run
       schedule_install

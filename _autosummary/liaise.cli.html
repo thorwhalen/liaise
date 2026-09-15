@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../_static/documentation_options.js?v=92734c54"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.cases" href="liaise.cases.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -327,6 +327,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.github.html">liaise.github</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
@@ -418,6 +419,12 @@
 <span class="n">liaise</span> <span class="n">case</span> <span class="nb">set</span><span class="o">-</span><span class="n">state</span> <span class="n">CASE_ID</span> <span class="n">STATE</span> <span class="p">[</span><span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">case</span> <span class="n">send</span><span class="o">-</span><span class="n">draft</span> <span class="n">CASE_ID</span> <span class="p">[</span><span class="n">INDEX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">edit</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">case</span> <span class="n">reject</span><span class="o">-</span><span class="n">draft</span> <span class="n">CASE_ID</span> <span class="p">[</span><span class="n">INDEX</span><span class="p">]</span> <span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">message</span> <span class="n">send</span> <span class="n">PERSON</span> <span class="o">--</span><span class="n">ref</span> <span class="n">REF</span> <span class="p">(</span><span class="o">--</span><span class="n">text</span> <span class="n">TEXT</span> <span class="o">|</span> <span class="o">--</span><span class="n">text</span><span class="o">-</span><span class="n">file</span> <span class="n">FILE</span><span class="p">)</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TITLE</span><span class="p">]</span>
+    <span class="p">[</span><span class="o">--</span><span class="n">purpose</span> <span class="n">PURPOSE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">message</span> <span class="nb">list</span> <span class="p">[</span><span class="o">--</span><span class="n">state</span> <span class="n">STATE</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">message</span> <span class="n">show</span> <span class="n">MESSAGE_ID</span>
+<span class="n">liaise</span> <span class="n">message</span> <span class="n">send</span><span class="o">-</span><span class="n">draft</span> <span class="n">MESSAGE_ID</span> <span class="p">[</span><span class="o">--</span><span class="n">edit</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">message</span> <span class="n">reject</span><span class="o">-</span><span class="n">draft</span> <span class="n">MESSAGE_ID</span> <span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="nb">list</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="n">show</span> <span class="n">SLUG</span>
 <span class="n">liaise</span> <span class="n">setup</span> <span class="n">SUBJECT</span>
@@ -449,7 +456,13 @@ traceback.</p>
 <td><p>How <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">subject</span> <span class="pre">show</span></code> prints an empty or unset value.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.TICK_RUNNING" title="liaise.cli.TICK_RUNNING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TICK_RUNNING</span></code></a></p></td>
-<td><p>What a case command that writes says, changing nothing, while a tick holds the run lock.</p></td>
+<td><p>What a command that writes a case or a message says, changing nothing, while a tick holds the run lock.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.STDIN_FILE_NAME" title="liaise.cli.STDIN_FILE_NAME"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STDIN_FILE_NAME</span></code></a></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">--text-file</span></code> that reads a message's text from standard input.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.TITLE_LINE_PREFIX" title="liaise.cli.TITLE_LINE_PREFIX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TITLE_LINE_PREFIX</span></code></a></p></td>
+<td><p>a first line, then a rule.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.EDITOR_ENV_VARS" title="liaise.cli.EDITOR_ENV_VARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EDITOR_ENV_VARS</span></code></a></p></td>
 <td><p>The environment variables that name the operator's editor, the first one set winning.</p></td>
@@ -467,7 +480,7 @@ traceback.</p>
 <td><p>the message is held for the operator, as <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">vet</span></code> is planned to say (discussion 32, §5.8).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.NO_TERMINAL" title="liaise.cli.NO_TERMINAL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NO_TERMINAL</span></code></a></p></td>
-<td><p>Why <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code> sends nothing without a terminal to ask at.</p></td>
+<td><p>Why <code class="docutils literal notranslate"><span class="pre">send-draft</span></code> sends nothing without a terminal to ask at.</p></td>
 </tr>
 </tbody>
 </table>
@@ -499,34 +512,49 @@ traceback.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.hold" title="liaise.cli.hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hold</span></code></a>(scope, *[, mode, reason, root, store])</p></td>
 <td><p>Stop work in SCOPE until <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">unhold</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.migrate_config" title="liaise.cli.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>(*[, root, apply])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_list" title="liaise.cli.message_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_list</span></code></a>(*[, state, root, store])</p></td>
+<td><p>Every message sent or held outside a case, a line each: id, state, and where it goes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_reject_draft" title="liaise.cli.message_reject_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_reject_draft</span></code></a>(message_id, *[, ...])</p></td>
+<td><p>Decline a held message, recording <code class="docutils literal notranslate"><span class="pre">--reason</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_send" title="liaise.cli.message_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send</span></code></a>(recipient, *[, ref, text, ...])</p></td>
+<td><p>Send a message to PERSON outside any case, through the gate, or hold it for the operator.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_send_draft" title="liaise.cli.message_send_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send_draft</span></code></a>(message_id, *[, edit, ...])</p></td>
+<td><p>Send a held message you approved, through the gate, as <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code> does.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_show" title="liaise.cli.message_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_show</span></code></a>(message_id, *[, root, store])</p></td>
+<td><p>MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.migrate_config" title="liaise.cli.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>(*[, root, apply])</p></td>
 <td><p>Derive 0.1 subject files from a 0.0.x configuration, and print the plan.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.run" title="liaise.cli.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(*[, root, once, dry_run, subject, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.run" title="liaise.cli.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(*[, root, once, dry_run, subject, ...])</p></td>
 <td><p>One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_install" title="liaise.cli.schedule_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_install</span></code></a>(*[, root, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_install" title="liaise.cli.schedule_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_install</span></code></a>(*[, root, ...])</p></td>
 <td><p>Install the scheduled <code class="code docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">run</span> <span class="pre">--once</span></code> job (launchd on macOS, systemd on Linux).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_status_cmd" title="liaise.cli.schedule_status_cmd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_status_cmd</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_status_cmd" title="liaise.cli.schedule_status_cmd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_status_cmd</span></code></a>()</p></td>
 <td><p>Whether the scheduled job is installed.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_uninstall" title="liaise.cli.schedule_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_uninstall</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_uninstall" title="liaise.cli.schedule_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_uninstall</span></code></a>()</p></td>
 <td><p>Remove the scheduled job.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.setup" title="liaise.cli.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>(subject, *[, root, labeler])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.setup" title="liaise.cli.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>(subject, *[, root, labeler])</p></td>
 <td><p>Create SUBJECT's labels in each GitHub repository it binds.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.status" title="liaise.cli.status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status</span></code></a>(*[, root, store, now])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.status" title="liaise.cli.status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status</span></code></a>(*[, root, store, now])</p></td>
 <td><p>What the ledger says, changing nothing: the last run, holds, runs, cases, what waits on you.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.subject_list" title="liaise.cli.subject_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_list</span></code></a>(*[, root])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.subject_list" title="liaise.cli.subject_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_list</span></code></a>(*[, root])</p></td>
 <td><p>Every configured subject with its bindings, flagging any binding that could never match.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.subject_show" title="liaise.cli.subject_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_show</span></code></a>(slug, *[, root])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.subject_show" title="liaise.cli.subject_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_show</span></code></a>(slug, *[, root])</p></td>
 <td><p>The subject SLUG as liaise reads it, every default applied, and its binding problems.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.unhold" title="liaise.cli.unhold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unhold</span></code></a>(scope, *[, root, store])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.unhold" title="liaise.cli.unhold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unhold</span></code></a>(scope, *[, root, store])</p></td>
 <td><p>Lift the hold on SCOPE, whoever set it.</p></td>
 </tr>
 </tbody>
@@ -583,8 +611,14 @@ for the operator, as <code class="docutils literal notranslate"><span class="pre
 
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.cli.NO_TERMINAL">
-<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">NO_TERMINAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span> <span class="pre">sends</span> <span class="pre">a</span> <span class="pre">draft</span> <span class="pre">only</span> <span class="pre">once</span> <span class="pre">you</span> <span class="pre">confirm</span> <span class="pre">it</span> <span class="pre">at</span> <span class="pre">a</span> <span class="pre">terminal,</span> <span class="pre">and</span> <span class="pre">there</span> <span class="pre">is</span> <span class="pre">no</span> <span class="pre">terminal</span> <span class="pre">here,</span> <span class="pre">so</span> <span class="pre">nothing</span> <span class="pre">was</span> <span class="pre">sent:</span> <span class="pre">run</span> <span class="pre">it</span> <span class="pre">in</span> <span class="pre">your</span> <span class="pre">own</span> <span class="pre">shell</span> <span class="pre">(--dry-run</span> <span class="pre">asks</span> <span class="pre">nothing)'</span></span><a class="headerlink" href="#liaise.cli.NO_TERMINAL" title="Link to this definition">#</a></dt>
-<dd><p>Why <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code> sends nothing without a terminal to ask at.</p>
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">NO_TERMINAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'a</span> <span class="pre">held</span> <span class="pre">message</span> <span class="pre">is</span> <span class="pre">sent</span> <span class="pre">only</span> <span class="pre">once</span> <span class="pre">you</span> <span class="pre">confirm</span> <span class="pre">it</span> <span class="pre">at</span> <span class="pre">a</span> <span class="pre">terminal,</span> <span class="pre">and</span> <span class="pre">there</span> <span class="pre">is</span> <span class="pre">no</span> <span class="pre">terminal</span> <span class="pre">here,</span> <span class="pre">so</span> <span class="pre">nothing</span> <span class="pre">was</span> <span class="pre">sent:</span> <span class="pre">run</span> <span class="pre">it</span> <span class="pre">in</span> <span class="pre">your</span> <span class="pre">own</span> <span class="pre">shell</span> <span class="pre">(--dry-run</span> <span class="pre">asks</span> <span class="pre">nothing)'</span></span><a class="headerlink" href="#liaise.cli.NO_TERMINAL" title="Link to this definition">#</a></dt>
+<dd><p>Why <code class="docutils literal notranslate"><span class="pre">send-draft</span></code> sends nothing without a terminal to ask at.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.cli.STDIN_FILE_NAME">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">STDIN_FILE_NAME</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'-'</span></span><a class="headerlink" href="#liaise.cli.STDIN_FILE_NAME" title="Link to this definition">#</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">--text-file</span></code> that reads a message’s text from standard input.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -595,8 +629,20 @@ for the operator, as <code class="docutils literal notranslate"><span class="pre
 
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.cli.TICK_RUNNING">
-<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">TICK_RUNNING</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'a</span> <span class="pre">liaise</span> <span class="pre">tick</span> <span class="pre">is</span> <span class="pre">running,</span> <span class="pre">so</span> <span class="pre">{case_id}</span> <span class="pre">was</span> <span class="pre">not</span> <span class="pre">{done};</span> <span class="pre">try</span> <span class="pre">again</span> <span class="pre">shortly</span> <span class="pre">({busy})'</span></span><a class="headerlink" href="#liaise.cli.TICK_RUNNING" title="Link to this definition">#</a></dt>
-<dd><p>What a case command that writes says, changing nothing, while a tick holds the run lock.</p>
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">TICK_RUNNING</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'a</span> <span class="pre">liaise</span> <span class="pre">tick</span> <span class="pre">is</span> <span class="pre">running,</span> <span class="pre">so</span> <span class="pre">{what}</span> <span class="pre">was</span> <span class="pre">not</span> <span class="pre">{done};</span> <span class="pre">try</span> <span class="pre">again</span> <span class="pre">shortly</span> <span class="pre">({busy})'</span></span><a class="headerlink" href="#liaise.cli.TICK_RUNNING" title="Link to this definition">#</a></dt>
+<dd><p>What a command that writes a case or a message says, changing nothing, while a tick
+holds the run lock.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.cli.TITLE_LINE_PREFIX">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">TITLE_LINE_PREFIX</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Title:</span> <span class="pre">'</span></span><a class="headerlink" href="#liaise.cli.TITLE_LINE_PREFIX" title="Link to this definition">#</a></dt>
+<dd><p>a first line, then a rule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>How <code class="docutils literal notranslate"><span class="pre">--edit</span></code> sets a message’s title apart from its text</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -730,6 +776,84 @@ nonzero, so nothing is sent.</p>
 default) starts nothing new and keeps a finished run’s messages as drafts; <code class="docutils literal notranslate"><span class="pre">drain</span></code>
 starts nothing new and lets work already running finish and send; <code class="docutils literal notranslate"><span class="pre">cancel</span></code> also
 stops running runs, which stay resumable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.message_list">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">message_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#message_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.message_list" title="Link to this definition">#</a></dt>
+<dd><p>Every message sent or held outside a case, a line each: id, state, and where it goes.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--state</span> <span class="pre">held</span></code> lists what waits on you. It changes nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.message_reject_draft">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">message_reject_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#message_reject_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.message_reject_draft" title="Link to this definition">#</a></dt>
+<dd><p>Decline a held message, recording <code class="docutils literal notranslate"><span class="pre">--reason</span></code>.</p>
+<p>Nothing is sent: the message is recorded as rejected, with its reason and its text. It
+holds the run lock. <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> changes nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.message_send">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">message_send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purpose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'ask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#message_send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.message_send" title="Link to this definition">#</a></dt>
+<dd><p>Send a message to PERSON outside any case, through the gate, or hold it for the operator.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--ref</span></code> is the conversation it goes to, and a subject must bind it: an issue
+(<code class="docutils literal notranslate"><span class="pre">github:example/app#12</span></code>), or a repository with <code class="docutils literal notranslate"><span class="pre">--title</span></code> to open an issue. That
+subject’s policy judges it, through the filters every message passes: reply mode, the
+leak scan (of the title too), the writing card, deslop and the mention. The text is
+<code class="docutils literal notranslate"><span class="pre">--text</span></code> or <code class="docutils literal notranslate"><span class="pre">--text-file</span></code> (<code class="docutils literal notranslate"><span class="pre">-</span></code> reads standard input). <code class="docutils literal notranslate"><span class="pre">--purpose</span></code> is <code class="docutils literal notranslate"><span class="pre">ask</span></code>,
+the default, <code class="docutils literal notranslate"><span class="pre">reply</span></code> or <code class="docutils literal notranslate"><span class="pre">propose</span></code>.</p>
+<p>In 0.1 the message is held for the operator: its sender chose where it goes, and only
+the operator’s release lets such a message out. A hold on the subject, the person or
+the repository keeps it too. It is recorded with its reason, the operator is told a
+message waits (never what it says), and the command exits 2, or 1 when its channel
+refused it. The operator sends it with <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">message</span> <span class="pre">send-draft</span></code>, and the gate
+judges it again then. Nothing opens a case or sets a label. <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> judges and
+plans, and records and tells nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.message_send_draft">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">message_send_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">edit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">editor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">confirm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#message_send_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.message_send_draft" title="Link to this definition">#</a></dt>
+<dd><p>Send a held message you approved, through the gate, as <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code> does.</p>
+<p>The gate judges it again with your approval recorded, and <code class="docutils literal notranslate"><span class="pre">--edit</span></code> opens it in your
+editor first. It shows where the message goes, the verdict and the exact text, and sends
+once you answer <code class="docutils literal notranslate"><span class="pre">y</span></code> at a terminal. A message the gate diverts stays held with the
+reason and exits 2; one its channel refuses exits 1. <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> judges and plans,
+asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps
+the message waiting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.message_show">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">message_show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#message_show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.message_show" title="Link to this definition">#</a></dt>
+<dd><p>MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.</p>
+<p>It changes nothing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -921,8 +1045,10 @@ queue, the drafts waiting for the operator, and the latest digest notes.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.EDITOR_ENV_VARS"><code class="docutils literal notranslate"><span class="pre">EDITOR_ENV_VARS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.NONE_SHOWN"><code class="docutils literal notranslate"><span class="pre">NONE_SHOWN</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.NO_TERMINAL"><code class="docutils literal notranslate"><span class="pre">NO_TERMINAL</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.STDIN_FILE_NAME"><code class="docutils literal notranslate"><span class="pre">STDIN_FILE_NAME</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.STOPPED"><code class="docutils literal notranslate"><span class="pre">STOPPED</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.TICK_RUNNING"><code class="docutils literal notranslate"><span class="pre">TICK_RUNNING</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.TITLE_LINE_PREFIX"><code class="docutils literal notranslate"><span class="pre">TITLE_LINE_PREFIX</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.case_list"><code class="docutils literal notranslate"><span class="pre">case_list()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.case_reject_draft"><code class="docutils literal notranslate"><span class="pre">case_reject_draft()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.case_send_draft"><code class="docutils literal notranslate"><span class="pre">case_send_draft()</span></code></a></li>
@@ -931,6 +1057,11 @@ queue, the drafts waiting for the operator, and the latest digest notes.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.confirm_at_terminal"><code class="docutils literal notranslate"><span class="pre">confirm_at_terminal()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.edit_in_editor"><code class="docutils literal notranslate"><span class="pre">edit_in_editor()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.hold"><code class="docutils literal notranslate"><span class="pre">hold()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_list"><code class="docutils literal notranslate"><span class="pre">message_list()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_reject_draft"><code class="docutils literal notranslate"><span class="pre">message_reject_draft()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_send"><code class="docutils literal notranslate"><span class="pre">message_send()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_send_draft"><code class="docutils literal notranslate"><span class="pre">message_send_draft()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_show"><code class="docutils literal notranslate"><span class="pre">message_show()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.migrate_config"><code class="docutils literal notranslate"><span class="pre">migrate_config()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.schedule_install"><code class="docutils literal notranslate"><span class="pre">schedule_install()</span></code></a></li>

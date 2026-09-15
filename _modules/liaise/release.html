@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../../_static/documentation_options.js?v=92734c54"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -714,11 +714,18 @@ window.runMermaid = runMermaid;</script>
 <span></span><span class="sd">"""Releasing a message: through the gate, then through correspond, as one step.</span>
 
 <span class="sd">Every message liaise sends goes through :func:`gate_and_send`. That covers what the tick</span>
-<span class="sd">sends for a run's outcomes, the tick's own notices, and a draft the operator releases</span>
-<span class="sd">with ``liaise case send-draft``. It runs :func:`liaise.gate.run_gate`, and only a message</span>
-<span class="sd">the gate passed reaches ``correspond.send``, as the filters left it. It records nothing:</span>
-<span class="sd">what a :class:`SendAttempt` means for a case, a draft or a notification is for its caller</span>
-<span class="sd">to keep.</span>
+<span class="sd">sends for a run's outcomes, the tick's own notices, a message an agent sends outside any</span>
+<span class="sd">case (``liaise message send``), and a draft the operator releases. It runs</span>
+<span class="sd">:func:`liaise.gate.run_gate`, and only a message the gate passed reaches</span>
+<span class="sd">``correspond.send``, as the filters left it. It records nothing: what a</span>
+<span class="sd">:class:`SendAttempt` means for a case, a message or a notification is for its caller to</span>
+<span class="sd">keep.</span>
+
+<span class="sd">**Releasing a held message.** :func:`release_draft` is the one way a message held for the</span>
+<span class="sd">operator goes out, whether it waits on a case (``liaise case send-draft``) or outside any</span>
+<span class="sd">(``liaise message send-draft``). It checks what must stop a release, runs</span>
+<span class="sd">:func:`gate_and_send` with the operator's :class:`~liaise.model.Approval` on the context,</span>
+<span class="sd">and hands back the ledger entry and the draft to keep, for the caller to record.</span>
 
 <span class="sd">One path for every sender is what makes the gate a gate. A filter added to it applies to</span>
 <span class="sd">all of them at once, and none of them has a way to send around it.</span>
@@ -728,9 +735,13 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">correspond</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.channels.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">REF_RE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConversationRef</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
@@ -740,9 +751,21 @@ window.runMermaid = runMermaid;</script>
     <span class="n">OutboundFilter</span><span class="p">,</span>
     <span class="n">run_gate</span><span class="p">,</span>
 <span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.holds</span><span class="w"> </span><span class="kn">import</span> <span class="n">blocking_hold</span><span class="p">,</span> <span class="n">scopes_for</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Approval</span><span class="p">,</span> <span class="n">Case</span><span class="p">,</span> <span class="n">LedgerEntry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outcomes</span><span class="w"> </span><span class="kn">import</span> <span class="n">HELD_REASON_PREFIX</span><span class="p">,</span> <span class="n">make_draft</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span>
 
 <span class="c1">#: Why a send failed when the channel said no without saying why.</span>
 <span class="n">DFLT_REFUSAL</span> <span class="o">=</span> <span class="s2">"the channel refused it"</span>
+<span class="c1">#: The outcome whose message announces a delivery.</span>
+<span class="n">DELIVER_PURPOSE</span> <span class="o">=</span> <span class="s2">"deliver"</span>
+<span class="c1">#: The entry kind a released or rejected draft is recorded as: a gate decision, as the</span>
+<span class="c1">#: tick's are.</span>
+<span class="n">DRAFT_ENTRY_KIND</span> <span class="o">=</span> <span class="s2">"gate"</span>
+<span class="c1">#: The channel whose references name repositories.</span>
+<span class="n">GITHUB_CHANNEL</span> <span class="o">=</span> <span class="s2">"github"</span>
 
 
 <div class="viewcode-block" id="error_text">
@@ -754,6 +777,46 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    'ValueError: no such channel'</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="github_repo">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.github_repo">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">github_repo</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``owner/repo``, lower-cased, of the repository a GitHub reference names: itself or one of its issues.</span>
+
+<span class="sd">    &gt;&gt;&gt; github_repo("github:Example/App#12"), github_repo("github:example/app")</span>
+<span class="sd">    ('example/app', 'example/app')</span>
+<span class="sd">    &gt;&gt;&gt; github_repo("webinbox:example-site") is None</span>
+<span class="sd">    True</span>
+<span class="sd">    """</span>
+    <span class="n">channel</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">native_id</span> <span class="o">=</span> <span class="p">(</span><span class="n">ref</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">REF_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">native_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">GITHUB_CHANNEL</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">'owner'</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">'repo'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">if</span> <span class="n">match</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="sendable_ref">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.sendable_ref">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">sendable_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``ref`` as a GitHub issue or repository reference, stripped and lower-cased.</span>
+
+<span class="sd">    &gt;&gt;&gt; sendable_ref(" github:Example/App#12 ")</span>
+<span class="sd">    'github:example/app#12'</span>
+
+<span class="sd">    Raises ``ValueError`` for anything else: another channel, a malformed reference, or an</span>
+<span class="sd">    issue number that is not a positive whole number.</span>
+<span class="sd">    """</span>
+    <span class="n">channel</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">native_id</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">REF_RE</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">native_id</span><span class="p">)</span> <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="n">GITHUB_CHANNEL</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">number</span> <span class="o">=</span> <span class="n">match</span><span class="p">[</span><span class="s2">"number"</span><span class="p">]</span> <span class="k">if</span> <span class="n">match</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">match</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">number</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ref</span><span class="si">!r}</span><span class="s2"> is not a GitHub issue (github:owner/repo#N) or repository "</span>
+            <span class="sa">f</span><span class="s2">"(github:owner/repo), the conversations a message outside a case goes to"</span>
+        <span class="p">)</span>
+    <span class="n">repo</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">GITHUB_CHANNEL</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">'owner'</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">match</span><span class="p">[</span><span class="s1">'repo'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">#</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">number</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">number</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">repo</span></div>
 
 
 
@@ -801,10 +864,10 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    The gate is :func:`liaise.gate.run_gate` with ``outbound_filters``, and a message it</span>
 <span class="sd">    diverts is not sent. A passed message goes to ``correspond.send`` as the filters left</span>
-<span class="sd">    it, on ``registry`` (correspond's own when None). ``dry_run`` asks correspond for its</span>
-<span class="sd">    plan and sends nothing. A channel that refuses the message, or raises, becomes a</span>
-<span class="sd">    ``failure`` on the attempt rather than an exception, so the caller still has the message</span>
-<span class="sd">    to keep.</span>
+<span class="sd">    it, its title included, on ``registry`` (correspond's own when None). ``dry_run`` asks</span>
+<span class="sd">    correspond for its plan and sends nothing. A channel that refuses the message, or</span>
+<span class="sd">    raises, becomes a ``failure`` on the attempt rather than an exception, so the caller</span>
+<span class="sd">    still has the message to keep.</span>
 <span class="sd">    """</span>
     <span class="n">decision</span> <span class="o">=</span> <span class="n">run_gate</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">outbound_filters</span><span class="o">=</span><span class="n">outbound_filters</span><span class="p">)</span>
     <span class="n">passed</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span>
@@ -812,7 +875,11 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span><span class="n">decision</span><span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">correspond</span><span class="o">.</span><span class="n">send</span><span class="p">(</span>
-            <span class="n">passed</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span> <span class="n">passed</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span>
+            <span class="n">passed</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+            <span class="n">passed</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">passed</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+            <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># an unknown channel, an adapter that raised</span>
         <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span>
@@ -826,6 +893,216 @@ window.runMermaid = runMermaid;</script>
         <span class="n">failure</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">error</span> <span class="ow">or</span> <span class="n">DFLT_REFUSAL</span><span class="p">,</span>
         <span class="n">failure_kind</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">error_kind</span><span class="p">,</span>
     <span class="p">)</span></div>
+
+
+
+<span class="c1"># ---- releasing a held message ----</span>
+
+
+<div class="viewcode-block" id="DraftSentNotRecorded">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.DraftSentNotRecorded">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DraftSentNotRecorded</span><span class="p">(</span><span class="ne">RuntimeError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A released message went out, and the ledger then failed to record that it did."""</span>
+
+<div class="viewcode-block" id="DraftSentNotRecorded.after">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.DraftSentNotRecorded.after">[docs]</a>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">after</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span>
+        <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">attempt</span><span class="p">:</span> <span class="n">SendAttempt</span><span class="p">,</span>
+        <span class="n">error</span><span class="p">:</span> <span class="ne">BaseException</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">reject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DraftSentNotRecorded</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""The error for ``label``, which ``attempt`` sent and the ledger failed to record.</span>
+
+<span class="sd">        ``reject`` is the command that takes the held message off, so it is not sent twice,</span>
+<span class="sd">        or None when there is no record to take it off.</span>
+<span class="sd">        """</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">where</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" as </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">url</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="n">take_off</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s1">' Take it off with </span><span class="si">{</span><span class="n">reject</span><span class="si">}</span><span class="s1"> --reason "sent, not recorded".'</span> <span class="k">if</span> <span class="n">reject</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> was sent</span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">, but the ledger could not record it "</span>
+            <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">): do not send it again.</span><span class="si">{</span><span class="n">take_off</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DraftOutcome">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.DraftOutcome">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DraftOutcome</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What :func:`release_draft` did with one held message, for its caller to record.</span>
+
+<span class="sd">    ``attempt`` is the gate's decision and the send, ``filters`` how many filters the gate</span>
+<span class="sd">    ran it through, and ``edited`` whether the operator's text replaced the draft's.</span>
+<span class="sd">    ``entry`` is the ``gate`` entry the release is recorded as. ``kept`` is the draft that</span>
+<span class="sd">    stays for the operator when nothing went out, and None once the message is sent. Both</span>
+<span class="sd">    are None for a plan (``send=False``) that the gate passed: nothing happened to record.</span>
+<span class="sd">    """</span>
+
+    <span class="n">attempt</span><span class="p">:</span> <span class="n">SendAttempt</span>
+    <span class="n">filters</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">edited</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">entry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LedgerEntry</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">kept</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+
+
+
+<div class="viewcode-block" id="release_draft">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.release_draft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">release_draft</span><span class="p">(</span>
+    <span class="n">draft</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">reject</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span>
+    <span class="n">case</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Case</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">text</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">MappingProxyType</span><span class="p">({}),</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">send</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DraftOutcome</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Release ``draft`` (a :func:`liaise.outcomes.make_draft` item) as ``by``, through the gate.</span>
+
+<span class="sd">    The message is the draft's text and title, or ``text`` and ``title`` when the operator</span>
+<span class="sd">    edited them. It goes to the draft's ``ref``, for its ``recipient``, carrying out its</span>
+<span class="sd">    ``outcome``, on the case ``case`` or outside any when that is None. It passes through</span>
+<span class="sd">    :func:`gate_and_send` with an :class:`~liaise.model.Approval` by ``by`` at ``now`` on</span>
+<span class="sd">    the context: draft reply mode lets it through, and every other filter judges it as it</span>
+<span class="sd">    judges any message, the mention included.</span>
+
+<span class="sd">    It asks no one and records nothing. Its caller shows the operator the verdict first,</span>
+<span class="sd">    from a dry run, and records the outcome's ``entry`` (with ``detail`` added to it) and,</span>
+<span class="sd">    when nothing went out, its ``kept`` draft. The kept draft holds the operator's text</span>
+<span class="sd">    without the mention the gate adds, and the new reason. ``send=False`` asks the channel</span>
+<span class="sd">    only for its plan. A dry run judges and plans as a send would. ``label`` names the</span>
+<span class="sd">    message in errors, and ``reject`` is the command that takes it off.</span>
+
+<span class="sd">    Raises ``ValueError``, sending nothing, for any of these:</span>
+
+<span class="sd">    - a draft with no destination, or no text;</span>
+<span class="sd">    - a ``deliver`` message a hold kept, whose delivery never ran;</span>
+<span class="sd">    - a hold on the subject, the recipient, the repository, the checkout or, for a</span>
+<span class="sd">      ``deliver`` message, the delivery, that keeps effects waiting.</span>
+<span class="sd">    """</span>
+    <span class="n">ref</span><span class="p">,</span> <span class="n">recipient</span><span class="p">,</span> <span class="n">purpose</span> <span class="o">=</span> <span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"ref"</span><span class="p">,</span> <span class="s2">"recipient"</span><span class="p">,</span> <span class="s2">"outcome"</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ref</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> has no destination (</span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span><span class="si">}</span><span class="s2">): send it yourself, then "</span>
+            <span class="sa">f</span><span class="s2">"take it off with </span><span class="si">{</span><span class="n">reject</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">channel</span> <span class="o">=</span> <span class="n">ConversationRef</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span><span class="o">.</span><span class="n">channel</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># correspond's InvalidRef, or anything a bad ref raises</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> goes to </span><span class="si">{</span><span class="n">ref</span><span class="si">!r}</span><span class="s2">: </span><span class="si">{</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+    <span class="n">delivers</span> <span class="o">=</span> <span class="n">purpose</span> <span class="o">==</span> <span class="n">DELIVER_PURPOSE</span>
+    <span class="k">if</span> <span class="n">delivers</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reason"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">HELD_REASON_PREFIX</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> tells </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> a change is live, but a hold kept that delivery "</span>
+            <span class="sa">f</span><span class="s2">"from running (</span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span><span class="si">}</span><span class="s2">), so nothing was sent: deliver the "</span>
+            <span class="sa">f</span><span class="s2">"change first, then take this draft off with </span><span class="si">{</span><span class="n">reject</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="k">if</span> <span class="n">text</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">text</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">body</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="n">hint</span> <span class="o">=</span> <span class="s2">"; write it with --edit"</span> <span class="k">if</span> <span class="n">text</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> has no text to send</span><span class="si">{</span><span class="n">hint</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">refs</span> <span class="o">=</span> <span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">conversations</span> <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">()))</span>
+    <span class="n">scopes</span> <span class="o">=</span> <span class="n">scopes_for</span><span class="p">(</span>
+        <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+        <span class="n">person</span><span class="o">=</span><span class="n">recipient</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">repo</span><span class="o">=</span><span class="nb">next</span><span class="p">(</span><span class="nb">filter</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="nb">map</span><span class="p">(</span><span class="n">github_repo</span><span class="p">,</span> <span class="n">refs</span><span class="p">)),</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">checkout</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">workspace</span><span class="o">.</span><span class="n">path</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">effect</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">delivery</span><span class="o">.</span><span class="n">kind</span> <span class="k">if</span> <span class="n">delivers</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">processor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">hold</span> <span class="o">=</span> <span class="n">blocking_hold</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">scopes</span><span class="p">,</span> <span class="n">for_</span><span class="o">=</span><span class="s2">"effect"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">waiting</span> <span class="o">=</span> <span class="s2">"this delivery"</span> <span class="k">if</span> <span class="n">delivers</span> <span class="k">else</span> <span class="s2">"these messages"</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> was not sent: the hold on </span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">) keeps "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">waiting</span><span class="si">}</span><span class="s2"> waiting; liaise unhold </span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2"> first"</span>
+        <span class="p">)</span>
+
+    <span class="n">approval</span> <span class="o">=</span> <span class="n">Approval</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="n">by</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">filters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">outbound_filters</span><span class="p">)</span>
+    <span class="n">headline</span> <span class="o">=</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span> <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">title</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">outbound</span> <span class="o">=</span> <span class="n">Outbound</span><span class="p">(</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+        <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
+        <span class="n">recipient</span><span class="o">=</span><span class="n">recipient</span><span class="p">,</span>
+        <span class="n">purpose</span><span class="o">=</span><span class="n">purpose</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">headline</span><span class="p">,</span>
+        <span class="n">case_id</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">GateContext</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="n">case</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">approval</span><span class="o">=</span><span class="n">approval</span><span class="p">)</span>
+    <span class="n">attempt</span> <span class="o">=</span> <span class="n">gate_and_send</span><span class="p">(</span>
+        <span class="n">outbound</span><span class="p">,</span>
+        <span class="n">context</span><span class="p">,</span>
+        <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+        <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">send</span><span class="p">,</span>
+        <span class="n">outbound_filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">decision</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span>
+    <span class="n">edited</span> <span class="o">=</span> <span class="n">body</span> <span class="o">!=</span> <span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="n">headline</span> <span class="o">!=</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">sent</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">send</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">DraftOutcome</span><span class="p">(</span><span class="n">attempt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">),</span> <span class="n">edited</span><span class="p">)</span>  <span class="c1"># a plan: nothing to record</span>
+    <span class="n">recorded</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"purpose"</span><span class="p">:</span> <span class="n">purpose</span><span class="p">,</span>
+        <span class="s2">"ref"</span><span class="p">:</span> <span class="n">ref</span><span class="p">,</span>
+        <span class="s2">"notes"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
+        <span class="o">**</span><span class="n">detail</span><span class="p">,</span>
+        <span class="s2">"held_for"</span><span class="p">:</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"reason"</span><span class="p">),</span>
+        <span class="s2">"edited"</span><span class="p">:</span> <span class="n">edited</span><span class="p">,</span>
+        <span class="s2">"approval"</span><span class="p">:</span> <span class="n">approval</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">url</span><span class="p">}</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
+            <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">DRAFT_ENTRY_KIND</span><span class="p">,</span>
+            <span class="n">actor</span><span class="o">=</span><span class="n">by</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">recorded</span><span class="p">,</span> <span class="o">**</span><span class="n">verdict</span><span class="p">},</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">DraftOutcome</span><span class="p">(</span><span class="n">attempt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">),</span> <span class="n">edited</span><span class="p">,</span> <span class="n">entry</span><span class="o">=</span><span class="n">entry</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"divert"</span><span class="p">,</span> <span class="s2">"reason"</span><span class="p">:</span> <span class="n">reason</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"send failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">verdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="p">}</span>
+    <span class="n">entry</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="n">DRAFT_ENTRY_KIND</span><span class="p">,</span>
+        <span class="n">actor</span><span class="o">=</span><span class="n">by</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">send</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">body</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">recorded</span><span class="p">,</span> <span class="o">**</span><span class="n">verdict</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">kept</span> <span class="o">=</span> <span class="n">make_draft</span><span class="p">(</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">outcome</span><span class="o">=</span><span class="n">purpose</span><span class="p">,</span>
+        <span class="n">recipient</span><span class="o">=</span><span class="n">recipient</span><span class="p">,</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>  <span class="c1"># the gate adds the mention again, for the handle of that day</span>
+        <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">headline</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">DraftOutcome</span><span class="p">(</span><span class="n">attempt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">),</span> <span class="n">edited</span><span class="p">,</span> <span class="n">entry</span><span class="o">=</span><span class="n">entry</span><span class="p">,</span> <span class="n">kept</span><span class="o">=</span><span class="n">kept</span><span class="p">)</span></div>
 
 </pre></div>
 

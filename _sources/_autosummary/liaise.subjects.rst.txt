@@ -28,6 +28,7 @@ liaise.subjects
       normalize_binding
       poll_ref
       ref_key
+      subject_for_ref
    
    .. rubric:: Classes
 

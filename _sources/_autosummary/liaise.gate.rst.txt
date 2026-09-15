@@ -9,6 +9,8 @@ liaise.gate
    .. autosummary::
    
       DRAFT_REPLY_MODE
+      OUTSIDE_A_CASE
+      DRAFT_REPLY_REASON
       MENTION_CHANNEL
       OutboundFilter
       DFLT_OUTBOUND_FILTERS

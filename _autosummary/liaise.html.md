@@ -484,6 +484,13 @@ The tick’s reads of the case’s issue state; an empty `IssueCheck` before any
 * **Return type:**
   [`IssueCheck`](liaise.model.html.md#liaise.model.IssueCheck)
 
+#### get_message(message_id)
+
+The message outside a case with `message_id`, or None.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`OutboundMessage`](liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### get_run(run_id)
 
 The record of the run `run_id`, or None.
@@ -521,6 +528,15 @@ Record the event with `delivery_id` as taken in, so [`seen()`](#liaise.Ledger.se
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+#### messages(, subject=None, state=None)
+
+Every message outside a case, or those of `subject`, or in `state`; in no set order.
+
+Raises `ValueError` for a state outside [`MESSAGE_STATES`](liaise.model.html.md#liaise.model.MESSAGE_STATES).
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`OutboundMessage`](liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### new_case(subject, conversation, , reporter, at)
 
 Open a case on `conversation` (an encoded ref), numbered `<subject>-<n>`.
@@ -530,6 +546,15 @@ the conversation already belongs to a case: its messages go to that case.
 
 * **Return type:**
   [`Case`](liaise.model.html.md#liaise.model.Case)
+
+#### new_message_id(subject)
+
+A fresh `<subject>-m<hex>` id for a message outside a case, unused in the ledger.
+
+The hex part is random, not counted, so two agents sending at once need no lock.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 #### runs(, status=None)
 
@@ -551,6 +576,13 @@ to another case.
 #### save_issue_check(case_id, check)
 
 Write `check`, replacing what the ledger held of the case’s issue state reads.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### save_message(message)
+
+Write `message`, replacing what the ledger held under its id.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -1012,6 +1044,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`github`](liaise.github.html.md#module-liaise.github)         | The GitHub seam: one protocol, two implementations.                                                                  |
 | [`holds`](liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
 | [`ledger`](liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
+| [`messages`](liaise.messages.html.md#module-liaise.messages)     | Messages outside a case: what an agent says to a person on its own initiative, through the gate.                     |
 | [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
 | [`model`](liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |
 | [`outcomes`](liaise.outcomes.html.md#module-liaise.outcomes)     | Outcomes: what a processor run reports, checked, then planned into actions.                                          |

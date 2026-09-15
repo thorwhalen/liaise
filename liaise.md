@@ -1,4 +1,4 @@
-> built 2026-09-15 14:30 UTC from 14a62fd (main) · liaise 0.1.1. Details: build_info.json
+> built 2026-09-15 15:07 UTC from b1fd353 (main) · liaise 0.1.2. Details: build_info.json
 
 # index.html.md
 
@@ -174,6 +174,8 @@ The first filter that diverts ends the gate: the message is not sent, it is kept
 
 **Sending a draft.** A draft waits for you, and nothing sends it on its own. `liaise case show <case>` numbers each draft, and `liaise case send-draft <case> [INDEX]` sends the one you approve. The gate runs again on it, with your approval recorded on the case: draft reply mode lets it through, and the leak scan, deslop and the mention judge it as they judge any message. `--edit` opens the text in `$VISUAL` or `$EDITOR` first, and the gate judges what you saved, so a path pasted into an edit is stopped like one the agent wrote. It then shows you where the message goes, the gate’s verdict and the exact text, and sends only once you answer `y` at a terminal. An agent’s shell or a processor run has no terminal, so neither can release a draft. A message the gate diverts again, or that its channel refuses, stays on the case with the new reason. Once the last draft is sent, a case in `needs-owner` whose draft was an `ask`, `reply` or `propose` moves to `needs-partner`; after an escalation’s text, move it on yourself. A delivery message whose delivery a hold kept is refused, since that change was never delivered. `liaise case reject-draft <case> [INDEX] --reason TEXT` takes a draft off the case without sending it, and records why.
 
+**Messages outside a case.** An agent working on a subject can write to a person without opening a case: `liaise message send PERSON --ref REF --text-file FILE`. The subject is the one whose bindings take the reference in, an issue of a bound repository or the repository itself (with `--title`, which opens an issue). A reference no subject binds is refused, and no caller can pick a different subject. In 0.1 every such message waits for you, whatever the reply mode: its sender chose where it goes and to whom, and until `liaise` can tell who reads a conversation and what the sender had read, only your release lets it out. It is recorded and held, `liaise status` lists it, the command exits 2, and you are told a message waits, never what it says, when a subject’s queue of held messages stops being empty. A hold on the subject, the person or the repository keeps it as well. `liaise message send-draft <id>` shows you the destination, the gate’s verdict and the exact text, and sends it once you confirm at a terminal. The gate judges it again then, so the leak scan (of the title too), deslop and the mention still apply, and `--edit` can fix the title as well as the text. `liaise message list`, `show` and `reject-draft` work like their case counterparts. No message opens a case or sets a label.
+
 ### The processor
 
 `ClaudeHeadless` (the `processor=` seam) runs the `claude` CLI headless: `claude -p` pointing at a prompt file, `--output-format stream-json --verbose`, the subject’s `--permission-mode` (`auto` by default, and the same on a resume), `--json-schema` for the outcomes, and `--session-id` for a new session or `--resume` for the case’s stored one. The run is spawned detached, in its own process group, so the tick returns at once and the run outlives it. Its environment drops `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so it runs on the account `claude` is logged in to rather than billing a key. Before each start, preflight checks that `claude` and the checkout exist and that `claude auth status` passes.
@@ -247,6 +249,9 @@ A subject’s runs share its checkout (`workspace.path`, behind the `workspace=`
 - `liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]`: move a case as you, recorded on the case; this is how a case in `needs-owner` or `deployed` moves on. `intake` has the tick start it again once it is ready, resuming its session. Any state but `working` is allowed, and a case with a run in flight is refused. While a tick is running it refuses too, changing nothing: try again once the tick is done. Its label follows on the next tick; `--dry-run` writes nothing.
 - `liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]`: send a draft you approved, through the gate again with your approval recorded. INDEX is the number `case show` gives the draft, and may be left out when the case holds one. `--edit` opens the text in your editor first. It shows the message and the gate’s verdict, and sends once you confirm at a terminal. Once sent, the draft leaves the case, and a case in `needs-owner` with no draft left moves on. A draft the gate diverts stays with its new reason and exits 2; one its channel refuses stays and exits 1. It refuses while a tick is running, while a hold keeps the case’s messages waiting, and while a run of the case is in flight. `--dry-run` judges and plans, asks nothing, and records nothing.
 - `liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]`: take a draft off the case without sending it, recording why. The case’s state stays; move it on with `set-state`.
+- `liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE] [--purpose ask|reply|propose] [--dry-run]`: a message outside any case, to a GitHub issue a subject binds, or to a repository with `--title`, which opens an issue. It is judged by the gate and, in 0.1, held for you to release, exiting 2. `--text-file -` reads standard input. `--dry-run` records and tells nothing.
+- `liaise message list [--state held|sent|rejected]` and `liaise message show MESSAGE_ID`: the messages sent or held outside a case, and one with its text and history. They change nothing.
+- `liaise message send-draft MESSAGE_ID [--edit] [--dry-run]` and `liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]`: send a held message after confirming it at a terminal, or decline it; as `case send-draft` and `case reject-draft` do for a case’s drafts.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
 - `liaise setup SUBJECT`: create the subject’s claim labels and every state label in each repository it binds. Safe to run again.
 - `liaise migrate-config [--apply]`: derive subject files from a 0.0.x configuration; a dry run unless `--apply`.
@@ -461,14 +466,13 @@ that the operator declined one, and why.
 | [`TEXT_INDENT`](_autosummary/liaise.cases.html.md#liaise.cases.TEXT_INDENT)            | How `liaise case show` indents a draft's text and a deploy's output.                                                                                                                                                                                           |
 | [`NEEDS_OWNER`](_autosummary/liaise.cases.html.md#liaise.cases.NEEDS_OWNER)            | The state a held message leaves its case waiting on the operator in.                                                                                                                                                                                           |
 | [`STATE_AFTER_SENT_DRAFT`](_autosummary/liaise.cases.html.md#liaise.cases.STATE_AFTER_SENT_DRAFT) | Where a case in [`NEEDS_OWNER`](_autosummary/liaise.cases.html.md#liaise.cases.NEEDS_OWNER) goes once the operator sends its last draft, by the outcome that draft carries out: a question, a reply or a proposal now waits on the reporter, as it does when a run sends one. |
-| [`DELIVER_PURPOSE`](_autosummary/liaise.cases.html.md#liaise.cases.DELIVER_PURPOSE)        | The outcome whose message announces a delivery.                                                                                                                                                                                                                |
-| [`DRAFT_ENTRY_KIND`](_autosummary/liaise.cases.html.md#liaise.cases.DRAFT_ENTRY_KIND)       | a gate decision, as the tick's are.                                                                                                                                                                                                                            |
 
 ### Functions
 
 | [`case_lines`](_autosummary/liaise.cases.html.md#liaise.cases.case_lines)(store, \*[, state])                    | What `liaise case list` prints: `<case id>\t<state>\t<conversations>` per case.                                    |
 |----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | [`case_show_lines`](_autosummary/liaise.cases.html.md#liaise.cases.case_show_lines)(store, case_id, \*[, entries])    | What `liaise case show` prints: the case `case_id`, with all a notification leaves out.                            |
+| [`entry_line`](_autosummary/liaise.cases.html.md#liaise.cases.entry_line)(entry)                                 | One entry on one line: when, what, by whom, its detail, and the start of its text.                                 |
 | [`find_draft`](_autosummary/liaise.cases.html.md#liaise.cases.find_draft)(ledger, case_id, \*[, index])          | `(index, draft)` of the case `case_id`, as [`pick_draft()`](_autosummary/liaise.cases.html.md#liaise.cases.pick_draft) picks it. |
 | [`pick_draft`](_autosummary/liaise.cases.html.md#liaise.cases.pick_draft)(case[, index])                         | `(index, draft)`: `case`'s draft at `index`, or its only draft when `index` is None.                               |
 | [`reject_draft`](_autosummary/liaise.cases.html.md#liaise.cases.reject_draft)(ledger, case_id, \*, reason[, ...])  | Decline the case `case_id`'s draft at `index` as `by`, recording `reason`.                                         |
@@ -481,15 +485,6 @@ that the operator declined one, and why.
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`DraftRelease`](_autosummary/liaise.cases.html.md#liaise.cases.DraftRelease)(index, draft, attempt, filters, ...) | What [`send_draft()`](_autosummary/liaise.cases.html.md#liaise.cases.send_draft) did with one of a case's drafts.                                |
 
-### Exceptions
-
-| [`DraftSentNotRecorded`](_autosummary/liaise.cases.html.md#liaise.cases.DraftSentNotRecorded)   | A released draft went out, and the ledger then failed to record that it did.   |
-|-------------------------------------------------------------------------|--------------------------------------------------------------------------------|
-
-### liaise.cases.DELIVER_PURPOSE *= 'deliver'*
-
-The outcome whose message announces a delivery.
-
 ### liaise.cases.DFLT_OPERATOR_REASON *= 'set by the operator'*
 
 The reason recorded for a state the operator set without giving one.
@@ -497,13 +492,6 @@ The reason recorded for a state the operator set without giving one.
 ### liaise.cases.DFLT_SHOW_ENTRIES *= 12*
 
 How many of a case’s latest entries `liaise case show` lists.
-
-### liaise.cases.DRAFT_ENTRY_KIND *= 'gate'*
-
-a gate decision, as the tick’s are.
-
-* **Type:**
-  The entry kind a sent or rejected draft is recorded as
 
 ### *class* liaise.cases.DraftRejection(index, draft, case)
 
@@ -522,12 +510,6 @@ decision and the send (see [`SendAttempt`](_autosummary/liaise.release.html.md#l
 how many filters the gate ran it through. `edited` says whether the operator’s text
 replaced the draft’s. `case` is the case as the release left it, or would leave it in
 a dry run, and `moved` is its `(from, to)` states when the send moved it on.
-
-### *exception* liaise.cases.DraftSentNotRecorded
-
-Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#RuntimeError)
-
-A released draft went out, and the ledger then failed to record that it did.
 
 ### liaise.cases.ESCALATION_KINDS *= ('escalate', 'decline')*
 
@@ -593,6 +575,13 @@ a line each with its detail and the start of its text. Reads only. Raises
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
+### liaise.cases.entry_line(entry)
+
+One entry on one line: when, what, by whom, its detail, and the start of its text.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.cases.find_draft(ledger, case_id, , index=None)
 
 `(index, draft)` of the case `case_id`, as [`pick_draft()`](_autosummary/liaise.cases.html.md#liaise.cases.pick_draft) picks it.
@@ -627,20 +616,20 @@ not hold, and a draft [`pick_draft()`](_autosummary/liaise.cases.html.md#liaise.
 * **Return type:**
   [`DraftRejection`](_autosummary/liaise.cases.html.md#liaise.cases.DraftRejection)
 
-### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by='operator', now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
 
 Send the case `case_id`’s draft at `index` as `by`, through the gate again.
 
-The message is the draft’s text, or `text` when the operator edited it. It goes to
-the draft’s `ref`, for its `recipient`, carrying out its `outcome`. It passes
-through [`liaise.release.gate_and_send()`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send), with an [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval)
+The message is the draft’s text, or `text` when the operator edited it. It goes out
+through [`liaise.release.release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft), with an [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval)
 by `by` at `now` (the current UTC time when None) on the gate’s context. Draft
 reply mode lets it through, and every other filter judges it as it would a message
 the tick sends, the mention included.
 
-It asks no one. Its caller shows the operator the message and the gate’s verdict
-first, from a dry run, and passes the draft they saw as `seen`, as
-`liaise case send-draft` does.
+It asks no one, and `by` has no default: the caller says who releases the draft. Its
+caller shows the operator the message and the gate’s verdict first, from a dry run, and
+passes the draft they saw as `seen`, as `liaise case send-draft` does after asking
+at a terminal.
 
 - **Sent:** the draft leaves the case. A `gate` entry by `by` records the text as
   it went out, its url, the approval and why the draft was held. Once no draft is
@@ -659,12 +648,10 @@ Raises `ValueError`, sending and writing nothing, for any of these:
 - a case the ledger does not hold, one with a run in flight, or one whose subject is
   not in `subjects`;
 - a draft [`pick_draft()`](_autosummary/liaise.cases.html.md#liaise.cases.pick_draft) cannot pick, or one that changed since `seen`;
-- a draft with no destination, or no text to send;
-- a `deliver` message a hold kept, whose delivery never ran;
-- a hold that keeps the case’s messages, or for a `deliver` message its delivery,
-  waiting.
+- anything [`liaise.release.release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) refuses: no destination or no text, a
+  `deliver` message a hold kept, a hold that keeps the case’s effects waiting.
 
-Raises [`DraftSentNotRecorded`](_autosummary/liaise.cases.html.md#liaise.cases.DraftSentNotRecorded) when the message went out and the ledger then
+Raises `DraftSentNotRecorded` when the message went out and the ledger then
 failed to record it.
 
 * **Return type:**
@@ -706,6 +693,12 @@ liaise case show CASE_ID
 liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
 liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
 liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
+liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
+    [--purpose PURPOSE] [--dry-run]
+liaise message list [--state STATE]
+liaise message show MESSAGE_ID
+liaise message send-draft MESSAGE_ID [--edit] [--dry-run]
+liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
 liaise subject list
 liaise subject show SLUG
 liaise setup SUBJECT
@@ -729,17 +722,19 @@ traceback.
 
 ### Module Attributes
 
-| [`DFLT_LOOP_SECONDS`](_autosummary/liaise.cli.html.md#liaise.cli.DFLT_LOOP_SECONDS)   | Seconds between two ticks of `liaise run` without `--once`.                                    |
-|----------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| [`STOPPED`](_autosummary/liaise.cli.html.md#liaise.cli.STOPPED)             | What `liaise run` without `--once` returns once it is interrupted.                             |
-| [`NONE_SHOWN`](_autosummary/liaise.cli.html.md#liaise.cli.NONE_SHOWN)          | How `liaise subject show` prints an empty or unset value.                                      |
-| [`TICK_RUNNING`](_autosummary/liaise.cli.html.md#liaise.cli.TICK_RUNNING)        | What a case command that writes says, changing nothing, while a tick holds the run lock.       |
-| [`EDITOR_ENV_VARS`](_autosummary/liaise.cli.html.md#liaise.cli.EDITOR_ENV_VARS)     | The environment variables that name the operator's editor, the first one set winning.          |
-| [`DFLT_EDITOR`](_autosummary/liaise.cli.html.md#liaise.cli.DFLT_EDITOR)         | The editor `liaise case send-draft --edit` opens when no variable names one.                   |
-| [`DRAFT_FILE_NAME`](_autosummary/liaise.cli.html.md#liaise.cli.DRAFT_FILE_NAME)     | The file `--edit` puts the draft in, inside a temporary directory of its own.                  |
-| [`CONFIRM_PROMPT`](_autosummary/liaise.cli.html.md#liaise.cli.CONFIRM_PROMPT)      | What `liaise case send-draft` asks at the terminal, and the answers that send.                 |
-| [`DIVERTED_EXIT_CODE`](_autosummary/liaise.cli.html.md#liaise.cli.DIVERTED_EXIT_CODE)  | the message is held for the operator, as `liaise vet` is planned to say (discussion 32, §5.8). |
-| [`NO_TERMINAL`](_autosummary/liaise.cli.html.md#liaise.cli.NO_TERMINAL)         | Why `liaise case send-draft` sends nothing without a terminal to ask at.                       |
+| [`DFLT_LOOP_SECONDS`](_autosummary/liaise.cli.html.md#liaise.cli.DFLT_LOOP_SECONDS)   | Seconds between two ticks of `liaise run` without `--once`.                                             |
+|----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------|
+| [`STOPPED`](_autosummary/liaise.cli.html.md#liaise.cli.STOPPED)             | What `liaise run` without `--once` returns once it is interrupted.                                      |
+| [`NONE_SHOWN`](_autosummary/liaise.cli.html.md#liaise.cli.NONE_SHOWN)          | How `liaise subject show` prints an empty or unset value.                                               |
+| [`TICK_RUNNING`](_autosummary/liaise.cli.html.md#liaise.cli.TICK_RUNNING)        | What a command that writes a case or a message says, changing nothing, while a tick holds the run lock. |
+| [`STDIN_FILE_NAME`](_autosummary/liaise.cli.html.md#liaise.cli.STDIN_FILE_NAME)     | The `--text-file` that reads a message's text from standard input.                                      |
+| [`TITLE_LINE_PREFIX`](_autosummary/liaise.cli.html.md#liaise.cli.TITLE_LINE_PREFIX)   | a first line, then a rule.                                                                              |
+| [`EDITOR_ENV_VARS`](_autosummary/liaise.cli.html.md#liaise.cli.EDITOR_ENV_VARS)     | The environment variables that name the operator's editor, the first one set winning.                   |
+| [`DFLT_EDITOR`](_autosummary/liaise.cli.html.md#liaise.cli.DFLT_EDITOR)         | The editor `liaise case send-draft --edit` opens when no variable names one.                            |
+| [`DRAFT_FILE_NAME`](_autosummary/liaise.cli.html.md#liaise.cli.DRAFT_FILE_NAME)     | The file `--edit` puts the draft in, inside a temporary directory of its own.                           |
+| [`CONFIRM_PROMPT`](_autosummary/liaise.cli.html.md#liaise.cli.CONFIRM_PROMPT)      | What `liaise case send-draft` asks at the terminal, and the answers that send.                          |
+| [`DIVERTED_EXIT_CODE`](_autosummary/liaise.cli.html.md#liaise.cli.DIVERTED_EXIT_CODE)  | the message is held for the operator, as `liaise vet` is planned to say (discussion 32, §5.8).          |
+| [`NO_TERMINAL`](_autosummary/liaise.cli.html.md#liaise.cli.NO_TERMINAL)         | Why `send-draft` sends nothing without a terminal to ask at.                                            |
 
 ### Functions
 
@@ -752,6 +747,11 @@ traceback.
 | [`confirm_at_terminal`](_autosummary/liaise.cli.html.md#liaise.cli.confirm_at_terminal)(preview)                       | Show `preview` and ask, at the operator's terminal, whether to send it; True for yes.        |
 | [`edit_in_editor`](_autosummary/liaise.cli.html.md#liaise.cli.edit_in_editor)(text)                               | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.             |
 | [`hold`](_autosummary/liaise.cli.html.md#liaise.cli.hold)(scope, \*[, mode, reason, root, store])       | Stop work in SCOPE until `liaise unhold`.                                                    |
+| [`message_list`](_autosummary/liaise.cli.html.md#liaise.cli.message_list)(\*[, state, root, store])             | Every message sent or held outside a case, a line each: id, state, and where it goes.        |
+| [`message_reject_draft`](_autosummary/liaise.cli.html.md#liaise.cli.message_reject_draft)(message_id, \*[, ...])        | Decline a held message, recording `--reason`.                                                |
+| [`message_send`](_autosummary/liaise.cli.html.md#liaise.cli.message_send)(recipient, \*[, ref, text, ...])      | Send a message to PERSON outside any case, through the gate, or hold it for the operator.    |
+| [`message_send_draft`](_autosummary/liaise.cli.html.md#liaise.cli.message_send_draft)(message_id, \*[, edit, ...])    | Send a held message you approved, through the gate, as `liaise case send-draft` does.        |
+| [`message_show`](_autosummary/liaise.cli.html.md#liaise.cli.message_show)(message_id, \*[, root, store])        | MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.     |
 | [`migrate_config`](_autosummary/liaise.cli.html.md#liaise.cli.migrate_config)(\*[, root, apply])                  | Derive 0.1 subject files from a 0.0.x configuration, and print the plan.                     |
 | [`run`](_autosummary/liaise.cli.html.md#liaise.cli.run)(\*[, root, once, dry_run, subject, ...])       | One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.     |
 | [`schedule_install`](_autosummary/liaise.cli.html.md#liaise.cli.schedule_install)(\*[, root, ...])                  | Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux).          |
@@ -796,17 +796,29 @@ The environment variables that name the operator’s editor, the first one set w
 
 How `liaise subject show` prints an empty or unset value.
 
-### liaise.cli.NO_TERMINAL *= 'liaise case send-draft sends a draft only once you confirm it at a terminal, and there is no terminal here, so nothing was sent: run it in your own shell (--dry-run asks nothing)'*
+### liaise.cli.NO_TERMINAL *= 'a held message is sent only once you confirm it at a terminal, and there is no terminal here, so nothing was sent: run it in your own shell (--dry-run asks nothing)'*
 
-Why `liaise case send-draft` sends nothing without a terminal to ask at.
+Why `send-draft` sends nothing without a terminal to ask at.
+
+### liaise.cli.STDIN_FILE_NAME *= '-'*
+
+The `--text-file` that reads a message’s text from standard input.
 
 ### liaise.cli.STOPPED *= 'stopped'*
 
 What `liaise run` without `--once` returns once it is interrupted.
 
-### liaise.cli.TICK_RUNNING *= 'a liaise tick is running, so {case_id} was not {done}; try again shortly ({busy})'*
+### liaise.cli.TICK_RUNNING *= 'a liaise tick is running, so {what} was not {done}; try again shortly ({busy})'*
 
-What a case command that writes says, changing nothing, while a tick holds the run lock.
+What a command that writes a case or a message says, changing nothing, while a tick
+holds the run lock.
+
+### liaise.cli.TITLE_LINE_PREFIX *= 'Title: '*
+
+a first line, then a rule.
+
+* **Type:**
+  How `--edit` sets a message’s title apart from its text
 
 ### liaise.cli.case_list(, state=None, root=None, store=None)
 
@@ -922,6 +934,70 @@ SCOPE is `global`, `processor`, `effect:<kind>`, `subject:<slug>`,
 default) starts nothing new and keeps a finished run’s messages as drafts; `drain`
 starts nothing new and lets work already running finish and send; `cancel` also
 stops running runs, which stay resumable.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_list(, state=None, root=None, store=None)
+
+Every message sent or held outside a case, a line each: id, state, and where it goes.
+
+`--state held` lists what waits on you. It changes nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_reject_draft(message_id, , reason='', dry_run=False, root=None, store=None, now=None)
+
+Decline a held message, recording `--reason`.
+
+Nothing is sent: the message is recorded as rejected, with its reason and its text. It
+holds the run lock. `--dry-run` changes nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_send(recipient, , ref='', text='', text_file='', title='', purpose='ask', dry_run=False, root=None, registry=None, store=None, now=None, notify_fn=None)
+
+Send a message to PERSON outside any case, through the gate, or hold it for the operator.
+
+`--ref` is the conversation it goes to, and a subject must bind it: an issue
+(`github:example/app#12`), or a repository with `--title` to open an issue. That
+subject’s policy judges it, through the filters every message passes: reply mode, the
+leak scan (of the title too), the writing card, deslop and the mention. The text is
+`--text` or `--text-file` (`-` reads standard input). `--purpose` is `ask`,
+the default, `reply` or `propose`.
+
+In 0.1 the message is held for the operator: its sender chose where it goes, and only
+the operator’s release lets such a message out. A hold on the subject, the person or
+the repository keeps it too. It is recorded with its reason, the operator is told a
+message waits (never what it says), and the command exits 2, or 1 when its channel
+refused it. The operator sends it with `liaise message send-draft`, and the gate
+judges it again then. Nothing opens a case or sets a label. `--dry-run` judges and
+plans, and records and tells nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_send_draft(message_id, , edit=False, dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
+
+Send a held message you approved, through the gate, as `liaise case send-draft` does.
+
+The gate judges it again with your approval recorded, and `--edit` opens it in your
+editor first. It shows where the message goes, the verdict and the exact text, and sends
+once you answer `y` at a terminal. A message the gate diverts stays held with the
+reason and exits 2; one its channel refuses exits 1. `--dry-run` judges and plans,
+asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps
+the message waiting.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.message_show(message_id, , root=None, store=None)
+
+MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.
+
+It changes nothing.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -2026,8 +2102,8 @@ each [`Send`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Send) among t
 hands to [`run_gate()`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate) before anything reaches a channel. The gate runs
 [`DFLT_OUTBOUND_FILTERS`](_autosummary/liaise.gate.html.md#liaise.gate.DFLT_OUTBOUND_FILTERS), in this order:
 
-1. [`reply_mode()`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode): nothing goes directly to a person in `draft` reply mode, unless
-   the operator released it.
+1. [`reply_mode()`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode): nothing goes directly to a person in `draft` reply mode, nor any
+   message outside a case, unless the operator released it.
 2. [`leak_scan()`](_autosummary/liaise.gate.html.md#liaise.gate.leak_scan): on a public channel, nothing holding an absolute local path, a
    `.env` path, an email address, a private key, a token (wrapped across lines or not)
    or one of `policy.leak_terms`. It never redacts.
@@ -2051,30 +2127,32 @@ final text, with their [`Approval`](_autosummary/liaise.model.html.md#liaise.mod
 
 ### Module Attributes
 
-| [`DRAFT_REPLY_MODE`](_autosummary/liaise.gate.html.md#liaise.gate.DRAFT_REPLY_MODE)      | The reply mode in which liaise sends nothing without the operator.      |
-|------------------------------------------------------------------------|-------------------------------------------------------------------------|
-| [`MENTION_CHANNEL`](_autosummary/liaise.gate.html.md#liaise.gate.MENTION_CHANNEL)       | The channel whose messages must @mention their recipient to reach them. |
-| [`OutboundFilter`](_autosummary/liaise.gate.html.md#liaise.gate.OutboundFilter)        | one check of the gate.                                                  |
-| [`DFLT_OUTBOUND_FILTERS`](_autosummary/liaise.gate.html.md#liaise.gate.DFLT_OUTBOUND_FILTERS) | The gate's filters, in the order they run.                              |
+| [`DRAFT_REPLY_MODE`](_autosummary/liaise.gate.html.md#liaise.gate.DRAFT_REPLY_MODE)      | The reply mode in which liaise sends nothing without the operator.                                                                   |
+|------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| [`OUTSIDE_A_CASE`](_autosummary/liaise.gate.html.md#liaise.gate.OUTSIDE_A_CASE)        | Why [`reply_mode()`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode) holds a message outside a case, and how its release note names it. |
+| [`DRAFT_REPLY_REASON`](_autosummary/liaise.gate.html.md#liaise.gate.DRAFT_REPLY_REASON)    | Why [`reply_mode()`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode) holds a message in draft reply mode, and its release note's name.  |
+| [`MENTION_CHANNEL`](_autosummary/liaise.gate.html.md#liaise.gate.MENTION_CHANNEL)       | The channel whose messages must @mention their recipient to reach them.                                                              |
+| [`OutboundFilter`](_autosummary/liaise.gate.html.md#liaise.gate.OutboundFilter)        | one check of the gate.                                                                                                               |
+| [`DFLT_OUTBOUND_FILTERS`](_autosummary/liaise.gate.html.md#liaise.gate.DFLT_OUTBOUND_FILTERS) | The gate's filters, in the order they run.                                                                                           |
 
 ### Functions
 
-| [`deslop`](_autosummary/liaise.gate.html.md#liaise.gate.deslop)(outbound, ctx)                           | Divert a message acquaint's style lint finds machine-sounding for its recipient.    |
-|--------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [`leak_scan`](_autosummary/liaise.gate.html.md#liaise.gate.leak_scan)(outbound, ctx)                        | On a public channel, divert a message holding what must not be made public.         |
-| [`notify_recipient`](_autosummary/liaise.gate.html.md#liaise.gate.notify_recipient)(outbound, ctx)                 | On GitHub, make the message start with an `@mention` of its recipient.              |
-| [`reply_mode`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode)(outbound, ctx)                       | Divert when the recipient's reply mode is `draft`, unless the operator released it. |
-| [`run_gate`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate)(outbound, ctx, \*[, outbound_filters]) | Run `outbound` through `outbound_filters` in order, stopping at the first divert.   |
-| [`writing_card`](_autosummary/liaise.gate.html.md#liaise.gate.writing_card)(outbound, ctx)                     | Note the recipient's acquaint writing card, for the ledger and the next run.        |
+| [`deslop`](_autosummary/liaise.gate.html.md#liaise.gate.deslop)(outbound, ctx)                           | Divert a message acquaint's style lint finds machine-sounding for its recipient.        |
+|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [`leak_scan`](_autosummary/liaise.gate.html.md#liaise.gate.leak_scan)(outbound, ctx)                        | On a public channel, divert a message holding what must not be made public.             |
+| [`notify_recipient`](_autosummary/liaise.gate.html.md#liaise.gate.notify_recipient)(outbound, ctx)                 | On GitHub, make the message start with an `@mention` of its recipient.                  |
+| [`reply_mode`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode)(outbound, ctx)                       | Divert what waits for the operator: a message in `draft` reply mode, or outside a case. |
+| [`run_gate`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate)(outbound, ctx, \*[, outbound_filters]) | Run `outbound` through `outbound_filters` in order, stopping at the first divert.       |
+| [`writing_card`](_autosummary/liaise.gate.html.md#liaise.gate.writing_card)(outbound, ctx)                     | Note the recipient's acquaint writing card, for the ledger and the next run.            |
 
 ### Classes
 
-| [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)(reason[, notes])                         | A filter's verdict to send nothing and hand the message to the operator.                                              |
-|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`GateContext`](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)(subject, case, now[, approval])     | What the filters may consult: the subject and its policy, the case, the time.                                         |
-| [`GateDecision`](_autosummary/liaise.gate.html.md#liaise.gate.GateDecision)(send, diverted[, notes, ...])      | What [`run_gate()`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate) decided: `send` a message, or why it was `diverted`. |
-| [`Outbound`](_autosummary/liaise.gate.html.md#liaise.gate.Outbound)(case_id, ref, channel, recipient, ...) | A message liaise would send: `text` for `recipient` (a person id) at `ref`.                                           |
-| [`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass)(outbound[, notes])                         | A filter's verdict to go on, with `outbound` as the filter left it.                                                   |
+| [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)(reason[, notes])                           | A filter's verdict to send nothing and hand the message to the operator.                                              |
+|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| [`GateContext`](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)(\*, subject, now[, case, approval])   | What the filters may consult: the subject and its policy, the case, the time.                                         |
+| [`GateDecision`](_autosummary/liaise.gate.html.md#liaise.gate.GateDecision)(send, diverted[, notes, ...])        | What [`run_gate()`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate) decided: `send` a message, or why it was `diverted`. |
+| [`Outbound`](_autosummary/liaise.gate.html.md#liaise.gate.Outbound)(\*, ref, channel, recipient, ...[, ...]) | A message liaise would send: `text` for `recipient` (a person id) at `ref`.                                           |
+| [`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass)(outbound[, notes])                           | A filter's verdict to go on, with `outbound` as the filter left it.                                                   |
 
 ### liaise.gate.DFLT_OUTBOUND_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound), [GateContext](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)], [Pass](_autosummary/liaise.gate.html.md#liaise.gate.Pass) | [Divert](_autosummary/liaise.gate.html.md#liaise.gate.Divert)], ...]* *= (<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>)*
 
@@ -2085,20 +2163,27 @@ setting: a draft is diverted before anything else looks at it.
 
 The reply mode in which liaise sends nothing without the operator.
 
+### liaise.gate.DRAFT_REPLY_REASON *= 'draft reply mode'*
+
+Why [`reply_mode()`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode) holds a message in draft reply mode, and its release note’s name.
+
 ### *class* liaise.gate.Divert(reason, notes=())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A filter’s verdict to send nothing and hand the message to the operator.
 
-### *class* liaise.gate.GateContext(subject, case, now, approval=None)
+### *class* liaise.gate.GateContext(, subject, now, case=None, approval=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 What the filters may consult: the subject and its policy, the case, the time.
 
-`approval` is the operator’s release of this message (`liaise case send-draft`).
-It is None for every message the tick sends on its own.
+`case` is the case the message belongs to, or None for a message outside any case.
+The subject is the subject either way, so its policy, leak terms, public channels and
+people all apply; no filter of the 0.1 gate reads the case. `approval` is the
+operator’s release of this message (`liaise case send-draft`, `liaise message
+send-draft`), and is None for every message sent without one.
 
 ### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None)
 
@@ -2115,15 +2200,22 @@ the reason can quote what a filter raised.
 
 The channel whose messages must @mention their recipient to reach them.
 
-### *class* liaise.gate.Outbound(case_id, ref, channel, recipient, purpose, text)
+### liaise.gate.OUTSIDE_A_CASE *= 'a message outside a case'*
+
+Why [`reply_mode()`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode) holds a message outside a case, and how its release note names it.
+
+### *class* liaise.gate.Outbound(, ref, channel, recipient, purpose, text, title=None, case_id=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A message liaise would send: `text` for `recipient` (a person id) at `ref`.
 
-`ref` is the encoded conversation or address it goes to
-(`github:example/app#12`), and `channel` that ref’s channel. `purpose` is the
-outcome kind it carries out (`ask`, `reply`, `propose`, `deliver`).
+`ref` is the encoded conversation or address it goes to (`github:example/app#12`,
+or `github:example/app` to open an issue there), and `channel` is that ref’s
+channel. `purpose` is the outcome kind it carries out (`ask`, `reply`,
+`propose`, `deliver`). `title` is the title of the issue it opens, when it opens
+one; the leak scan judges it with the text. `case_id` is the case the message belongs
+to, or None for a message an agent sends outside any case (`liaise message send`).
 
 ### liaise.gate.OutboundFilter
 
@@ -2164,8 +2256,8 @@ line, a token shape (`ghp_`,
 `policy.leak_terms` as a whole word in any case. Tokens are also looked for with the
 text’s line breaks removed, so a token wrapped across lines is found. The reason
 names each kind found and the notes say where, never what. It never redacts: a leak
-is for the operator to fix. A channel outside `policy.public_channels` passes
-unscanned.
+is for the operator to fix. A title is scanned the same way, and its notes say “of the
+title”. A channel outside `policy.public_channels` passes unscanned.
 
 * **Return type:**
   `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
@@ -2186,14 +2278,18 @@ diverted. Other channels pass unchanged.
 
 ### liaise.gate.reply_mode(outbound, ctx)
 
-Divert when the recipient’s reply mode is `draft`, unless the operator released it.
+Divert what waits for the operator: a message in `draft` reply mode, or outside a case.
 
 The mode is the person’s `policy.reply_modes` override, else the subject’s
-`default_reply_mode` (see [`reply_mode_for()`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject.reply_mode_for)). In
-`draft` mode, a message with the operator’s [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval) on
-`ctx.approval` passes, with a note saying who released it and when. The approval
-settles this filter alone; the filters after it judge the message as they would any
-other.
+`default_reply_mode` (see [`reply_mode_for()`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject.reply_mode_for)). A message
+outside any case (`ctx.case` None) waits whatever the mode. Its sender chose where it
+goes and to whom, so a sender who picks a person in `direct` mode must not reach an
+audience that way. Until the gate can tell who reads a conversation and what the sender
+had read (liaise discussion 32, §5.3 and §6), only the operator releases it.
+
+A message with the operator’s [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval) on `ctx.approval`
+passes, with a note saying who released it and when. The approval settles this filter
+alone; the filters after it judge the message as they would any other.
 
 * **Return type:**
   `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
@@ -2421,15 +2517,15 @@ Everything goes through a [`Ledger`](_autosummary/liaise.ledger.html.md#liaise.l
 
 ### Functions
 
-| [`auto_hold`](_autosummary/liaise.holds.html.md#liaise.holds.auto_hold)(ledger, scope, \*, error_class[, now])   | Block `scope` because the tick met `error_class`: the hold in force, and whether it is new.   |
-|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| [`blocking_hold`](_autosummary/liaise.holds.html.md#liaise.holds.blocking_hold)(ledger, scopes, \*, for_)            | The most specific hold on one of `scopes` that stops `for_`, or None.                         |
-| [`canonical_scope`](_autosummary/liaise.holds.html.md#liaise.holds.canonical_scope)(scope)                             | `scope` as holds are stored and matched: validated, and a checkout path resolved.             |
-| [`hold`](_autosummary/liaise.holds.html.md#liaise.holds.hold)(ledger, scope, \*[, mode, reason, ...])       | Put a `mode` hold on `scope`, replacing any hold already there, and return it.                |
-| [`parse_scope`](_autosummary/liaise.holds.html.md#liaise.holds.parse_scope)(scope)                                 | `(kind, value)` for a hold scope; the value is None for `global` and `processor`.             |
-| [`release_auto_holds`](_autosummary/liaise.holds.html.md#liaise.holds.release_auto_holds)(ledger, scope)                  | Lift the tick's own hold on `scope` and return what was lifted; an operator's stays.          |
-| [`scopes_for`](_autosummary/liaise.holds.html.md#liaise.holds.scopes_for)(\*[, subject, person, repo, ...])       | The scopes a piece of work falls under, most specific first and `global` last.                |
-| [`unhold`](_autosummary/liaise.holds.html.md#liaise.holds.unhold)(ledger, scope)                              | Lift the hold on `scope`, whoever set it; True when there was one.                            |
+| [`auto_hold`](_autosummary/liaise.holds.html.md#liaise.holds.auto_hold)(ledger, scope, \*, error_class[, now])   | Block `scope` because the tick met `error_class`: the hold in force, and whether it is new.                                                                        |
+|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`blocking_hold`](_autosummary/liaise.holds.html.md#liaise.holds.blocking_hold)(ledger, scopes, \*, for_)            | The most specific hold on one of `scopes` that stops `for_`, or None.                                                                                              |
+| [`canonical_scope`](_autosummary/liaise.holds.html.md#liaise.holds.canonical_scope)(scope)                             | `scope` as holds are stored and matched: validated, a checkout path resolved, and a repository lower-cased, since GitHub's names ignore case as its references do. |
+| [`hold`](_autosummary/liaise.holds.html.md#liaise.holds.hold)(ledger, scope, \*[, mode, reason, ...])       | Put a `mode` hold on `scope`, replacing any hold already there, and return it.                                                                                     |
+| [`parse_scope`](_autosummary/liaise.holds.html.md#liaise.holds.parse_scope)(scope)                                 | `(kind, value)` for a hold scope; the value is None for `global` and `processor`.                                                                                  |
+| [`release_auto_holds`](_autosummary/liaise.holds.html.md#liaise.holds.release_auto_holds)(ledger, scope)                  | Lift the tick's own hold on `scope` and return what was lifted; an operator's stays.                                                                               |
+| [`scopes_for`](_autosummary/liaise.holds.html.md#liaise.holds.scopes_for)(\*[, subject, person, repo, ...])       | The scopes a piece of work falls under, most specific first and `global` last.                                                                                     |
+| [`unhold`](_autosummary/liaise.holds.html.md#liaise.holds.unhold)(ledger, scope)                              | Lift the hold on `scope`, whoever set it; True when there was one.                                                                                                 |
 
 ### Classes
 
@@ -2517,12 +2613,18 @@ a scope outside the accepted forms.
 
 ### liaise.holds.canonical_scope(scope)
 
-`scope` as holds are stored and matched: validated, and a checkout path resolved.
-
-Raises `ValueError` as [`parse_scope()`](_autosummary/liaise.holds.html.md#liaise.holds.parse_scope) does.
+`scope` as holds are stored and matched: validated, a checkout path resolved, and a
+repository lower-cased, since GitHub’s names ignore case as its references do.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> canonical_scope("repo:Example/App")
+'repo:example/app'
+```
+
+Raises `ValueError` as [`parse_scope()`](_autosummary/liaise.holds.html.md#liaise.holds.parse_scope) does.
 
 ### liaise.holds.hold(ledger, scope, , mode='block', reason='', set_by='operator', now=None)
 
@@ -3076,6 +3178,13 @@ The tick’s reads of the case’s issue state; an empty `IssueCheck` before any
 * **Return type:**
   [`IssueCheck`](_autosummary/liaise.model.html.md#liaise.model.IssueCheck)
 
+#### get_message(message_id)
+
+The message outside a case with `message_id`, or None.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### get_run(run_id)
 
 The record of the run `run_id`, or None.
@@ -3113,6 +3222,15 @@ Record the event with `delivery_id` as taken in, so [`seen()`](_autosummary/liai
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+#### messages(, subject=None, state=None)
+
+Every message outside a case, or those of `subject`, or in `state`; in no set order.
+
+Raises `ValueError` for a state outside [`MESSAGE_STATES`](_autosummary/liaise.model.html.md#liaise.model.MESSAGE_STATES).
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### new_case(subject, conversation, , reporter, at)
 
 Open a case on `conversation` (an encoded ref), numbered `<subject>-<n>`.
@@ -3122,6 +3240,15 @@ the conversation already belongs to a case: its messages go to that case.
 
 * **Return type:**
   [`Case`](_autosummary/liaise.model.html.md#liaise.model.Case)
+
+#### new_message_id(subject)
+
+A fresh `<subject>-m<hex>` id for a message outside a case, unused in the ledger.
+
+The hex part is random, not counted, so two agents sending at once need no lock.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 #### runs(, status=None)
 
@@ -3143,6 +3270,13 @@ to another case.
 #### save_issue_check(case_id, check)
 
 Write `check`, replacing what the ledger held of the case’s issue state reads.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### save_message(message)
+
+Write `message`, replacing what the ledger held under its id.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -3604,6 +3738,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`github`](_autosummary/liaise.github.html.md#module-liaise.github)         | The GitHub seam: one protocol, two implementations.                                                                  |
 | [`holds`](_autosummary/liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
 | [`ledger`](_autosummary/liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
+| [`messages`](_autosummary/liaise.messages.html.md#module-liaise.messages)     | Messages outside a case: what an agent says to a person on its own initiative, through the gate.                     |
 | [`migrate`](_autosummary/liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
 | [`model`](_autosummary/liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |
 | [`outcomes`](_autosummary/liaise.outcomes.html.md#module-liaise.outcomes)     | Outcomes: what a processor run reports, checked, then planned into actions.                                          |
@@ -3641,6 +3776,7 @@ counter__cases                      the last case number handed out
 daily__<subject>__<YYYY-MM-DD>      that day's dispatches, as 0.0.x kept them
 budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
 issue_check__<case_id>              an IssueCheck: the tick's reads of the case's issue state
+message__<message_id>               an OutboundMessage: one sent or held outside any case
 ```
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
@@ -3654,9 +3790,11 @@ absent.
 
 ### Module Attributes
 
-| [`DFLT_LEDGER_SUBDIR`](_autosummary/liaise.ledger.html.md#liaise.ledger.DFLT_LEDGER_SUBDIR)   | The ledger's directory under `state_dir`.                                 |
-|-----------------------------------------------------------------------|---------------------------------------------------------------------------|
-| [`DFLT_DIGEST_LENGTH`](_autosummary/liaise.ledger.html.md#liaise.ledger.DFLT_DIGEST_LENGTH)   | How many hex digits of a delivery id's sha1 inbox and unrouted keys keep. |
+| [`DFLT_LEDGER_SUBDIR`](_autosummary/liaise.ledger.html.md#liaise.ledger.DFLT_LEDGER_SUBDIR)    | The ledger's directory under `state_dir`.                                 |
+|------------------------------------------------------------------------|---------------------------------------------------------------------------|
+| [`DFLT_DIGEST_LENGTH`](_autosummary/liaise.ledger.html.md#liaise.ledger.DFLT_DIGEST_LENGTH)    | How many hex digits of a delivery id's sha1 inbox and unrouted keys keep. |
+| [`MESSAGE_ID_INFIX`](_autosummary/liaise.ledger.html.md#liaise.ledger.MESSAGE_ID_INFIX)      | `example-app-m1f3a9c2e`.                                                  |
+| [`MESSAGE_ID_HEX_DIGITS`](_autosummary/liaise.ledger.html.md#liaise.ledger.MESSAGE_ID_HEX_DIGITS) | How many hex digits a message id's random part has.                       |
 
 ### Functions
 
@@ -3783,6 +3921,13 @@ The tick’s reads of the case’s issue state; an empty `IssueCheck` before any
 * **Return type:**
   [`IssueCheck`](_autosummary/liaise.model.html.md#liaise.model.IssueCheck)
 
+#### get_message(message_id)
+
+The message outside a case with `message_id`, or None.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### get_run(run_id)
 
 The record of the run `run_id`, or None.
@@ -3820,6 +3965,15 @@ Record the event with `delivery_id` as taken in, so [`seen()`](_autosummary/liai
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+#### messages(, subject=None, state=None)
+
+Every message outside a case, or those of `subject`, or in `state`; in no set order.
+
+Raises `ValueError` for a state outside [`MESSAGE_STATES`](_autosummary/liaise.model.html.md#liaise.model.MESSAGE_STATES).
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)]
+
 #### new_case(subject, conversation, , reporter, at)
 
 Open a case on `conversation` (an encoded ref), numbered `<subject>-<n>`.
@@ -3829,6 +3983,15 @@ the conversation already belongs to a case: its messages go to that case.
 
 * **Return type:**
   [`Case`](_autosummary/liaise.model.html.md#liaise.model.Case)
+
+#### new_message_id(subject)
+
+A fresh `<subject>-m<hex>` id for a message outside a case, unused in the ledger.
+
+The hex part is random, not counted, so two agents sending at once need no lock.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 #### runs(, status=None)
 
@@ -3850,6 +4013,13 @@ to another case.
 #### save_issue_check(case_id, check)
 
 Write `check`, replacing what the ledger held of the case’s issue state reads.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### save_message(message)
+
+Write `message`, replacing what the ledger held under its id.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -3891,6 +4061,17 @@ Every queued unrouted message, as a fresh dict, in no set order.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
 
+### liaise.ledger.MESSAGE_ID_HEX_DIGITS *= 8*
+
+How many hex digits a message id’s random part has.
+
+### liaise.ledger.MESSAGE_ID_INFIX *= '-m'*
+
+`example-app-m1f3a9c2e`.
+
+* **Type:**
+  What joins a subject’s slug to the hex of a message id
+
 ### liaise.ledger.default_ledger_store(state_dir)
 
 The default ledger store: one JSON file per key in `<state_dir>/ledger`.
@@ -3899,6 +4080,224 @@ Creates the directory, since `dol.Jsons` will not create one on write.
 
 * **Return type:**
   [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+
+# _autosummary/liaise.messages.html.md
+
+# liaise.messages
+
+Messages outside a case: what an agent says to a person on its own initiative, through the gate.
+
+A case is a unit of feedback work, with a reporter, a state machine, runs and a delivery. A
+question an agent decides to ask has none of those, so it is not a case, and `liaise
+message send` opens none (liaise #28). It is an [`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage) in
+the ledger, judged by the same gate as every message liaise sends, with no case on the
+gate’s context.
+
+- [`send_message()`](_autosummary/liaise.messages.html.md#liaise.messages.send_message) takes a GitHub issue, or a repository and a title to open an issue,
+  and the subject from the bindings that take it in
+  ([`liaise.subjects.subject_for_ref()`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref)), so the caller cannot pick a laxer policy. The
+  gate judges it with that subject’s policy and no case on its context, which in 0.1 means
+  it is held for the operator: its sender chose where it goes, and only the operator’s
+  release lets such a message out (see [`liaise.gate.reply_mode()`](_autosummary/liaise.gate.html.md#liaise.gate.reply_mode)). The operator is
+  told, without its text, when a subject’s held queue stops being empty. A hold on the
+  subject, the recipient, the repository or the checkout keeps it before the gate judges
+  it. Every message is recorded.
+- [`send_held_message()`](_autosummary/liaise.messages.html.md#liaise.messages.send_held_message) is how the operator sends a held one, through
+  [`liaise.release.release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft), as a case’s draft is sent.
+- [`reject_message()`](_autosummary/liaise.messages.html.md#liaise.messages.reject_message) records that the operator declined one, and why.
+- [`message_lines()`](_autosummary/liaise.messages.html.md#liaise.messages.message_lines) and [`message_show_lines()`](_autosummary/liaise.messages.html.md#liaise.messages.message_show_lines) are `liaise message list` and
+  `liaise message show`.
+
+A message has no label, so nothing here writes to a repository beyond the message itself.
+
+### Module Attributes
+
+| [`MESSAGE_PURPOSES`](_autosummary/liaise.messages.html.md#liaise.messages.MESSAGE_PURPOSES)   | a question, a reply or a proposal.                                              |
+|---------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| [`DFLT_SENDER`](_autosummary/liaise.messages.html.md#liaise.messages.DFLT_SENDER)        | an agent, never the operator, whose word is what releases a held one.           |
+| [`OPERATOR_ACTOR`](_autosummary/liaise.messages.html.md#liaise.messages.OPERATOR_ACTOR)     | Who a held message is released or rejected by.                                  |
+| [`SEND_REFUSED_CAUSE`](_autosummary/liaise.messages.html.md#liaise.messages.SEND_REFUSED_CAUSE) | What a notification names a failed send by when the channel gave no error kind. |
+
+### Functions
+
+| [`find_message`](_autosummary/liaise.messages.html.md#liaise.messages.find_message)(ledger, message_id)                   | The message `message_id`.                                                                                                                                   |
+|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`held_message`](_autosummary/liaise.messages.html.md#liaise.messages.held_message)(ledger, message_id, \*[, verb])       | The held message `message_id`.                                                                                                                              |
+| [`message_draft`](_autosummary/liaise.messages.html.md#liaise.messages.message_draft)(message)                             | `message` as a held draft: the shape [`liaise.release.release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) releases. |
+| [`message_lines`](_autosummary/liaise.messages.html.md#liaise.messages.message_lines)(store, \*[, state])                  | What `liaise message list` prints: `<id>\t<state>\t<purpose> to <person> on <ref>`.                                                                         |
+| [`message_show_lines`](_autosummary/liaise.messages.html.md#liaise.messages.message_show_lines)(store, message_id, \*[, ...])   | What `liaise message show` prints: the message `message_id`, with its text.                                                                                 |
+| [`reject_message`](_autosummary/liaise.messages.html.md#liaise.messages.reject_message)(ledger, message_id, \*, reason)     | Decline the held message `message_id` as `by`, recording `reason`; return it.                                                                               |
+| [`send_held_message`](_autosummary/liaise.messages.html.md#liaise.messages.send_held_message)(ledger, subjects, ...[, ...])    | Send the held message `message_id` as `by`, through the gate again.                                                                                         |
+| [`send_message`](_autosummary/liaise.messages.html.md#liaise.messages.send_message)(ledger, subjects, recipient, \*, ...) | Send `text` to `recipient` (a person id) at `ref` outside any case, or hold it.                                                                             |
+
+### Classes
+
+| [`MessageRelease`](_autosummary/liaise.messages.html.md#liaise.messages.MessageRelease)(draft, attempt, filters, ...)   | What [`send_held_message()`](_autosummary/liaise.messages.html.md#liaise.messages.send_held_message) did, as [`liaise.cases.DraftRelease`](_autosummary/liaise.cases.html.md#liaise.cases.DraftRelease) does for a case.   |
+|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`MessageSent`](_autosummary/liaise.messages.html.md#liaise.messages.MessageSent)(message, attempt, filters[, hold]) | What [`send_message()`](_autosummary/liaise.messages.html.md#liaise.messages.send_message) did: the message as recorded, the gate's attempt, any hold.                                                                          |
+
+### liaise.messages.DFLT_SENDER *= 'agent'*
+
+an agent, never the
+operator, whose word is what releases a held one.
+
+* **Type:**
+  Who a message is recorded as sent by when its sender does not say
+
+### liaise.messages.MESSAGE_PURPOSES *= ('ask', 'reply', 'propose')*
+
+a question, a reply or a proposal.
+
+* **Type:**
+  What a message outside a case may carry out
+
+### *class* liaise.messages.MessageRelease(draft, attempt, filters, edited, message)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What [`send_held_message()`](_autosummary/liaise.messages.html.md#liaise.messages.send_held_message) did, as [`liaise.cases.DraftRelease`](_autosummary/liaise.cases.html.md#liaise.cases.DraftRelease) does for a case.
+
+`draft` is the held message as the operator saw it, `attempt` the gate’s decision
+and the send, `filters` how many filters ran, `edited` whether the operator’s text
+replaced the message’s, and `message` the record as the release left it.
+
+### *class* liaise.messages.MessageSent(message, attempt, filters, hold=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What [`send_message()`](_autosummary/liaise.messages.html.md#liaise.messages.send_message) did: the message as recorded, the gate’s attempt, any hold.
+
+`message` is the record (as it would be, in a dry run). `attempt` is None when
+`hold` kept the message before the gate judged it, and `filters` is how many
+filters the gate had.
+
+#### *property* sent *: [bool](https://docs.python.org/3/builtins/functions.html#bool)*
+
+Whether the message went out; in a dry run, whether it would have.
+
+### liaise.messages.OPERATOR_ACTOR *= 'operator'*
+
+Who a held message is released or rejected by.
+
+### liaise.messages.SEND_REFUSED_CAUSE *= 'refused'*
+
+What a notification names a failed send by when the channel gave no error kind.
+
+### liaise.messages.find_message(ledger, message_id)
+
+The message `message_id`. Raises `ValueError` for one the ledger does not hold.
+
+* **Return type:**
+  [`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)
+
+### liaise.messages.held_message(ledger, message_id, , verb='send')
+
+The held message `message_id`. Raises `ValueError` for one missing or not held.
+
+`verb` says, in the error, what there is nothing to do.
+
+* **Return type:**
+  [`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)
+
+### liaise.messages.message_draft(message)
+
+`message` as a held draft: the shape [`liaise.release.release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) releases.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+### liaise.messages.message_lines(store, , state=None)
+
+What `liaise message list` prints: `<id>\t<state>\t<purpose> to <person> on <ref>`.
+
+Every message outside a case in the ledger `store`, or only those in `state`,
+oldest first. Reads only. Raises `ValueError` for a state outside
+[`MESSAGE_STATES`](_autosummary/liaise.model.html.md#liaise.model.MESSAGE_STATES).
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### liaise.messages.message_show_lines(store, message_id, , entries=12)
+
+What `liaise message show` prints: the message `message_id`, with its text.
+
+Its subject, state, recipient, reference, purpose and title; why it is held, with the
+gate’s notes; its whole text; and its `entries` latest entries. Reads only. Raises
+`ValueError` for a message the ledger `store` does not hold.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### liaise.messages.reject_message(ledger, message_id, , reason, by='operator', now=None, dry_run=False)
+
+Decline the held message `message_id` as `by`, recording `reason`; return it.
+
+Nothing is sent. The message is recorded as rejected, with an entry keeping its text,
+where it would have gone, why it was held and `reason`. A dry run writes nothing.
+
+Raises `ValueError`, writing nothing, for a blank `reason`, a message the ledger
+does not hold, and one that is not held.
+
+* **Return type:**
+  [`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)
+
+### liaise.messages.send_held_message(ledger, subjects, message_id, \*, by, text=None, title=None, seen=None, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+
+Send the held message `message_id` as `by`, through the gate again.
+
+It goes out through [`liaise.release.release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) with `by`’s approval on the
+context, as a case’s draft does ([`liaise.cases.send_draft()`](_autosummary/liaise.cases.html.md#liaise.cases.send_draft)), with `text` and
+`title` when the operator edited them. `by` has no default: this function asks no
+one, and `liaise message send-draft` passes the operator only after asking at a
+terminal. Sent, the message is recorded as sent. Diverted or refused,
+it stays held with the text that was judged and the new reason. Either way an entry
+by `by` records the attempt. `seen` is the message as the operator saw it
+([`message_draft()`](_autosummary/liaise.messages.html.md#liaise.messages.message_draft)): one that changed since is not sent. `send=False` and
+`dry_run` are as [`release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) has them.
+
+Raises `ValueError`, sending and writing nothing, for a message the ledger does not
+hold, one that is not held, one whose subject is not in `subjects`, one that changed
+since `seen`, and anything [`release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) refuses.
+
+* **Return type:**
+  [`MessageRelease`](_autosummary/liaise.messages.html.md#liaise.messages.MessageRelease)
+
+### liaise.messages.send_message(ledger, subjects, recipient, \*, ref, text, title=None, purpose='ask', by='agent', now=None, registry=None, notify_fn=None, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+
+Send `text` to `recipient` (a person id) at `ref` outside any case, or hold it.
+
+`ref` is a GitHub issue a subject binds (`github:example/app#12`), or a repository
+it binds with a `title`, to open an issue there; it is kept as
+[`sendable_ref()`](_autosummary/liaise.release.html.md#liaise.release.sendable_ref) gives it. Its subject is the one
+[`subject_for_ref()`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref) names. The message is judged by the gate
+(`outbound_filters`) with no case on the context, then sent through correspond on
+`registry`, or held:
+
+- **Held**, because the gate diverted it (in 0.1 it always does, for the operator to
+  release), its channel refused it, or a hold on the subject, the recipient, the
+  repository or the checkout keeps effects waiting. It is recorded as held, with the
+  reason and the text as given. When no other message of the subject was held yet,
+  the operator is told through `notify_fn` (`liaise.notify.notify()` when None)
+  that a message on the subject waits. The notification carries neither the text nor
+  the recipient.
+- **Sent**, when a gate without that rule passes it: recorded as sent, with the text
+  as it went out and its url.
+
+Each record’s one entry is by `by`, at `now`. A dry run judges and plans the same,
+and records and tells nothing.
+
+Raises `ValueError`, sending and recording nothing, for any of these:
+
+- a purpose outside [`MESSAGE_PURPOSES`](_autosummary/liaise.messages.html.md#liaise.messages.MESSAGE_PURPOSES), or a blank recipient or text;
+- a `ref` that is not a GitHub issue or repository, or that no subject binds;
+- a title on an issue, or a repository with no title.
+
+Raises [`DraftSentNotRecorded`](_autosummary/liaise.release.html.md#liaise.release.DraftSentNotRecorded) when the message went out and
+the ledger failed to record it.
+
+* **Return type:**
+  [`MessageSent`](_autosummary/liaise.messages.html.md#liaise.messages.MessageSent)
 
 
 # _autosummary/liaise.migrate.html.md
@@ -4131,6 +4530,7 @@ are pure and take the time they record as an argument.
 | [`OUTCOME_KINDS`](_autosummary/liaise.model.html.md#liaise.model.OUTCOME_KINDS)      | The closed vocabulary a processor run reports its outcomes in.                                                                    |
 | [`PERMISSIONS`](_autosummary/liaise.model.html.md#liaise.model.PERMISSIONS)        | What a role can grant on a subject (see [`liaise.subjects`](_autosummary/liaise.subjects.html.md#module-liaise.subjects)). |
 | [`HOLD_MODES`](_autosummary/liaise.model.html.md#liaise.model.HOLD_MODES)         | How a [`Hold`](_autosummary/liaise.model.html.md#liaise.model.Hold) stops work in its scope.                                              |
+| [`MESSAGE_STATES`](_autosummary/liaise.model.html.md#liaise.model.MESSAGE_STATES)     | held for the operator, sent, or declined.                                                                                         |
 
 ### Functions
 
@@ -4140,16 +4540,17 @@ are pure and take the time they record as an argument.
 
 ### Classes
 
-| [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval)(by, at)                                | The operator's release of a held message: who released it, and when.                                             |
-|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| [`Case`](_autosummary/liaise.model.html.md#liaise.model.Case)(id, subject, conversations, reporter, ...) | One piece of work on a subject, from its first message to its delivery.                                          |
-| [`Health`](_autosummary/liaise.model.html.md#liaise.model.Health)(ok[, defer_until, error])                | Whether a processor can take work now, and if not, until when or why.                                            |
-| [`Hold`](_autosummary/liaise.model.html.md#liaise.model.Hold)(scope, mode[, reason, set_by, set_at])     | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                       |
-| [`IssueCheck`](_autosummary/liaise.model.html.md#liaise.model.IssueCheck)([read_at, failures])                 | The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.                |
-| [`LedgerEntry`](_autosummary/liaise.model.html.md#liaise.model.LedgerEntry)(at, kind[, actor, grade, ...])      | One thing that happened on a case: appended, never changed.                                                      |
-| [`Outcome`](_autosummary/liaise.model.html.md#liaise.model.Outcome)(kind[, text, questions, reason])        | One outcome a processor run reports: `kind` from [`OUTCOME_KINDS`](_autosummary/liaise.model.html.md#liaise.model.OUTCOME_KINDS). |
-| [`RunRecord`](_autosummary/liaise.model.html.md#liaise.model.RunRecord)(run_id, case_id, subject, mode, ...)  | A processor run started on a case: how it was started, and where it is now.                                      |
-| [`RunResult`](_autosummary/liaise.model.html.md#liaise.model.RunResult)(run_id[, outcomes, usage, ...])       | What a finished run returned: its outcomes, what it cost, and how it ended.                                      |
+| [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval)(by, at)                                  | The operator's release of a held message: who released it, and when.                                             |
+|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| [`Case`](_autosummary/liaise.model.html.md#liaise.model.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                          |
+| [`Health`](_autosummary/liaise.model.html.md#liaise.model.Health)(ok[, defer_until, error])                  | Whether a processor can take work now, and if not, until when or why.                                            |
+| [`Hold`](_autosummary/liaise.model.html.md#liaise.model.Hold)(scope, mode[, reason, set_by, set_at])       | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                       |
+| [`IssueCheck`](_autosummary/liaise.model.html.md#liaise.model.IssueCheck)([read_at, failures])                   | The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.                |
+| [`LedgerEntry`](_autosummary/liaise.model.html.md#liaise.model.LedgerEntry)(at, kind[, actor, grade, ...])        | One thing that happened on a case: appended, never changed.                                                      |
+| [`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)(id, subject, recipient, ref, ...) | A message an agent sent, or asked to send, outside any case (`liaise message send`).                             |
+| [`Outcome`](_autosummary/liaise.model.html.md#liaise.model.Outcome)(kind[, text, questions, reason])          | One outcome a processor run reports: `kind` from [`OUTCOME_KINDS`](_autosummary/liaise.model.html.md#liaise.model.OUTCOME_KINDS). |
+| [`RunRecord`](_autosummary/liaise.model.html.md#liaise.model.RunRecord)(run_id, case_id, subject, mode, ...)    | A processor run started on a case: how it was started, and where it is now.                                      |
+| [`RunResult`](_autosummary/liaise.model.html.md#liaise.model.RunResult)(run_id[, outcomes, usage, ...])         | What a finished run returned: its outcomes, what it cost, and how it ended.                                      |
 
 ### *class* liaise.model.Approval(by, at)
 
@@ -4253,10 +4654,36 @@ what access was judged on; `delivery_id` is the channel event it came from.
 `detail` holds whatever else the kind needs, such as a transition’s `from`,
 `to` and `reason`.
 
+### liaise.model.MESSAGE_STATES *= ('held', 'sent', 'rejected')*
+
+held for the operator, sent, or declined.
+
+* **Type:**
+  Where an [`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage) stands
+
 ### liaise.model.OUTCOME_KINDS *= ('ask', 'reply', 'escalate', 'propose', 'deliver', 'decline', 'defer', 'note')*
 
 The closed vocabulary a processor run reports its outcomes in. Validating an
 [`Outcome`](_autosummary/liaise.model.html.md#liaise.model.Outcome) (and treating `decline` as `escalate`) is `liaise.outcomes`’s job.
+
+### *class* liaise.model.OutboundMessage(id, subject, recipient, ref, purpose, text, state, created_at, updated_at, title=None, reason=None, notes=(), entries=())
+
+Bases: `_Record`
+
+A message an agent sent, or asked to send, outside any case (`liaise message send`).
+
+`id` is `<subject>-m<hex>`. `recipient` (a person id), `ref`, `purpose`,
+`title` and `text` are the message, as it was last judged. `state` is one of
+[`MESSAGE_STATES`](_autosummary/liaise.model.html.md#liaise.model.MESSAGE_STATES), and while it is `held`, `reason` and `notes` say why.
+`entries` is its append-only history of gate decisions, as a case keeps its own. A
+message has no reporter, no run and no label: it is not a unit of work.
+
+#### with_entry(entry)
+
+This message with `entry` appended, and `updated_at` moved forward to it.
+
+* **Return type:**
+  [`OutboundMessage`](_autosummary/liaise.model.html.md#liaise.model.OutboundMessage)
 
 ### *class* liaise.model.Outcome(kind, text='', questions=(), reason='')
 
@@ -4352,13 +4779,14 @@ for `liaise case show`.
 
 ### Module Attributes
 
-| [`DFLT_SENDING_CHANNELS`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DFLT_SENDING_CHANNELS)   | Channels whose conversations liaise posts into.                                                  |
-|--------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| [`DFLT_ADDRESS_CHANNELS`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DFLT_ADDRESS_CHANNELS)   | Channels that can write to a person's address (`email:<address>`), not only into a conversation. |
-| [`DFLT_OPERATOR_PRIORITY`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DFLT_OPERATOR_PRIORITY)  | The ntfy priority of an operator notification that needs the operator to act.                    |
-| [`REQUIRED_FIELD_BY_KIND`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.REQUIRED_FIELD_BY_KIND)  | The field each outcome kind cannot do without.                                                   |
-| [`OUTCOME_SCHEMA`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.OUTCOME_SCHEMA)          | The JSON Schema of a run's structured result, passed to `claude --json-schema`.                  |
-| [`Action`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Action)                  | What [`plan_outcomes()`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.plan_outcomes) returns a list of.         |
+| [`DFLT_SENDING_CHANNELS`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DFLT_SENDING_CHANNELS)   | Channels whose conversations liaise posts into.                                                                                |
+|--------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_ADDRESS_CHANNELS`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DFLT_ADDRESS_CHANNELS)   | Channels that can write to a person's address (`email:<address>`), not only into a conversation.                               |
+| [`DFLT_OPERATOR_PRIORITY`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DFLT_OPERATOR_PRIORITY)  | The ntfy priority of an operator notification that needs the operator to act.                                                  |
+| [`HELD_REASON_PREFIX`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.HELD_REASON_PREFIX)      | How the reason of a draft kept because a hold kept its effects waiting begins, before the hold's scope: `held: effect:deploy`. |
+| [`REQUIRED_FIELD_BY_KIND`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.REQUIRED_FIELD_BY_KIND)  | The field each outcome kind cannot do without.                                                                                 |
+| [`OUTCOME_SCHEMA`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.OUTCOME_SCHEMA)          | The JSON Schema of a run's structured result, passed to `claude --json-schema`.                                                |
+| [`Action`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Action)                  | What [`plan_outcomes()`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.plan_outcomes) returns a list of.                                       |
 
 ### Functions
 
@@ -4370,14 +4798,14 @@ for `liaise case show`.
 
 ### Classes
 
-| [`Defer`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Defer)(case_id, reason)                      | Put the case aside for `reason`.                                                                                          |
-|----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| [`Deliver`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Deliver)(case_id, kind, per, command)        | Deliver the case's work as the subject's `delivery` says.                                                                 |
-| [`DigestNote`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DigestNote)(case_id, text)                   | Add `text` to the operator's digest.                                                                                      |
-| [`NotifyOperator`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.NotifyOperator)(title, body[, priority])     | Tell the operator, as `liaise.notify.notify()` does.                                                                      |
-| [`Send`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Send)(case_id, ref, channel, recipient, ...) | Send `text` to `recipient` at `ref`.                                                                                      |
-| [`StoreDraft`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.StoreDraft)(case_id, draft)                  | Keep `draft` (see [`make_draft()`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.make_draft)) in the case's `drafts` for the operator. |
-| [`Transition`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Transition)(case_id, state, reason)          | Move the case to `state`, recording `reason`.                                                                             |
+| [`Defer`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Defer)(case_id, reason)                           | Put the case aside for `reason`.                                                                                          |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| [`Deliver`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Deliver)(case_id, kind, per, command)             | Deliver the case's work as the subject's `delivery` says.                                                                 |
+| [`DigestNote`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DigestNote)(case_id, text)                        | Add `text` to the operator's digest.                                                                                      |
+| [`NotifyOperator`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.NotifyOperator)(title, body[, priority])          | Tell the operator, as `liaise.notify.notify()` does.                                                                      |
+| [`Send`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Send)(\*, ref, channel, recipient, purpose, text) | Send `text` to `recipient` at `ref`.                                                                                      |
+| [`StoreDraft`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.StoreDraft)(case_id, draft)                       | Keep `draft` (see [`make_draft()`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.make_draft)) in the case's `drafts` for the operator. |
+| [`Transition`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Transition)(case_id, state, reason)               | Move the case to `state`, recording `reason`.                                                                             |
 
 ### liaise.outcomes.Action
 
@@ -4416,6 +4844,11 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Add `text` to the operator’s digest.
 
+### liaise.outcomes.HELD_REASON_PREFIX *= 'held: '*
+
+How the reason of a draft kept because a hold kept its effects waiting begins, before
+the hold’s scope: `held: effect:deploy`.
+
 ### *class* liaise.outcomes.NotifyOperator(title, body, priority='default')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -4431,7 +4864,7 @@ The JSON Schema of a run’s structured result, passed to `claude --json-schema`
 The field each outcome kind cannot do without. [`parse_outcomes()`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.parse_outcomes) enforces it
 and [`OUTCOME_SCHEMA`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.OUTCOME_SCHEMA) states it.
 
-### *class* liaise.outcomes.Send(case_id, ref, channel, recipient, purpose, text)
+### *class* liaise.outcomes.Send(, ref, channel, recipient, purpose, text, title=None, case_id=None)
 
 Bases: [`Outbound`](_autosummary/liaise.gate.html.md#liaise.gate.Outbound)
 
@@ -4449,7 +4882,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Move the case to `state`, recording `reason`.
 
-### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=())
+### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=(), title=None)
 
 One item of a case’s `drafts`: a message held for the operator.
 
@@ -4462,7 +4895,8 @@ This is the one shape every draft has, JSON-ready:
   can reach the recipient;
 - `text`: the message, as it would be sent;
 - `reason`: why it was held (an escalation’s reason, a gate divert, no channel);
-- `notes`: the gate’s notes on it, in order.
+- `notes`: the gate’s notes on it, in order;
+- `title`: the title of the issue it would open, present only when it opens one.
 
 ```pycon
 >>> from datetime import datetime, timezone
@@ -5091,34 +5525,97 @@ The latest of: the case’s creation, and the partner’s own message entries.
 Releasing a message: through the gate, then through correspond, as one step.
 
 Every message liaise sends goes through [`gate_and_send()`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send). That covers what the tick
-sends for a run’s outcomes, the tick’s own notices, and a draft the operator releases
-with `liaise case send-draft`. It runs [`liaise.gate.run_gate()`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate), and only a message
-the gate passed reaches `correspond.send`, as the filters left it. It records nothing:
-what a [`SendAttempt`](_autosummary/liaise.release.html.md#liaise.release.SendAttempt) means for a case, a draft or a notification is for its caller
-to keep.
+sends for a run’s outcomes, the tick’s own notices, a message an agent sends outside any
+case (`liaise message send`), and a draft the operator releases. It runs
+[`liaise.gate.run_gate()`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate), and only a message the gate passed reaches
+`correspond.send`, as the filters left it. It records nothing: what a
+[`SendAttempt`](_autosummary/liaise.release.html.md#liaise.release.SendAttempt) means for a case, a message or a notification is for its caller to
+keep.
+
+**Releasing a held message.** [`release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) is the one way a message held for the
+operator goes out, whether it waits on a case (`liaise case send-draft`) or outside any
+(`liaise message send-draft`). It checks what must stop a release, runs
+[`gate_and_send()`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send) with the operator’s [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval) on the context,
+and hands back the ledger entry and the draft to keep, for the caller to record.
 
 One path for every sender is what makes the gate a gate. A filter added to it applies to
 all of them at once, and none of them has a way to send around it.
 
 ### Module Attributes
 
-| [`DFLT_REFUSAL`](_autosummary/liaise.release.html.md#liaise.release.DFLT_REFUSAL)   | Why a send failed when the channel said no without saying why.   |
-|-----------------------------------------------------------------|------------------------------------------------------------------|
+| [`DFLT_REFUSAL`](_autosummary/liaise.release.html.md#liaise.release.DFLT_REFUSAL)     | Why a send failed when the channel said no without saying why.   |
+|-------------------------------------------------------------------|------------------------------------------------------------------|
+| [`DELIVER_PURPOSE`](_autosummary/liaise.release.html.md#liaise.release.DELIVER_PURPOSE)  | The outcome whose message announces a delivery.                  |
+| [`DRAFT_ENTRY_KIND`](_autosummary/liaise.release.html.md#liaise.release.DRAFT_ENTRY_KIND) | a gate decision, as the tick's are.                              |
+| [`GITHUB_CHANNEL`](_autosummary/liaise.release.html.md#liaise.release.GITHUB_CHANNEL)   | The channel whose references name repositories.                  |
 
 ### Functions
 
-| [`error_text`](_autosummary/liaise.release.html.md#liaise.release.error_text)(error)                                 | How liaise names an exception it recovered from: its class, then its message.         |
-|----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| [`gate_and_send`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send)(outbound, ctx, \*[, registry, ...]) | Put `outbound` through the gate and, only when it passes, send it through correspond. |
+| [`error_text`](_autosummary/liaise.release.html.md#liaise.release.error_text)(error)                                 | How liaise names an exception it recovered from: its class, then its message.                                                                                |
+|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`gate_and_send`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send)(outbound, ctx, \*[, registry, ...]) | Put `outbound` through the gate and, only when it passes, send it through correspond.                                                                        |
+| [`github_repo`](_autosummary/liaise.release.html.md#liaise.release.github_repo)(ref)                                  | `owner/repo`, lower-cased, of the repository a GitHub reference names: itself or one of its issues.                                                          |
+| [`release_draft`](_autosummary/liaise.release.html.md#liaise.release.release_draft)(draft, \*, subject, ledger, ...)    | Release `draft` (a [`liaise.outcomes.make_draft()`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.make_draft) item) as `by`, through the gate. |
+| [`sendable_ref`](_autosummary/liaise.release.html.md#liaise.release.sendable_ref)(ref)                                 | `ref` as a GitHub issue or repository reference, stripped and lower-cased.                                                                                   |
 
 ### Classes
 
-| [`SendAttempt`](_autosummary/liaise.release.html.md#liaise.release.SendAttempt)(decision[, result, failure, ...])   | What [`gate_and_send()`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send) did with one message.   |
-|--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
+| [`DraftOutcome`](_autosummary/liaise.release.html.md#liaise.release.DraftOutcome)(attempt, filters, edited[, ...])   | What [`release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) did with one held message, for its caller to record.   |
+|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| [`SendAttempt`](_autosummary/liaise.release.html.md#liaise.release.SendAttempt)(decision[, result, failure, ...])   | What [`gate_and_send()`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send) did with one message.                                  |
+
+### Exceptions
+
+| [`DraftSentNotRecorded`](_autosummary/liaise.release.html.md#liaise.release.DraftSentNotRecorded)   | A released message went out, and the ledger then failed to record that it did.   |
+|-------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+
+### liaise.release.DELIVER_PURPOSE *= 'deliver'*
+
+The outcome whose message announces a delivery.
 
 ### liaise.release.DFLT_REFUSAL *= 'the channel refused it'*
 
 Why a send failed when the channel said no without saying why.
+
+### liaise.release.DRAFT_ENTRY_KIND *= 'gate'*
+
+a gate decision, as the
+tick’s are.
+
+* **Type:**
+  The entry kind a released or rejected draft is recorded as
+
+### *class* liaise.release.DraftOutcome(attempt, filters, edited, entry=None, kept=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What [`release_draft()`](_autosummary/liaise.release.html.md#liaise.release.release_draft) did with one held message, for its caller to record.
+
+`attempt` is the gate’s decision and the send, `filters` how many filters the gate
+ran it through, and `edited` whether the operator’s text replaced the draft’s.
+`entry` is the `gate` entry the release is recorded as. `kept` is the draft that
+stays for the operator when nothing went out, and None once the message is sent. Both
+are None for a plan (`send=False`) that the gate passed: nothing happened to record.
+
+### *exception* liaise.release.DraftSentNotRecorded
+
+Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#RuntimeError)
+
+A released message went out, and the ledger then failed to record that it did.
+
+#### *classmethod* after(label, attempt, error, , reject)
+
+The error for `label`, which `attempt` sent and the ledger failed to record.
+
+`reject` is the command that takes the held message off, so it is not sent twice,
+or None when there is no record to take it off.
+
+* **Return type:**
+  [`DraftSentNotRecorded`](_autosummary/liaise.release.html.md#liaise.release.DraftSentNotRecorded)
+
+### liaise.release.GITHUB_CHANNEL *= 'github'*
+
+The channel whose references name repositories.
 
 ### *class* liaise.release.SendAttempt(decision, result=None, failure=None, failure_kind=None)
 
@@ -5158,13 +5655,70 @@ Put `outbound` through the gate and, only when it passes, send it through corres
 
 The gate is [`liaise.gate.run_gate()`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate) with `outbound_filters`, and a message it
 diverts is not sent. A passed message goes to `correspond.send` as the filters left
-it, on `registry` (correspond’s own when None). `dry_run` asks correspond for its
-plan and sends nothing. A channel that refuses the message, or raises, becomes a
-`failure` on the attempt rather than an exception, so the caller still has the message
-to keep.
+it, its title included, on `registry` (correspond’s own when None). `dry_run` asks
+correspond for its plan and sends nothing. A channel that refuses the message, or
+raises, becomes a `failure` on the attempt rather than an exception, so the caller
+still has the message to keep.
 
 * **Return type:**
   [`SendAttempt`](_autosummary/liaise.release.html.md#liaise.release.SendAttempt)
+
+### liaise.release.github_repo(ref)
+
+`owner/repo`, lower-cased, of the repository a GitHub reference names: itself or one of its issues.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+```pycon
+>>> github_repo("github:Example/App#12"), github_repo("github:example/app")
+('example/app', 'example/app')
+>>> github_repo("webinbox:example-site") is None
+True
+```
+
+### liaise.release.release_draft(draft, \*, subject, ledger, label, reject, by, now, case=None, text=None, title=None, detail=mappingproxy({}), registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+
+Release `draft` (a [`liaise.outcomes.make_draft()`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.make_draft) item) as `by`, through the gate.
+
+The message is the draft’s text and title, or `text` and `title` when the operator
+edited them. It goes to the draft’s `ref`, for its `recipient`, carrying out its
+`outcome`, on the case `case` or outside any when that is None. It passes through
+[`gate_and_send()`](_autosummary/liaise.release.html.md#liaise.release.gate_and_send) with an [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval) by `by` at `now` on
+the context: draft reply mode lets it through, and every other filter judges it as it
+judges any message, the mention included.
+
+It asks no one and records nothing. Its caller shows the operator the verdict first,
+from a dry run, and records the outcome’s `entry` (with `detail` added to it) and,
+when nothing went out, its `kept` draft. The kept draft holds the operator’s text
+without the mention the gate adds, and the new reason. `send=False` asks the channel
+only for its plan. A dry run judges and plans as a send would. `label` names the
+message in errors, and `reject` is the command that takes it off.
+
+Raises `ValueError`, sending nothing, for any of these:
+
+- a draft with no destination, or no text;
+- a `deliver` message a hold kept, whose delivery never ran;
+- a hold on the subject, the recipient, the repository, the checkout or, for a
+  `deliver` message, the delivery, that keeps effects waiting.
+
+* **Return type:**
+  [`DraftOutcome`](_autosummary/liaise.release.html.md#liaise.release.DraftOutcome)
+
+### liaise.release.sendable_ref(ref)
+
+`ref` as a GitHub issue or repository reference, stripped and lower-cased.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> sendable_ref(" github:Example/App#12 ")
+'github:example/app#12'
+```
+
+Raises `ValueError` for anything else: another channel, a malformed reference, or an
+issue number that is not a positive whole number.
 
 
 # _autosummary/liaise.schedule.html.md
@@ -5303,6 +5857,7 @@ roles = { pat = "partner" }
 | [`normalize_binding`](_autosummary/liaise.subjects.html.md#liaise.subjects.normalize_binding)(binding)              | `binding` as a subject keeps it: on a GitHub channel, its channel and conversation lower-cased.                              |
 | [`poll_ref`](_autosummary/liaise.subjects.html.md#liaise.subjects.poll_ref)(binding)                       | The conversation `binding` is polled on, or None when v0.1 cannot poll it.                                                   |
 | [`ref_key`](_autosummary/liaise.subjects.html.md#liaise.subjects.ref_key)(ref)                            | How two polled conversations compare: without regard to case, as their cursors do.                                           |
+| [`subject_for_ref`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref)(subjects, ref)          | The subject whose bindings take in `ref`, the conversation a message outside a case goes to.                                 |
 
 ### Classes
 
@@ -5572,6 +6127,34 @@ on the cursor of `github:example/app`.
 >>> ref_key("github:Example/App") == ref_key("github:example/app")
 True
 ```
+
+### liaise.subjects.subject_for_ref(subjects, ref)
+
+The subject whose bindings take in `ref`, the conversation a message outside a case goes to.
+
+A binding takes in the conversation it polls and, on GitHub, every issue of a repository
+it binds, so `github:example/app#12` is the subject’s that binds
+`github:example/app`. Conversations compare as [`ref_key()`](_autosummary/liaise.subjects.html.md#liaise.subjects.ref_key) says. A binding’s
+`?conditions` are not consulted, since they sort what comes in, not where a message
+may go, and a wildcard binding polls nothing, so it takes in nothing (see
+[`poll_ref()`](_autosummary/liaise.subjects.html.md#liaise.subjects.poll_ref)). When two subjects take `ref` in, the one whose binding names it most
+closely wins: an issue’s own binding over its repository’s.
+
+No caller may choose another subject: the subject’s policy is what the gate judges a
+message by, so a message goes only where its subject binds.
+
+* **Return type:**
+  [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)
+
+```pycon
+>>> heron = Subject("heron", ("github:example/heron?labels=partner:pat",),
+...     Policy(people={}, roles={}))
+>>> subject_for_ref({"heron": heron}, "github:Example/Heron#12").slug
+'heron'
+```
+
+Raises `ValueError` naming the subjects there are when none takes `ref` in, and
+naming each when several name it equally closely.
 
 
 # _autosummary/liaise.testing.html.md
@@ -5850,7 +6433,6 @@ tell a running tick from a finished or an interrupted one. [`status_lines()`](_a
 | [`DEPLOY_OUTPUT_TAIL_CHARS`](_autosummary/liaise.tick.html.md#liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS) | How many of a failed deploy's last output characters its `run` entry keeps.                                                                                                    |
 | [`WorkspaceFactory`](_autosummary/liaise.tick.html.md#liaise.tick.WorkspaceFactory)         | the workspace seam (see [`liaise.workspace.workspace_for()`](_autosummary/liaise.workspace.html.md#liaise.workspace.workspace_for)).                                     |
 | [`Triage`](_autosummary/liaise.tick.html.md#liaise.tick.Triage)                   | the triage seam (#19).                                                                                                                                                         |
-| [`HELD_REASON_PREFIX`](_autosummary/liaise.tick.html.md#liaise.tick.HELD_REASON_PREFIX)       | How a draft kept because a hold kept its effects waiting begins its reason, before the hold's scope: `held: effect:deploy`.                                                    |
 | [`RUN_LOCK_FILE`](_autosummary/liaise.tick.html.md#liaise.tick.RUN_LOCK_FILE)            | The run lock's file under `state_dir`.                                                                                                                                         |
 | [`RUN_STARTED_KEY`](_autosummary/liaise.tick.html.md#liaise.tick.RUN_STARTED_KEY)          | Where the store keeps a tick's start and end.                                                                                                                                  |
 | [`LEGACY_LAST_RUN_KEY`](_autosummary/liaise.tick.html.md#liaise.tick.LEGACY_LAST_RUN_KEY)      | a pass's start, written once the pass had finished.                                                                                                                            |
@@ -5942,11 +6524,6 @@ A message that did not go out: the gate diverted it, or a hold kept it.
 The states a case may be started from. `working`, `needs-owner` and `deployed`
 wait on something other than the partner’s clock. `budget` is one, since the cap is
 per day (0.0.x H-4).
-
-### liaise.tick.HELD_REASON_PREFIX *= 'held: '*
-
-How a draft kept because a hold kept its effects waiting begins its reason, before the
-hold’s scope: `held: effect:deploy`.
 
 ### liaise.tick.ISSUE_DELIVERY_PER *= 'issue'*
 
@@ -6380,7 +6957,7 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-15 14:30 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/14a62fd36f4cc10cc3e15c03789eb639428a3fcb"><code>14a62fd</code></a> on branch <code>main</code>, for **liaise 0.1.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-15 15:07 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb"><code>b1fd353</code></a> on branch <code>main</code>, for **liaise 0.1.2** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -6389,7 +6966,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/14a62fd36f4cc10cc3e15c03789eb639428a3fcb"><code>14a62fd36f4cc10cc3e15c03789eb639428a3fcb</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb"><code>b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -6400,9 +6977,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/34981862981">34981862981</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/34986124721">34986124721</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>14a62fd36f4cc10cc3e15c03789eb639428a3fcb</code> (in the history of the built commit) |
+| Event commit | <code>b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -6427,13 +7004,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.1/">0.1.1</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/liaise/0.1.2/">0.1.2</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 14a62fd36f4cc10cc3e15c03789eb639428a3fcb
+git checkout b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
@@ -6457,7 +7034,7 @@ Skills are folders holding a `SKILL.md` (the [Agent Skills](https://agentskills.
 
 ### `liaise`
 
-Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on “add a partner to liaise”, “onboard <name> to liaise”, “add a subject to liaise”, “check liaise status”, “what is liaise waiting on”, “hold liaise”, “pause liaise for <subject>”, “unhold”, “why is this issue unrouted”, “migrate my liaise config”, “what does liaise:needs-owner mean”, “why hasn’t liaise picked up this issue”, “send the liaise draft”, “approve this draft”, “reject a draft”.
+Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on “add a partner to liaise”, “onboard <name> to liaise”, “add a subject to liaise”, “check liaise status”, “what is liaise waiting on”, “hold liaise”, “pause liaise for <subject>”, “unhold”, “why is this issue unrouted”, “migrate my liaise config”, “what does liaise:needs-owner mean”, “why hasn’t liaise picked up this issue”, “send the liaise draft”, “approve this draft”, “reject a draft”, “message someone through liaise”, “ask the partner a question outside a case”, “liaise message send”.
 
 Source: [`.claude/skills/liaise`](https://github.com/thorwhalen/liaise/tree/HEAD/.claude/skills/liaise).
 

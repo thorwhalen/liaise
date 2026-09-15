@@ -10,6 +10,8 @@ liaise.ledger
    
       DFLT_LEDGER_SUBDIR
       DFLT_DIGEST_LENGTH
+      MESSAGE_ID_INFIX
+      MESSAGE_ID_HEX_DIGITS
    
    .. rubric:: Functions
 

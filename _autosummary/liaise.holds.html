@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../_static/documentation_options.js?v=92734c54"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.github" href="liaise.github.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -327,6 +327,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.github.html">liaise.github</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.holds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
@@ -470,7 +471,7 @@ holds apply it gets the most specific one, the narrowest reason there is.</p>
 <td><p>The most specific hold on one of <code class="docutils literal notranslate"><span class="pre">scopes</span></code> that stops <code class="docutils literal notranslate"><span class="pre">for_</span></code>, or None.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.holds.canonical_scope" title="liaise.holds.canonical_scope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">canonical_scope</span></code></a>(scope)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">scope</span></code> as holds are stored and matched: validated, and a checkout path resolved.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">scope</span></code> as holds are stored and matched: validated, a checkout path resolved, and a repository lower-cased, since GitHub's names ignore case as its references do.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.holds.hold" title="liaise.holds.hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hold</span></code></a>(ledger, scope, *[, mode, reason, ...])</p></td>
 <td><p>Put a <code class="docutils literal notranslate"><span class="pre">mode</span></code> hold on <code class="docutils literal notranslate"><span class="pre">scope</span></code>, replacing any hold already there, and return it.</p></td>
@@ -612,13 +613,18 @@ a scope outside the accepted forms.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.holds.canonical_scope">
 <span class="sig-prename descclassname"><span class="pre">liaise.holds.</span></span><span class="sig-name descname"><span class="pre">canonical_scope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scope</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/holds.html#canonical_scope"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.holds.canonical_scope" title="Link to this definition">#</a></dt>
-<dd><p><code class="docutils literal notranslate"><span class="pre">scope</span></code> as holds are stored and matched: validated, and a checkout path resolved.</p>
-<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> as <a class="reference internal" href="#liaise.holds.parse_scope" title="liaise.holds.parse_scope"><code class="xref py py-func docutils literal notranslate"><span class="pre">parse_scope()</span></code></a> does.</p>
+<dd><p><code class="docutils literal notranslate"><span class="pre">scope</span></code> as holds are stored and matched: validated, a checkout path resolved, and a
+repository lower-cased, since GitHub’s names ignore case as its references do.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">canonical_scope</span><span class="p">(</span><span class="s2">"repo:Example/App"</span><span class="p">)</span>
+<span class="go">'repo:example/app'</span>
+</pre></div>
+</div>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> as <a class="reference internal" href="#liaise.holds.parse_scope" title="liaise.holds.parse_scope"><code class="xref py py-func docutils literal notranslate"><span class="pre">parse_scope()</span></code></a> does.</p>
 </dd></dl>
 
 <dl class="py function">

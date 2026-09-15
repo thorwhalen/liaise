@@ -24,6 +24,7 @@ are pure and take the time they record as an argument.
 | [`OUTCOME_KINDS`](#liaise.model.OUTCOME_KINDS)      | The closed vocabulary a processor run reports its outcomes in.                                                                    |
 | [`PERMISSIONS`](#liaise.model.PERMISSIONS)        | What a role can grant on a subject (see [`liaise.subjects`](liaise.subjects.html.md#module-liaise.subjects)). |
 | [`HOLD_MODES`](#liaise.model.HOLD_MODES)         | How a [`Hold`](#liaise.model.Hold) stops work in its scope.                                              |
+| [`MESSAGE_STATES`](#liaise.model.MESSAGE_STATES)     | held for the operator, sent, or declined.                                                                                         |
 
 ### Functions
 
@@ -33,16 +34,17 @@ are pure and take the time they record as an argument.
 
 ### Classes
 
-| [`Approval`](#liaise.model.Approval)(by, at)                                | The operator's release of a held message: who released it, and when.                                             |
-|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| [`Case`](#liaise.model.Case)(id, subject, conversations, reporter, ...) | One piece of work on a subject, from its first message to its delivery.                                          |
-| [`Health`](#liaise.model.Health)(ok[, defer_until, error])                | Whether a processor can take work now, and if not, until when or why.                                            |
-| [`Hold`](#liaise.model.Hold)(scope, mode[, reason, set_by, set_at])     | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                       |
-| [`IssueCheck`](#liaise.model.IssueCheck)([read_at, failures])                 | The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.                |
-| [`LedgerEntry`](#liaise.model.LedgerEntry)(at, kind[, actor, grade, ...])      | One thing that happened on a case: appended, never changed.                                                      |
-| [`Outcome`](#liaise.model.Outcome)(kind[, text, questions, reason])        | One outcome a processor run reports: `kind` from [`OUTCOME_KINDS`](#liaise.model.OUTCOME_KINDS). |
-| [`RunRecord`](#liaise.model.RunRecord)(run_id, case_id, subject, mode, ...)  | A processor run started on a case: how it was started, and where it is now.                                      |
-| [`RunResult`](#liaise.model.RunResult)(run_id[, outcomes, usage, ...])       | What a finished run returned: its outcomes, what it cost, and how it ended.                                      |
+| [`Approval`](#liaise.model.Approval)(by, at)                                  | The operator's release of a held message: who released it, and when.                                             |
+|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| [`Case`](#liaise.model.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                          |
+| [`Health`](#liaise.model.Health)(ok[, defer_until, error])                  | Whether a processor can take work now, and if not, until when or why.                                            |
+| [`Hold`](#liaise.model.Hold)(scope, mode[, reason, set_by, set_at])       | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                       |
+| [`IssueCheck`](#liaise.model.IssueCheck)([read_at, failures])                   | The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.                |
+| [`LedgerEntry`](#liaise.model.LedgerEntry)(at, kind[, actor, grade, ...])        | One thing that happened on a case: appended, never changed.                                                      |
+| [`OutboundMessage`](#liaise.model.OutboundMessage)(id, subject, recipient, ref, ...) | A message an agent sent, or asked to send, outside any case (`liaise message send`).                             |
+| [`Outcome`](#liaise.model.Outcome)(kind[, text, questions, reason])          | One outcome a processor run reports: `kind` from [`OUTCOME_KINDS`](#liaise.model.OUTCOME_KINDS). |
+| [`RunRecord`](#liaise.model.RunRecord)(run_id, case_id, subject, mode, ...)    | A processor run started on a case: how it was started, and where it is now.                                      |
+| [`RunResult`](#liaise.model.RunResult)(run_id[, outcomes, usage, ...])         | What a finished run returned: its outcomes, what it cost, and how it ended.                                      |
 
 ### *class* liaise.model.Approval(by, at)
 
@@ -146,10 +148,36 @@ what access was judged on; `delivery_id` is the channel event it came from.
 `detail` holds whatever else the kind needs, such as a transition’s `from`,
 `to` and `reason`.
 
+### liaise.model.MESSAGE_STATES *= ('held', 'sent', 'rejected')*
+
+held for the operator, sent, or declined.
+
+* **Type:**
+  Where an [`OutboundMessage`](#liaise.model.OutboundMessage) stands
+
 ### liaise.model.OUTCOME_KINDS *= ('ask', 'reply', 'escalate', 'propose', 'deliver', 'decline', 'defer', 'note')*
 
 The closed vocabulary a processor run reports its outcomes in. Validating an
 [`Outcome`](#liaise.model.Outcome) (and treating `decline` as `escalate`) is `liaise.outcomes`’s job.
+
+### *class* liaise.model.OutboundMessage(id, subject, recipient, ref, purpose, text, state, created_at, updated_at, title=None, reason=None, notes=(), entries=())
+
+Bases: `_Record`
+
+A message an agent sent, or asked to send, outside any case (`liaise message send`).
+
+`id` is `<subject>-m<hex>`. `recipient` (a person id), `ref`, `purpose`,
+`title` and `text` are the message, as it was last judged. `state` is one of
+[`MESSAGE_STATES`](#liaise.model.MESSAGE_STATES), and while it is `held`, `reason` and `notes` say why.
+`entries` is its append-only history of gate decisions, as a case keeps its own. A
+message has no reporter, no run and no label: it is not a unit of work.
+
+#### with_entry(entry)
+
+This message with `entry` appended, and `updated_at` moved forward to it.
+
+* **Return type:**
+  [`OutboundMessage`](#liaise.model.OutboundMessage)
 
 ### *class* liaise.model.Outcome(kind, text='', questions=(), reason='')
 

@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../../_static/documentation_options.js?v=92734c54"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -982,6 +982,67 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    True</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="n">ref</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span></div>
+
+
+
+<span class="c1">#: What joins an issue's number to its repository in a GitHub reference.</span>
+<span class="n">_ISSUE_SEPARATOR</span> <span class="o">=</span> <span class="s2">"#"</span>
+
+
+<div class="viewcode-block" id="subject_for_ref">
+<a class="viewcode-back" href="../../_autosummary/liaise.subjects.html#liaise.subject_for_ref">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">subject_for_ref</span><span class="p">(</span><span class="n">subjects</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">],</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Subject</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The subject whose bindings take in ``ref``, the conversation a message outside a case goes to.</span>
+
+<span class="sd">    A binding takes in the conversation it polls and, on GitHub, every issue of a repository</span>
+<span class="sd">    it binds, so ``github:example/app#12`` is the subject's that binds</span>
+<span class="sd">    ``github:example/app``. Conversations compare as :func:`ref_key` says. A binding's</span>
+<span class="sd">    ``?conditions`` are not consulted, since they sort what comes in, not where a message</span>
+<span class="sd">    may go, and a wildcard binding polls nothing, so it takes in nothing (see</span>
+<span class="sd">    :func:`poll_ref`). When two subjects take ``ref`` in, the one whose binding names it most</span>
+<span class="sd">    closely wins: an issue's own binding over its repository's.</span>
+
+<span class="sd">    No caller may choose another subject: the subject's policy is what the gate judges a</span>
+<span class="sd">    message by, so a message goes only where its subject binds.</span>
+
+<span class="sd">    &gt;&gt;&gt; heron = Subject("heron", ("github:example/heron?labels=partner:pat",),</span>
+<span class="sd">    ...     Policy(people={}, roles={}))</span>
+<span class="sd">    &gt;&gt;&gt; subject_for_ref({"heron": heron}, "github:Example/Heron#12").slug</span>
+<span class="sd">    'heron'</span>
+
+<span class="sd">    Raises ``ValueError`` naming the subjects there are when none takes ``ref`` in, and</span>
+<span class="sd">    naming each when several name it equally closely.</span>
+<span class="sd">    """</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">ref_key</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+    <span class="n">closeness</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">slug</span><span class="p">,</span> <span class="n">subject</span> <span class="ow">in</span> <span class="n">subjects</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">binding</span> <span class="ow">in</span> <span class="n">subject</span><span class="o">.</span><span class="n">bindings</span><span class="p">:</span>
+            <span class="n">polled</span> <span class="o">=</span> <span class="n">poll_ref</span><span class="p">(</span><span class="n">binding</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">polled</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">polled_key</span> <span class="o">=</span> <span class="n">ref_key</span><span class="p">(</span><span class="n">polled</span><span class="p">)</span>
+            <span class="n">github</span> <span class="o">=</span> <span class="n">polled_key</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">in</span> <span class="n">CASE_INSENSITIVE_REF_CHANNELS</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">polled_key</span><span class="p">:</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="k">elif</span> <span class="n">github</span> <span class="ow">and</span> <span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">polled_key</span> <span class="o">+</span> <span class="n">_ISSUE_SEPARATOR</span><span class="p">):</span>
+                <span class="n">score</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">closeness</span><span class="p">[</span><span class="n">slug</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">closeness</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">slug</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">score</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">closeness</span><span class="p">:</span>
+        <span class="n">known</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">subjects</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">"(none)"</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"no subject binds </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">, so there is no policy to judge a message to it by "</span>
+            <span class="sa">f</span><span class="s2">"(the subjects are: </span><span class="si">{</span><span class="n">known</span><span class="si">}</span><span class="s2">); bind it in a subject's file first"</span>
+        <span class="p">)</span>
+    <span class="n">best</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">closeness</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="n">closest</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">slug</span> <span class="k">for</span> <span class="n">slug</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="n">closeness</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">score</span> <span class="o">==</span> <span class="n">best</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">closest</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> is bound equally closely by the subjects </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">closest</span><span class="p">)</span><span class="si">}</span><span class="s2">; bind it "</span>
+            <span class="sa">f</span><span class="s2">"in one of them only"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">subjects</span><span class="p">[</span><span class="n">closest</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span></div>
 
 
 

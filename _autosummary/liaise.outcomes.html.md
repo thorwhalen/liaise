@@ -39,13 +39,14 @@ for `liaise case show`.
 
 ### Module Attributes
 
-| [`DFLT_SENDING_CHANNELS`](#liaise.outcomes.DFLT_SENDING_CHANNELS)   | Channels whose conversations liaise posts into.                                                  |
-|--------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
-| [`DFLT_ADDRESS_CHANNELS`](#liaise.outcomes.DFLT_ADDRESS_CHANNELS)   | Channels that can write to a person's address (`email:<address>`), not only into a conversation. |
-| [`DFLT_OPERATOR_PRIORITY`](#liaise.outcomes.DFLT_OPERATOR_PRIORITY)  | The ntfy priority of an operator notification that needs the operator to act.                    |
-| [`REQUIRED_FIELD_BY_KIND`](#liaise.outcomes.REQUIRED_FIELD_BY_KIND)  | The field each outcome kind cannot do without.                                                   |
-| [`OUTCOME_SCHEMA`](#liaise.outcomes.OUTCOME_SCHEMA)          | The JSON Schema of a run's structured result, passed to `claude --json-schema`.                  |
-| [`Action`](#liaise.outcomes.Action)                  | What [`plan_outcomes()`](#liaise.outcomes.plan_outcomes) returns a list of.         |
+| [`DFLT_SENDING_CHANNELS`](#liaise.outcomes.DFLT_SENDING_CHANNELS)   | Channels whose conversations liaise posts into.                                                                                |
+|--------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_ADDRESS_CHANNELS`](#liaise.outcomes.DFLT_ADDRESS_CHANNELS)   | Channels that can write to a person's address (`email:<address>`), not only into a conversation.                               |
+| [`DFLT_OPERATOR_PRIORITY`](#liaise.outcomes.DFLT_OPERATOR_PRIORITY)  | The ntfy priority of an operator notification that needs the operator to act.                                                  |
+| [`HELD_REASON_PREFIX`](#liaise.outcomes.HELD_REASON_PREFIX)      | How the reason of a draft kept because a hold kept its effects waiting begins, before the hold's scope: `held: effect:deploy`. |
+| [`REQUIRED_FIELD_BY_KIND`](#liaise.outcomes.REQUIRED_FIELD_BY_KIND)  | The field each outcome kind cannot do without.                                                                                 |
+| [`OUTCOME_SCHEMA`](#liaise.outcomes.OUTCOME_SCHEMA)          | The JSON Schema of a run's structured result, passed to `claude --json-schema`.                                                |
+| [`Action`](#liaise.outcomes.Action)                  | What [`plan_outcomes()`](#liaise.outcomes.plan_outcomes) returns a list of.                                       |
 
 ### Functions
 
@@ -57,14 +58,14 @@ for `liaise case show`.
 
 ### Classes
 
-| [`Defer`](#liaise.outcomes.Defer)(case_id, reason)                      | Put the case aside for `reason`.                                                                                          |
-|----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
-| [`Deliver`](#liaise.outcomes.Deliver)(case_id, kind, per, command)        | Deliver the case's work as the subject's `delivery` says.                                                                 |
-| [`DigestNote`](#liaise.outcomes.DigestNote)(case_id, text)                   | Add `text` to the operator's digest.                                                                                      |
-| [`NotifyOperator`](#liaise.outcomes.NotifyOperator)(title, body[, priority])     | Tell the operator, as `liaise.notify.notify()` does.                                                                      |
-| [`Send`](#liaise.outcomes.Send)(case_id, ref, channel, recipient, ...) | Send `text` to `recipient` at `ref`.                                                                                      |
-| [`StoreDraft`](#liaise.outcomes.StoreDraft)(case_id, draft)                  | Keep `draft` (see [`make_draft()`](#liaise.outcomes.make_draft)) in the case's `drafts` for the operator. |
-| [`Transition`](#liaise.outcomes.Transition)(case_id, state, reason)          | Move the case to `state`, recording `reason`.                                                                             |
+| [`Defer`](#liaise.outcomes.Defer)(case_id, reason)                           | Put the case aside for `reason`.                                                                                          |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| [`Deliver`](#liaise.outcomes.Deliver)(case_id, kind, per, command)             | Deliver the case's work as the subject's `delivery` says.                                                                 |
+| [`DigestNote`](#liaise.outcomes.DigestNote)(case_id, text)                        | Add `text` to the operator's digest.                                                                                      |
+| [`NotifyOperator`](#liaise.outcomes.NotifyOperator)(title, body[, priority])          | Tell the operator, as `liaise.notify.notify()` does.                                                                      |
+| [`Send`](#liaise.outcomes.Send)(\*, ref, channel, recipient, purpose, text) | Send `text` to `recipient` at `ref`.                                                                                      |
+| [`StoreDraft`](#liaise.outcomes.StoreDraft)(case_id, draft)                       | Keep `draft` (see [`make_draft()`](#liaise.outcomes.make_draft)) in the case's `drafts` for the operator. |
+| [`Transition`](#liaise.outcomes.Transition)(case_id, state, reason)               | Move the case to `state`, recording `reason`.                                                                             |
 
 ### liaise.outcomes.Action
 
@@ -103,6 +104,11 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Add `text` to the operator’s digest.
 
+### liaise.outcomes.HELD_REASON_PREFIX *= 'held: '*
+
+How the reason of a draft kept because a hold kept its effects waiting begins, before
+the hold’s scope: `held: effect:deploy`.
+
 ### *class* liaise.outcomes.NotifyOperator(title, body, priority='default')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -118,7 +124,7 @@ The JSON Schema of a run’s structured result, passed to `claude --json-schema`
 The field each outcome kind cannot do without. [`parse_outcomes()`](#liaise.outcomes.parse_outcomes) enforces it
 and [`OUTCOME_SCHEMA`](#liaise.outcomes.OUTCOME_SCHEMA) states it.
 
-### *class* liaise.outcomes.Send(case_id, ref, channel, recipient, purpose, text)
+### *class* liaise.outcomes.Send(, ref, channel, recipient, purpose, text, title=None, case_id=None)
 
 Bases: [`Outbound`](liaise.gate.html.md#liaise.gate.Outbound)
 
@@ -136,7 +142,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Move the case to `state`, recording `reason`.
 
-### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=())
+### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=(), title=None)
 
 One item of a case’s `drafts`: a message held for the operator.
 
@@ -149,7 +155,8 @@ This is the one shape every draft has, JSON-ready:
   can reach the recipient;
 - `text`: the message, as it would be sent;
 - `reason`: why it was held (an escalation’s reason, a gate divert, no channel);
-- `notes`: the gate’s notes on it, in order.
+- `notes`: the gate’s notes on it, in order;
+- `title`: the title of the issue it would open, present only when it opens one.
 
 ```pycon
 >>> from datetime import datetime, timezone

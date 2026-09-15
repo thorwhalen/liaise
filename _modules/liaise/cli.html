@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../../_static/documentation_options.js?v=92734c54"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -724,6 +724,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]</span>
 <span class="sd">    liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]</span>
 <span class="sd">    liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]</span>
+<span class="sd">    liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]</span>
+<span class="sd">        [--purpose PURPOSE] [--dry-run]</span>
+<span class="sd">    liaise message list [--state STATE]</span>
+<span class="sd">    liaise message show MESSAGE_ID</span>
+<span class="sd">    liaise message send-draft MESSAGE_ID [--edit] [--dry-run]</span>
+<span class="sd">    liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]</span>
 <span class="sd">    liaise subject list</span>
 <span class="sd">    liaise subject show SLUG</span>
 <span class="sd">    liaise setup SUBJECT</span>
@@ -760,11 +766,11 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">ExitStack</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">cw</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">cases</span><span class="p">,</span> <span class="n">holds</span><span class="p">,</span> <span class="n">migrate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">cases</span><span class="p">,</span> <span class="n">holds</span><span class="p">,</span> <span class="n">messages</span><span class="p">,</span> <span class="n">migrate</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.access</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resolver</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DFLT_CONFIG_ROOT</span><span class="p">,</span>
@@ -775,8 +781,10 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">GhCli</span><span class="p">,</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">GitHubError</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_LEDGER_SUBDIR</span><span class="p">,</span> <span class="n">Ledger</span><span class="p">,</span> <span class="n">default_ledger_store</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">HOLD_MODES</span><span class="p">,</span> <span class="n">require_one_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClaudeHeadless</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.projection</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_labels</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="n">DraftSentNotRecorded</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.schedule</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DFLT_INTERVAL_MINUTES</span><span class="p">,</span>
     <span class="n">install_schedule</span><span class="p">,</span>
@@ -802,10 +810,16 @@ window.runMermaid = runMermaid;</script>
 <span class="n">STOPPED</span> <span class="o">=</span> <span class="s2">"stopped"</span>
 <span class="c1">#: How ``liaise subject show`` prints an empty or unset value.</span>
 <span class="n">NONE_SHOWN</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">NONE_SHOWN</span>
-<span class="c1">#: What a case command that writes says, changing nothing, while a tick holds the run lock.</span>
+<span class="c1">#: What a command that writes a case or a message says, changing nothing, while a tick</span>
+<span class="c1">#: holds the run lock.</span>
 <span class="n">TICK_RUNNING</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"a liaise tick is running, so </span><span class="si">{case_id}</span><span class="s2"> was not </span><span class="si">{done}</span><span class="s2">; try again shortly (</span><span class="si">{busy}</span><span class="s2">)"</span>
+    <span class="s2">"a liaise tick is running, so </span><span class="si">{what}</span><span class="s2"> was not </span><span class="si">{done}</span><span class="s2">; try again shortly (</span><span class="si">{busy}</span><span class="s2">)"</span>
 <span class="p">)</span>
+<span class="c1">#: The ``--text-file`` that reads a message's text from standard input.</span>
+<span class="n">STDIN_FILE_NAME</span> <span class="o">=</span> <span class="s2">"-"</span>
+<span class="c1">#: How ``--edit`` sets a message's title apart from its text: a first line, then a rule.</span>
+<span class="n">TITLE_LINE_PREFIX</span> <span class="o">=</span> <span class="s2">"Title: "</span>
+<span class="n">TITLE_RULE</span> <span class="o">=</span> <span class="s2">"---"</span>
 <span class="c1">#: The environment variables that name the operator's editor, the first one set winning.</span>
 <span class="n">EDITOR_ENV_VARS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"VISUAL"</span><span class="p">,</span> <span class="s2">"EDITOR"</span><span class="p">)</span>
 <span class="c1">#: The editor ``liaise case send-draft --edit`` opens when no variable names one.</span>
@@ -818,11 +832,10 @@ window.runMermaid = runMermaid;</script>
 <span class="c1">#: The exit code of a draft command whose message the gate diverted: the message is held</span>
 <span class="c1">#: for the operator, as ``liaise vet`` is planned to say (discussion 32, §5.8).</span>
 <span class="n">DIVERTED_EXIT_CODE</span> <span class="o">=</span> <span class="mi">2</span>
-<span class="c1">#: Why ``liaise case send-draft`` sends nothing without a terminal to ask at.</span>
+<span class="c1">#: Why ``send-draft`` sends nothing without a terminal to ask at.</span>
 <span class="n">NO_TERMINAL</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"liaise case send-draft sends a draft only once you confirm it at a terminal, and "</span>
-    <span class="s2">"there is no terminal here, so nothing was sent: run it in your own shell "</span>
-    <span class="s2">"(--dry-run asks nothing)"</span>
+    <span class="s2">"a held message is sent only once you confirm it at a terminal, and there is no "</span>
+    <span class="s2">"terminal here, so nothing was sent: run it in your own shell (--dry-run asks nothing)"</span>
 <span class="p">)</span>
 
 
@@ -880,18 +893,19 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_hold_run_lock</span><span class="p">(</span>
-    <span class="n">stack</span><span class="p">:</span> <span class="n">ExitStack</span><span class="p">,</span> <span class="n">global_config</span><span class="p">:</span> <span class="n">GlobalConfig</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">stack</span><span class="p">:</span> <span class="n">ExitStack</span><span class="p">,</span> <span class="n">global_config</span><span class="p">:</span> <span class="n">GlobalConfig</span><span class="p">,</span> <span class="n">what</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">done</span><span class="p">:</span> <span class="nb">str</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Take the run lock into ``stack``, or refuse in one line while a tick holds it.</span>
 
-<span class="sd">    A case command that writes holds the lock, so a tick cannot start meanwhile and write</span>
-<span class="sd">    over it. It does not wait: the refusal says what was not ``done``.</span>
+<span class="sd">    A command that writes a case or a message holds the lock, so a tick cannot start</span>
+<span class="sd">    meanwhile and write over it. It does not wait: the refusal says ``what`` was not</span>
+<span class="sd">    ``done``.</span>
 <span class="sd">    """</span>
     <span class="n">lock_path</span> <span class="o">=</span> <span class="n">run_lock_path</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">global_config</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">())</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">stack</span><span class="o">.</span><span class="n">enter_context</span><span class="p">(</span><span class="n">run_lock</span><span class="p">(</span><span class="n">lock_path</span><span class="p">))</span>
     <span class="k">except</span> <span class="n">RunLockHeld</span> <span class="k">as</span> <span class="n">busy</span><span class="p">:</span>
-        <span class="n">message</span> <span class="o">=</span> <span class="n">TICK_RUNNING</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">case_id</span><span class="o">=</span><span class="n">case_id</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span> <span class="n">busy</span><span class="o">=</span><span class="n">busy</span><span class="p">)</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="n">TICK_RUNNING</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">what</span><span class="o">=</span><span class="n">what</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="n">done</span><span class="p">,</span> <span class="n">busy</span><span class="o">=</span><span class="n">busy</span><span class="p">)</span>
         <span class="k">raise</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">busy</span>
 
 
@@ -1357,14 +1371,25 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">index</span> <span class="k">else</span> <span class="kc">None</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_draft_not_sent</span><span class="p">(</span>
-    <span class="n">release</span><span class="p">:</span> <span class="n">cases</span><span class="o">.</span><span class="n">DraftRelease</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The one-screen refusal for a released draft the gate diverted or its channel refused.</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_Held</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""A held message as a release command names it."""</span>
+
+    <span class="c1">#: How its lines and refusals name it: ``draft [0] of example-app-1``.</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: Where it stays when it is not sent: ``on the case``, ``held``.</span>
+    <span class="n">stays</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: The command that edits and sends it again.</span>
+    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="c1">#: What a refusal for a running tick names.</span>
+    <span class="n">owner</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_not_sent</span><span class="p">(</span><span class="n">held</span><span class="p">:</span> <span class="n">_Held</span><span class="p">,</span> <span class="n">release</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The refusal for a held message the gate diverted or its channel refused.</span>
 
 <span class="sd">    A divert exits :data:`DIVERTED_EXIT_CODE`, and a refusal cw's usual error code.</span>
 <span class="sd">    """</span>
-    <span class="n">attempt</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">release</span><span class="o">.</span><span class="n">attempt</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"draft [</span><span class="si">{</span><span class="n">release</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">attempt</span> <span class="o">=</span> <span class="n">release</span><span class="o">.</span><span class="n">attempt</span>
     <span class="n">decision</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span>
     <span class="n">diverted</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span>
     <span class="n">why</span> <span class="o">=</span> <span class="p">(</span>
@@ -1375,35 +1400,86 @@ window.runMermaid = runMermaid;</script>
     <span class="n">kept</span> <span class="o">=</span> <span class="p">(</span>
         <span class="s2">""</span>
         <span class="k">if</span> <span class="n">dry_run</span>
-        <span class="k">else</span> <span class="sa">f</span><span class="s2">". It stays on the case with that reason; edit it with liaise case "</span>
-        <span class="sa">f</span><span class="s2">"send-draft </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">release</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2"> --edit"</span>
+        <span class="k">else</span> <span class="sa">f</span><span class="s2">". It stays </span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">stays</span><span class="si">}</span><span class="s2"> with that reason; edit it with </span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">command</span><span class="si">}</span><span class="s2"> --edit"</span>
     <span class="p">)</span>
     <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would not be sent"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">"was not sent"</span>
     <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
-    <span class="n">message</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">why</span><span class="si">}{</span><span class="n">kept</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">why</span><span class="si">}{</span><span class="n">kept</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span>
     <span class="k">return</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"code"</span><span class="p">:</span> <span class="n">DIVERTED_EXIT_CODE</span><span class="p">}</span> <span class="k">if</span> <span class="n">diverted</span> <span class="k">else</span> <span class="p">{}))</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_draft_preview</span><span class="p">(</span><span class="n">release</span><span class="p">:</span> <span class="n">cases</span><span class="o">.</span><span class="n">DraftRelease</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_preview</span><span class="p">(</span><span class="n">held</span><span class="p">:</span> <span class="n">_Held</span><span class="p">,</span> <span class="n">release</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">then</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""What the operator reads before confirming: where it goes, the verdict, the exact text."""</span>
     <span class="n">outbound</span> <span class="o">=</span> <span class="n">release</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="sa">f</span><span class="s2">"draft [</span><span class="si">{</span><span class="n">release</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2"> to "</span>
-        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="sa">f</span><span class="s2">"gate: passed (</span><span class="si">{</span><span class="n">release</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span><span class="p">,</span>
         <span class="o">*</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">release</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">edit</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">release</span><span class="o">.</span><span class="n">edited</span><span class="p">:</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"your edit changed nothing: this is the draft as it was"</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">release</span><span class="o">.</span><span class="n">moved</span><span class="p">:</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"then </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> moves from </span><span class="si">{</span><span class="n">release</span><span class="o">.</span><span class="n">moved</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">release</span><span class="o">.</span><span class="n">moved</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">+=</span> <span class="n">then</span>
+    <span class="k">if</span> <span class="n">outbound</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"title: </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">"--- the message, as it would be sent ---"</span><span class="p">,</span> <span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">"---"</span><span class="p">]</span>
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_release_after_confirmation</span><span class="p">(</span>
+    <span class="n">release</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">first</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">bind</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">held</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">_Held</span><span class="p">],</span>
+    <span class="n">then</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">ledger_store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">global_config</span><span class="p">:</span> <span class="n">GlobalConfig</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="n">confirm</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Judge a held message, show the operator the verdict and the text, send it once confirmed.</span>
+
+<span class="sd">    ``release(ledger, **kwargs)`` is :func:`liaise.cases.send_draft` or</span>
+<span class="sd">    :func:`liaise.messages.send_held_message`, with all but the ledger bound. It is judged</span>
+<span class="sd">    first, as a dry run on an overlay of the ledger, with ``first``. A message the gate</span>
+<span class="sd">    diverts, or its channel refuses, is never shown: outside a dry run its reason is</span>
+<span class="sd">    recorded, sending nothing, and the command fails. One the gate passes is shown to</span>
+<span class="sd">    ``confirm`` and, once confirmed, sent under the run lock, bound by ``bind`` to what the</span>
+<span class="sd">    operator was shown. This is the one path both ``send-draft`` commands take.</span>
+
+<span class="sd">    Returns ``(release, True)`` for the release made, or the judgement in a dry run, and</span>
+<span class="sd">    ``(judgement, False)`` when the operator declined.</span>
+<span class="sd">    """</span>
+    <span class="n">judged</span> <span class="o">=</span> <span class="n">release</span><span class="p">(</span><span class="n">Ledger</span><span class="p">(</span><span class="n">ChainMap</span><span class="p">({},</span> <span class="n">ledger_store</span><span class="p">)),</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">first</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">held</span><span class="p">(</span><span class="n">judged</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">judged</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">_not_sent</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">judged</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>  <span class="c1"># record why, sending nothing</span>
+            <span class="n">_hold_run_lock</span><span class="p">(</span><span class="n">between_ticks</span><span class="p">,</span> <span class="n">global_config</span><span class="p">,</span> <span class="n">names</span><span class="o">.</span><span class="n">owner</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="s2">"changed"</span><span class="p">)</span>
+            <span class="n">recorded</span> <span class="o">=</span> <span class="n">release</span><span class="p">(</span><span class="n">Ledger</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">),</span> <span class="n">send</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">bind</span><span class="p">(</span><span class="n">judged</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">recorded</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"the gate's verdict on </span><span class="si">{</span><span class="n">names</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2"> changed while it was judged, so "</span>
+                <span class="sa">f</span><span class="s2">"nothing was sent; run the command again"</span>
+            <span class="p">)</span>
+        <span class="k">raise</span> <span class="n">_not_sent</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">recorded</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">judged</span><span class="p">,</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">confirm</span><span class="p">(</span><span class="n">_preview</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">judged</span><span class="p">,</span> <span class="n">edit</span><span class="o">=</span><span class="n">edit</span><span class="p">,</span> <span class="n">then</span><span class="o">=</span><span class="n">then</span><span class="p">(</span><span class="n">judged</span><span class="p">))):</span>
+        <span class="k">return</span> <span class="n">judged</span><span class="p">,</span> <span class="kc">False</span>
+    <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>
+        <span class="n">_hold_run_lock</span><span class="p">(</span><span class="n">between_ticks</span><span class="p">,</span> <span class="n">global_config</span><span class="p">,</span> <span class="n">names</span><span class="o">.</span><span class="n">owner</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="s2">"sent"</span><span class="p">)</span>
+        <span class="n">released</span> <span class="o">=</span> <span class="n">release</span><span class="p">(</span><span class="n">Ledger</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">),</span> <span class="o">**</span><span class="n">bind</span><span class="p">(</span><span class="n">judged</span><span class="p">))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">released</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">_not_sent</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">released</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">released</span><span class="p">,</span> <span class="kc">True</span>
+
+
 <div class="viewcode-block" id="case_send_draft">
 <a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.case_send_draft">[docs]</a>
-<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">cases</span><span class="o">.</span><span class="n">DraftSentNotRecorded</span><span class="p">)</span>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">DraftSentNotRecorded</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">case_send_draft</span><span class="p">(</span>
     <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
@@ -1440,64 +1516,64 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    """</span>
     <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
     <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
-    <span class="n">subjects</span> <span class="o">=</span> <span class="n">load_subjects</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
     <span class="n">ledger_store</span> <span class="o">=</span> <span class="n">_ledger_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="ow">not</span> <span class="n">dry_run</span><span class="p">)</span>
-    <span class="n">ledger</span> <span class="o">=</span> <span class="n">Ledger</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">)</span>
     <span class="n">draft_index</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">opened</span> <span class="o">=</span> <span class="n">_one_index</span><span class="p">(</span><span class="n">case_id</span><span class="p">,</span> <span class="n">index</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">edit</span><span class="p">:</span>  <span class="c1"># before the lock: an editor can stay open far longer than a tick waits</span>
+        <span class="n">ledger</span> <span class="o">=</span> <span class="n">Ledger</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">)</span>
         <span class="n">draft_index</span><span class="p">,</span> <span class="n">opened</span> <span class="o">=</span> <span class="n">cases</span><span class="o">.</span><span class="n">find_draft</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">draft_index</span><span class="p">)</span>
         <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="n">editor</span> <span class="ow">or</span> <span class="n">edit_in_editor</span><span class="p">)(</span><span class="n">opened</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
-    <span class="n">release</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
-        <span class="n">cases</span><span class="o">.</span><span class="n">send_draft</span><span class="p">,</span> <span class="n">subjects</span><span class="o">=</span><span class="n">subjects</span><span class="p">,</span> <span class="n">case_id</span><span class="o">=</span><span class="n">case_id</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
-        <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
-    <span class="p">)</span>  <span class="c1"># fmt: skip</span>
 
-    <span class="n">preview</span> <span class="o">=</span> <span class="n">release</span><span class="p">(</span>
-        <span class="n">Ledger</span><span class="p">(</span><span class="n">ChainMap</span><span class="p">({},</span> <span class="n">ledger_store</span><span class="p">)),</span> <span class="n">index</span><span class="o">=</span><span class="n">draft_index</span><span class="p">,</span> <span class="n">seen</span><span class="o">=</span><span class="n">opened</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">moves</span><span class="p">(</span><span class="n">judged</span><span class="p">:</span> <span class="n">cases</span><span class="o">.</span><span class="n">DraftRelease</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">judged</span><span class="o">.</span><span class="n">moved</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"then </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> moves from </span><span class="si">{</span><span class="n">judged</span><span class="o">.</span><span class="n">moved</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">judged</span><span class="o">.</span><span class="n">moved</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
+
+    <span class="n">done</span><span class="p">,</span> <span class="n">confirmed</span> <span class="o">=</span> <span class="n">_release_after_confirmation</span><span class="p">(</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">cases</span><span class="o">.</span><span class="n">send_draft</span><span class="p">,</span>
+            <span class="n">subjects</span><span class="o">=</span><span class="n">load_subjects</span><span class="p">(</span><span class="n">config_root</span><span class="p">),</span>
+            <span class="n">case_id</span><span class="o">=</span><span class="n">case_id</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">by</span><span class="o">=</span><span class="n">cases</span><span class="o">.</span><span class="n">OPERATOR_ACTOR</span><span class="p">,</span>
+            <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">first</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">draft_index</span><span class="p">,</span> <span class="n">seen</span><span class="o">=</span><span class="n">opened</span><span class="p">),</span>
+        <span class="n">bind</span><span class="o">=</span><span class="k">lambda</span> <span class="n">judged</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">judged</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">seen</span><span class="o">=</span><span class="n">judged</span><span class="o">.</span><span class="n">draft</span><span class="p">),</span>
+        <span class="n">held</span><span class="o">=</span><span class="k">lambda</span> <span class="n">judged</span><span class="p">:</span> <span class="n">_Held</span><span class="p">(</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"draft [</span><span class="si">{</span><span class="n">judged</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">stays</span><span class="o">=</span><span class="s2">"on the case"</span><span class="p">,</span>
+            <span class="n">command</span><span class="o">=</span><span class="sa">f</span><span class="s2">"liaise case send-draft </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">judged</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="n">owner</span><span class="o">=</span><span class="n">case_id</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">then</span><span class="o">=</span><span class="n">moves</span><span class="p">,</span>
+        <span class="n">ledger_store</span><span class="o">=</span><span class="n">ledger_store</span><span class="p">,</span>
+        <span class="n">global_config</span><span class="o">=</span><span class="n">global_config</span><span class="p">,</span>
+        <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+        <span class="n">edit</span><span class="o">=</span><span class="n">edit</span><span class="p">,</span>
+        <span class="n">confirm</span><span class="o">=</span><span class="n">confirm</span> <span class="ow">or</span> <span class="n">confirm_at_terminal</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="n">bound</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">preview</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">seen</span><span class="o">=</span><span class="n">preview</span><span class="o">.</span><span class="n">draft</span><span class="p">)</span>  <span class="c1"># what the operator was shown</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">preview</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">_draft_not_sent</span><span class="p">(</span><span class="n">preview</span><span class="p">,</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>  <span class="c1"># record why, sending nothing</span>
-            <span class="n">_hold_run_lock</span><span class="p">(</span><span class="n">between_ticks</span><span class="p">,</span> <span class="n">global_config</span><span class="p">,</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="s2">"changed"</span><span class="p">)</span>
-            <span class="n">judged</span> <span class="o">=</span> <span class="n">release</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">send</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">bound</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">judged</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"the gate's verdict on draft [</span><span class="si">{</span><span class="n">preview</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> changed while "</span>
-                <span class="sa">f</span><span class="s2">"it was judged, so nothing was sent; run the command again"</span>
-            <span class="p">)</span>
-        <span class="k">raise</span> <span class="n">_draft_not_sent</span><span class="p">(</span><span class="n">judged</span><span class="p">,</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">confirm</span> <span class="ow">or</span> <span class="n">confirm_at_terminal</span><span class="p">)(</span>
-            <span class="n">_draft_preview</span><span class="p">(</span><span class="n">preview</span><span class="p">,</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">edit</span><span class="o">=</span><span class="n">edit</span><span class="p">)</span>
-        <span class="p">):</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">"nothing sent: draft [</span><span class="si">{</span><span class="n">preview</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> stays on the case"</span>
-        <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>
-            <span class="n">_hold_run_lock</span><span class="p">(</span><span class="n">between_ticks</span><span class="p">,</span> <span class="n">global_config</span><span class="p">,</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="s2">"sent"</span><span class="p">)</span>
-            <span class="n">preview</span> <span class="o">=</span> <span class="n">release</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="o">**</span><span class="n">bound</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">preview</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">_draft_not_sent</span><span class="p">(</span><span class="n">preview</span><span class="p">,</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-
-    <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"draft [</span><span class="si">{</span><span class="n">preview</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">"</span>
-    <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">preview</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"draft [</span><span class="si">{</span><span class="n">done</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">confirmed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"nothing sent: </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> stays on the case"</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
     <span class="n">head</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'would send'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">dry_run</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'sent'</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">preview</span><span class="o">.</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
-        <span class="sa">f</span><span class="s2">"(gate: passed, </span><span class="si">{</span><span class="n">preview</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'would send'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">dry_run</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'sent'</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">done</span><span class="o">.</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"(gate: passed, </span><span class="si">{</span><span class="n">done</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
     <span class="p">)</span>
-    <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">preview</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
+    <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">head</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">": </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">url</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">),</span> <span class="o">*</span><span class="n">notes</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">preview</span><span class="o">.</span><span class="n">moved</span><span class="p">:</span>
-        <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="n">preview</span><span class="o">.</span><span class="n">moved</span>
+    <span class="k">if</span> <span class="n">done</span><span class="o">.</span><span class="n">moved</span><span class="p">:</span>
+        <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="n">done</span><span class="o">.</span><span class="n">moved</span>
         <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would move"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">"moved"</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> from </span><span class="si">{</span><span class="n">before</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">after</span><span class="si">}</span><span class="s2">; its labels follow on the next "</span>
             <span class="sa">f</span><span class="s2">"tick"</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> stays </span><span class="si">{</span><span class="n">preview</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">preview</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">drafts</span><span class="p">:</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"drafts left on </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">preview</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">drafts</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> stays </span><span class="si">{</span><span class="n">done</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">done</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">drafts</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"drafts left on </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">done</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">drafts</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
 
 
@@ -1546,6 +1622,280 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="c1"># ---- messages outside a case ----</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_edit_title_and_text</span><span class="p">(</span>
+    <span class="n">draft</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">editor</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The title and text the operator leaves in ``editor``; a draft with no title edits its text.</span>
+
+<span class="sd">    A titled draft opens as ``Title: &lt;title&gt;``, a ``---`` line, then its text, so a title</span>
+<span class="sd">    the gate diverted can be fixed as its text can. Raises ``ValueError``, sending nothing,</span>
+<span class="sd">    when the first two lines are not left in that shape.</span>
+<span class="sd">    """</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">editor</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="n">edited</span> <span class="o">=</span> <span class="n">editor</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">TITLE_LINE_PREFIX</span><span class="si">}{</span><span class="n">draft</span><span class="p">[</span><span class="s1">'title'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">TITLE_RULE</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">head</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="n">edited</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">rule</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">body</span> <span class="o">=</span> <span class="n">rest</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">head</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">TITLE_LINE_PREFIX</span><span class="p">)</span> <span class="ow">or</span> <span class="n">rule</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">!=</span> <span class="n">TITLE_RULE</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"the edit must keep </span><span class="si">{</span><span class="n">TITLE_LINE_PREFIX</span><span class="si">!r}</span><span class="s2"> and the title on its first line, and "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">TITLE_RULE</span><span class="si">}</span><span class="s2"> on its second, so nothing was sent"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">head</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">TITLE_LINE_PREFIX</span><span class="p">)</span> <span class="p">:],</span> <span class="n">body</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_message_text</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">text_file</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The message's text: ``--text``, or the file ``--text-file`` names (``-``: standard input).</span>
+
+<span class="sd">    Raises ``ValueError`` unless exactly one is given, and for a file that cannot be read.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">(</span><span class="n">text_file</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"give the message's text with exactly one of --text and --text-file "</span>
+            <span class="sa">f</span><span class="s2">"(--text-file </span><span class="si">{</span><span class="n">STDIN_FILE_NAME</span><span class="si">}</span><span class="s2"> reads standard input)"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">text</span>
+    <span class="k">if</span> <span class="n">text_file</span> <span class="o">==</span> <span class="n">STDIN_FILE_NAME</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">text_file</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"cannot read --text-file </span><span class="si">{</span><span class="n">text_file</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+
+
+<div class="viewcode-block" id="message_send">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.message_send">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">DraftSentNotRecorded</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_send</span><span class="p">(</span>
+    <span class="n">recipient</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">text_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">messages</span><span class="o">.</span><span class="n">DFLT_MESSAGE_PURPOSE</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Send a message to PERSON outside any case, through the gate, or hold it for the operator.</span>
+
+<span class="sd">    ``--ref`` is the conversation it goes to, and a subject must bind it: an issue</span>
+<span class="sd">    (``github:example/app#12``), or a repository with ``--title`` to open an issue. That</span>
+<span class="sd">    subject's policy judges it, through the filters every message passes: reply mode, the</span>
+<span class="sd">    leak scan (of the title too), the writing card, deslop and the mention. The text is</span>
+<span class="sd">    ``--text`` or ``--text-file`` (``-`` reads standard input). ``--purpose`` is ``ask``,</span>
+<span class="sd">    the default, ``reply`` or ``propose``.</span>
+
+<span class="sd">    In 0.1 the message is held for the operator: its sender chose where it goes, and only</span>
+<span class="sd">    the operator's release lets such a message out. A hold on the subject, the person or</span>
+<span class="sd">    the repository keeps it too. It is recorded with its reason, the operator is told a</span>
+<span class="sd">    message waits (never what it says), and the command exits 2, or 1 when its channel</span>
+<span class="sd">    refused it. The operator sends it with ``liaise message send-draft``, and the gate</span>
+<span class="sd">    judges it again then. Nothing opens a case or sets a label. ``--dry-run`` judges and</span>
+<span class="sd">    plans, and records and tells nothing.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ref</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"a message needs --ref, the conversation it goes to: an issue such as "</span>
+            <span class="s2">"github:example/app#12, or a repository with --title to open an issue"</span>
+        <span class="p">)</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">_message_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">text_file</span><span class="p">)</span>
+    <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
+    <span class="n">ledger_store</span> <span class="o">=</span> <span class="n">_ledger_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="ow">not</span> <span class="n">dry_run</span><span class="p">)</span>
+    <span class="n">topic_env</span> <span class="o">=</span> <span class="n">global_config</span><span class="o">.</span><span class="n">notify</span><span class="o">.</span><span class="n">ntfy_topic_env</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">messages</span><span class="o">.</span><span class="n">send_message</span><span class="p">(</span>
+        <span class="n">Ledger</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">),</span>
+        <span class="n">load_subjects</span><span class="p">(</span><span class="n">config_root</span><span class="p">),</span>
+        <span class="n">recipient</span><span class="p">,</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">body</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">purpose</span><span class="o">=</span><span class="n">purpose</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+        <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span> <span class="ow">or</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">notify</span><span class="p">,</span> <span class="n">topic_env</span><span class="o">=</span><span class="n">topic_env</span><span class="p">),</span>
+        <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">message</span><span class="p">,</span> <span class="n">attempt</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">attempt</span>
+    <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">attempt</span> <span class="k">else</span> <span class="p">())]</span>
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would send a message"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"sent message </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> (gate: passed, </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
+        <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">head</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">": </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">url</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">),</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">hold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">why</span><span class="p">,</span> <span class="n">held_back</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"the hold on </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">hold</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">decision</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span>
+        <span class="n">why</span><span class="p">,</span> <span class="n">held_back</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"diverted by </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted_by</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="kc">True</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">why</span><span class="p">,</span> <span class="n">held_back</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"send failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="kc">False</span>
+    <span class="n">head</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"the message to </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> would be held: </span><span class="si">{</span><span class="n">why</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="n">dry_run</span>
+        <span class="k">else</span> <span class="sa">f</span><span class="s2">"the message to </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> is held as </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">why</span><span class="si">}</span><span class="s2">. "</span>
+        <span class="sa">f</span><span class="s2">"liaise status lists it for the operator, who sends it with liaise message "</span>
+        <span class="sa">f</span><span class="s2">"send-draft </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span>
+    <span class="n">code</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"code"</span><span class="p">:</span> <span class="n">DIVERTED_EXIT_CODE</span><span class="p">}</span> <span class="k">if</span> <span class="n">held_back</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="k">raise</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">head</span><span class="p">,</span> <span class="o">*</span><span class="n">notes</span><span class="p">]),</span> <span class="o">**</span><span class="n">code</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="message_list">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.message_list">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_list</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Every message sent or held outside a case, a line each: id, state, and where it goes.</span>
+
+<span class="sd">    ``--state held`` lists what waits on you. It changes nothing.</span>
+<span class="sd">    """</span>
+    <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+    <span class="n">ledger_store</span> <span class="o">=</span> <span class="n">_ledger_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">messages</span><span class="o">.</span><span class="n">message_lines</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="message_show">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.message_show">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_show</span><span class="p">(</span>
+    <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.</span>
+
+<span class="sd">    It changes nothing.</span>
+<span class="sd">    """</span>
+    <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+    <span class="n">ledger_store</span> <span class="o">=</span> <span class="n">_ledger_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">messages</span><span class="o">.</span><span class="n">message_show_lines</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">,</span> <span class="n">message_id</span><span class="p">))</span></div>
+
+
+
+<div class="viewcode-block" id="message_send_draft">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.message_send_draft">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="n">DraftSentNotRecorded</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_send_draft</span><span class="p">(</span>
+    <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">editor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">confirm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Send a held message you approved, through the gate, as ``liaise case send-draft`` does.</span>
+
+<span class="sd">    The gate judges it again with your approval recorded, and ``--edit`` opens it in your</span>
+<span class="sd">    editor first. It shows where the message goes, the verdict and the exact text, and sends</span>
+<span class="sd">    once you answer ``y`` at a terminal. A message the gate diverts stays held with the</span>
+<span class="sd">    reason and exits 2; one its channel refuses exits 1. ``--dry-run`` judges and plans,</span>
+<span class="sd">    asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps</span>
+<span class="sd">    the message waiting.</span>
+<span class="sd">    """</span>
+    <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
+    <span class="n">ledger_store</span> <span class="o">=</span> <span class="n">_ledger_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="ow">not</span> <span class="n">dry_run</span><span class="p">)</span>
+    <span class="n">title</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">opened</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">edit</span><span class="p">:</span>  <span class="c1"># before the lock: an editor can stay open far longer than a tick waits</span>
+        <span class="n">held</span> <span class="o">=</span> <span class="n">messages</span><span class="o">.</span><span class="n">held_message</span><span class="p">(</span><span class="n">Ledger</span><span class="p">(</span><span class="n">ledger_store</span><span class="p">),</span> <span class="n">message_id</span><span class="p">)</span>
+        <span class="n">opened</span> <span class="o">=</span> <span class="n">messages</span><span class="o">.</span><span class="n">message_draft</span><span class="p">(</span><span class="n">held</span><span class="p">)</span>
+        <span class="n">title</span><span class="p">,</span> <span class="n">text</span> <span class="o">=</span> <span class="n">_edit_title_and_text</span><span class="p">(</span><span class="n">opened</span><span class="p">,</span> <span class="n">editor</span> <span class="ow">or</span> <span class="n">edit_in_editor</span><span class="p">)</span>
+    <span class="n">names</span> <span class="o">=</span> <span class="n">_Held</span><span class="p">(</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"message </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">stays</span><span class="o">=</span><span class="s2">"held"</span><span class="p">,</span>
+        <span class="n">command</span><span class="o">=</span><span class="sa">f</span><span class="s2">"liaise message send-draft </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">owner</span><span class="o">=</span><span class="n">message_id</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">done</span><span class="p">,</span> <span class="n">confirmed</span> <span class="o">=</span> <span class="n">_release_after_confirmation</span><span class="p">(</span>
+        <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">messages</span><span class="o">.</span><span class="n">send_held_message</span><span class="p">,</span>
+            <span class="n">subjects</span><span class="o">=</span><span class="n">load_subjects</span><span class="p">(</span><span class="n">config_root</span><span class="p">),</span>
+            <span class="n">message_id</span><span class="o">=</span><span class="n">message_id</span><span class="p">,</span>
+            <span class="n">by</span><span class="o">=</span><span class="n">messages</span><span class="o">.</span><span class="n">OPERATOR_ACTOR</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">first</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">seen</span><span class="o">=</span><span class="n">opened</span><span class="p">),</span>
+        <span class="n">bind</span><span class="o">=</span><span class="k">lambda</span> <span class="n">judged</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">seen</span><span class="o">=</span><span class="n">judged</span><span class="o">.</span><span class="n">draft</span><span class="p">),</span>
+        <span class="n">held</span><span class="o">=</span><span class="k">lambda</span> <span class="n">judged</span><span class="p">:</span> <span class="n">names</span><span class="p">,</span>
+        <span class="n">then</span><span class="o">=</span><span class="k">lambda</span> <span class="n">judged</span><span class="p">:</span> <span class="p">(),</span>
+        <span class="n">ledger_store</span><span class="o">=</span><span class="n">ledger_store</span><span class="p">,</span>
+        <span class="n">global_config</span><span class="o">=</span><span class="n">global_config</span><span class="p">,</span>
+        <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+        <span class="n">edit</span><span class="o">=</span><span class="n">edit</span><span class="p">,</span>
+        <span class="n">confirm</span><span class="o">=</span><span class="n">confirm</span> <span class="ow">or</span> <span class="n">confirm_at_terminal</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">confirmed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"nothing sent: message </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2"> stays held"</span>
+    <span class="n">outbound</span> <span class="o">=</span> <span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">head</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'would send'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">dry_run</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'sent'</span><span class="si">}</span><span class="s2"> message </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2"> to "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2"> (gate: passed, </span><span class="si">{</span><span class="n">done</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
+    <span class="p">)</span>
+    <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">head</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">": </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">url</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">),</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="message_reject_draft">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.message_reject_draft">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_reject_draft</span><span class="p">(</span>
+    <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Decline a held message, recording ``--reason``.</span>
+
+<span class="sd">    Nothing is sent: the message is recorded as rejected, with its reason and its text. It</span>
+<span class="sd">    holds the run lock. ``--dry-run`` changes nothing.</span>
+<span class="sd">    """</span>
+    <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">))</span>
+    <span class="n">ledger_store</span> <span class="o">=</span> <span class="n">_ledger_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">store</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="ow">not</span> <span class="n">dry_run</span><span class="p">)</span>
+    <span class="n">ledger</span> <span class="o">=</span> <span class="n">Ledger</span><span class="p">(</span><span class="n">ChainMap</span><span class="p">({},</span> <span class="n">ledger_store</span><span class="p">)</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="n">ledger_store</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+            <span class="n">_hold_run_lock</span><span class="p">(</span><span class="n">between_ticks</span><span class="p">,</span> <span class="n">global_config</span><span class="p">,</span> <span class="n">message_id</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="s2">"changed"</span><span class="p">)</span>
+        <span class="n">rejected</span> <span class="o">=</span> <span class="n">messages</span><span class="o">.</span><span class="n">reject_message</span><span class="p">(</span>
+            <span class="n">ledger</span><span class="p">,</span> <span class="n">message_id</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span>
+        <span class="p">)</span>
+    <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would reject"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">"rejected"</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> message </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">rejected</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">rejected</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rejected</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
+    <span class="p">)</span></div>
+
+
+
 <span class="c1">#: SSOT command tree consumed by ``__main__.py`` and any later surface (MCP, HTTP). Named</span>
 <span class="c1">#: explicitly, so the commands read ``liaise subject show`` and ``liaise migrate-config``.</span>
 <span class="n">_dispatch_funcs</span> <span class="o">=</span> <span class="p">{</span>
@@ -1559,6 +1909,13 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"set-state"</span><span class="p">:</span> <span class="n">case_set_state</span><span class="p">,</span>
         <span class="s2">"send-draft"</span><span class="p">:</span> <span class="n">case_send_draft</span><span class="p">,</span>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="n">case_reject_draft</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"send"</span><span class="p">:</span> <span class="n">message_send</span><span class="p">,</span>
+        <span class="s2">"list"</span><span class="p">:</span> <span class="n">message_list</span><span class="p">,</span>
+        <span class="s2">"show"</span><span class="p">:</span> <span class="n">message_show</span><span class="p">,</span>
+        <span class="s2">"send-draft"</span><span class="p">:</span> <span class="n">message_send_draft</span><span class="p">,</span>
+        <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="n">message_reject_draft</span><span class="p">,</span>
     <span class="p">},</span>
     <span class="s2">"subject"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"list"</span><span class="p">:</span> <span class="n">subject_list</span><span class="p">,</span> <span class="s2">"show"</span><span class="p">:</span> <span class="n">subject_show</span><span class="p">},</span>
     <span class="s2">"setup"</span><span class="p">:</span> <span class="n">setup</span><span class="p">,</span>
@@ -1592,6 +1949,13 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"list"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
         <span class="s2">"show"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
         <span class="s2">"set-state"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
+        <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"editor"</span><span class="p">,</span> <span class="s2">"confirm"</span><span class="p">),</span>
+        <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
+    <span class="p">},</span>
+    <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"send"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"notify_fn"</span><span class="p">),</span>
+        <span class="s2">"list"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
+        <span class="s2">"show"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
         <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"editor"</span><span class="p">,</span> <span class="s2">"confirm"</span><span class="p">),</span>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
     <span class="p">},</span>

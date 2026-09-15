@@ -1,0 +1,1302 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="alternate" type="text/markdown" href="messages.html.md">
+<link rel="describedby" href="../../llms.txt" type="text/markdown">
+    <title>liaise.messages &#8212; liaise</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/epythet.css?v=be2741c3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=fd10adb8"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (false) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+
+const load = async () => {
+    initStyles();
+
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/liaise/messages';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.2" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">liaise</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">liaise.messages</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for liaise.messages</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Messages outside a case: what an agent says to a person on its own initiative, through the gate.</span>
+
+<span class="sd">A case is a unit of feedback work, with a reporter, a state machine, runs and a delivery. A</span>
+<span class="sd">question an agent decides to ask has none of those, so it is not a case, and ``liaise</span>
+<span class="sd">message send`` opens none (liaise #28). It is an :class:`~liaise.model.OutboundMessage` in</span>
+<span class="sd">the ledger, judged by the same gate as every message liaise sends, with no case on the</span>
+<span class="sd">gate's context.</span>
+
+<span class="sd">- :func:`send_message` takes a GitHub issue, or a repository and a title to open an issue,</span>
+<span class="sd">  and the subject from the bindings that take it in</span>
+<span class="sd">  (:func:`liaise.subjects.subject_for_ref`), so the caller cannot pick a laxer policy. The</span>
+<span class="sd">  gate judges it with that subject's policy and no case on its context, which in 0.1 means</span>
+<span class="sd">  it is held for the operator: its sender chose where it goes, and only the operator's</span>
+<span class="sd">  release lets such a message out (see :func:`liaise.gate.reply_mode`). The operator is</span>
+<span class="sd">  told, without its text, when a subject's held queue stops being empty. A hold on the</span>
+<span class="sd">  subject, the recipient, the repository or the checkout keeps it before the gate judges</span>
+<span class="sd">  it. Every message is recorded.</span>
+<span class="sd">- :func:`send_held_message` is how the operator sends a held one, through</span>
+<span class="sd">  :func:`liaise.release.release_draft`, as a case's draft is sent.</span>
+<span class="sd">- :func:`reject_message` records that the operator declined one, and why.</span>
+<span class="sd">- :func:`message_lines` and :func:`message_show_lines` are ``liaise message list`` and</span>
+<span class="sd">  ``liaise message show``.</span>
+
+<span class="sd">A message has no label, so nothing here writes to a repository beyond the message itself.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">MutableMapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ERROR_KINDS</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.cases</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_SHOW_ENTRIES</span><span class="p">,</span> <span class="n">NONE_SHOWN</span><span class="p">,</span> <span class="n">TEXT_INDENT</span><span class="p">,</span> <span class="n">entry_line</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span> <span class="n">GateContext</span><span class="p">,</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">OutboundFilter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.holds</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_SET_BY</span><span class="p">,</span> <span class="n">blocking_hold</span><span class="p">,</span> <span class="n">scopes_for</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MESSAGE_HELD</span><span class="p">,</span>
+    <span class="n">MESSAGE_REJECTED</span><span class="p">,</span>
+    <span class="n">MESSAGE_SENT</span><span class="p">,</span>
+    <span class="n">Hold</span><span class="p">,</span>
+    <span class="n">LedgerEntry</span><span class="p">,</span>
+    <span class="n">OutboundMessage</span><span class="p">,</span>
+    <span class="n">require_one_of</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">NOTICE_MESSAGE_HELD</span><span class="p">,</span> <span class="n">notice_body</span><span class="p">,</span> <span class="n">notice_title</span><span class="p">,</span> <span class="n">notify</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outcomes</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_OPERATOR_PRIORITY</span><span class="p">,</span> <span class="n">HELD_REASON_PREFIX</span><span class="p">,</span> <span class="n">make_draft</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DRAFT_ENTRY_KIND</span><span class="p">,</span>
+    <span class="n">GITHUB_CHANNEL</span><span class="p">,</span>
+    <span class="n">DraftSentNotRecorded</span><span class="p">,</span>
+    <span class="n">SendAttempt</span><span class="p">,</span>
+    <span class="n">gate_and_send</span><span class="p">,</span>
+    <span class="n">github_repo</span><span class="p">,</span>
+    <span class="n">release_draft</span><span class="p">,</span>
+    <span class="n">sendable_ref</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">subject_for_ref</span>
+
+<span class="c1">#: What a message outside a case may carry out: a question, a reply or a proposal.</span>
+<span class="n">MESSAGE_PURPOSES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"ask"</span><span class="p">,</span> <span class="s2">"reply"</span><span class="p">,</span> <span class="s2">"propose"</span><span class="p">)</span>
+<span class="n">DFLT_MESSAGE_PURPOSE</span> <span class="o">=</span> <span class="s2">"ask"</span>
+<span class="c1">#: Who a message is recorded as sent by when its sender does not say: an agent, never the</span>
+<span class="c1">#: operator, whose word is what releases a held one.</span>
+<span class="n">DFLT_SENDER</span> <span class="o">=</span> <span class="s2">"agent"</span>
+<span class="c1">#: Who a held message is released or rejected by.</span>
+<span class="n">OPERATOR_ACTOR</span> <span class="o">=</span> <span class="n">DFLT_SET_BY</span>
+<span class="c1">#: What a notification names a failed send by when the channel gave no error kind.</span>
+<span class="n">SEND_REFUSED_CAUSE</span> <span class="o">=</span> <span class="s2">"refused"</span>
+
+
+<div class="viewcode-block" id="MessageSent">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.MessageSent">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MessageSent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What :func:`send_message` did: the message as recorded, the gate's attempt, any hold.</span>
+
+<span class="sd">    ``message`` is the record (as it would be, in a dry run). ``attempt`` is None when</span>
+<span class="sd">    ``hold`` kept the message before the gate judged it, and ``filters`` is how many</span>
+<span class="sd">    filters the gate had.</span>
+<span class="sd">    """</span>
+
+    <span class="n">message</span><span class="p">:</span> <span class="n">OutboundMessage</span>
+    <span class="n">attempt</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SendAttempt</span><span class="p">]</span>
+    <span class="n">filters</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">hold</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Hold</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">sent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the message went out; in a dry run, whether it would have."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">MESSAGE_SENT</span></div>
+
+
+
+<div class="viewcode-block" id="MessageRelease">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.MessageRelease">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MessageRelease</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What :func:`send_held_message` did, as :class:`liaise.cases.DraftRelease` does for a case.</span>
+
+<span class="sd">    ``draft`` is the held message as the operator saw it, ``attempt`` the gate's decision</span>
+<span class="sd">    and the send, ``filters`` how many filters ran, ``edited`` whether the operator's text</span>
+<span class="sd">    replaced the message's, and ``message`` the record as the release left it.</span>
+<span class="sd">    """</span>
+
+    <span class="n">draft</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="n">attempt</span><span class="p">:</span> <span class="n">SendAttempt</span>
+    <span class="n">filters</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">edited</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="n">message</span><span class="p">:</span> <span class="n">OutboundMessage</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_no_message</span><span class="p">(</span><span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"no message </span><span class="si">{</span><span class="n">message_id</span><span class="si">!r}</span><span class="s2"> in the ledger; liaise message list shows the "</span>
+        <span class="sa">f</span><span class="s2">"messages there are"</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_utc_now</span><span class="p">(</span><span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">datetime</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="message_draft">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.message_draft">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_draft</span><span class="p">(</span><span class="n">message</span><span class="p">:</span> <span class="n">OutboundMessage</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``message`` as a held draft: the shape :func:`liaise.release.release_draft` releases."""</span>
+    <span class="k">return</span> <span class="n">make_draft</span><span class="p">(</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">updated_at</span><span class="p">,</span>
+        <span class="n">outcome</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">purpose</span><span class="p">,</span>
+        <span class="n">recipient</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">recipient</span><span class="p">,</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="n">reason</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">reason</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="find_message">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.find_message">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_message</span><span class="p">(</span><span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span> <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OutboundMessage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The message ``message_id``. Raises ``ValueError`` for one the ledger does not hold."""</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">get_message</span><span class="p">(</span><span class="n">message_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">message</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">_no_message</span><span class="p">(</span><span class="n">message_id</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">message</span></div>
+
+
+
+<div class="viewcode-block" id="held_message">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.held_message">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">held_message</span><span class="p">(</span><span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span> <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">verb</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"send"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OutboundMessage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The held message ``message_id``. Raises ``ValueError`` for one missing or not held.</span>
+
+<span class="sd">    ``verb`` says, in the error, what there is nothing to do.</span>
+<span class="sd">    """</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">find_message</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">message_id</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">message</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">MESSAGE_HELD</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"message </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">, not held: there is nothing to </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">message</span></div>
+
+
+
+<div class="viewcode-block" id="send_message">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.send_message">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_message</span><span class="p">(</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
+    <span class="n">subjects</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">],</span>
+    <span class="n">recipient</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_MESSAGE_PURPOSE</span><span class="p">,</span>
+    <span class="n">by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_SENDER</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MessageSent</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Send ``text`` to ``recipient`` (a person id) at ``ref`` outside any case, or hold it.</span>
+
+<span class="sd">    ``ref`` is a GitHub issue a subject binds (``github:example/app#12``), or a repository</span>
+<span class="sd">    it binds with a ``title``, to open an issue there; it is kept as</span>
+<span class="sd">    :func:`~liaise.release.sendable_ref` gives it. Its subject is the one</span>
+<span class="sd">    :func:`~liaise.subjects.subject_for_ref` names. The message is judged by the gate</span>
+<span class="sd">    (``outbound_filters``) with no case on the context, then sent through correspond on</span>
+<span class="sd">    ``registry``, or held:</span>
+
+<span class="sd">    - **Held**, because the gate diverted it (in 0.1 it always does, for the operator to</span>
+<span class="sd">      release), its channel refused it, or a hold on the subject, the recipient, the</span>
+<span class="sd">      repository or the checkout keeps effects waiting. It is recorded as held, with the</span>
+<span class="sd">      reason and the text as given. When no other message of the subject was held yet,</span>
+<span class="sd">      the operator is told through ``notify_fn`` (:func:`liaise.notify.notify` when None)</span>
+<span class="sd">      that a message on the subject waits. The notification carries neither the text nor</span>
+<span class="sd">      the recipient.</span>
+<span class="sd">    - **Sent**, when a gate without that rule passes it: recorded as sent, with the text</span>
+<span class="sd">      as it went out and its url.</span>
+
+<span class="sd">    Each record's one entry is by ``by``, at ``now``. A dry run judges and plans the same,</span>
+<span class="sd">    and records and tells nothing.</span>
+
+<span class="sd">    Raises ``ValueError``, sending and recording nothing, for any of these:</span>
+
+<span class="sd">    - a purpose outside :data:`MESSAGE_PURPOSES`, or a blank recipient or text;</span>
+<span class="sd">    - a ``ref`` that is not a GitHub issue or repository, or that no subject binds;</span>
+<span class="sd">    - a title on an issue, or a repository with no title.</span>
+
+<span class="sd">    Raises :class:`~liaise.release.DraftSentNotRecorded` when the message went out and</span>
+<span class="sd">    the ledger failed to record it.</span>
+<span class="sd">    """</span>
+    <span class="n">require_one_of</span><span class="p">(</span><span class="n">purpose</span><span class="p">,</span> <span class="n">MESSAGE_PURPOSES</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s2">"message purpose"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">recipient</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"a message needs a recipient: the id of the person it is for"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"a message needs text to send"</span><span class="p">)</span>
+    <span class="n">ref</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="n">sendable_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span> <span class="p">(</span><span class="n">title</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="kc">None</span>
+    <span class="n">opens_an_issue</span> <span class="o">=</span> <span class="n">github_repo</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">"#"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ref</span>
+    <span class="k">if</span> <span class="n">title</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">opens_an_issue</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"a title opens an issue, and </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> is one already: leave the title out, or "</span>
+            <span class="sa">f</span><span class="s2">"give its repository"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">opens_an_issue</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">title</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> is a repository: a message there opens an issue, which needs a title"</span>
+        <span class="p">)</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="n">subject_for_ref</span><span class="p">(</span><span class="n">subjects</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">GITHUB_CHANNEL</span>
+    <span class="n">at</span> <span class="o">=</span> <span class="n">_utc_now</span><span class="p">(</span><span class="n">now</span><span class="p">)</span>
+    <span class="n">filters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">outbound_filters</span><span class="p">)</span>
+    <span class="n">scopes</span> <span class="o">=</span> <span class="n">scopes_for</span><span class="p">(</span>
+        <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+        <span class="n">person</span><span class="o">=</span><span class="n">recipient</span><span class="p">,</span>
+        <span class="n">repo</span><span class="o">=</span><span class="n">github_repo</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span>
+        <span class="n">checkout</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">workspace</span><span class="o">.</span><span class="n">path</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">processor</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">hold</span> <span class="o">=</span> <span class="n">blocking_hold</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">scopes</span><span class="p">,</span> <span class="n">for_</span><span class="o">=</span><span class="s2">"effect"</span><span class="p">)</span>
+    <span class="n">detail</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"purpose"</span><span class="p">:</span> <span class="n">purpose</span><span class="p">,</span> <span class="s2">"ref"</span><span class="p">:</span> <span class="n">ref</span><span class="p">,</span> <span class="s2">"recipient"</span><span class="p">:</span> <span class="n">recipient</span><span class="p">}</span>
+    <span class="n">attempt</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">recorded_text</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">MESSAGE_HELD</span><span class="p">,</span> <span class="n">text</span>
+    <span class="k">if</span> <span class="n">hold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">reason</span><span class="p">,</span> <span class="n">notes</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">HELD_REASON_PREFIX</span><span class="si">}{</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="p">()</span>
+        <span class="n">detail</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decision</span><span class="o">=</span><span class="s2">"hold"</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">)</span>
+        <span class="n">cause</span> <span class="o">=</span> <span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">outbound</span> <span class="o">=</span> <span class="n">Outbound</span><span class="p">(</span>
+            <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+            <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
+            <span class="n">recipient</span><span class="o">=</span><span class="n">recipient</span><span class="p">,</span>
+            <span class="n">purpose</span><span class="o">=</span><span class="n">purpose</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">attempt</span> <span class="o">=</span> <span class="n">gate_and_send</span><span class="p">(</span>
+            <span class="n">outbound</span><span class="p">,</span>
+            <span class="n">GateContext</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">at</span><span class="p">),</span>
+            <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+            <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+            <span class="n">outbound_filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">decision</span><span class="p">,</span> <span class="n">notes</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="p">,</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span>
+        <span class="n">detail</span><span class="p">[</span><span class="s2">"notes"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">notes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
+            <span class="n">state</span><span class="p">,</span> <span class="n">reason</span><span class="p">,</span> <span class="n">cause</span> <span class="o">=</span> <span class="n">MESSAGE_SENT</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+            <span class="n">recorded_text</span><span class="p">,</span> <span class="n">title</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span><span class="o">.</span><span class="n">title</span>
+            <span class="n">detail</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decision</span><span class="o">=</span><span class="s2">"send"</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">reason</span><span class="p">,</span> <span class="n">cause</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="p">,</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted_by</span>
+            <span class="n">detail</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decision</span><span class="o">=</span><span class="s2">"divert"</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"send failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">known</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">failure_kind</span> <span class="ow">in</span> <span class="n">ERROR_KINDS</span>  <span class="c1"># never an adapter's own words</span>
+            <span class="n">cause</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">failure_kind</span> <span class="k">if</span> <span class="n">known</span> <span class="k">else</span> <span class="n">SEND_REFUSED_CAUSE</span>
+            <span class="n">detail</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decision</span><span class="o">=</span><span class="s2">"send"</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="p">)</span>
+    <span class="n">tried</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span> <span class="k">if</span> <span class="n">attempt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">entry</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span>
+        <span class="n">kind</span><span class="o">=</span><span class="n">DRAFT_ENTRY_KIND</span><span class="p">,</span>
+        <span class="n">actor</span><span class="o">=</span><span class="n">by</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">tried</span><span class="o">.</span><span class="n">text</span> <span class="k">if</span> <span class="n">tried</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">text</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="n">detail</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">OutboundMessage</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">ledger</span><span class="o">.</span><span class="n">new_message_id</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">),</span>
+        <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+        <span class="n">recipient</span><span class="o">=</span><span class="n">recipient</span><span class="p">,</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+        <span class="n">purpose</span><span class="o">=</span><span class="n">purpose</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">recorded_text</span><span class="p">,</span>
+        <span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">,</span>
+        <span class="n">created_at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span>
+        <span class="n">updated_at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span>
+        <span class="n">entries</span><span class="o">=</span><span class="p">(</span><span class="n">entry</span><span class="p">,),</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">waiting</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">ledger</span><span class="o">.</span><span class="n">messages</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">MESSAGE_HELD</span><span class="p">),</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">):</span>  <span class="c1"># an unreadable record: tell the operator</span>
+            <span class="n">waiting</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ledger</span><span class="o">.</span><span class="n">save_message</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">state</span> <span class="o">!=</span> <span class="n">MESSAGE_SENT</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"the message to </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">raise</span> <span class="n">DraftSentNotRecorded</span><span class="o">.</span><span class="n">after</span><span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">attempt</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">reject</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+        <span class="k">if</span> <span class="n">state</span> <span class="o">==</span> <span class="n">MESSAGE_HELD</span> <span class="ow">and</span> <span class="n">waiting</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># once, when the queue stops being empty</span>
+            <span class="n">notice</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="n">cause</span><span class="p">)</span>
+            <span class="p">(</span><span class="n">notify_fn</span> <span class="ow">or</span> <span class="n">notify</span><span class="p">)(</span>
+                <span class="n">notice_title</span><span class="p">(</span><span class="n">NOTICE_MESSAGE_HELD</span><span class="p">,</span> <span class="o">**</span><span class="n">notice</span><span class="p">),</span>
+                <span class="n">notice_body</span><span class="p">(</span><span class="n">NOTICE_MESSAGE_HELD</span><span class="p">,</span> <span class="o">**</span><span class="n">notice</span><span class="p">),</span>
+                <span class="n">priority</span><span class="o">=</span><span class="n">DFLT_OPERATOR_PRIORITY</span><span class="p">,</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">MessageSent</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span> <span class="n">attempt</span><span class="o">=</span><span class="n">attempt</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">),</span> <span class="n">hold</span><span class="o">=</span><span class="n">hold</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="send_held_message">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.send_held_message">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">send_held_message</span><span class="p">(</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
+    <span class="n">subjects</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">],</span>
+    <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">text</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">seen</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">send</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MessageRelease</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Send the held message ``message_id`` as ``by``, through the gate again.</span>
+
+<span class="sd">    It goes out through :func:`liaise.release.release_draft` with ``by``'s approval on the</span>
+<span class="sd">    context, as a case's draft does (:func:`liaise.cases.send_draft`), with ``text`` and</span>
+<span class="sd">    ``title`` when the operator edited them. ``by`` has no default: this function asks no</span>
+<span class="sd">    one, and ``liaise message send-draft`` passes the operator only after asking at a</span>
+<span class="sd">    terminal. Sent, the message is recorded as sent. Diverted or refused,</span>
+<span class="sd">    it stays held with the text that was judged and the new reason. Either way an entry</span>
+<span class="sd">    by ``by`` records the attempt. ``seen`` is the message as the operator saw it</span>
+<span class="sd">    (:func:`message_draft`): one that changed since is not sent. ``send=False`` and</span>
+<span class="sd">    ``dry_run`` are as :func:`~liaise.release.release_draft` has them.</span>
+
+<span class="sd">    Raises ``ValueError``, sending and writing nothing, for a message the ledger does not</span>
+<span class="sd">    hold, one that is not held, one whose subject is not in ``subjects``, one that changed</span>
+<span class="sd">    since ``seen``, and anything :func:`~liaise.release.release_draft` refuses.</span>
+<span class="sd">    """</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">held_message</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">message_id</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="s2">"send"</span><span class="p">)</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="n">subjects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">subject</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">subject</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"message </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2"> belongs to the subject </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">subject</span><span class="si">!r}</span><span class="s2">, which is "</span>
+            <span class="sa">f</span><span class="s2">"not configured, so there is no policy to judge it by"</span>
+        <span class="p">)</span>
+    <span class="n">draft</span><span class="p">,</span> <span class="n">label</span> <span class="o">=</span> <span class="n">message_draft</span><span class="p">(</span><span class="n">message</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"message </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">seen</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">dict</span><span class="p">(</span><span class="n">draft</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">seen</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> changed while you had it open, so nothing was sent; read it again "</span>
+            <span class="sa">f</span><span class="s2">"with liaise message show </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="n">reject</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"liaise message reject-draft </span><span class="si">{</span><span class="n">message_id</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">outcome</span> <span class="o">=</span> <span class="n">release_draft</span><span class="p">(</span>
+        <span class="n">draft</span><span class="p">,</span>
+        <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
+        <span class="n">ledger</span><span class="o">=</span><span class="n">ledger</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
+        <span class="n">reject</span><span class="o">=</span><span class="n">reject</span><span class="p">,</span>
+        <span class="n">by</span><span class="o">=</span><span class="n">by</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">_utc_now</span><span class="p">(</span><span class="n">now</span><span class="p">),</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+        <span class="n">send</span><span class="o">=</span><span class="n">send</span><span class="p">,</span>
+        <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
+        <span class="n">outbound_filters</span><span class="o">=</span><span class="n">outbound_filters</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">release</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+        <span class="n">MessageRelease</span><span class="p">,</span>
+        <span class="n">draft</span><span class="o">=</span><span class="n">draft</span><span class="p">,</span>
+        <span class="n">attempt</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">attempt</span><span class="p">,</span>
+        <span class="n">filters</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span>
+        <span class="n">edited</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">edited</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">release</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">)</span>  <span class="c1"># only a plan: nothing went out</span>
+    <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">kept</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">went</span> <span class="o">=</span> <span class="n">outcome</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span>
+        <span class="n">after</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span>
+            <span class="n">message</span><span class="p">,</span>
+            <span class="n">state</span><span class="o">=</span><span class="n">MESSAGE_SENT</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">went</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">went</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+            <span class="n">reason</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">outcome</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">kept</span> <span class="o">=</span> <span class="n">outcome</span><span class="o">.</span><span class="n">kept</span>
+        <span class="n">after</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span>
+            <span class="n">message</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">kept</span><span class="p">[</span><span class="s2">"text"</span><span class="p">],</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">kept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">),</span>
+            <span class="n">reason</span><span class="o">=</span><span class="n">kept</span><span class="p">[</span><span class="s2">"reason"</span><span class="p">],</span>
+            <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">kept</span><span class="p">[</span><span class="s2">"notes"</span><span class="p">]),</span>
+        <span class="p">)</span>
+    <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="o">.</span><span class="n">with_entry</span><span class="p">(</span><span class="n">outcome</span><span class="o">.</span><span class="n">entry</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ledger</span><span class="o">.</span><span class="n">save_message</span><span class="p">(</span><span class="n">after</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">kept</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span>
+            <span class="k">raise</span> <span class="n">DraftSentNotRecorded</span><span class="o">.</span><span class="n">after</span><span class="p">(</span>
+                <span class="n">label</span><span class="p">,</span> <span class="n">outcome</span><span class="o">.</span><span class="n">attempt</span><span class="p">,</span> <span class="n">error</span><span class="p">,</span> <span class="n">reject</span><span class="o">=</span><span class="n">reject</span>
+            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+    <span class="k">return</span> <span class="n">release</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">after</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="reject_message">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.reject_message">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reject_message</span><span class="p">(</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
+    <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">OPERATOR_ACTOR</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OutboundMessage</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Decline the held message ``message_id`` as ``by``, recording ``reason``; return it.</span>
+
+<span class="sd">    Nothing is sent. The message is recorded as rejected, with an entry keeping its text,</span>
+<span class="sd">    where it would have gone, why it was held and ``reason``. A dry run writes nothing.</span>
+
+<span class="sd">    Raises ``ValueError``, writing nothing, for a blank ``reason``, a message the ledger</span>
+<span class="sd">    does not hold, and one that is not held.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"a rejected message needs a reason, so the ledger says why it was not sent "</span>
+            <span class="s2">"(--reason)"</span>
+        <span class="p">)</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">held_message</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">message_id</span><span class="p">,</span> <span class="n">verb</span><span class="o">=</span><span class="s2">"reject"</span><span class="p">)</span>
+    <span class="n">entry</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">_utc_now</span><span class="p">(</span><span class="n">now</span><span class="p">),</span>
+        <span class="n">kind</span><span class="o">=</span><span class="n">DRAFT_ENTRY_KIND</span><span class="p">,</span>
+        <span class="n">actor</span><span class="o">=</span><span class="n">by</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="n">detail</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"reject"</span><span class="p">,</span>
+            <span class="s2">"reason"</span><span class="p">:</span> <span class="n">reason</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+            <span class="s2">"purpose"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">purpose</span><span class="p">,</span>
+            <span class="s2">"ref"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+            <span class="s2">"held_for"</span><span class="p">:</span> <span class="n">message</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">after</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">MESSAGE_REJECTED</span><span class="p">)</span><span class="o">.</span><span class="n">with_entry</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="n">ledger</span><span class="o">.</span><span class="n">save_message</span><span class="p">(</span><span class="n">after</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">after</span></div>
+
+
+
+<div class="viewcode-block" id="message_lines">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.message_lines">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_lines</span><span class="p">(</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""What ``liaise message list`` prints: ``&lt;id&gt;\\t&lt;state&gt;\\t&lt;purpose&gt; to &lt;person&gt; on &lt;ref&gt;``.</span>
+
+<span class="sd">    Every message outside a case in the ledger ``store``, or only those in ``state``,</span>
+<span class="sd">    oldest first. Reads only. Raises ``ValueError`` for a state outside</span>
+<span class="sd">    :data:`~liaise.model.MESSAGE_STATES`.</span>
+<span class="sd">    """</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">Ledger</span><span class="p">(</span><span class="n">store</span><span class="p">)</span><span class="o">.</span><span class="n">messages</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">state</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"(no </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2"> messages)"</span> <span class="k">if</span> <span class="n">state</span> <span class="k">else</span> <span class="s2">"(no messages)"</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">found</span>
+    <span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="message_show_lines">
+<a class="viewcode-back" href="../../_autosummary/liaise.messages.html#liaise.messages.message_show_lines">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">message_show_lines</span><span class="p">(</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+    <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">entries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_SHOW_ENTRIES</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""What ``liaise message show`` prints: the message ``message_id``, with its text.</span>
+
+<span class="sd">    Its subject, state, recipient, reference, purpose and title; why it is held, with the</span>
+<span class="sd">    gate's notes; its whole text; and its ``entries`` latest entries. Reads only. Raises</span>
+<span class="sd">    ``ValueError`` for a message the ledger ``store`` does not hold.</span>
+<span class="sd">    """</span>
+    <span class="n">message</span> <span class="o">=</span> <span class="n">find_message</span><span class="p">(</span><span class="n">Ledger</span><span class="p">(</span><span class="n">store</span><span class="p">),</span> <span class="n">message_id</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"message: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  subject: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  state: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  recipient: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  ref: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  purpose: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  title: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">title</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">NONE_SHOWN</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  created: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">created_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s1">'seconds'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  updated: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">updated_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s1">'seconds'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"held for: </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">reason</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">NONE_SHOWN</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">message</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
+        <span class="s2">"text:"</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">TEXT_INDENT</span><span class="si">}{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">text</span> <span class="ow">or</span> <span class="n">NONE_SHOWN</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()),</span>
+    <span class="p">]</span>
+    <span class="n">shown</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="o">-</span><span class="n">entries</span><span class="p">:]</span> <span class="k">if</span> <span class="n">entries</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">()</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"latest entries: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">shown</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">message</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">entry_line</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">shown</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">lines</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

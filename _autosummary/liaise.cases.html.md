@@ -37,14 +37,13 @@ that the operator declined one, and why.
 | [`TEXT_INDENT`](#liaise.cases.TEXT_INDENT)            | How `liaise case show` indents a draft's text and a deploy's output.                                                                                                                                                                                           |
 | [`NEEDS_OWNER`](#liaise.cases.NEEDS_OWNER)            | The state a held message leaves its case waiting on the operator in.                                                                                                                                                                                           |
 | [`STATE_AFTER_SENT_DRAFT`](#liaise.cases.STATE_AFTER_SENT_DRAFT) | Where a case in [`NEEDS_OWNER`](#liaise.cases.NEEDS_OWNER) goes once the operator sends its last draft, by the outcome that draft carries out: a question, a reply or a proposal now waits on the reporter, as it does when a run sends one. |
-| [`DELIVER_PURPOSE`](#liaise.cases.DELIVER_PURPOSE)        | The outcome whose message announces a delivery.                                                                                                                                                                                                                |
-| [`DRAFT_ENTRY_KIND`](#liaise.cases.DRAFT_ENTRY_KIND)       | a gate decision, as the tick's are.                                                                                                                                                                                                                            |
 
 ### Functions
 
 | [`case_lines`](#liaise.cases.case_lines)(store, \*[, state])                    | What `liaise case list` prints: `<case id>\t<state>\t<conversations>` per case.                                    |
 |----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------|
 | [`case_show_lines`](#liaise.cases.case_show_lines)(store, case_id, \*[, entries])    | What `liaise case show` prints: the case `case_id`, with all a notification leaves out.                            |
+| [`entry_line`](#liaise.cases.entry_line)(entry)                                 | One entry on one line: when, what, by whom, its detail, and the start of its text.                                 |
 | [`find_draft`](#liaise.cases.find_draft)(ledger, case_id, \*[, index])          | `(index, draft)` of the case `case_id`, as [`pick_draft()`](#liaise.cases.pick_draft) picks it. |
 | [`pick_draft`](#liaise.cases.pick_draft)(case[, index])                         | `(index, draft)`: `case`'s draft at `index`, or its only draft when `index` is None.                               |
 | [`reject_draft`](#liaise.cases.reject_draft)(ledger, case_id, \*, reason[, ...])  | Decline the case `case_id`'s draft at `index` as `by`, recording `reason`.                                         |
@@ -57,15 +56,6 @@ that the operator declined one, and why.
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`DraftRelease`](#liaise.cases.DraftRelease)(index, draft, attempt, filters, ...) | What [`send_draft()`](#liaise.cases.send_draft) did with one of a case's drafts.                                |
 
-### Exceptions
-
-| [`DraftSentNotRecorded`](#liaise.cases.DraftSentNotRecorded)   | A released draft went out, and the ledger then failed to record that it did.   |
-|-------------------------------------------------------------------------|--------------------------------------------------------------------------------|
-
-### liaise.cases.DELIVER_PURPOSE *= 'deliver'*
-
-The outcome whose message announces a delivery.
-
 ### liaise.cases.DFLT_OPERATOR_REASON *= 'set by the operator'*
 
 The reason recorded for a state the operator set without giving one.
@@ -73,13 +63,6 @@ The reason recorded for a state the operator set without giving one.
 ### liaise.cases.DFLT_SHOW_ENTRIES *= 12*
 
 How many of a case’s latest entries `liaise case show` lists.
-
-### liaise.cases.DRAFT_ENTRY_KIND *= 'gate'*
-
-a gate decision, as the tick’s are.
-
-* **Type:**
-  The entry kind a sent or rejected draft is recorded as
 
 ### *class* liaise.cases.DraftRejection(index, draft, case)
 
@@ -98,12 +81,6 @@ decision and the send (see [`SendAttempt`](liaise.release.html.md#liaise.release
 how many filters the gate ran it through. `edited` says whether the operator’s text
 replaced the draft’s. `case` is the case as the release left it, or would leave it in
 a dry run, and `moved` is its `(from, to)` states when the send moved it on.
-
-### *exception* liaise.cases.DraftSentNotRecorded
-
-Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#RuntimeError)
-
-A released draft went out, and the ledger then failed to record that it did.
 
 ### liaise.cases.ESCALATION_KINDS *= ('escalate', 'decline')*
 
@@ -169,6 +146,13 @@ a line each with its detail and the start of its text. Reads only. Raises
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
+### liaise.cases.entry_line(entry)
+
+One entry on one line: when, what, by whom, its detail, and the start of its text.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.cases.find_draft(ledger, case_id, , index=None)
 
 `(index, draft)` of the case `case_id`, as [`pick_draft()`](#liaise.cases.pick_draft) picks it.
@@ -203,20 +187,20 @@ not hold, and a draft [`pick_draft()`](#liaise.cases.pick_draft) cannot pick.
 * **Return type:**
   [`DraftRejection`](#liaise.cases.DraftRejection)
 
-### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by='operator', now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
 
 Send the case `case_id`’s draft at `index` as `by`, through the gate again.
 
-The message is the draft’s text, or `text` when the operator edited it. It goes to
-the draft’s `ref`, for its `recipient`, carrying out its `outcome`. It passes
-through [`liaise.release.gate_and_send()`](liaise.release.html.md#liaise.release.gate_and_send), with an [`Approval`](liaise.model.html.md#liaise.model.Approval)
+The message is the draft’s text, or `text` when the operator edited it. It goes out
+through [`liaise.release.release_draft()`](liaise.release.html.md#liaise.release.release_draft), with an [`Approval`](liaise.model.html.md#liaise.model.Approval)
 by `by` at `now` (the current UTC time when None) on the gate’s context. Draft
 reply mode lets it through, and every other filter judges it as it would a message
 the tick sends, the mention included.
 
-It asks no one. Its caller shows the operator the message and the gate’s verdict
-first, from a dry run, and passes the draft they saw as `seen`, as
-`liaise case send-draft` does.
+It asks no one, and `by` has no default: the caller says who releases the draft. Its
+caller shows the operator the message and the gate’s verdict first, from a dry run, and
+passes the draft they saw as `seen`, as `liaise case send-draft` does after asking
+at a terminal.
 
 - **Sent:** the draft leaves the case. A `gate` entry by `by` records the text as
   it went out, its url, the approval and why the draft was held. Once no draft is
@@ -235,12 +219,10 @@ Raises `ValueError`, sending and writing nothing, for any of these:
 - a case the ledger does not hold, one with a run in flight, or one whose subject is
   not in `subjects`;
 - a draft [`pick_draft()`](#liaise.cases.pick_draft) cannot pick, or one that changed since `seen`;
-- a draft with no destination, or no text to send;
-- a `deliver` message a hold kept, whose delivery never ran;
-- a hold that keeps the case’s messages, or for a `deliver` message its delivery,
-  waiting.
+- anything [`liaise.release.release_draft()`](liaise.release.html.md#liaise.release.release_draft) refuses: no destination or no text, a
+  `deliver` message a hold kept, a hold that keeps the case’s effects waiting.
 
-Raises [`DraftSentNotRecorded`](#liaise.cases.DraftSentNotRecorded) when the message went out and the ledger then
+Raises `DraftSentNotRecorded` when the message went out and the ledger then
 failed to record it.
 
 * **Return type:**

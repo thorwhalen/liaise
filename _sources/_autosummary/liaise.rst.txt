@@ -71,6 +71,7 @@
    github
    holds
    ledger
+   messages
    migrate
    model
    outcomes

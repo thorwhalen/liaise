@@ -48,6 +48,7 @@ roles = { pat = "partner" }
 | [`normalize_binding`](#liaise.subjects.normalize_binding)(binding)              | `binding` as a subject keeps it: on a GitHub channel, its channel and conversation lower-cased.                              |
 | [`poll_ref`](#liaise.subjects.poll_ref)(binding)                       | The conversation `binding` is polled on, or None when v0.1 cannot poll it.                                                   |
 | [`ref_key`](#liaise.subjects.ref_key)(ref)                            | How two polled conversations compare: without regard to case, as their cursors do.                                           |
+| [`subject_for_ref`](#liaise.subjects.subject_for_ref)(subjects, ref)          | The subject whose bindings take in `ref`, the conversation a message outside a case goes to.                                 |
 
 ### Classes
 
@@ -317,3 +318,31 @@ on the cursor of `github:example/app`.
 >>> ref_key("github:Example/App") == ref_key("github:example/app")
 True
 ```
+
+### liaise.subjects.subject_for_ref(subjects, ref)
+
+The subject whose bindings take in `ref`, the conversation a message outside a case goes to.
+
+A binding takes in the conversation it polls and, on GitHub, every issue of a repository
+it binds, so `github:example/app#12` is the subject’s that binds
+`github:example/app`. Conversations compare as [`ref_key()`](#liaise.subjects.ref_key) says. A binding’s
+`?conditions` are not consulted, since they sort what comes in, not where a message
+may go, and a wildcard binding polls nothing, so it takes in nothing (see
+[`poll_ref()`](#liaise.subjects.poll_ref)). When two subjects take `ref` in, the one whose binding names it most
+closely wins: an issue’s own binding over its repository’s.
+
+No caller may choose another subject: the subject’s policy is what the gate judges a
+message by, so a message goes only where its subject binds.
+
+* **Return type:**
+  [`Subject`](#liaise.subjects.Subject)
+
+```pycon
+>>> heron = Subject("heron", ("github:example/heron?labels=partner:pat",),
+...     Policy(people={}, roles={}))
+>>> subject_for_ref({"heron": heron}, "github:Example/Heron#12").slug
+'heron'
+```
+
+Raises `ValueError` naming the subjects there are when none takes `ref` in, and
+naming each when several name it equally closely.

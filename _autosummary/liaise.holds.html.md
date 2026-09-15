@@ -48,15 +48,15 @@ Everything goes through a [`Ledger`](liaise.ledger.html.md#liaise.ledger.Ledger)
 
 ### Functions
 
-| [`auto_hold`](#liaise.holds.auto_hold)(ledger, scope, \*, error_class[, now])   | Block `scope` because the tick met `error_class`: the hold in force, and whether it is new.   |
-|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| [`blocking_hold`](#liaise.holds.blocking_hold)(ledger, scopes, \*, for_)            | The most specific hold on one of `scopes` that stops `for_`, or None.                         |
-| [`canonical_scope`](#liaise.holds.canonical_scope)(scope)                             | `scope` as holds are stored and matched: validated, and a checkout path resolved.             |
-| [`hold`](#liaise.holds.hold)(ledger, scope, \*[, mode, reason, ...])       | Put a `mode` hold on `scope`, replacing any hold already there, and return it.                |
-| [`parse_scope`](#liaise.holds.parse_scope)(scope)                                 | `(kind, value)` for a hold scope; the value is None for `global` and `processor`.             |
-| [`release_auto_holds`](#liaise.holds.release_auto_holds)(ledger, scope)                  | Lift the tick's own hold on `scope` and return what was lifted; an operator's stays.          |
-| [`scopes_for`](#liaise.holds.scopes_for)(\*[, subject, person, repo, ...])       | The scopes a piece of work falls under, most specific first and `global` last.                |
-| [`unhold`](#liaise.holds.unhold)(ledger, scope)                              | Lift the hold on `scope`, whoever set it; True when there was one.                            |
+| [`auto_hold`](#liaise.holds.auto_hold)(ledger, scope, \*, error_class[, now])   | Block `scope` because the tick met `error_class`: the hold in force, and whether it is new.                                                                        |
+|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`blocking_hold`](#liaise.holds.blocking_hold)(ledger, scopes, \*, for_)            | The most specific hold on one of `scopes` that stops `for_`, or None.                                                                                              |
+| [`canonical_scope`](#liaise.holds.canonical_scope)(scope)                             | `scope` as holds are stored and matched: validated, a checkout path resolved, and a repository lower-cased, since GitHub's names ignore case as its references do. |
+| [`hold`](#liaise.holds.hold)(ledger, scope, \*[, mode, reason, ...])       | Put a `mode` hold on `scope`, replacing any hold already there, and return it.                                                                                     |
+| [`parse_scope`](#liaise.holds.parse_scope)(scope)                                 | `(kind, value)` for a hold scope; the value is None for `global` and `processor`.                                                                                  |
+| [`release_auto_holds`](#liaise.holds.release_auto_holds)(ledger, scope)                  | Lift the tick's own hold on `scope` and return what was lifted; an operator's stays.                                                                               |
+| [`scopes_for`](#liaise.holds.scopes_for)(\*[, subject, person, repo, ...])       | The scopes a piece of work falls under, most specific first and `global` last.                                                                                     |
+| [`unhold`](#liaise.holds.unhold)(ledger, scope)                              | Lift the hold on `scope`, whoever set it; True when there was one.                                                                                                 |
 
 ### Classes
 
@@ -144,12 +144,18 @@ a scope outside the accepted forms.
 
 ### liaise.holds.canonical_scope(scope)
 
-`scope` as holds are stored and matched: validated, and a checkout path resolved.
-
-Raises `ValueError` as [`parse_scope()`](#liaise.holds.parse_scope) does.
+`scope` as holds are stored and matched: validated, a checkout path resolved, and a
+repository lower-cased, since GitHub’s names ignore case as its references do.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> canonical_scope("repo:Example/App")
+'repo:example/app'
+```
+
+Raises `ValueError` as [`parse_scope()`](#liaise.holds.parse_scope) does.
 
 ### liaise.holds.hold(ledger, scope, , mode='block', reason='', set_by='operator', now=None)
 

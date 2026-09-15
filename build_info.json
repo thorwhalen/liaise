@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-09-15T14:30:33Z",
+  "built_at": "2026-09-15T15:07:48Z",
   "package": {
     "name": "liaise",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "display_name": "liaise",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "14a62fd36f4cc10cc3e15c03789eb639428a3fcb",
-    "short_commit": "14a62fd",
+    "commit": "b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb",
+    "short_commit": "b1fd353",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/liaise",
-    "commit_url": "https://github.com/thorwhalen/liaise/commit/14a62fd36f4cc10cc3e15c03789eb639428a3fcb",
+    "commit_url": "https://github.com/thorwhalen/liaise/commit/b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/liaise",
-    "sha": "14a62fd36f4cc10cc3e15c03789eb639428a3fcb",
+    "sha": "b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "34981862981",
-    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/34981862981",
+    "run_id": "34986124721",
+    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/34986124721",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -55,16 +55,16 @@
     "docs_dir": "docsrc"
   },
   "site": {
-    "modules_documented": 24,
-    "objects_documented": 555
+    "modules_documented": 25,
+    "objects_documented": 600
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.1",
+    "latest": "0.1.2",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout 14a62fd36f4cc10cc3e15c03789eb639428a3fcb\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout b1fd35328ea2318b3d4f25c006f6154cb9ddd2fb\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

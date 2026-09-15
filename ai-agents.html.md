@@ -12,7 +12,7 @@ Skills are folders holding a `SKILL.md` (the [Agent Skills](https://agentskills.
 
 ### `liaise`
 
-Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on “add a partner to liaise”, “onboard <name> to liaise”, “add a subject to liaise”, “check liaise status”, “what is liaise waiting on”, “hold liaise”, “pause liaise for <subject>”, “unhold”, “why is this issue unrouted”, “migrate my liaise config”, “what does liaise:needs-owner mean”, “why hasn’t liaise picked up this issue”, “send the liaise draft”, “approve this draft”, “reject a draft”.
+Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on “add a partner to liaise”, “onboard <name> to liaise”, “add a subject to liaise”, “check liaise status”, “what is liaise waiting on”, “hold liaise”, “pause liaise for <subject>”, “unhold”, “why is this issue unrouted”, “migrate my liaise config”, “what does liaise:needs-owner mean”, “why hasn’t liaise picked up this issue”, “send the liaise draft”, “approve this draft”, “reject a draft”, “message someone through liaise”, “ask the partner a question outside a case”, “liaise message send”.
 
 Source: [`.claude/skills/liaise`](https://github.com/thorwhalen/liaise/tree/HEAD/.claude/skills/liaise).
 

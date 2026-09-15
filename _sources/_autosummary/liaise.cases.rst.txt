@@ -18,8 +18,6 @@ liaise.cases
       TEXT_INDENT
       NEEDS_OWNER
       STATE_AFTER_SENT_DRAFT
-      DELIVER_PURPOSE
-      DRAFT_ENTRY_KIND
    
    .. rubric:: Functions
 
@@ -27,6 +25,7 @@ liaise.cases
    
       case_lines
       case_show_lines
+      entry_line
       find_draft
       pick_draft
       reject_draft
@@ -39,10 +38,4 @@ liaise.cases
    
       DraftRejection
       DraftRelease
-   
-   .. rubric:: Exceptions
-
-   .. autosummary::
-   
-      DraftSentNotRecorded
    

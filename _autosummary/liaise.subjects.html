@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
+    <script src="../_static/documentation_options.js?v=92734c54"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.schedule" href="liaise.schedule.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.1" />
+  <meta name="docsearch:version" content="0.1.2" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -327,6 +327,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.github.html">liaise.github</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
@@ -481,6 +482,9 @@ Every table has defaults, so a minimal subject file needs only:</p>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.ref_key" title="liaise.subjects.ref_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ref_key</span></code></a>(ref)</p></td>
 <td><p>How two polled conversations compare: without regard to case, as their cursors do.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.subject_for_ref" title="liaise.subjects.subject_for_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_for_ref</span></code></a>(subjects, ref)</p></td>
+<td><p>The subject whose bindings take in <code class="docutils literal notranslate"><span class="pre">ref</span></code>, the conversation a message outside a case goes to.</p></td>
 </tr>
 </tbody>
 </table>
@@ -851,6 +855,34 @@ on the cursor of <code class="docutils literal notranslate"><span class="pre">gi
 </div>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.subjects.subject_for_ref">
+<span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">subject_for_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#subject_for_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.subject_for_ref" title="Link to this definition">#</a></dt>
+<dd><p>The subject whose bindings take in <code class="docutils literal notranslate"><span class="pre">ref</span></code>, the conversation a message outside a case goes to.</p>
+<p>A binding takes in the conversation it polls and, on GitHub, every issue of a repository
+it binds, so <code class="docutils literal notranslate"><span class="pre">github:example/app#12</span></code> is the subject’s that binds
+<code class="docutils literal notranslate"><span class="pre">github:example/app</span></code>. Conversations compare as <a class="reference internal" href="#liaise.subjects.ref_key" title="liaise.subjects.ref_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">ref_key()</span></code></a> says. A binding’s
+<code class="docutils literal notranslate"><span class="pre">?conditions</span></code> are not consulted, since they sort what comes in, not where a message
+may go, and a wildcard binding polls nothing, so it takes in nothing (see
+<a class="reference internal" href="#liaise.subjects.poll_ref" title="liaise.subjects.poll_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">poll_ref()</span></code></a>). When two subjects take <code class="docutils literal notranslate"><span class="pre">ref</span></code> in, the one whose binding names it most
+closely wins: an issue’s own binding over its repository’s.</p>
+<p>No caller may choose another subject: the subject’s policy is what the gate judges a
+message by, so a message goes only where its subject binds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">heron</span> <span class="o">=</span> <span class="n">Subject</span><span class="p">(</span><span class="s2">"heron"</span><span class="p">,</span> <span class="p">(</span><span class="s2">"github:example/heron?labels=partner:pat"</span><span class="p">,),</span>
+<span class="gp">... </span>    <span class="n">Policy</span><span class="p">(</span><span class="n">people</span><span class="o">=</span><span class="p">{},</span> <span class="n">roles</span><span class="o">=</span><span class="p">{}))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">subject_for_ref</span><span class="p">({</span><span class="s2">"heron"</span><span class="p">:</span> <span class="n">heron</span><span class="p">},</span> <span class="s2">"github:Example/Heron#12"</span><span class="p">)</span><span class="o">.</span><span class="n">slug</span>
+<span class="go">'heron'</span>
+</pre></div>
+</div>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> naming the subjects there are when none takes <code class="docutils literal notranslate"><span class="pre">ref</span></code> in, and
+naming each when several name it equally closely.</p>
+</dd></dl>
+
 </section>
 
 
@@ -935,6 +967,7 @@ on the cursor of <code class="docutils literal notranslate"><span class="pre">gi
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.normalize_binding"><code class="docutils literal notranslate"><span class="pre">normalize_binding()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.poll_ref"><code class="docutils literal notranslate"><span class="pre">poll_ref()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.ref_key"><code class="docutils literal notranslate"><span class="pre">ref_key()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.subject_for_ref"><code class="docutils literal notranslate"><span class="pre">subject_for_ref()</span></code></a></li>
 </ul>
   </nav></div>
 
