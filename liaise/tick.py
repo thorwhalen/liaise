@@ -2508,12 +2508,14 @@ class _Tick:
         ]
         self.say(f"labels: {len(targets)} case(s)")
         for case in targets:
+            before = projected(case)
             try:
                 lines = project_labels(
                     case,
                     self.subjects[case.subject],
                     labeler=self.labeler,
                     dry_run=self.dry_run,
+                    stale=[before[1]] if before and before[1] else [],
                 )
             except Exception as error:  # a GitHubError, usually: labels never set up
                 why = _error_text(error)

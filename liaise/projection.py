@@ -24,6 +24,7 @@ tests), since correspond has no label operations yet. Only a case's
 from __future__ import annotations
 
 import json
+from collections.abc import Iterable
 from importlib import resources
 from typing import Optional
 
@@ -94,7 +95,12 @@ def waiting_label(case: Case, subject: Subject) -> Optional[str]:
 
 
 def project_labels(
-    case: Case, subject: Subject, *, labeler: GitHub, dry_run: bool = False
+    case: Case,
+    subject: Subject,
+    *,
+    labeler: GitHub,
+    dry_run: bool = False,
+    stale: Iterable[str] = (),
 ) -> list[str]:
     """Label each of ``case``'s GitHub issues with its state, and with no other state.
 
@@ -102,18 +108,23 @@ def project_labels(
     ``<label_prefix><state>`` labels are removed and the current one is added (labels
     that are not state labels stay). When the subject has waiting labels, the other
     people's come off too, and :func:`waiting_label` goes on beside the state label while
-    the case waits on its reporter. Returns one line per issue. A dry run returns the
-    lines and calls nothing on ``labeler``. A ``GitHubError`` from ``labeler`` propagates.
+    the case waits on its reporter. ``stale`` are waiting labels projected before that the
+    subject no longer gives (turned off, or renamed): they come off as well, except a label
+    that is now a claim label. Returns one line per issue. A dry run returns the lines and
+    calls nothing on ``labeler``. A ``GitHubError`` from ``labeler`` propagates.
     """
     prefix = subject.label_prefix
     current = f"{prefix}{case.state}"
     others = [f"{prefix}{state}" for state in CASE_STATES if state != case.state]
     waiting = waiting_label(case, subject)
-    configured = dict.fromkeys(subject.policy.waiting_labels.values())
-    not_waiting = [label for label in configured if label != waiting]
+    claims = subject.policy.claim_labels
+    candidates = dict.fromkeys((*subject.policy.waiting_labels.values(), *stale))
+    not_waiting = [
+        label for label in candidates if label and label != waiting and label not in claims
+    ]
     shown = f"{current} and {waiting}" if waiting else current
     removing = f"any other {prefix} state label" + (
-        " and waiting label" if configured else ""
+        " and waiting label" if not_waiting else ""
     )
     lines = []
     for conversation in case.conversations:

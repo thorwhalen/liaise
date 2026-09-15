@@ -122,6 +122,14 @@ def test_a_dry_run_says_what_it_would_label_and_touches_nothing():
     ]
 
 
+def test_a_stale_waiting_label_comes_off_but_never_a_claim_label():
+    fake = FakeGitHub([_issue(labels=("old-waiting", "partner:pat"))])
+
+    project_labels(_case("needs-partner"), _subject_with(LABELS), labeler=fake, stale=["old-waiting", "partner:pat"])
+
+    assert set(fake.get_issue(REPO, 12).labels) == {"partner:pat", "liaise:needs-partner", "needs-pat"}
+
+
 def test_setup_creates_the_waiting_labels_with_the_state_they_go_with():
     fake = FakeGitHub()
 
@@ -192,3 +200,18 @@ def test_the_tick_relabels_a_waiting_case_once_its_subject_turns_waiting_labels_
     assert projections[-1].detail == {"state": "needs-partner", "waiting": "needs-pat"}
     world.tick(LATER + timedelta(minutes=2))
     assert len([entry for entry in world.case(CASE_1).entries if entry.kind == "projection"]) == len(projections)
+
+
+def test_a_renamed_or_turned_off_waiting_label_is_taken_off_the_issue(world):
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+    labels = {"pat": "needs-pat"}
+    for minutes, waiting in ((1, {"pat": "needs-pat"}), (2, {"pat": "waits-on-pat"}), (3, {})):
+        world.subject = replace(world.subject, policy=replace(world.subject.policy, waiting_labels=waiting))
+        world.tick(LATER + timedelta(minutes=minutes))
+        labels = set(world.labels())
+        assert "liaise:needs-partner" in labels
+        assert labels & {"needs-pat", "waits-on-pat"} == set(waiting.values())
+    last = [entry for entry in world.case(CASE_1).entries if entry.kind == "projection"][-1]
+    assert last.detail == {"state": "needs-partner"}
