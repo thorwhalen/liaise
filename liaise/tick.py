@@ -567,7 +567,9 @@ def run_once(
             if subjects[slug].active:
                 continue
             if slug in tick.slugs:
-                tick.say(f"subject {slug}: inactive (active = false); planned, as a dry run")
+                tick.say(
+                    f"subject {slug}: inactive (active = false); planned, as a dry run"
+                )
             elif only is None:
                 tick.say(f"subject {slug}: inactive (active = false), not ticked")
         tick.intake_all()
@@ -2492,7 +2494,8 @@ class _Tick:
             case
             for case in (*touched, *drifted)
             if case is not None
-            and case.subject in self.slugs  # an inactive subject's issues keep their labels
+            and case.subject
+            in self.slugs  # an inactive subject's issues keep their labels
             and _github_issue_ref(case) is not None
         ]
         self.say(f"labels: {len(targets)} case(s)")
