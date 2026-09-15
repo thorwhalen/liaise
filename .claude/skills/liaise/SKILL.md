@@ -72,6 +72,8 @@ digest notes: 1
 - **Drafts waiting for the operator.** Messages `liaise` kept instead of sending: draft reply mode, a gate divert (a leak, deslop, no handle to mention), an escalation, held effects, a failed send. Nothing sends them later: the owner sends what they want by hand. `liaise case show <case>` prints each draft's full text.
 - **Digest notes.** `note` outcomes: what the agent noticed for the owner, never shown to the partner.
 
+Before sending a draft by hand, or choosing a person's reply mode, check who can actually read the thread, not only who it is for. The 0.1 gate's leak scan runs only on channels named in `policy.public_channels` and knows no project name unless it is in `policy.leak_terms`. [references/outbound-safety.md](references/outbound-safety.md) has what that leaves uncovered, and what an owner can set today.
+
 ## A notification from liaise
 
 Notifications carry no case text. A push to the owner's ntfy topic, which anyone who knows the topic's name can read, names only the subject, the case, the event (an escalation, a diverted or failed message, a failed deploy, a lost run, an error, the daily cap) and its cause (an error class, the gate filter that diverted a message, a deploy's exit code), and ends `see liaise case show <case>`. Its title is fixed text with the subject or the case id, never a person's name or address, nor an issue's title. Read the details with that command: the drafts with their text, the escalation's reason, the failed deploy's output, and the case's latest entries.
