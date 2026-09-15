@@ -1,4 +1,0 @@
-liaise.tests
-============
-.. automodule:: liaise.tests
-   :members:

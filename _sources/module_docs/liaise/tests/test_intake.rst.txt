@@ -1,4 +1,0 @@
-liaise.tests.test_intake
-========================
-.. automodule:: liaise.tests.test_intake
-   :members:

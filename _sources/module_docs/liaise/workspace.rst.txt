@@ -1,4 +1,0 @@
-liaise.workspace
-================
-.. automodule:: liaise.workspace
-   :members:

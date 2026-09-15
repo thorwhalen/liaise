@@ -1,4 +1,0 @@
-liaise.processor
-================
-.. automodule:: liaise.processor
-   :members:

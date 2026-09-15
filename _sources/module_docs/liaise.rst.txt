@@ -1,4 +1,0 @@
-liaise
-======
-.. automodule:: liaise
-   :members:

@@ -1,0 +1,83 @@
+liaise.detect
+=============
+
+.. automodule:: liaise.detect
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      KINDS
+      FOLDED_KINDS
+      LABELS
+      DFLT_ENTITY_LABEL
+      PERSON_PREFIX
+      SEVERITY_WIDE_AUDIENCE
+      DFLT_STATE_DIR
+      KEY_READ_ATTEMPTS
+      MIN_BASE64_RUN
+      MIN_WRAPPED_BASE64_LINE
+      MIN_HEX_RUN
+      MAX_DESTINATION
+      CONFUSABLES_RESOURCE
+      TOKEN_SHAPES
+      TOKEN_RULES
+      TOKEN_LITERALS
+      EMAIL_PATTERN
+      PRIVATE_KEY_PATTERN
+      LOCAL_PATH_PATTERNS
+      ENV_FILE_PATTERN
+      Detector
+      SECRET_RULES
+      MAX_TAG_LOOKBACK
+      INTERNAL_NETWORKS
+      LOCAL_PATH_LITERALS
+      LOCAL_PATH_RULES
+      EXFILTRATION_SCANNERS
+      PERSONAL_SCANNERS
+      DFLT_DETECTORS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      chain
+      detect
+      detect_canaries
+      detect_exfiltration
+      detect_personal
+      detect_third_parties
+      detect_vocabulary
+      fingerprint_key
+      fold_term
+      local_path_scanner
+      normalise
+      render
+      scan_base64_runs
+      scan_email_addresses
+      scan_hex_runs
+      scan_invisible_characters
+      scan_links
+      scan_personal_terms
+      scan_private_addresses
+      secret_detector
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Finding
+      FoldedTerm
+      Normalised
+      PathRule
+      Scan
+      SecretRule
+      View
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      FingerprintKeyError
+   

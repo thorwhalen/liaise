@@ -1,0 +1,37 @@
+liaise.processor
+================
+
+.. automodule:: liaise.processor
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      FRESH
+      RESUME
+      RUN_STATUSES
+      CANCEL_MODES
+      DFLT_GRACE_S
+      KILL_GRACE_S
+      SCRUBBED_ENV_VARS
+      CHILD_ENV_OVERRIDES
+      DFLT_AUTH_CHECK
+      DFLT_AUTH_TIMEOUT_S
+      PROMPT_POINTER
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      child_env
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      ClaudeHeadless
+      EchoProcessor
+      Job
+      Processor
+   

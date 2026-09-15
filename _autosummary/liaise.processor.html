@@ -1,0 +1,970 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="alternate" type="text/markdown" href="liaise.processor.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+    <title>liaise.processor &#8212; liaise</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fd10adb8"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/liaise.processor';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="liaise.projection" href="liaise.projection.html" />
+    <link rel="prev" title="liaise.outcomes" href="liaise.outcomes.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">liaise</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="liaise.html">liaise</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="liaise.access.html">liaise.access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.cases.html">liaise.cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.cli.html">liaise.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.config.html">liaise.config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.detect.html">liaise.detect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.errors.html">liaise.errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.gate.html">liaise.gate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.github.html">liaise.github</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.projection.html">liaise.projection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.prompt.html">liaise.prompt</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.readiness.html">liaise.readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.schedule.html">liaise.schedule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="liaise.html" class="nav-link">liaise</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">liaise.processor</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-liaise.processor">
+<span id="liaise-processor"></span><h1>liaise.processor<a class="headerlink" href="#module-liaise.processor" title="Link to this heading">#</a></h1>
+<p>Processors (design §3.6): what runs a case’s work, detached, and how that run ended.</p>
+<p>A <a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a> has six verbs, each with its default in <a class="reference internal" href="#liaise.processor.ClaudeHeadless" title="liaise.processor.ClaudeHeadless"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClaudeHeadless</span></code></a>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">preflight(job)</span></code>: whether work could start now: the command, the checkout, and whether
+the login still works. It never starts any.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">start(job)</span></code> and <code class="docutils literal notranslate"><span class="pre">resume(session_id,</span> <span class="pre">job)</span></code>: spawn a detached run and return its
+<a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a> at once. Both are idempotent on <code class="docutils literal notranslate"><span class="pre">job.run_id</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">status(run)</span></code>: never blocks. It refreshes the heartbeat, the status and the end time.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cancel(run,</span> <span class="pre">mode=...)</span></code>: interrupt, then terminate. The session stays resumable. Only a
+process verified as the run’s, by when it started, is ever signalled.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">collect(run)</span></code>: <code class="docutils literal notranslate"><span class="pre">None</span></code> while the run is going, then its
+<a class="reference internal" href="liaise.model.html#liaise.model.RunResult" title="liaise.model.RunResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunResult</span></code></a>, classified by <a class="reference internal" href="liaise.errors.html#liaise.errors.classify" title="liaise.errors.classify"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.errors.classify()</span></code></a>.</p></li>
+</ul>
+<p>In a dry run the tick passes <code class="docutils literal notranslate"><span class="pre">persist=False</span></code> to <code class="docutils literal notranslate"><span class="pre">status</span></code> and <code class="docutils literal notranslate"><span class="pre">collect</span></code>, which then
+write nothing.</p>
+<p><a class="reference internal" href="#liaise.processor.ClaudeHeadless" title="liaise.processor.ClaudeHeadless"><code class="xref py py-class docutils literal notranslate"><span class="pre">ClaudeHeadless</span></code></a> keeps each run’s files in <code class="docutils literal notranslate"><span class="pre">&lt;runs_dir&gt;/&lt;run_id&gt;/</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">prompt</span><span class="o">.</span><span class="n">md</span>       <span class="n">the</span> <span class="n">prompt</span><span class="p">;</span> <span class="n">the</span> <span class="n">command</span> <span class="n">line</span> <span class="n">only</span> <span class="n">points</span> <span class="n">at</span> <span class="n">it</span>
+<span class="n">stream</span><span class="o">.</span><span class="n">jsonl</span>    <span class="n">claude</span><span class="s1">'s stream-JSON stdout, whose mtime is the heartbeat</span>
+<span class="n">stderr</span><span class="o">.</span><span class="n">log</span>      <span class="n">claude</span><span class="s1">'s stderr</span>
+<span class="n">record</span><span class="o">.</span><span class="n">json</span>     <span class="n">the</span> <span class="n">RunRecord</span><span class="p">,</span> <span class="n">plus</span> <span class="n">the</span> <span class="n">cancel</span> <span class="n">bookkeeping</span>
+</pre></div>
+</div>
+<p>The files hold everything, so a run one tick started is checked, cancelled and collected
+by the next. <a class="reference internal" href="#liaise.processor.EchoProcessor" title="liaise.processor.EchoProcessor"><code class="xref py py-class docutils literal notranslate"><span class="pre">EchoProcessor</span></code></a> runs nothing and returns scripted results, for tests.</p>
+<p class="rubric">Module Attributes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.FRESH" title="liaise.processor.FRESH"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FRESH</span></code></a></p></td>
+<td><p>A run is a new session (<code class="docutils literal notranslate"><span class="pre">fresh</span></code>) or continues a stored one (<code class="docutils literal notranslate"><span class="pre">resume</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.processor.RESUME" title="liaise.processor.RESUME"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RESUME</span></code></a></p></td>
+<td><p>A run is a new session (<code class="docutils literal notranslate"><span class="pre">fresh</span></code>) or continues a stored one (<code class="docutils literal notranslate"><span class="pre">resume</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.RUN_STATUSES" title="liaise.processor.RUN_STATUSES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_STATUSES</span></code></a></p></td>
+<td><p>A run's <code class="docutils literal notranslate"><span class="pre">status</span></code> in its RunRecord.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.processor.CANCEL_MODES" title="liaise.processor.CANCEL_MODES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CANCEL_MODES</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">graceful</span></code> interrupts first and terminates after the grace period; <code class="docutils literal notranslate"><span class="pre">now</span></code> terminates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.DFLT_GRACE_S" title="liaise.processor.DFLT_GRACE_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_GRACE_S</span></code></a></p></td>
+<td><p>Seconds between a graceful cancel's interrupt and the terminate that may follow it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.processor.KILL_GRACE_S" title="liaise.processor.KILL_GRACE_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KILL_GRACE_S</span></code></a></p></td>
+<td><p>Seconds a run may go on after a cancel sent it SIGTERM before a later cancel kills it with SIGKILL (POSIX only: on Windows every cancel already ends the run outright).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.SCRUBBED_ENV_VARS" title="liaise.processor.SCRUBBED_ENV_VARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SCRUBBED_ENV_VARS</span></code></a></p></td>
+<td><p>with either set, claude bills that key instead of the subscription the operator logged in with.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.processor.CHILD_ENV_OVERRIDES" title="liaise.processor.CHILD_ENV_OVERRIDES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHILD_ENV_OVERRIDES</span></code></a></p></td>
+<td><p>claude retries transient API errors, a bounded number of times, before it gives up and reports them.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.DFLT_AUTH_CHECK" title="liaise.processor.DFLT_AUTH_CHECK"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_AUTH_CHECK</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">auth</span> <span class="pre">status</span></code>, which exits non-zero once the login is gone.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.processor.DFLT_AUTH_TIMEOUT_S" title="liaise.processor.DFLT_AUTH_TIMEOUT_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_AUTH_TIMEOUT_S</span></code></a></p></td>
+<td><p>Seconds <a class="reference internal" href="#liaise.processor.ClaudeHeadless.preflight" title="liaise.processor.ClaudeHeadless.preflight"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ClaudeHeadless.preflight()</span></code></a> gives that check to answer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.PROMPT_POINTER" title="liaise.processor.PROMPT_POINTER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PROMPT_POINTER</span></code></a></p></td>
+<td><p>The only instruction on the command line; the prompt itself stays in its file.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.child_env" title="liaise.processor.child_env"><code class="xref py py-obj docutils literal notranslate"><span class="pre">child_env</span></code></a>(environ)</p></td>
+<td><p>The environment a run gets: <code class="docutils literal notranslate"><span class="pre">environ</span></code> without <a class="reference internal" href="#liaise.processor.SCRUBBED_ENV_VARS" title="liaise.processor.SCRUBBED_ENV_VARS"><code class="xref py py-data docutils literal notranslate"><span class="pre">SCRUBBED_ENV_VARS</span></code></a>, plus <a class="reference internal" href="#liaise.processor.CHILD_ENV_OVERRIDES" title="liaise.processor.CHILD_ENV_OVERRIDES"><code class="xref py py-data docutils literal notranslate"><span class="pre">CHILD_ENV_OVERRIDES</span></code></a>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.ClaudeHeadless" title="liaise.processor.ClaudeHeadless"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClaudeHeadless</span></code></a>(*[, claude_bin, runs_dir, ...])</p></td>
+<td><p>The default <a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a>: the <code class="docutils literal notranslate"><span class="pre">claude</span></code> CLI, headless, stream-JSON, detached.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.processor.EchoProcessor" title="liaise.processor.EchoProcessor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EchoProcessor</span></code></a>(*[, results, default, health])</p></td>
+<td><p>A <a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a> that runs nothing: it records jobs and returns scripted results.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.processor.Job" title="liaise.processor.Job"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Job</span></code></a>(run_id, case_id, subject, prompt, cwd, ...)</p></td>
+<td><p>Everything a <a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a> needs to run one case once.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Processor</span></code></a>(*args, **kwargs)</p></td>
+<td><p>What the tick needs to run a case's work: the processor seam (<code class="docutils literal notranslate"><span class="pre">processor=</span></code>).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.CANCEL_MODES">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">CANCEL_MODES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('graceful',</span> <span class="pre">'now')</span></span><a class="headerlink" href="#liaise.processor.CANCEL_MODES" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">graceful</span></code> interrupts first and terminates after the grace period; <code class="docutils literal notranslate"><span class="pre">now</span></code> terminates.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.CHILD_ENV_OVERRIDES">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">CHILD_ENV_OVERRIDES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'CLAUDE_CODE_MAX_RETRIES':</span> <span class="pre">'3'})</span></span><a class="headerlink" href="#liaise.processor.CHILD_ENV_OVERRIDES" title="Link to this definition">#</a></dt>
+<dd><p>claude retries transient API errors, a bounded number
+of times, before it gives up and reports them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Set in every run’s environment</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">ClaudeHeadless</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">claude_bin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'claude'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grace_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kill_grace_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auth_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('auth',</span> <span class="pre">'status')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">auth_timeout_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The default <a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a>: the <code class="docutils literal notranslate"><span class="pre">claude</span></code> CLI, headless, stream-JSON, detached.</p>
+<p><code class="docutils literal notranslate"><span class="pre">runs_dir</span></code> is where each run’s directory goes; the tick passes
+<code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/runs</span></code>, and nothing but <a class="reference internal" href="#liaise.processor.ClaudeHeadless.preflight" title="liaise.processor.ClaudeHeadless.preflight"><code class="xref py py-meth docutils literal notranslate"><span class="pre">preflight()</span></code></a> works without it.
+<code class="docutils literal notranslate"><span class="pre">claude_bin</span></code> is the command, found on <code class="docutils literal notranslate"><span class="pre">PATH</span></code> or given as a path. <code class="docutils literal notranslate"><span class="pre">grace_s</span></code> is
+how long a graceful cancel waits after its interrupt before it may terminate, and
+<code class="docutils literal notranslate"><span class="pre">kill_grace_s</span></code> how long a run that was sent SIGTERM may go on before a cancel kills
+it (POSIX). <code class="docutils literal notranslate"><span class="pre">auth_check</span></code> is the arguments that ask <code class="docutils literal notranslate"><span class="pre">claude</span></code> whether its login
+still works (<a class="reference internal" href="#liaise.processor.DFLT_AUTH_CHECK" title="liaise.processor.DFLT_AUTH_CHECK"><code class="xref py py-data docutils literal notranslate"><span class="pre">DFLT_AUTH_CHECK</span></code></a>), which <a class="reference internal" href="#liaise.processor.ClaudeHeadless.preflight" title="liaise.processor.ClaudeHeadless.preflight"><code class="xref py py-meth docutils literal notranslate"><span class="pre">preflight()</span></code></a> gives
+<code class="docutils literal notranslate"><span class="pre">auth_timeout_s</span></code> seconds to answer; None skips that check, for a <code class="docutils literal notranslate"><span class="pre">claude</span></code> without
+the command.</p>
+<p>A run is spawned in its own process group (a new session on POSIX), so it outlives
+the tick that started it and a cancel reaches everything it started. Its environment
+is <a class="reference internal" href="#liaise.processor.child_env" title="liaise.processor.child_env"><code class="xref py py-func docutils literal notranslate"><span class="pre">child_env()</span></code></a>.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless.cancel">
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graceful'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless.cancel" title="Link to this definition">#</a></dt>
+<dd><p>Ask <code class="docutils literal notranslate"><span class="pre">run</span></code> to stop, and return its refreshed record (usually still running).</p>
+<p>On POSIX, <code class="docutils literal notranslate"><span class="pre">graceful</span></code> sends SIGINT to the run’s process group the first time, and
+SIGTERM on a later call once <code class="docutils literal notranslate"><span class="pre">grace_s</span></code> has passed since that first request;
+<code class="docutils literal notranslate"><span class="pre">now</span></code> sends SIGTERM. A run still alive <code class="docutils literal notranslate"><span class="pre">kill_grace_s</span></code> after its SIGTERM is sent
+SIGKILL by the next call, whatever the mode. On Windows every call terminates the
+run and its children outright, so there is nothing to escalate to. When the cancel
+was first requested, the last signal, and when that signal was first sent are kept
+in <code class="docutils literal notranslate"><span class="pre">record.json</span></code>, so the next tick’s call continues the same cancel. <code class="docutils literal notranslate"><span class="pre">now</span></code> is
+the cancel’s clock (the current UTC time when None). A finished run is returned as
+it is. Only a process verified as the run’s (see <a class="reference internal" href="#liaise.processor.ClaudeHeadless.status" title="liaise.processor.ClaudeHeadless.status"><code class="xref py py-meth docutils literal notranslate"><span class="pre">status()</span></code></a>) is signalled: a
+live pid whose start cannot be read may be another process’s, so it is sent nothing,
+and only the request is recorded.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless.collect">
+<span class="sig-name descname"><span class="pre">collect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">timed_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless.collect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless.collect" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">run</span></code>’s result, or None while it is running. Never raises on a bad stream.</p>
+<p>The outcomes are the last <code class="docutils literal notranslate"><span class="pre">result</span></code> event’s <code class="docutils literal notranslate"><span class="pre">structured_output.outcomes</span></code>; if
+any of them is malformed the run has no outcomes. The error class comes from
+<a class="reference internal" href="liaise.errors.html#liaise.errors.classify" title="liaise.errors.classify"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.errors.classify()</span></code></a>, given <code class="docutils literal notranslate"><span class="pre">stderr.log</span></code> and <code class="docutils literal notranslate"><span class="pre">timed_out</span></code> (which the
+tick sets for a run it cancelled for passing its wall clock). <code class="docutils literal notranslate"><span class="pre">persist</span></code> is as
+for <a class="reference internal" href="#liaise.processor.ClaudeHeadless.status" title="liaise.processor.ClaudeHeadless.status"><code class="xref py py-meth docutils literal notranslate"><span class="pre">status()</span></code></a>. A run whose id names another case’s record is <code class="docutils literal notranslate"><span class="pre">config_error</span></code>,
+and that record’s files are not read.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference internal" href="liaise.model.html#liaise.model.RunResult" title="liaise.model.RunResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunResult</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless.preflight">
+<span class="sig-name descname"><span class="pre">preflight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless.preflight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless.preflight" title="Link to this definition">#</a></dt>
+<dd><p>Whether <code class="docutils literal notranslate"><span class="pre">job</span></code> could start now. It starts no run.</p>
+<p><code class="docutils literal notranslate"><span class="pre">config_error</span></code> without <code class="docutils literal notranslate"><span class="pre">runs_dir</span></code>, a runnable <code class="docutils literal notranslate"><span class="pre">claude_bin</span></code>, or <code class="docutils literal notranslate"><span class="pre">job.cwd</span></code>.
+Then <code class="docutils literal notranslate"><span class="pre">auth_expired</span></code> when <code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">auth</span> <span class="pre">status</span></code> (<code class="docutils literal notranslate"><span class="pre">auth_check</span></code>) exits non-zero,
+so a login that has expired costs no run. A check that cannot be run, or does not
+answer within <code class="docutils literal notranslate"><span class="pre">auth_timeout_s</span></code>, tells nothing: preflight passes, and the run’s
+own classification has the last word.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.Health" title="liaise.model.Health"><code class="xref py py-class docutils literal notranslate"><span class="pre">Health</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless.resume">
+<span class="sig-name descname"><span class="pre">resume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless.resume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless.resume" title="Link to this definition">#</a></dt>
+<dd><p>Like <a class="reference internal" href="#liaise.processor.ClaudeHeadless.start" title="liaise.processor.ClaudeHeadless.start"><code class="xref py py-meth docutils literal notranslate"><span class="pre">start()</span></code></a>, but continuing <code class="docutils literal notranslate"><span class="pre">session_id</span></code> (<code class="docutils literal notranslate"><span class="pre">--resume</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless.run_dir">
+<span class="sig-name descname"><span class="pre">run_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless.run_dir"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless.run_dir" title="Link to this definition">#</a></dt>
+<dd><p>The directory holding <code class="docutils literal notranslate"><span class="pre">run_id</span></code>’s files. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> without
+<code class="docutils literal notranslate"><span class="pre">runs_dir</span></code>, or for a <code class="docutils literal notranslate"><span class="pre">run_id</span></code> that is not one path segment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless.start" title="Link to this definition">#</a></dt>
+<dd><p>Spawn <code class="docutils literal notranslate"><span class="pre">job</span></code> in a new session (<code class="docutils literal notranslate"><span class="pre">--session-id</span></code>) and return its record at once.</p>
+<p>Idempotent: when <code class="docutils literal notranslate"><span class="pre">job.run_id</span></code> already has a record of <code class="docutils literal notranslate"><span class="pre">job.case_id</span></code>, that record
+is returned and nothing is spawned. A record another case’s run wrote under that id
+is neither returned nor touched: the run returned is finished at once, spawned
+nothing, and <a class="reference internal" href="#liaise.processor.ClaudeHeadless.collect" title="liaise.processor.ClaudeHeadless.collect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">collect()</span></code></a> classifies it as <code class="docutils literal notranslate"><span class="pre">config_error</span></code>. Never raises for a
+command that cannot be spawned: the run is recorded as finished with the reason in
+its <code class="docutils literal notranslate"><span class="pre">stderr.log</span></code>, which <a class="reference internal" href="#liaise.processor.ClaudeHeadless.collect" title="liaise.processor.ClaudeHeadless.collect"><code class="xref py py-meth docutils literal notranslate"><span class="pre">collect()</span></code></a> classifies as <code class="docutils literal notranslate"><span class="pre">config_error</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.ClaudeHeadless.status">
+<span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">persist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#ClaudeHeadless.status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.ClaudeHeadless.status" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">run</span></code> refreshed from its files and process, and saved to its <code class="docutils literal notranslate"><span class="pre">record.json</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">heartbeat_at</span></code> is the stream’s mtime. The run is finished once its stream holds
+a <code class="docutils literal notranslate"><span class="pre">result</span></code> event or its process is gone; <code class="docutils literal notranslate"><span class="pre">ended_at</span></code> is then the stream’s mtime.
+A run another process started (an earlier tick) is known by its pid, which counts
+as its process only while that process started when the run was spawned (see
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">_process_is_the_run()</span></code>): a pid a later process was given, after a reboot say,
+is gone, and a live pid whose start cannot be read is taken to be the run. It reads
+files and, for such a pid, asks <code class="docutils literal notranslate"><span class="pre">ps</span></code> (bounded by a timeout), so it never waits on
+the run. With <code class="docutils literal notranslate"><span class="pre">persist=False</span></code>, as in a dry run, <code class="docutils literal notranslate"><span class="pre">record.json</span></code> is left as it was.
+A run whose id names another case’s record is finished, and nothing is written.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.DFLT_AUTH_CHECK">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">DFLT_AUTH_CHECK</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('auth',</span> <span class="pre">'status')</span></span><a class="headerlink" href="#liaise.processor.DFLT_AUTH_CHECK" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">claude</span> <span class="pre">auth</span>
+<span class="pre">status</span></code>, which exits non-zero once the login is gone.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The arguments that ask <code class="docutils literal notranslate"><span class="pre">claude</span></code> whether its login still works</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.DFLT_AUTH_TIMEOUT_S">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">DFLT_AUTH_TIMEOUT_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">15.0</span></span><a class="headerlink" href="#liaise.processor.DFLT_AUTH_TIMEOUT_S" title="Link to this definition">#</a></dt>
+<dd><p>Seconds <a class="reference internal" href="#liaise.processor.ClaudeHeadless.preflight" title="liaise.processor.ClaudeHeadless.preflight"><code class="xref py py-meth docutils literal notranslate"><span class="pre">ClaudeHeadless.preflight()</span></code></a> gives that check to answer.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.DFLT_GRACE_S">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">DFLT_GRACE_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">15.0</span></span><a class="headerlink" href="#liaise.processor.DFLT_GRACE_S" title="Link to this definition">#</a></dt>
+<dd><p>Seconds between a graceful cancel’s interrupt and the terminate that may follow it.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.processor.EchoProcessor">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">EchoProcessor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">health</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#EchoProcessor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.EchoProcessor" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A <a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a> that runs nothing: it records jobs and returns scripted results.</p>
+<p><code class="docutils literal notranslate"><span class="pre">results</span></code> maps a case id to the <a class="reference internal" href="liaise.model.html#liaise.model.RunResult" title="liaise.model.RunResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunResult</span></code></a> its runs return,
+and <code class="docutils literal notranslate"><span class="pre">default</span></code> is returned for any other case; without either, a run reports one
+<code class="docutils literal notranslate"><span class="pre">note</span></code>. <code class="docutils literal notranslate"><span class="pre">health</span></code> is what <code class="xref py py-meth docutils literal notranslate"><span class="pre">preflight()</span></code> returns (ok by default). A run is
+finished as soon as it starts. It writes nothing, so <code class="docutils literal notranslate"><span class="pre">persist</span></code> changes nothing. <code class="docutils literal notranslate"><span class="pre">jobs</span></code>, <code class="docutils literal notranslate"><span class="pre">preflights</span></code> and <code class="docutils literal notranslate"><span class="pre">cancels</span></code> record the
+calls, for tests to assert on.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.FRESH">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">FRESH</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'fresh'</span></span><a class="headerlink" href="#liaise.processor.FRESH" title="Link to this definition">#</a></dt>
+<dd><p>A run is a new session (<code class="docutils literal notranslate"><span class="pre">fresh</span></code>) or continues a stored one (<code class="docutils literal notranslate"><span class="pre">resume</span></code>).</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.processor.Job">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">Job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prompt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cwd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permission_mode</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_minutes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_schema</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Job" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Everything a <a class="reference internal" href="#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a> needs to run one case once.</p>
+<p><code class="docutils literal notranslate"><span class="pre">run_id</span></code> names the run, and its directory, so it is one path segment. <code class="docutils literal notranslate"><span class="pre">prompt</span></code>
+is the whole prompt (see <a class="reference internal" href="liaise.prompt.html#liaise.prompt.compose_case_prompt" title="liaise.prompt.compose_case_prompt"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.prompt.compose_case_prompt()</span></code></a>), <code class="docutils literal notranslate"><span class="pre">cwd</span></code> is where
+the work happens, and <code class="docutils literal notranslate"><span class="pre">json_schema</span></code> is the structured result the run must end
+with. <code class="docutils literal notranslate"><span class="pre">timeout_minutes</span></code> is the wall clock the tick enforces; a processor does not.
+<code class="docutils literal notranslate"><span class="pre">session_id</span></code> is the case’s stored session, if it has one: the tick hands it to
+<a class="reference internal" href="#liaise.processor.Processor.resume" title="liaise.processor.Processor.resume"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Processor.resume()</span></code></a>, while <code class="docutils literal notranslate"><span class="pre">start</span></code> always opens a new session.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.KILL_GRACE_S">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">KILL_GRACE_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">60.0</span></span><a class="headerlink" href="#liaise.processor.KILL_GRACE_S" title="Link to this definition">#</a></dt>
+<dd><p>Seconds a run may go on after a cancel sent it SIGTERM before a later cancel kills it
+with SIGKILL (POSIX only: on Windows every cancel already ends the run outright).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.PROMPT_POINTER">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">PROMPT_POINTER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Read</span> <span class="pre">and</span> <span class="pre">follow</span> <span class="pre">the</span> <span class="pre">instructions</span> <span class="pre">in</span> <span class="pre">{prompt_path}'</span></span><a class="headerlink" href="#liaise.processor.PROMPT_POINTER" title="Link to this definition">#</a></dt>
+<dd><p>The only instruction on the command line; the prompt itself stays in its file.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.processor.Processor">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">Processor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Processor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Processor" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
+<p>What the tick needs to run a case’s work: the processor seam (<code class="docutils literal notranslate"><span class="pre">processor=</span></code>).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.Processor.cancel">
+<span class="sig-name descname"><span class="pre">cancel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graceful'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Processor.cancel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Processor.cancel" title="Link to this definition">#</a></dt>
+<dd><p>Ask <code class="docutils literal notranslate"><span class="pre">run</span></code> to stop (see <a class="reference internal" href="#liaise.processor.CANCEL_MODES" title="liaise.processor.CANCEL_MODES"><code class="xref py py-data docutils literal notranslate"><span class="pre">CANCEL_MODES</span></code></a>); its session stays resumable.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.Processor.collect">
+<span class="sig-name descname"><span class="pre">collect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">timed_out</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">persist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Processor.collect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Processor.collect" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">run</span></code>’s result once it has finished, or None while it is still going.</p>
+<p><code class="docutils literal notranslate"><span class="pre">persist</span></code> is as for <a class="reference internal" href="#liaise.processor.Processor.status" title="liaise.processor.Processor.status"><code class="xref py py-meth docutils literal notranslate"><span class="pre">status()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference internal" href="liaise.model.html#liaise.model.RunResult" title="liaise.model.RunResult"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunResult</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.Processor.preflight">
+<span class="sig-name descname"><span class="pre">preflight</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Processor.preflight"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Processor.preflight" title="Link to this definition">#</a></dt>
+<dd><p>Whether <code class="docutils literal notranslate"><span class="pre">job</span></code> could start now, and if not why or until when. Starts nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.Health" title="liaise.model.Health"><code class="xref py py-class docutils literal notranslate"><span class="pre">Health</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.Processor.resume">
+<span class="sig-name descname"><span class="pre">resume</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">session_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Processor.resume"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Processor.resume" title="Link to this definition">#</a></dt>
+<dd><p>Start <code class="docutils literal notranslate"><span class="pre">job</span></code> continuing <code class="docutils literal notranslate"><span class="pre">session_id</span></code>, in the same permission mode as <code class="docutils literal notranslate"><span class="pre">start</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.Processor.start">
+<span class="sig-name descname"><span class="pre">start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Processor.start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Processor.start" title="Link to this definition">#</a></dt>
+<dd><p>Start <code class="docutils literal notranslate"><span class="pre">job</span></code> in a new session; for a <code class="docutils literal notranslate"><span class="pre">run_id</span></code> already started, its record.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.processor.Processor.status">
+<span class="sig-name descname"><span class="pre">status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">persist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#Processor.status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.Processor.status" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">run</span></code> with its heartbeat, status and end time refreshed. Never blocks.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">persist=False</span></code>, as in a dry run, the processor writes nothing of its own.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.RESUME">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">RESUME</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'resume'</span></span><a class="headerlink" href="#liaise.processor.RESUME" title="Link to this definition">#</a></dt>
+<dd><p>A run is a new session (<code class="docutils literal notranslate"><span class="pre">fresh</span></code>) or continues a stored one (<code class="docutils literal notranslate"><span class="pre">resume</span></code>).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.RUN_STATUSES">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">RUN_STATUSES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('running',</span> <span class="pre">'finished')</span></span><a class="headerlink" href="#liaise.processor.RUN_STATUSES" title="Link to this definition">#</a></dt>
+<dd><p>A run’s <code class="docutils literal notranslate"><span class="pre">status</span></code> in its RunRecord.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.processor.SCRUBBED_ENV_VARS">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">SCRUBBED_ENV_VARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('ANTHROPIC_API_KEY',</span> <span class="pre">'ANTHROPIC_AUTH_TOKEN')</span></span><a class="headerlink" href="#liaise.processor.SCRUBBED_ENV_VARS" title="Link to this definition">#</a></dt>
+<dd><p>with either set, claude bills that key instead of
+the subscription the operator logged in with.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Variables a run must not inherit</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.processor.child_env">
+<span class="sig-prename descclassname"><span class="pre">liaise.processor.</span></span><span class="sig-name descname"><span class="pre">child_env</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">environ</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/processor.html#child_env"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.processor.child_env" title="Link to this definition">#</a></dt>
+<dd><p>The environment a run gets: <code class="docutils literal notranslate"><span class="pre">environ</span></code> without <a class="reference internal" href="#liaise.processor.SCRUBBED_ENV_VARS" title="liaise.processor.SCRUBBED_ENV_VARS"><code class="xref py py-data docutils literal notranslate"><span class="pre">SCRUBBED_ENV_VARS</span></code></a>, plus
+<a class="reference internal" href="#liaise.processor.CHILD_ENV_OVERRIDES" title="liaise.processor.CHILD_ENV_OVERRIDES"><code class="xref py py-data docutils literal notranslate"><span class="pre">CHILD_ENV_OVERRIDES</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">env</span> <span class="o">=</span> <span class="n">child_env</span><span class="p">({</span><span class="s2">"PATH"</span><span class="p">:</span> <span class="s2">"/bin"</span><span class="p">,</span> <span class="s2">"ANTHROPIC_API_KEY"</span><span class="p">:</span> <span class="s2">"k"</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">sorted</span><span class="p">(</span><span class="n">env</span><span class="p">)</span>
+<span class="go">['CLAUDE_CODE_MAX_RETRIES', 'PATH']</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="liaise.outcomes.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">liaise.outcomes</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="liaise.projection.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">liaise.projection</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.CANCEL_MODES"><code class="docutils literal notranslate"><span class="pre">CANCEL_MODES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.CHILD_ENV_OVERRIDES"><code class="docutils literal notranslate"><span class="pre">CHILD_ENV_OVERRIDES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless.cancel"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless.cancel()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless.collect"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless.collect()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless.preflight"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless.preflight()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless.resume"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless.resume()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless.run_dir"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless.run_dir()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless.start"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless.start()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.ClaudeHeadless.status"><code class="docutils literal notranslate"><span class="pre">ClaudeHeadless.status()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.DFLT_AUTH_CHECK"><code class="docutils literal notranslate"><span class="pre">DFLT_AUTH_CHECK</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.DFLT_AUTH_TIMEOUT_S"><code class="docutils literal notranslate"><span class="pre">DFLT_AUTH_TIMEOUT_S</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.DFLT_GRACE_S"><code class="docutils literal notranslate"><span class="pre">DFLT_GRACE_S</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.EchoProcessor"><code class="docutils literal notranslate"><span class="pre">EchoProcessor</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.FRESH"><code class="docutils literal notranslate"><span class="pre">FRESH</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Job"><code class="docutils literal notranslate"><span class="pre">Job</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.KILL_GRACE_S"><code class="docutils literal notranslate"><span class="pre">KILL_GRACE_S</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.PROMPT_POINTER"><code class="docutils literal notranslate"><span class="pre">PROMPT_POINTER</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Processor"><code class="docutils literal notranslate"><span class="pre">Processor</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Processor.cancel"><code class="docutils literal notranslate"><span class="pre">Processor.cancel()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Processor.collect"><code class="docutils literal notranslate"><span class="pre">Processor.collect()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Processor.preflight"><code class="docutils literal notranslate"><span class="pre">Processor.preflight()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Processor.resume"><code class="docutils literal notranslate"><span class="pre">Processor.resume()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Processor.start"><code class="docutils literal notranslate"><span class="pre">Processor.start()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.Processor.status"><code class="docutils literal notranslate"><span class="pre">Processor.status()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.RESUME"><code class="docutils literal notranslate"><span class="pre">RESUME</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.RUN_STATUSES"><code class="docutils literal notranslate"><span class="pre">RUN_STATUSES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.SCRUBBED_ENV_VARS"><code class="docutils literal notranslate"><span class="pre">SCRUBBED_ENV_VARS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.processor.child_env"><code class="docutils literal notranslate"><span class="pre">child_env()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/_autosummary/liaise.processor.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

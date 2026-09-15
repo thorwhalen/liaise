@@ -1,0 +1,29 @@
+liaise.errors
+=============
+
+.. automodule:: liaise.errors
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_QUOTA_DEFER
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      classify
+      classify_delivery_failure
+      defer_until
+      parse_stream
+      reset_time
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      ErrorAction
+      StreamSummary
+   

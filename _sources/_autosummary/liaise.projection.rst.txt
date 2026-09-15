@@ -1,0 +1,24 @@
+liaise.projection
+=================
+
+.. automodule:: liaise.projection
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      GITHUB_CHANNEL
+      LABEL_SPECS_RESOURCE
+      DFLT_LABEL_COLOR
+      CLAIM_LABEL_DESCRIPTION
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      github_issue
+      github_repos
+      project_labels
+      setup_labels
+   

@@ -1,4 +1,0 @@
-liaise.prompt
-=============
-.. automodule:: liaise.prompt
-   :members:

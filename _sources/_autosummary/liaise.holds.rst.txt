@@ -1,0 +1,36 @@
+liaise.holds
+============
+
+.. automodule:: liaise.holds
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      SCOPE_KINDS
+      BARE_SCOPE_KINDS
+      SCOPE_SPECIFICITY
+      BLOCKING_MODES
+      DFLT_SET_BY
+      AUTO_SET_BY_PREFIX
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      auto_hold
+      blocking_hold
+      canonical_scope
+      hold
+      parse_scope
+      release_auto_holds
+      scopes_for
+      unhold
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AutoHold
+   

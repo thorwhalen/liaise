@@ -1,0 +1,38 @@
+liaise.config
+=============
+
+.. automodule:: liaise.config
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_DISPATCH_COMMAND
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      load_config
+      load_global_config
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Budget
+      Config
+      DispatchConfig
+      EscalateConfig
+      GlobalConfig
+      Markers
+      NotifyConfig
+      PartnerConfig
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      ConfigError
+   

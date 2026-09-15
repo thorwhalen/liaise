@@ -1,0 +1,42 @@
+# liaise
+
+> Run the loop between a non-technical partner who tests an app and a coding agent that answers, fixes, builds and redeploys — over GitHub issues
+
+
+## Pages
+
+- [liaise](index.html.md): `liaise` runs the loop between the people who test an app and the coding agent that maintains it. A ...
+- [API reference](api.html.md): | [`liaise`](_autosummary/liaise.html.md#module-liaise)   | liaise: the loop between a non-technical...
+- [liaise](_autosummary/liaise.html.md): liaise: the loop between a non-technical partner and a coding agent, over conversations.
+- [liaise.access](_autosummary/liaise.access.html.md): Identity and access: who a message is from, and whether they may do what it asks.
+- [liaise.cases](_autosummary/liaise.cases.html.md): Cases as the operator sees and moves them: `liaise case list`, `show` and `set-state`.
+- [liaise.cli](_autosummary/liaise.cli.html.md): The `liaise` command line (liaise 0.1).
+- [liaise.config](_autosummary/liaise.config.html.md): The global config, and the 0.0.x partner files `liaise migrate-config` reads.
+- [liaise.detect](_autosummary/liaise.detect.html.md): Detectors for outbound messages: what a message holds, reported without the value.
+- [liaise.errors](_autosummary/liaise.errors.html.md): Processor error taxonomy (design §3.6): classify how a run ended, and what the tick does.
+- [liaise.gate](_autosummary/liaise.gate.html.md): The outbound gate: the checks a message passes before liaise sends it.
+- [liaise.github](_autosummary/liaise.github.html.md): The GitHub seam: one protocol, two implementations.
+- [liaise.holds](_autosummary/liaise.holds.html.md): Holds: stops on work, by scope, set by the operator or by the tick itself.
+- [liaise.ledger](_autosummary/liaise.ledger.html.md): The ledger: liaise’s own record of what it has seen, opened, decided and started.
+- [liaise.migrate](_autosummary/liaise.migrate.html.md): Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.
+- [liaise.model](_autosummary/liaise.model.html.md): The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.
+- [liaise.outcomes](_autosummary/liaise.outcomes.html.md): Outcomes: what a processor run reports, checked, then planned into actions.
+- [liaise.processor](_autosummary/liaise.processor.html.md): Processors (design §3.6): what runs a case’s work, detached, and how that run ended.
+- [liaise.projection](_autosummary/liaise.projection.html.md): Label projection: a case’s state, shown on each of its GitHub issues as one label.
+- [liaise.prompt](_autosummary/liaise.prompt.html.md): The prompt composer: the whole prompt a processor run on one case starts from.
+- [liaise.readiness](_autosummary/liaise.readiness.html.md): Readiness: whether a case is ready to dispatch, read off its own ledger entries.
+- [liaise.schedule](_autosummary/liaise.schedule.html.md): Scheduling `liaise run --once` (A.7): a launchd agent on macOS, a systemd
+- [liaise.subjects](_autosummary/liaise.subjects.html.md): Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.
+- [liaise.testing](_autosummary/liaise.testing.html.md): Fakes shipped with liaise: for its tests, and for the one-command smoke test.
+- [liaise.tick](_autosummary/liaise.tick.html.md): The tick: one pass of liaise 0.1’s loop (design §3.1).
+- [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
+- [For AI agents](ai-agents.html.md): `liaise` ships artifacts for coding agents alongside its code. This page lists
+- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 13:50 UTC** from commit <a href="https://github.com/tho...
+
+---
+
+For more comprehensive documentation, see [liaise.md](liaise.md)
+
+## Build
+
+- [build_info.json](build_info.json): build provenance (commit, version, tool versions, whether the docs match the package)

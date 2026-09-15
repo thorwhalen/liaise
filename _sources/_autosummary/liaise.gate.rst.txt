@@ -1,0 +1,36 @@
+liaise.gate
+===========
+
+.. automodule:: liaise.gate
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DRAFT_REPLY_MODE
+      MENTION_CHANNEL
+      OutboundFilter
+      DFLT_OUTBOUND_FILTERS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      deslop
+      leak_scan
+      notify_recipient
+      reply_mode
+      run_gate
+      writing_card
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Divert
+      GateContext
+      GateDecision
+      Outbound
+      Pass
+   

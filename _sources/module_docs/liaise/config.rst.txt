@@ -1,4 +1,0 @@
-liaise.config
-=============
-.. automodule:: liaise.config
-   :members:

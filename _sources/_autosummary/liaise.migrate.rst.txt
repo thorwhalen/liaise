@@ -1,0 +1,36 @@
+liaise.migrate
+==============
+
+.. automodule:: liaise.migrate
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      BATCH_DELIVERY_PER
+      ISSUE_DELIVERY_PER
+      GLOBAL_CONFIG_FILE
+      PARTNERS_SUBDIR
+      GITHUB_CHANNEL
+      PARTNER_ROLE
+      POSTING_REPLY_MODE
+      BUDGET_LIMITS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      apply_plan
+      dumps_toml
+      migrate_config
+      plan_migration
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      InlineTable
+      MigrationPlan
+      PlannedSubject
+   

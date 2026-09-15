@@ -1,0 +1,32 @@
+liaise.workspace
+================
+
+.. automodule:: liaise.workspace
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_SESSIONS_DIR
+      DFLT_LOCKS_SUBDIR
+      DFLT_LOCK_DIGEST_LENGTH
+      PID_START_TOLERANCE
+      PS_COMMAND
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      pid_is_alive
+      pid_matches_start
+      process_started_at
+      resolve_checkout
+      workspace_for
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SharedCheckout
+   

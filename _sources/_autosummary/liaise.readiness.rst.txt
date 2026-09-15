@@ -1,0 +1,19 @@
+liaise.readiness
+================
+
+.. automodule:: liaise.readiness
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compute_readiness
+      last_partner_activity
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Readiness
+   

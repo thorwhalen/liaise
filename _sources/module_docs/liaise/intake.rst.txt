@@ -1,4 +1,0 @@
-liaise.intake
-=============
-.. automodule:: liaise.intake
-   :members:

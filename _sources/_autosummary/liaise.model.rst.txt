@@ -1,0 +1,37 @@
+liaise.model
+============
+
+.. automodule:: liaise.model
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      CASE_STATES
+      INITIAL_CASE_STATE
+      ENTRY_KINDS
+      OUTCOME_KINDS
+      PERMISSIONS
+      HOLD_MODES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      require_one_of
+      to_jsonable
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Case
+      Health
+      Hold
+      IssueCheck
+      LedgerEntry
+      Outcome
+      RunRecord
+      RunResult
+   

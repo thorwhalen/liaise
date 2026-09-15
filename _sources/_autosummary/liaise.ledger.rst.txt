@@ -1,0 +1,25 @@
+liaise.ledger
+=============
+
+.. automodule:: liaise.ledger
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_LEDGER_SUBDIR
+      DFLT_DIGEST_LENGTH
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      default_ledger_store
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Ledger
+   

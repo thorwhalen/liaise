@@ -1,4 +1,0 @@
-liaise.gate
-===========
-.. automodule:: liaise.gate
-   :members:

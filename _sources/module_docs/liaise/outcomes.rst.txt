@@ -1,4 +1,0 @@
-liaise.outcomes
-===============
-.. automodule:: liaise.outcomes
-   :members:

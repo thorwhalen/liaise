@@ -1,0 +1,22 @@
+liaise.schedule
+===============
+
+.. automodule:: liaise.schedule
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      LAUNCHD_DETACH_SETTING
+      OUTDATED_SCHEDULE_NOTE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      install_schedule
+      job_environment
+      schedule_status
+      uninstall_schedule
+   

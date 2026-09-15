@@ -1,0 +1,85 @@
+﻿liaise
+======
+
+.. automodule:: liaise
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      authorize
+      default_ledger_store
+      hold
+      intake
+      load_global_config
+      load_subjects
+      migrate_config
+      notify
+      parse_outcomes
+      plan_outcomes
+      resolve_person
+      run_gate
+      run_once
+      status_lines
+      unhold
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Case
+      ClaudeHeadless
+      EchoProcessor
+      FakeGitHub
+      GhCli
+      GitHub
+      GlobalConfig
+      Health
+      Hold
+      IntakeReport
+      Job
+      Ledger
+      LedgerEntry
+      Outcome
+      Processor
+      RunRecord
+      RunResult
+      Subject
+      TickReport
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      ConfigError
+      GitHubError
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   access
+   cases
+   cli
+   config
+   detect
+   errors
+   gate
+   github
+   holds
+   ledger
+   migrate
+   model
+   outcomes
+   processor
+   projection
+   prompt
+   readiness
+   schedule
+   subjects
+   testing
+   tick
+   workspace

@@ -1,4 +1,0 @@
-liaise.cases
-============
-.. automodule:: liaise.cases
-   :members:

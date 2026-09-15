@@ -1,0 +1,29 @@
+liaise.testing
+==============
+
+.. automodule:: liaise.testing
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_GITHUB_CHANNEL
+      SELF_LOGIN
+      DFLT_SITE_SECRET
+      NATIVE_FIELDS
+      ISSUE_STATES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      add_webinbox_report
+      demo_registry
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      FakeGitHubChannel
+   

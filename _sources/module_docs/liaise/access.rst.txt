@@ -1,4 +1,0 @@
-liaise.access
-=============
-.. automodule:: liaise.access
-   :members:

@@ -1,0 +1,29 @@
+liaise.access
+=============
+
+.. automodule:: liaise.access
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      UNTRUSTED_CLAIM
+      ALLOWED
+      VIA_HANDLE
+      Resolver
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      authorize
+      is_relay
+      resolve_person
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      AccessDecision
+   

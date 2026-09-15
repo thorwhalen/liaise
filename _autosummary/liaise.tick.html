@@ -1,0 +1,1144 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="alternate" type="text/markdown" href="liaise.tick.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+    <title>liaise.tick &#8212; liaise</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=fd10adb8"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/liaise.tick';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="liaise.workspace" href="liaise.workspace.html" />
+    <link rel="prev" title="liaise.testing" href="liaise.testing.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">liaise</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="liaise.html">liaise</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="liaise.access.html">liaise.access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.cases.html">liaise.cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.cli.html">liaise.cli</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.config.html">liaise.config</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.detect.html">liaise.detect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.errors.html">liaise.errors</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.gate.html">liaise.gate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.github.html">liaise.github</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.projection.html">liaise.projection</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.prompt.html">liaise.prompt</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.readiness.html">liaise.readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.schedule.html">liaise.schedule</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
+</ul>
+</details></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="liaise.html" class="nav-link">liaise</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">liaise.tick</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-liaise.tick">
+<span id="liaise-tick"></span><h1>liaise.tick<a class="headerlink" href="#module-liaise.tick" title="Link to this heading">#</a></h1>
+<p>The tick: one pass of liaise 0.1’s loop (design §3.1).</p>
+<p><a class="reference internal" href="#liaise.tick.run_once" title="liaise.tick.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_once()</span></code></a> takes in what arrived, reconciles the runs in flight, starts the cases
+that are ready, nudges quiet deliveries, and shows each touched case’s state on its GitHub
+labels:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="mf">1.</span> <span class="n">intake</span>     <span class="n">each</span> <span class="n">subject</span><span class="s1">'s bindings, through correspond (liaise.intake)</span>
+<span class="mf">2.</span> <span class="n">reconcile</span>  <span class="n">each</span> <span class="n">run</span> <span class="n">the</span> <span class="n">tick</span> <span class="n">has</span> <span class="ow">not</span> <span class="n">collected</span><span class="p">:</span> <span class="n">cancelled</span> <span class="k">for</span> <span class="n">a</span> <span class="n">cancel</span> <span class="n">hold</span> <span class="ow">or</span> <span class="n">its</span>
+              <span class="n">wall</span> <span class="n">clock</span><span class="p">,</span> <span class="n">refreshed</span><span class="p">,</span> <span class="ow">and</span> <span class="n">collected</span> <span class="n">once</span> <span class="n">finished</span><span class="p">,</span> <span class="k">as</span> <span class="n">timed_out</span> <span class="n">only</span> <span class="k">if</span>
+              <span class="n">it</span> <span class="n">ended</span> <span class="n">past</span> <span class="n">its</span> <span class="n">wall</span> <span class="n">clock</span> <span class="ow">or</span> <span class="n">the</span> <span class="n">tick</span> <span class="n">cancelled</span> <span class="n">it</span> <span class="k">for</span> <span class="n">that</span><span class="p">;</span> <span class="ow">or</span> <span class="n">given</span>
+              <span class="n">up</span> <span class="k">as</span> <span class="n">timed_out</span> <span class="n">when</span> <span class="n">it</span> <span class="n">still</span> <span class="n">runs</span> <span class="n">LOST_RUN_DEADLINE</span> <span class="n">after</span> <span class="n">the</span> <span class="n">tick</span>
+              <span class="n">cancelled</span> <span class="n">it</span> <span class="k">for</span> <span class="n">its</span> <span class="n">wall</span> <span class="n">clock</span><span class="o">.</span> <span class="n">The</span> <span class="n">processor</span> <span class="n">signals</span> <span class="n">a</span> <span class="n">run</span><span class="s1">'s process</span>
+              <span class="n">only</span> <span class="n">once</span> <span class="n">it</span> <span class="n">has</span> <span class="n">verified</span><span class="p">,</span> <span class="n">by</span> <span class="n">its</span> <span class="n">start</span><span class="p">,</span> <span class="n">that</span> <span class="n">the</span> <span class="n">pid</span> <span class="ow">is</span> <span class="n">still</span> <span class="n">the</span> <span class="n">run</span><span class="s1">'s.</span>
+              <span class="n">An</span> <span class="n">error</span> <span class="n">takes</span> <span class="n">its</span> <span class="n">action</span> <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.errors</span><span class="p">;</span> <span class="n">a</span>
+              <span class="n">success</span><span class="s1">'s outcomes are planned (liaise.outcomes) and carried out, every</span>
+              <span class="n">message</span> <span class="n">through</span> <span class="n">the</span> <span class="n">gate</span> <span class="p">(</span><span class="n">liaise</span><span class="o">.</span><span class="n">gate</span><span class="p">)</span><span class="o">.</span> <span class="n">A</span> <span class="n">deploy</span> <span class="n">per</span> <span class="n">issue</span> <span class="n">runs</span> <span class="n">right</span>
+              <span class="n">after</span> <span class="n">its</span> <span class="n">case</span><span class="s1">'s outcomes and batch deploys run last, once per subject;</span>
+              <span class="n">nothing</span> <span class="n">tells</span> <span class="n">a</span> <span class="n">partner</span> <span class="n">a</span> <span class="n">change</span> <span class="ow">is</span> <span class="n">live</span> <span class="n">before</span> <span class="n">its</span> <span class="n">deploy</span> <span class="n">succeeded</span><span class="o">.</span>
+              <span class="n">Last</span><span class="p">,</span> <span class="n">each</span> <span class="n">case</span> <span class="n">left</span> <span class="n">working</span> <span class="k">with</span> <span class="n">no</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">flight</span><span class="p">,</span> <span class="n">its</span> <span class="n">run</span> <span class="n">lost</span><span class="p">,</span> <span class="n">goes</span>
+              <span class="n">to</span> <span class="n">needs</span><span class="o">-</span><span class="n">owner</span><span class="o">.</span>
+<span class="mf">3.</span> <span class="n">start</span>      <span class="n">each</span> <span class="n">ready</span> <span class="n">case</span><span class="p">,</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">order</span> <span class="n">the</span> <span class="n">triage</span> <span class="n">seam</span> <span class="n">gives</span><span class="p">,</span> <span class="n">that</span> <span class="n">passes</span> <span class="n">holds</span><span class="p">,</span>
+              <span class="n">authorization</span><span class="p">,</span> <span class="n">budget</span><span class="p">,</span> <span class="n">an</span> <span class="nb">open</span> <span class="n">GitHub</span> <span class="n">issue</span><span class="p">,</span> <span class="n">preflight</span> <span class="ow">and</span> <span class="n">the</span> <span class="n">workspace</span>
+              <span class="n">check</span><span class="p">,</span> <span class="k">as</span> <span class="n">a</span> <span class="n">detached</span> <span class="n">processor</span> <span class="n">run</span><span class="o">.</span> <span class="n">A</span> <span class="n">case</span> <span class="n">whose</span> <span class="n">issue</span> <span class="n">was</span> <span class="n">read</span> <span class="n">closed</span>
+              <span class="n">has</span> <span class="n">it</span> <span class="n">read</span> <span class="n">again</span> <span class="n">at</span> <span class="n">most</span> <span class="n">once</span> <span class="n">per</span> <span class="n">CLOSED_RECHECK_INTERVAL</span><span class="o">.</span>
+<span class="mf">4.</span> <span class="n">nudge</span>      <span class="n">each</span> <span class="n">deployed</span> <span class="n">case</span> <span class="n">its</span> <span class="n">partner</span> <span class="n">has</span> <span class="n">gone</span> <span class="n">quiet</span> <span class="n">on</span><span class="p">,</span> <span class="n">once</span><span class="p">,</span> <span class="n">unless</span> <span class="n">its</span> <span class="n">issue</span>
+              <span class="ow">is</span> <span class="n">closed</span>
+<span class="mf">5.</span> <span class="n">project</span>    <span class="n">the</span> <span class="n">state</span> <span class="n">label</span> <span class="n">of</span> <span class="n">each</span> <span class="n">case</span> <span class="n">this</span> <span class="n">tick</span> <span class="n">touched</span><span class="p">,</span> <span class="ow">and</span> <span class="n">of</span> <span class="n">each</span> <span class="n">whose</span> <span class="n">state</span>
+              <span class="ow">is</span> <span class="ow">not</span> <span class="n">the</span> <span class="n">one</span> <span class="n">last</span> <span class="n">projected</span> <span class="p">(</span><span class="n">liaise</span><span class="o">.</span><span class="n">projection</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The tick keeps its own clock: <code class="docutils literal notranslate"><span class="pre">now</span></code> stamps every entry, and a run’s wall clock counts
+from the tick that started it. The ledger’s record of a run says <code class="docutils literal notranslate"><span class="pre">running</span></code> until the
+tick collects it, whatever the processor says, so a run that ended at once (a spawn that
+failed, an <code class="docutils literal notranslate"><span class="pre">EchoProcessor</span></code> run) is still collected, on the next tick. Any exception a
+processor verb raises is a <code class="docutils literal notranslate"><span class="pre">crashed</span></code> run, never the tick’s end (#24). One case’s failure
+is a problem line, never the other cases’ end: a checkout release or a deploy that raises
+hands its cases to the owner. No operator notification carries anything a case holds: its
+body comes from <code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.notify.notice_body()</span></code>, and <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> has the rest.</p>
+<p><strong>Dry run.</strong> The ledger is <code class="docutils literal notranslate"><span class="pre">Ledger(ChainMap({},</span> <span class="pre">store))</span></code>: every step runs on real state,
+and every write vanishes with the overlay. Nothing is sent (<code class="docutils literal notranslate"><span class="pre">correspond.send</span></code> gets
+<code class="docutils literal notranslate"><span class="pre">dry_run=True</span></code>), labelled, started, cancelled, deployed, locked, stamped, notified or
+written (the processor is asked with <code class="docutils literal notranslate"><span class="pre">persist=False</span></code>), and preflight, which runs a
+process, is skipped. The report’s plan lines say what would be.</p>
+<p><strong>One tick at a time.</strong> A tick holds the run lock in <code class="docutils literal notranslate"><span class="pre">state_dir</span></code> (<a class="reference internal" href="#liaise.tick.run_lock_path" title="liaise.tick.run_lock_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_lock_path()</span></code></a>)
+and stamps its start and end in the store (<a class="reference internal" href="#liaise.tick.run_stamps" title="liaise.tick.run_stamps"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_stamps()</span></code></a>), so <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">status</span></code> can
+tell a running tick from a finished or an interrupted one. <a class="reference internal" href="#liaise.tick.status_lines" title="liaise.tick.status_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">status_lines()</span></code></a> is what
+<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">status</span></code> prints.</p>
+<p class="rubric">Module Attributes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.ELIGIBLE_STATES" title="liaise.tick.ELIGIBLE_STATES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ELIGIBLE_STATES</span></code></a></p></td>
+<td><p>The states a case may be started from.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.DFLT_DEFER" title="liaise.tick.DFLT_DEFER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_DEFER</span></code></a></p></td>
+<td><p>How long a <code class="docutils literal notranslate"><span class="pre">defer</span></code> outcome puts a case aside.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.DFLT_RUNS_SUBDIR" title="liaise.tick.DFLT_RUNS_SUBDIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_RUNS_SUBDIR</span></code></a></p></td>
+<td><p>The processor runs' directory under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.DFLT_STATUS_RECENT" title="liaise.tick.DFLT_STATUS_RECENT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_STATUS_RECENT</span></code></a></p></td>
+<td><p>How many of the latest unrouted messages and digest notes <a class="reference internal" href="#liaise.tick.status_lines" title="liaise.tick.status_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">status_lines()</span></code></a> lists.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.TICK_ACTOR" title="liaise.tick.TICK_ACTOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TICK_ACTOR</span></code></a></p></td>
+<td><p>The actor of the entries the tick writes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.REQUEST_WORK" title="liaise.tick.REQUEST_WORK"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REQUEST_WORK</span></code></a></p></td>
+<td><p>The permission a case's reporter needs for the tick to start work on it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.PROCESSOR_SCOPE" title="liaise.tick.PROCESSOR_SCOPE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PROCESSOR_SCOPE</span></code></a></p></td>
+<td><p>The hold scope of the processor, which the tick holds itself after some errors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.AUTH_PROBE_INTERVAL" title="liaise.tick.AUTH_PROBE_INTERVAL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AUTH_PROBE_INTERVAL</span></code></a></p></td>
+<td><p>How long an automatic <code class="docutils literal notranslate"><span class="pre">processor</span></code> hold stands before the tick probes it with preflight, lifting it if preflight passes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.LOST_RUN_DEADLINE" title="liaise.tick.LOST_RUN_DEADLINE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LOST_RUN_DEADLINE</span></code></a></p></td>
+<td><p>How long after the tick first cancelled a run for passing its wall clock it waits for the run to stop.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.CLOSED_RECHECK_INTERVAL" title="liaise.tick.CLOSED_RECHECK_INTERVAL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CLOSED_RECHECK_INTERVAL</span></code></a></p></td>
+<td><p>How long a case whose issue was read closed goes before the tick reads its issue again, to notice a reopening.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.STATE_READ_FAILURE_LIMIT" title="liaise.tick.STATE_READ_FAILURE_LIMIT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STATE_READ_FAILURE_LIMIT</span></code></a></p></td>
+<td><p>How many reads of a case's issue state in a row may fail for good before the case goes to the owner, who is told once: a deleted or transferred issue never reads again.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.PERMANENT_READ_ERRORS" title="liaise.tick.PERMANENT_READ_ERRORS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PERMANENT_READ_ERRORS</span></code></a></p></td>
+<td><p>The kinds of correspond <code class="docutils literal notranslate"><span class="pre">ChannelError</span></code> by which a failed state read counts toward that limit: the issue is not there, or not for this account.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.DEPLOY_DELIVERY" title="liaise.tick.DEPLOY_DELIVERY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEPLOY_DELIVERY</span></code></a></p></td>
+<td><p>A deploy that runs the subject's command, and a delivery that stops at a pull request.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.PR_ONLY_DELIVERY" title="liaise.tick.PR_ONLY_DELIVERY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PR_ONLY_DELIVERY</span></code></a></p></td>
+<td><p>A deploy that runs the subject's command, and a delivery that stops at a pull request.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.BATCH_DELIVERY_PER" title="liaise.tick.BATCH_DELIVERY_PER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BATCH_DELIVERY_PER</span></code></a></p></td>
+<td><p>A deploy that runs once per tick, after every case of the subject has been collected, and one that runs for each case right after its outcomes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.ISSUE_DELIVERY_PER" title="liaise.tick.ISSUE_DELIVERY_PER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ISSUE_DELIVERY_PER</span></code></a></p></td>
+<td><p>A deploy that runs once per tick, after every case of the subject has been collected, and one that runs for each case right after its outcomes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RUN_ID_SUFFIX_DIGITS" title="liaise.tick.RUN_ID_SUFFIX_DIGITS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_ID_SUFFIX_DIGITS</span></code></a></p></td>
+<td><p>How many hex digits of a uuid4 end a run id, so that no two runs share one.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.BUDGET_MESSAGE" title="liaise.tick.BUDGET_MESSAGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BUDGET_MESSAGE</span></code></a></p></td>
+<td><p>The messages the tick sends to a partner on its own, through the gate, which adds the mention: when the daily cap trips, when a batch deploy is live, and on a quiet delivery.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.BUDGET_PURPOSE" title="liaise.tick.BUDGET_PURPOSE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BUDGET_PURPOSE</span></code></a></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">purpose</span></code> of those messages, as the gate and the ledger see it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.DAILY_CAP_PRIORITY" title="liaise.tick.DAILY_CAP_PRIORITY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DAILY_CAP_PRIORITY</span></code></a></p></td>
+<td><p>news for the operator, not a call to act.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.SEND_REFUSED_CAUSE" title="liaise.tick.SEND_REFUSED_CAUSE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SEND_REFUSED_CAUSE</span></code></a></p></td>
+<td><p>What a notification names a failed send by when the channel gave no error kind.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RUN_STARTED" title="liaise.tick.RUN_STARTED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_STARTED</span></code></a></p></td>
+<td><p>a start, a start that failed, a collection...</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RUN_LOST" title="liaise.tick.RUN_LOST"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_LOST</span></code></a></p></td>
+<td><p>...a case found <code class="docutils literal notranslate"><span class="pre">working</span></code> with no run in flight, its run lost...</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RUN_ISSUE_CLOSED" title="liaise.tick.RUN_ISSUE_CLOSED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_ISSUE_CLOSED</span></code></a></p></td>
+<td><p>...and the case's GitHub issue found closed, then open again, each once per change.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RUN_DEPLOY_FAILED" title="liaise.tick.RUN_DEPLOY_FAILED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_DEPLOY_FAILED</span></code></a></p></td>
+<td><p>...and a deploy that failed, the tail of its output the entry's text, which <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> prints and no notification carries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.PLAN_TEXT_CHARS" title="liaise.tick.PLAN_TEXT_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PLAN_TEXT_CHARS</span></code></a></p></td>
+<td><p>How many characters of a message a plan line shows.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS" title="liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEPLOY_OUTPUT_TAIL_CHARS</span></code></a></p></td>
+<td><p>How many of a failed deploy's last output characters its <code class="docutils literal notranslate"><span class="pre">run</span></code> entry keeps.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.WorkspaceFactory" title="liaise.tick.WorkspaceFactory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WorkspaceFactory</span></code></a></p></td>
+<td><p>the workspace seam (see <a class="reference internal" href="liaise.workspace.html#liaise.workspace.workspace_for" title="liaise.workspace.workspace_for"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.workspace.workspace_for()</span></code></a>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.Triage" title="liaise.tick.Triage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triage</span></code></a></p></td>
+<td><p>the triage seam (#19).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RUN_LOCK_FILE" title="liaise.tick.RUN_LOCK_FILE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_LOCK_FILE</span></code></a></p></td>
+<td><p>The run lock's file under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RUN_STARTED_KEY" title="liaise.tick.RUN_STARTED_KEY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_STARTED_KEY</span></code></a></p></td>
+<td><p>Where the store keeps a tick's start and end.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.LEGACY_LAST_RUN_KEY" title="liaise.tick.LEGACY_LAST_RUN_KEY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LEGACY_LAST_RUN_KEY</span></code></a></p></td>
+<td><p>a pass's start, written once the pass had finished.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.last_run_age" title="liaise.tick.last_run_age"><code class="xref py py-obj docutils literal notranslate"><span class="pre">last_run_age</span></code></a>(store, *[, now])</p></td>
+<td><p>Seconds since the latest tick that was not a dry run started, or None before any.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.run_lock" title="liaise.tick.run_lock"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_lock</span></code></a>(lock_path)</p></td>
+<td><p>Hold the run lock while the block runs: a tick, or an operator's change between ticks.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.run_lock_path" title="liaise.tick.run_lock_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_lock_path</span></code></a>(state_dir)</p></td>
+<td><p>Where a tick keeps its run lock.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.run_once" title="liaise.tick.run_once"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_once</span></code></a>(subjects, store, *, global_config)</p></td>
+<td><p>One tick over <code class="docutils literal notranslate"><span class="pre">subjects</span></code> (slug to <a class="reference internal" href="liaise.subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a>), on the ledger <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.run_stamps" title="liaise.tick.run_stamps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_stamps</span></code></a>(store, *[, lock_path])</p></td>
+<td><p>The run stamps a tick keeps in <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.status_lines" title="liaise.tick.status_lines"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status_lines</span></code></a>(subjects, store, *, global_config)</p></td>
+<td><p>What <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">status</span></code> prints: what the ledger in <code class="docutils literal notranslate"><span class="pre">store</span></code> says, read only.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.Diversion" title="liaise.tick.Diversion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diversion</span></code></a>(outbound, reason)</p></td>
+<td><p>A message that did not go out: the gate diverted it, or a hold kept it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RunStamps" title="liaise.tick.RunStamps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunStamps</span></code></a>([started_at, ended_at, lock_held])</p></td>
+<td><p>When the latest tick that was not a dry run started and ended.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.TickReport" title="liaise.tick.TickReport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TickReport</span></code></a>([plan_lines, dispatched, ...])</p></td>
+<td><p>What one <a class="reference internal" href="#liaise.tick.run_once" title="liaise.tick.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_once()</span></code></a> did or, in a dry run, would do.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Exceptions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RunLockHeld" title="liaise.tick.RunLockHeld"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunLockHeld</span></code></a></p></td>
+<td><p>Another live liaise process holds the run lock, so this tick did not start.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.AUTH_PROBE_INTERVAL">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">AUTH_PROBE_INTERVAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.timedelta(seconds=1800)</span></span><a class="headerlink" href="#liaise.tick.AUTH_PROBE_INTERVAL" title="Link to this definition">#</a></dt>
+<dd><p>How long an automatic <code class="docutils literal notranslate"><span class="pre">processor</span></code> hold stands before the tick probes it with
+preflight, lifting it if preflight passes. A login that has expired where preflight
+cannot see it then costs one failed run, and one notification, per interval, not a tick.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.BATCH_DELIVERY_PER">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">BATCH_DELIVERY_PER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'batch'</span></span><a class="headerlink" href="#liaise.tick.BATCH_DELIVERY_PER" title="Link to this definition">#</a></dt>
+<dd><p>A deploy that runs once per tick, after every case of the subject has been collected,
+and one that runs for each case right after its outcomes.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.BUDGET_MESSAGE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">BUDGET_MESSAGE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;Today's</span> <span class="pre">limit</span> <span class="pre">on</span> <span class="pre">automatic</span> <span class="pre">work</span> <span class="pre">has</span> <span class="pre">been</span> <span class="pre">reached.</span> <span class="pre">This</span> <span class="pre">will</span> <span class="pre">pick</span> <span class="pre">back</span> <span class="pre">up</span> <span class="pre">tomorrow.&quot;</span></span><a class="headerlink" href="#liaise.tick.BUDGET_MESSAGE" title="Link to this definition">#</a></dt>
+<dd><p>The messages the tick sends to a partner on its own, through the gate, which adds the
+mention: when the daily cap trips, when a batch deploy is live, and on a quiet delivery.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.BUDGET_PURPOSE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">BUDGET_PURPOSE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'budget'</span></span><a class="headerlink" href="#liaise.tick.BUDGET_PURPOSE" title="Link to this definition">#</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">purpose</span></code> of those messages, as the gate and the ledger see it.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.CLOSED_RECHECK_INTERVAL">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">CLOSED_RECHECK_INTERVAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.timedelta(seconds=3600)</span></span><a class="headerlink" href="#liaise.tick.CLOSED_RECHECK_INTERVAL" title="Link to this definition">#</a></dt>
+<dd><p>How long a case whose issue was read closed goes before the tick reads its issue again,
+to notice a reopening. correspond’s GitHub poll reports neither a closing nor a
+reopening, and each read costs the issue and its comment pages, so a closed case that is
+otherwise ready is not read every tick.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.DAILY_CAP_PRIORITY">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">DAILY_CAP_PRIORITY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></span><a class="headerlink" href="#liaise.tick.DAILY_CAP_PRIORITY" title="Link to this definition">#</a></dt>
+<dd><p>news for the operator, not a call to act.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The ntfy priority of the daily-cap notice</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.DEPLOY_DELIVERY">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">DEPLOY_DELIVERY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'deploy'</span></span><a class="headerlink" href="#liaise.tick.DEPLOY_DELIVERY" title="Link to this definition">#</a></dt>
+<dd><p>A deploy that runs the subject’s command, and a delivery that stops at a pull request.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">DEPLOY_OUTPUT_TAIL_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2000</span></span><a class="headerlink" href="#liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS" title="Link to this definition">#</a></dt>
+<dd><p>How many of a failed deploy’s last output characters its <code class="docutils literal notranslate"><span class="pre">run</span></code> entry keeps.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.DFLT_DEFER">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">DFLT_DEFER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.timedelta(days=1)</span></span><a class="headerlink" href="#liaise.tick.DFLT_DEFER" title="Link to this definition">#</a></dt>
+<dd><p>How long a <code class="docutils literal notranslate"><span class="pre">defer</span></code> outcome puts a case aside.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.DFLT_RUNS_SUBDIR">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">DFLT_RUNS_SUBDIR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'runs'</span></span><a class="headerlink" href="#liaise.tick.DFLT_RUNS_SUBDIR" title="Link to this definition">#</a></dt>
+<dd><p>The processor runs’ directory under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.DFLT_STATUS_RECENT">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">DFLT_STATUS_RECENT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></span><a class="headerlink" href="#liaise.tick.DFLT_STATUS_RECENT" title="Link to this definition">#</a></dt>
+<dd><p>How many of the latest unrouted messages and digest notes <a class="reference internal" href="#liaise.tick.status_lines" title="liaise.tick.status_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">status_lines()</span></code></a> lists.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.tick.Diversion">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">Diversion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#Diversion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.Diversion" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A message that did not go out: the gate diverted it, or a hold kept it.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.ELIGIBLE_STATES">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">ELIGIBLE_STATES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('intake',</span> <span class="pre">'needs-partner',</span> <span class="pre">'paused',</span> <span class="pre">'budget')</span></span><a class="headerlink" href="#liaise.tick.ELIGIBLE_STATES" title="Link to this definition">#</a></dt>
+<dd><p>The states a case may be started from. <code class="docutils literal notranslate"><span class="pre">working</span></code>, <code class="docutils literal notranslate"><span class="pre">needs-owner</span></code> and <code class="docutils literal notranslate"><span class="pre">deployed</span></code>
+wait on something other than the partner’s clock. <code class="docutils literal notranslate"><span class="pre">budget</span></code> is one, since the cap is
+per day (0.0.x H-4).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.ISSUE_DELIVERY_PER">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">ISSUE_DELIVERY_PER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'issue'</span></span><a class="headerlink" href="#liaise.tick.ISSUE_DELIVERY_PER" title="Link to this definition">#</a></dt>
+<dd><p>A deploy that runs once per tick, after every case of the subject has been collected,
+and one that runs for each case right after its outcomes.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.LEGACY_LAST_RUN_KEY">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">LEGACY_LAST_RUN_KEY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'last_run'</span></span><a class="headerlink" href="#liaise.tick.LEGACY_LAST_RUN_KEY" title="Link to this definition">#</a></dt>
+<dd><p>a pass’s start, written once the pass had finished.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>0.0.3 and earlier kept one stamp</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.LOST_RUN_DEADLINE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">LOST_RUN_DEADLINE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.timedelta(seconds=600)</span></span><a class="headerlink" href="#liaise.tick.LOST_RUN_DEADLINE" title="Link to this definition">#</a></dt>
+<dd><p>How long after the tick first cancelled a run for passing its wall clock it waits for
+the run to stop. A run its processor still reports running by then is finished as
+<code class="docutils literal notranslate"><span class="pre">timed_out</span></code>, sent nothing more (its pid may be another process’s by then), and its
+case goes to the owner. A run no tick has cancelled is never given up.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.PERMANENT_READ_ERRORS">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">PERMANENT_READ_ERRORS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'not_found',</span> <span class="pre">'permission'})</span></span><a class="headerlink" href="#liaise.tick.PERMANENT_READ_ERRORS" title="Link to this definition">#</a></dt>
+<dd><p>The kinds of correspond <code class="docutils literal notranslate"><span class="pre">ChannelError</span></code> by which a failed state read counts toward that
+limit: the issue is not there, or not for this account. Any other failure (the network,
+a rate limit, a login, an exception) counts nothing, and the case waits for the next tick.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.PLAN_TEXT_CHARS">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">PLAN_TEXT_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">72</span></span><a class="headerlink" href="#liaise.tick.PLAN_TEXT_CHARS" title="Link to this definition">#</a></dt>
+<dd><p>How many characters of a message a plan line shows.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.PROCESSOR_SCOPE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">PROCESSOR_SCOPE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'processor'</span></span><a class="headerlink" href="#liaise.tick.PROCESSOR_SCOPE" title="Link to this definition">#</a></dt>
+<dd><p>The hold scope of the processor, which the tick holds itself after some errors.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.PR_ONLY_DELIVERY">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">PR_ONLY_DELIVERY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'pr_only'</span></span><a class="headerlink" href="#liaise.tick.PR_ONLY_DELIVERY" title="Link to this definition">#</a></dt>
+<dd><p>A deploy that runs the subject’s command, and a delivery that stops at a pull request.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.REQUEST_WORK">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">REQUEST_WORK</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'request_work'</span></span><a class="headerlink" href="#liaise.tick.REQUEST_WORK" title="Link to this definition">#</a></dt>
+<dd><p>The permission a case’s reporter needs for the tick to start work on it.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.RUN_DEPLOY_FAILED">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RUN_DEPLOY_FAILED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'deploy_failed'</span></span><a class="headerlink" href="#liaise.tick.RUN_DEPLOY_FAILED" title="Link to this definition">#</a></dt>
+<dd><p>…and a deploy that failed, the tail of its output the entry’s text, which <code class="docutils literal notranslate"><span class="pre">liaise</span>
+<span class="pre">case</span> <span class="pre">show</span></code> prints and no notification carries.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.RUN_ID_SUFFIX_DIGITS">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RUN_ID_SUFFIX_DIGITS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></span><a class="headerlink" href="#liaise.tick.RUN_ID_SUFFIX_DIGITS" title="Link to this definition">#</a></dt>
+<dd><p>How many hex digits of a uuid4 end a run id, so that no two runs share one.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.RUN_ISSUE_CLOSED">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RUN_ISSUE_CLOSED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'issue_closed'</span></span><a class="headerlink" href="#liaise.tick.RUN_ISSUE_CLOSED" title="Link to this definition">#</a></dt>
+<dd><p>…and the case’s GitHub issue found closed, then open again, each once per change. A
+case whose issue is closed is neither started nor nudged.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.RUN_LOCK_FILE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RUN_LOCK_FILE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'run.lock'</span></span><a class="headerlink" href="#liaise.tick.RUN_LOCK_FILE" title="Link to this definition">#</a></dt>
+<dd><p>The run lock’s file under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.RUN_LOST">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RUN_LOST</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'lost'</span></span><a class="headerlink" href="#liaise.tick.RUN_LOST" title="Link to this definition">#</a></dt>
+<dd><p>…a case found <code class="docutils literal notranslate"><span class="pre">working</span></code> with no run in flight, its run lost…</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.RUN_STARTED">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RUN_STARTED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'started'</span></span><a class="headerlink" href="#liaise.tick.RUN_STARTED" title="Link to this definition">#</a></dt>
+<dd><p>a start, a start that failed, a collection…</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>What a <code class="docutils literal notranslate"><span class="pre">run</span></code> entry records</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.RUN_STARTED_KEY">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RUN_STARTED_KEY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'run_started_at'</span></span><a class="headerlink" href="#liaise.tick.RUN_STARTED_KEY" title="Link to this definition">#</a></dt>
+<dd><p>Where the store keeps a tick’s start and end.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="liaise.tick.RunLockHeld">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RunLockHeld</span></span><a class="reference internal" href="../_modules/liaise/tick.html#RunLockHeld"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.RunLockHeld" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#RuntimeError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></a></p>
+<p>Another live liaise process holds the run lock, so this tick did not start.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.tick.RunStamps">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RunStamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">started_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ended_at</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lock_held</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#RunStamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.RunStamps" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>When the latest tick that was not a dry run started and ended.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="liaise.tick.RunStamps.lock_held">
+<span class="sig-name descname"><span class="pre">lock_held</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#liaise.tick.RunStamps.lock_held" title="Link to this definition">#</a></dt>
+<dd><p>Whether a live process held the run lock when these were read; None when the lock
+was not checked.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.tick.RunStamps.state">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">state</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#liaise.tick.RunStamps.state" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">never</span></code>, <code class="docutils literal notranslate"><span class="pre">finished</span></code>, <code class="docutils literal notranslate"><span class="pre">running</span></code> or <code class="docutils literal notranslate"><span class="pre">interrupted</span></code>.</p>
+<p>A tick that started later than the last one ended is <code class="docutils literal notranslate"><span class="pre">running</span></code>, unless the lock
+was checked and no live process holds it. Then the tick was killed before it could
+stamp its end (a <code class="docutils literal notranslate"><span class="pre">launchctl</span> <span class="pre">bootout</span></code>, a shutdown): <code class="docutils literal notranslate"><span class="pre">interrupted</span></code>, since a job
+that stopped must not read as one that is busy.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.SEND_REFUSED_CAUSE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">SEND_REFUSED_CAUSE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'refused'</span></span><a class="headerlink" href="#liaise.tick.SEND_REFUSED_CAUSE" title="Link to this definition">#</a></dt>
+<dd><p>What a notification names a failed send by when the channel gave no error kind.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.STATE_READ_FAILURE_LIMIT">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">STATE_READ_FAILURE_LIMIT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#liaise.tick.STATE_READ_FAILURE_LIMIT" title="Link to this definition">#</a></dt>
+<dd><p>How many reads of a case’s issue state in a row may fail for good before the case goes
+to the owner, who is told once: a deleted or transferred issue never reads again.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.TICK_ACTOR">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">TICK_ACTOR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'liaise'</span></span><a class="headerlink" href="#liaise.tick.TICK_ACTOR" title="Link to this definition">#</a></dt>
+<dd><p>The actor of the entries the tick writes.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.tick.TickReport">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">TickReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plan_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispatched</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problems</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#TickReport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.TickReport" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What one <a class="reference internal" href="#liaise.tick.run_once" title="liaise.tick.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_once()</span></code></a> did or, in a dry run, would do.</p>
+<p><code class="docutils literal notranslate"><span class="pre">plan_lines</span></code> has a line per step, event, case and decision, for <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> to
+print. <code class="docutils literal notranslate"><span class="pre">dispatched</span></code> and <code class="docutils literal notranslate"><span class="pre">collected</span></code> are run ids, <code class="docutils literal notranslate"><span class="pre">sent</span></code> the messages as they went
+out (mention added), <code class="docutils literal notranslate"><span class="pre">diverted</span></code> those that stayed with the operator as drafts.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.Triage">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">Triage</span></span><a class="headerlink" href="#liaise.tick.Triage" title="Link to this definition">#</a></dt>
+<dd><p>the
+triage seam (#19). The tick starts the cases group by group, each group in its order,
+and a case left out is not started this tick. None keeps the tick’s own order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(the</span> <span class="pre">ready</span> <span class="pre">cases,</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">tick's</span> <span class="pre">order)</span> <span class="pre">-&gt;</span> <span class="pre">groups</span> <span class="pre">of</span> <span class="pre">them,</span> <span class="pre">in</span> <span class="pre">the</span> <span class="pre">order</span> <span class="pre">to</span> <span class="pre">start</span></code></p>
+</dd>
+</dl>
+<p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code>[[<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Sequence" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Sequence</span></code></a>[<a class="reference internal" href="liaise.model.html#liaise.model.Case" title="liaise.model.Case"><code class="xref py py-class docutils literal notranslate"><span class="pre">Case</span></code></a>]], <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterable</span></code></a>[<a class="reference internal" href="liaise.model.html#liaise.model.Case" title="liaise.model.Case"><code class="xref py py-class docutils literal notranslate"><span class="pre">Case</span></code></a>]]]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.WorkspaceFactory">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">WorkspaceFactory</span></span><a class="headerlink" href="#liaise.tick.WorkspaceFactory" title="Link to this definition">#</a></dt>
+<dd><p>the
+workspace seam (see <a class="reference internal" href="liaise.workspace.html#liaise.workspace.workspace_for" title="liaise.workspace.workspace_for"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.workspace.workspace_for()</span></code></a>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><code class="docutils literal notranslate"><span class="pre">(subject,</span> <span class="pre">*,</span> <span class="pre">lock_dir,</span> <span class="pre">sessions_dir,</span> <span class="pre">own_pids)</span> <span class="pre">-&gt;</span> <span class="pre">SharedCheckout</span> <span class="pre">|</span> <span class="pre">None</span></code></p>
+</dd>
+</dl>
+<p>alias of <code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code>[[…], <a class="reference internal" href="liaise.workspace.html#liaise.workspace.SharedCheckout" title="liaise.workspace.SharedCheckout"><code class="xref py py-class docutils literal notranslate"><span class="pre">SharedCheckout</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tick.last_run_age">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">last_run_age</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#last_run_age"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.last_run_age" title="Link to this definition">#</a></dt>
+<dd><p>Seconds since the latest tick that was not a dry run started, or None before any.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#float" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">float</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tick.run_lock">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">run_lock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lock_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_lock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.run_lock" title="Link to this definition">#</a></dt>
+<dd><p>Hold the run lock while the block runs: a tick, or an operator’s change between ticks.</p>
+<p>One tick at a time (0.0.x L-3). The lock is an exclusive OS lock on the open lock file
+(see <code class="xref py py-func docutils literal notranslate"><span class="pre">_try_lock()</span></code>), taken without waiting. Finding it free and taking it are one
+step, and it goes with the process that held it, so no lock is ever stale and none is
+taken over. While held, the file holds this process’s pid, for <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">status</span></code> and
+for another tick’s error; it is emptied before the lock is released, and the file is
+never removed. Raises <a class="reference internal" href="#liaise.tick.RunLockHeld" title="liaise.tick.RunLockHeld"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunLockHeld</span></code></a> while another holds the lock, in this
+process too.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tick.run_lock_path">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">run_lock_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_lock_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.run_lock_path" title="Link to this definition">#</a></dt>
+<dd><p>Where a tick keeps its run lock.</p>
+<p><code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">status</span></code> reads it too, to tell a running tick from one whose process died.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tick.run_once">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">run_once</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">workspace_for&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sessions_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">reply_mode&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">leak_scan&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lost_run_deadline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=600)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">closed_recheck_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=3600)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_once"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.run_once" title="Link to this definition">#</a></dt>
+<dd><p>One tick over <code class="docutils literal notranslate"><span class="pre">subjects</span></code> (slug to <a class="reference internal" href="liaise.subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a>), on the ledger <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p>
+<p>See the module docstring for the steps. The seams, each with a working default:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">registry</span></code>: correspond’s channel registry (its own when None);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">processor</span></code>: a <a class="reference internal" href="liaise.processor.html#liaise.processor.Processor" title="liaise.processor.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a>, by default
+<code class="docutils literal notranslate"><span class="pre">ClaudeHeadless(runs_dir=&lt;state_dir&gt;/runs)</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">resolver</span></code>: who a channel address is (<a class="reference internal" href="liaise.access.html#liaise.access.resolve_person" title="liaise.access.resolve_person"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.access.resolve_person()</span></code></a>);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">workspace</span></code>: a subject’s checkout (<a class="reference internal" href="liaise.workspace.html#liaise.workspace.workspace_for" title="liaise.workspace.workspace_for"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.workspace.workspace_for()</span></code></a>), with
+its locks in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/locks</span></code> and Claude Code’s session records read from
+<code class="docutils literal notranslate"><span class="pre">sessions_dir</span></code> (<code class="docutils literal notranslate"><span class="pre">~/.claude/sessions</span></code> when None);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">labeler</span></code>: the GitHub labels (<code class="docutils literal notranslate"><span class="pre">GhCli()</span></code>);</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">notify_fn</span></code>: <code class="docutils literal notranslate"><span class="pre">(title,</span> <span class="pre">body,</span> <span class="pre">*,</span> <span class="pre">priority)</span></code>, by default <code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.notify.notify()</span></code>
+on <code class="docutils literal notranslate"><span class="pre">global_config.notify.ntfy_topic_env</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">triage</span></code>: a <a class="reference internal" href="#liaise.tick.Triage" title="liaise.tick.Triage"><code class="xref py py-data docutils literal notranslate"><span class="pre">Triage</span></code></a> that groups and orders each subject’s ready cases
+before they start; None keeps the tick’s own order, oldest first.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">only</span></code> is a slug or slugs to run alone; an unknown one raises
+<a class="reference internal" href="liaise.config.html#liaise.config.ConfigError" title="liaise.config.ConfigError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfigError</span></code></a>. <code class="docutils literal notranslate"><span class="pre">now</span></code> is the tick’s clock (the current UTC
+time when None). <code class="docutils literal notranslate"><span class="pre">lost_run_deadline</span></code> is how long after the tick cancelled a run for
+its wall clock a run that will not stop is waited on (<a class="reference internal" href="#liaise.tick.LOST_RUN_DEADLINE" title="liaise.tick.LOST_RUN_DEADLINE"><code class="xref py py-data docutils literal notranslate"><span class="pre">LOST_RUN_DEADLINE</span></code></a>), and
+<code class="docutils literal notranslate"><span class="pre">closed_recheck_interval</span></code> how long a case whose issue was read closed goes before
+it is read again (<a class="reference internal" href="#liaise.tick.CLOSED_RECHECK_INTERVAL" title="liaise.tick.CLOSED_RECHECK_INTERVAL"><code class="xref py py-data docutils literal notranslate"><span class="pre">CLOSED_RECHECK_INTERVAL</span></code></a>). Unless <code class="docutils literal notranslate"><span class="pre">dry_run</span></code>, the tick holds
+the run lock in <code class="docutils literal notranslate"><span class="pre">state_dir</span></code> (raising <a class="reference internal" href="#liaise.tick.RunLockHeld" title="liaise.tick.RunLockHeld"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunLockHeld</span></code></a> while another tick holds
+it) and stamps its start and end in <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.tick.TickReport" title="liaise.tick.TickReport"><code class="xref py py-class docutils literal notranslate"><span class="pre">TickReport</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tick.run_stamps">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">run_stamps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">lock_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_stamps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.run_stamps" title="Link to this definition">#</a></dt>
+<dd><p>The run stamps a tick keeps in <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">lock_path</span></code> (see <a class="reference internal" href="#liaise.tick.run_lock_path" title="liaise.tick.run_lock_path"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_lock_path()</span></code></a>) to tell a running tick from a killed
+one. A store last written by 0.0.3 or earlier holds only <code class="docutils literal notranslate"><span class="pre">last_run</span></code>, the start of a
+pass that had already finished, read here as a run that started and ended then.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.tick.RunStamps" title="liaise.tick.RunStamps"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunStamps</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.tick.status_lines">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">status_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#status_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.status_lines" title="Link to this definition">#</a></dt>
+<dd><p>What <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">status</span></code> prints: what the ledger in <code class="docutils literal notranslate"><span class="pre">store</span></code> says, read only.</p>
+<p>The run stamps (<code class="docutils literal notranslate"><span class="pre">running</span></code>, <code class="docutils literal notranslate"><span class="pre">interrupted</span></code> or <code class="docutils literal notranslate"><span class="pre">finished</span></code>, the lock checked in
+<code class="docutils literal notranslate"><span class="pre">state_dir</span></code>), the holds, the runs in flight with their heartbeat age, each subject’s
+cases by state and dispatches today, the unrouted queue (its size and the <code class="docutils literal notranslate"><span class="pre">recent</span></code>
+latest), the drafts waiting for the operator, and the <code class="docutils literal notranslate"><span class="pre">recent</span></code> latest digest notes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="liaise.testing.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">liaise.testing</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="liaise.workspace.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">liaise.workspace</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.AUTH_PROBE_INTERVAL"><code class="docutils literal notranslate"><span class="pre">AUTH_PROBE_INTERVAL</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.BATCH_DELIVERY_PER"><code class="docutils literal notranslate"><span class="pre">BATCH_DELIVERY_PER</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.BUDGET_MESSAGE"><code class="docutils literal notranslate"><span class="pre">BUDGET_MESSAGE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.BUDGET_PURPOSE"><code class="docutils literal notranslate"><span class="pre">BUDGET_PURPOSE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.CLOSED_RECHECK_INTERVAL"><code class="docutils literal notranslate"><span class="pre">CLOSED_RECHECK_INTERVAL</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DAILY_CAP_PRIORITY"><code class="docutils literal notranslate"><span class="pre">DAILY_CAP_PRIORITY</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DEPLOY_DELIVERY"><code class="docutils literal notranslate"><span class="pre">DEPLOY_DELIVERY</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS"><code class="docutils literal notranslate"><span class="pre">DEPLOY_OUTPUT_TAIL_CHARS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DFLT_DEFER"><code class="docutils literal notranslate"><span class="pre">DFLT_DEFER</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DFLT_RUNS_SUBDIR"><code class="docutils literal notranslate"><span class="pre">DFLT_RUNS_SUBDIR</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DFLT_STATUS_RECENT"><code class="docutils literal notranslate"><span class="pre">DFLT_STATUS_RECENT</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.Diversion"><code class="docutils literal notranslate"><span class="pre">Diversion</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.ELIGIBLE_STATES"><code class="docutils literal notranslate"><span class="pre">ELIGIBLE_STATES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.ISSUE_DELIVERY_PER"><code class="docutils literal notranslate"><span class="pre">ISSUE_DELIVERY_PER</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.LEGACY_LAST_RUN_KEY"><code class="docutils literal notranslate"><span class="pre">LEGACY_LAST_RUN_KEY</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.LOST_RUN_DEADLINE"><code class="docutils literal notranslate"><span class="pre">LOST_RUN_DEADLINE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.PERMANENT_READ_ERRORS"><code class="docutils literal notranslate"><span class="pre">PERMANENT_READ_ERRORS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.PLAN_TEXT_CHARS"><code class="docutils literal notranslate"><span class="pre">PLAN_TEXT_CHARS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.PROCESSOR_SCOPE"><code class="docutils literal notranslate"><span class="pre">PROCESSOR_SCOPE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.PR_ONLY_DELIVERY"><code class="docutils literal notranslate"><span class="pre">PR_ONLY_DELIVERY</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.REQUEST_WORK"><code class="docutils literal notranslate"><span class="pre">REQUEST_WORK</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_DEPLOY_FAILED"><code class="docutils literal notranslate"><span class="pre">RUN_DEPLOY_FAILED</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_ID_SUFFIX_DIGITS"><code class="docutils literal notranslate"><span class="pre">RUN_ID_SUFFIX_DIGITS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_ISSUE_CLOSED"><code class="docutils literal notranslate"><span class="pre">RUN_ISSUE_CLOSED</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_LOCK_FILE"><code class="docutils literal notranslate"><span class="pre">RUN_LOCK_FILE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_LOST"><code class="docutils literal notranslate"><span class="pre">RUN_LOST</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_STARTED"><code class="docutils literal notranslate"><span class="pre">RUN_STARTED</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_STARTED_KEY"><code class="docutils literal notranslate"><span class="pre">RUN_STARTED_KEY</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RunLockHeld"><code class="docutils literal notranslate"><span class="pre">RunLockHeld</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RunStamps"><code class="docutils literal notranslate"><span class="pre">RunStamps</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RunStamps.lock_held"><code class="docutils literal notranslate"><span class="pre">RunStamps.lock_held</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RunStamps.state"><code class="docutils literal notranslate"><span class="pre">RunStamps.state</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.SEND_REFUSED_CAUSE"><code class="docutils literal notranslate"><span class="pre">SEND_REFUSED_CAUSE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.STATE_READ_FAILURE_LIMIT"><code class="docutils literal notranslate"><span class="pre">STATE_READ_FAILURE_LIMIT</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.TICK_ACTOR"><code class="docutils literal notranslate"><span class="pre">TICK_ACTOR</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.TickReport"><code class="docutils literal notranslate"><span class="pre">TickReport</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.Triage"><code class="docutils literal notranslate"><span class="pre">Triage</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.WorkspaceFactory"><code class="docutils literal notranslate"><span class="pre">WorkspaceFactory</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.last_run_age"><code class="docutils literal notranslate"><span class="pre">last_run_age()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.run_lock"><code class="docutils literal notranslate"><span class="pre">run_lock()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.run_lock_path"><code class="docutils literal notranslate"><span class="pre">run_lock_path()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.run_once"><code class="docutils literal notranslate"><span class="pre">run_once()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.run_stamps"><code class="docutils literal notranslate"><span class="pre">run_stamps()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.status_lines"><code class="docutils literal notranslate"><span class="pre">status_lines()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/_autosummary/liaise.tick.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

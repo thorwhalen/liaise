@@ -1,0 +1,27 @@
+liaise.cases
+============
+
+.. automodule:: liaise.cases
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      OPERATOR_ACTOR
+      DFLT_OPERATOR_REASON
+      TICK_ONLY_STATES
+      NONE_SHOWN
+      DFLT_SHOW_ENTRIES
+      SHOW_TEXT_CHARS
+      ESCALATION_KINDS
+      TEXT_INDENT
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      case_lines
+      case_show_lines
+      set_case_state
+   

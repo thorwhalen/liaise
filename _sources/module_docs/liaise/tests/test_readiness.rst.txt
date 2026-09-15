@@ -1,4 +1,0 @@
-liaise.tests.test_readiness
-===========================
-.. automodule:: liaise.tests.test_readiness
-   :members:

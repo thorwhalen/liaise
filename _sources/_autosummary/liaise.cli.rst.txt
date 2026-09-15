@@ -1,0 +1,34 @@
+liaise.cli
+==========
+
+.. automodule:: liaise.cli
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_LOOP_SECONDS
+      STOPPED
+      NONE_SHOWN
+      TICK_RUNNING
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      case_list
+      case_set_state
+      case_show
+      hold
+      migrate_config
+      run
+      schedule_install
+      schedule_status_cmd
+      schedule_uninstall
+      setup
+      status
+      subject_list
+      subject_show
+      unhold
+   

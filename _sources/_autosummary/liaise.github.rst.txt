@@ -1,0 +1,22 @@
+liaise.github
+=============
+
+.. automodule:: liaise.github
+
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Comment
+      FakeGitHub
+      GhCli
+      GitHub
+      Issue
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      GitHubError
+   

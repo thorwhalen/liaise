@@ -1,4 +1,0 @@
-liaise.errors
-=============
-.. automodule:: liaise.errors
-   :members:

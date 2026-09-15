@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-09-15T13:50:25Z",
+  "package": {
+    "name": "liaise",
+    "version": "0.1.0",
+    "display_name": "liaise",
+    "source": "pyproject.toml"
+  },
+  "git": {
+    "available": true,
+    "commit": "8e1d319ffb1d7e5a6fc1ce0136268ca2509ea38b",
+    "short_commit": "8e1d319",
+    "branch": "main",
+    "tags": [],
+    "dirty": false,
+    "remote_url": "https://github.com/thorwhalen/liaise",
+    "commit_url": "https://github.com/thorwhalen/liaise/commit/8e1d319ffb1d7e5a6fc1ce0136268ca2509ea38b",
+    "error": null
+  },
+  "ci": {
+    "provider": "github",
+    "repository": "thorwhalen/liaise",
+    "sha": "8e1d319ffb1d7e5a6fc1ce0136268ca2509ea38b",
+    "sha_in_history": true,
+    "ref": "refs/heads/main",
+    "ref_name": "main",
+    "run_id": "34977392292",
+    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/34977392292",
+    "server_url": "https://github.com"
+  },
+  "tools": {
+    "epythet": "0.2.12",
+    "sphinx": "9.1.0",
+    "docutils": "0.22.4",
+    "python": "3.12.14"
+  },
+  "config": {
+    "theme": "auto",
+    "html_theme": "pydata_sphinx_theme",
+    "accent": "#635b00",
+    "mode": "auto",
+    "api_generator": "autosummary",
+    "ignore": [
+      "tests/",
+      "scrap/",
+      "examples/"
+    ],
+    "agent_outputs": true,
+    "aggregates": [
+      "md"
+    ],
+    "ai_artifacts": true,
+    "provenance": true,
+    "docs_dir": "docsrc"
+  },
+  "site": {
+    "modules_documented": 23,
+    "objects_documented": 526
+  },
+  "pypi": {
+    "checked": true,
+    "latest": "0.1.0",
+    "relation": "same",
+    "error": null
+  },
+  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout 8e1d319ffb1d7e5a6fc1ce0136268ca2509ea38b\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "warnings": [],
+  "alignment": {
+    "aligned": true,
+    "notes": []
+  }
+}

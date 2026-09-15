@@ -1,0 +1,43 @@
+liaise.subjects
+===============
+
+.. automodule:: liaise.subjects
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_SUBJECTS_SUBDIR
+      REPLY_MODES
+      DELIVERY_KINDS
+      DELIVERY_PERS
+      WORKSPACE_KINDS
+      GRADES
+      REF_WILDCARDS
+      CASE_INSENSITIVE_REF_CHANNELS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      address_key
+      check_bindings
+      load_subject
+      load_subjects
+      normalize_binding
+      poll_ref
+      ref_key
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BudgetPolicy
+      Delivery
+      Policy
+      ProcessorConfig
+      ReadinessPolicy
+      Subject
+      Workspace
+   

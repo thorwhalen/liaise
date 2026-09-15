@@ -1,0 +1,38 @@
+liaise.outcomes
+===============
+
+.. automodule:: liaise.outcomes
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_SENDING_CHANNELS
+      DFLT_ADDRESS_CHANNELS
+      DFLT_OPERATOR_PRIORITY
+      REQUIRED_FIELD_BY_KIND
+      OUTCOME_SCHEMA
+      Action
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      make_draft
+      normalize
+      parse_outcomes
+      plan_outcomes
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Defer
+      Deliver
+      DigestNote
+      NotifyOperator
+      Send
+      StoreDraft
+      Transition
+   

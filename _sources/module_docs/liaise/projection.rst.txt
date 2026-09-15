@@ -1,4 +1,0 @@
-liaise.projection
-=================
-.. automodule:: liaise.projection
-   :members:

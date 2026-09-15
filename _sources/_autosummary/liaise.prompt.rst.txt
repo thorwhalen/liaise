@@ -1,0 +1,22 @@
+liaise.prompt
+=============
+
+.. automodule:: liaise.prompt
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      MODES
+      OPERATING_RULES_RESOURCE
+      GITHUB_ISSUE_URL
+      OUTCOME_GUIDANCE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compose_case_prompt
+      conversation_link
+   

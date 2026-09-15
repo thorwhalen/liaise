@@ -1,4 +1,0 @@
-liaise.ledger
-=============
-.. automodule:: liaise.ledger
-   :members:

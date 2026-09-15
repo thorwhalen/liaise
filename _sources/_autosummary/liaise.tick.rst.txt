@@ -1,0 +1,68 @@
+liaise.tick
+===========
+
+.. automodule:: liaise.tick
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ELIGIBLE_STATES
+      DFLT_DEFER
+      DFLT_RUNS_SUBDIR
+      DFLT_STATUS_RECENT
+      TICK_ACTOR
+      REQUEST_WORK
+      PROCESSOR_SCOPE
+      AUTH_PROBE_INTERVAL
+      LOST_RUN_DEADLINE
+      CLOSED_RECHECK_INTERVAL
+      STATE_READ_FAILURE_LIMIT
+      PERMANENT_READ_ERRORS
+      DEPLOY_DELIVERY
+      PR_ONLY_DELIVERY
+      BATCH_DELIVERY_PER
+      ISSUE_DELIVERY_PER
+      RUN_ID_SUFFIX_DIGITS
+      BUDGET_MESSAGE
+      BUDGET_PURPOSE
+      DAILY_CAP_PRIORITY
+      SEND_REFUSED_CAUSE
+      RUN_STARTED
+      RUN_LOST
+      RUN_ISSUE_CLOSED
+      RUN_DEPLOY_FAILED
+      PLAN_TEXT_CHARS
+      DEPLOY_OUTPUT_TAIL_CHARS
+      WorkspaceFactory
+      Triage
+      RUN_LOCK_FILE
+      RUN_STARTED_KEY
+      LEGACY_LAST_RUN_KEY
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      last_run_age
+      run_lock
+      run_lock_path
+      run_once
+      run_stamps
+      status_lines
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Diversion
+      RunStamps
+      TickReport
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      RunLockHeld
+   
