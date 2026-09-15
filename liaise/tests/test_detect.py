@@ -6,6 +6,8 @@ the no-personal-data guard nor a secret-scanning push protection reads one in th
 The mutation checks: each secret rule, path rule, exfiltration check, personal check and
 detector is removed in turn, and its sample must then go unfound; each secret rule also
 has a near miss one character short of its bound, which a loosened bound would find.
+Spans, trailing punctuation, marks, word checks and length bounds each have a test that
+pins them.
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ import stat
 import sys
 import time
 import unicodedata
+from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
 
 import pytest
@@ -31,6 +34,7 @@ from liaise.detect import (
     EXFILTRATION_SCANNERS,
     KINDS,
     LOCAL_PATH_RULES,
+    MIN_BASE64_RUN,
     PERSONAL_SCANNERS,
     SECRET_RULES,
     SEVERITY_ABOVE_CLEARANCE,
@@ -45,8 +49,10 @@ from liaise.detect import (
     chain,
     detect,
     fingerprint_key,
+    fold_term,
     local_path_scanner,
     normalise,
+    render,
     secret_detector,
 )
 from liaise.gate import leak_scan
@@ -65,17 +71,20 @@ OTHER_KEY = b"o" * 32
 ALLOWLIST = ("example.org",)
 ADDRESS = "ada" + "@" + "example.org"
 CANARY = "zq-canary-7731"
-#: The disclosure of the worked case (discussion §1): Ada and Bram read the channel, the
-#: audience is public, Heron is amber and sealed from Bram, Cy is a person who is not a
-#: reader. Entity ids are part of a finding by design; the terms are not.
+#: The disclosure of the worked case (discussion §1): Ada (p-01) and Bram (p-02) read the
+#: channel, the audience is public, Heron (p-17) is amber and sealed from Bram, Cy (p-03)
+#: and Ona (p-04) are people who are not readers. The ids share no text with the terms,
+#: so the check that no finding holds its matched text can be strict.
+HERON = "project:p-17"
 DISCLOSURE = {
-    "people": {"ada": {"tier": "open", "clearance": "amber"}, "bram": {"tier": "reviewed", "clearance": "clear"}},
+    "people": {"p-01": {"tier": "open", "clearance": "amber"}, "p-02": {"tier": "reviewed", "clearance": "clear"}},
     "least_clearance": "clear",
     "vocabulary": [
-        {"term": "Heron", "entity": "project:heron", "label": "amber", "sealed_from": ["bram"]},
-        {"term": "the bird project", "entity": "project:heron", "label": "amber", "sealed_from": ["bram"]},
-        {"term": "Cy", "entity": "person:cy", "label": "green"},
-        {"term": "Ada", "entity": "person:ada", "label": "green"},
+        {"term": "Heron", "entity": HERON, "label": "amber", "sealed_from": ["p-02"]},
+        {"term": "the bird project", "entity": HERON, "label": "amber", "sealed_from": ["p-02"]},
+        {"term": "Cy", "entity": "person:p-03", "label": "green"},
+        {"term": "Ona", "entity": "person:p-04", "label": "green"},
+        {"term": "Ada", "entity": "person:p-01", "label": "green"},
     ],
 }
 
@@ -87,6 +96,10 @@ def _detect(text, **options):
 
 def _of_kind(kind, text, **options):
     return [finding for finding in _detect(text, **options) if finding.kind == kind]
+
+
+def _rules(kind, text, **options):
+    return [f.rule for f in _of_kind(kind, text, **options)]
 
 
 # ---- the 0.1 leak-scan table ----
@@ -130,11 +143,18 @@ HERON_FORMS = {
     "zero-width-space": "He\u200bron",
     "hyphenated": "He-ron",
     "mixed-case": "hErOn",
-    "spaced": "H e r o n",
+    "letter-spaced": "H e r o n",
     "soft-hyphen": "Her\u00adon",
     "cyrillic-e": "H\u0435ron",
+    "greek-capitals": "\u0397ERO\u039d",
+    "small-capitals": "\u029c\u1d07\u0280\u1d0f\u0274",
+    "minus-sign": "He\u2212ron",
     "accented": "H\u00e9r\u00f6n",
     "decomposed-accent": "He\u0301ron",
+    "emphasis": "He*ro*n",
+    "html-tag": "He<b></b>ron",
+    "html-comment": "He<!-- -->ron",
+    "character-reference": "H&#101;ron",
 }
 
 
@@ -143,12 +163,7 @@ def test_heron_is_found_in_every_form_at_its_place_in_the_text(form):
     text = "Update: " + form + " slips to October."
     (finding,) = _of_kind("vocabulary", text)
     assert text[finding.start : finding.end] == form
-    assert (finding.entity, finding.label, finding.sealed_from, finding.rule) == (
-        "project:heron",
-        "amber",
-        ("bram",),
-        "term",
-    )
+    assert (finding.entity, finding.label, finding.sealed_from, finding.rule) == (HERON, "amber", ("p-02",), "term")
 
 
 def test_a_term_of_several_words_is_found_across_separators():
@@ -157,12 +172,23 @@ def test_a_term_of_several_words_is_found_across_separators():
     assert text[finding.start : finding.end] == "The Bird-Project"
 
 
+def test_a_match_covers_the_marks_after_it():
+    text = "Heron\u0301 slips."
+    (finding,) = _of_kind("vocabulary", text)
+    assert text[finding.start : finding.end] == "Heron\u0301"
+
+
 @pytest.mark.parametrize(
     "text",
-    ["Herons nest here.", "The heronry is quiet.", "Herondale road.", "xHeron", "She Ron called.", "a\u200bheron"],
+    ["Herons nest here.", "The heronry is quiet.", "Herondale road.", "xHeron", "She Ron called.", "a\u200bheron", "He ron"],
 )
 def test_a_term_is_matched_as_a_whole_word_only(text):
     assert _of_kind("vocabulary", text) == []
+
+
+@pytest.mark.parametrize("text", ["We move on a new plan.", "Moving on, a new plan.", "Go on and on a bit."])
+def test_a_match_does_not_span_a_word_break_the_term_does_not_have(text):
+    assert _of_kind("third_party", text) == []
 
 
 @pytest.mark.parametrize("text", ["Heron's date", "(Heron)", "Heron.", "\u00abHeron\u00bb", "heron_v2"])
@@ -173,30 +199,38 @@ def test_a_term_beside_punctuation_is_a_whole_word(text):
 def test_severity_follows_the_seal_then_the_label_then_the_audience():
     text = "Heron slips."
     assert _of_kind("vocabulary", text)[0].severity == SEVERITY_SEALED
-    readers = {**DISCLOSURE, "people": {"ada": {}}}
+    readers = {**DISCLOSURE, "people": {"p-01": {}}}
     assert _of_kind("vocabulary", text, disclosure=readers)[0].severity == SEVERITY_ABOVE_CLEARANCE
     cleared = {**readers, "least_clearance": "amber"}
     assert _of_kind("vocabulary", text, disclosure=cleared)[0].severity == SEVERITY_NARROW_AUDIENCE
-    wide = {**readers, "vocabulary": [{"term": "Heron", "entity": "project:heron", "label": "clear"}]}
+    wide = {**readers, "vocabulary": [{"term": "Heron", "entity": HERON, "label": "clear"}]}
     assert _of_kind("vocabulary", text, disclosure=wide)[0].severity == SEVERITY_WIDE_AUDIENCE
 
 
 def test_an_unknown_label_counts_as_the_most_restrictive():
-    disclosure = {"least_clearance": "red", "vocabulary": [{"term": "Heron", "entity": "project:heron", "label": "purple"}]}
+    disclosure = {"least_clearance": "red", "vocabulary": [{"term": "Heron", "entity": HERON, "label": "purple"}]}
     assert _of_kind("vocabulary", "Heron", disclosure=disclosure)[0].severity == SEVERITY_ABOVE_CLEARANCE
 
 
-@pytest.mark.parametrize("text", ["Ｈé\u200b-Ron!", "ﬁle ß İ", "a\u0301\u0302b", "plain ascii-text_here."])
+@pytest.mark.parametrize("text", ["Ｈé\u200b-Ron!", "ﬁle ß İ", "a\u0301\u0302b", "plain ascii-text_here.", "\u0397\u029c"])
 def test_every_normalised_character_comes_from_its_origin(text):
     folded = normalise(text)
     assert len(folded.origins) == len(folded.text)
     for index, char in enumerate(folded.text):
-        assert char in normalise(text[folded.origins[index]]).text
+        assert char in normalise(text[folded.start_of(index) : folded.end_of(index)]).text
 
 
 def test_ascii_text_folds_exactly_as_any_text_does():
     text = "".join(map(chr, range(128))) * 2 + "Mixed-Case_text.with SEPARATORS"
     assert detect_module._fold_ascii(text) == detect_module._fold_characters(text)
+
+
+def test_rendering_removes_markup_and_maps_back_to_the_source():
+    text = "a<i>b</i>&amp;%41\\*"
+    view = render(text)
+    assert view.text == "ab&A*"
+    assert [text[view.start_of(i) : view.end_of(i)] for i in range(len(view.text))] == ["a", "b", "&amp;", "%41", "*"]
+    assert render("no markup here") is None
 
 
 def test_every_format_character_counts_as_invisible():
@@ -215,7 +249,7 @@ def test_a_person_who_is_not_a_reader_is_a_third_party():
     text = "Cy and Ada agreed."
     (finding,) = _of_kind("third_party", text)
     assert text[finding.start : finding.end] == "Cy"
-    assert (finding.entity, finding.rule) == ("person:cy", "person-name")
+    assert (finding.entity, finding.rule) == ("person:p-03", "person-name")
     assert _of_kind("vocabulary", text) == []
 
 
@@ -237,22 +271,19 @@ def test_any_email_address_is_personal():
     assert (finding.rule, text[finding.start : finding.end]) == ("email-address", ADDRESS)
 
 
-@pytest.mark.parametrize("form", [CANARY, "ZQ-Canary-7731", "zq\u200bcanary7731", "prefix" + "zqcanary7731" + "suffix"])
+@pytest.mark.parametrize(
+    "form",
+    [CANARY, "ZQ-Canary-7731", "zq\u200bcanary7731", "prefix" + "zqcanary7731" + "suffix", "zq%2Dcanary%2D7731"],
+)
 def test_a_canary_term_is_found_anywhere(form):
-    text = "Here: " + form + " done."
+    text = "Here: https://example.org/search?q=" + form + " done."
     (finding,) = _of_kind("canary", text, canary_terms=[CANARY])
     assert (finding.rule, finding.severity) == ("canary-term", SEVERITY_CANARY)
 
 
-# ---- exfiltration ----
+# ---- exfiltration: links ----
 
 COLLECTOR = "collector.example.net"
-BASE64_RUN = base64.b64encode(bytes(range(150))).decode()  # 200 characters
-HEX_RUN = ("0123456789abcdef" * 9)[:129]
-
-
-def _rules(kind, text, **options):
-    return [f.rule for f in _of_kind(kind, text, **options)]
 
 
 def test_a_reference_style_image_to_a_host_outside_the_allowlist():
@@ -272,11 +303,20 @@ def test_a_reference_style_image_to_a_host_outside_the_allowlist():
         ('<img alt="x" src="https://' + COLLECTOR + '/i.png">', "image-host"),
         ("![c](//" + COLLECTOR + "/c.png)", "image-host"),
         ("![s][ref]\n[REF]: //" + COLLECTOR + "/s.png", "image-host"),
+        ("![s][b]\n[b]:\n//" + COLLECTOR + "/s.png", "image-host"),
         ("Go to www." + COLLECTOR + " now", "link-host"),
         ("[a](https://example.org@" + COLLECTOR + "/)", "link-host"),
         ("[a](https://" + COLLECTOR + "\\@example.org/)", "link-host"),
+        ("[a](https://example.org\\@" + COLLECTOR + "/)", "link-host"),
         ("[a](https://example.org." + COLLECTOR + "/)", "link-host"),
         ("[a](https://example.org%2E" + COLLECTOR + "/)", "link-host"),
+        ("![x](https&#58;//" + COLLECTOR + "/p.png)", "image-host"),
+        ('<img src="https:///' + COLLECTOR + '/p.png">', "image-host"),
+        ('<img src="https:\\\\' + COLLECTOR + '/p.png">', "image-host"),
+        ('<img src="https://\n' + COLLECTOR + '/p.png">', "image-host"),
+        ('<img src="https://example.org@\n' + COLLECTOR + '/p.png">', "image-host"),
+        ('<img src="https:/\n/' + COLLECTOR + '/p.png">', "image-host"),
+        ('<img srcset="https://example.org/a.png 1x, //' + COLLECTOR + '/b.png 2x">', "image-host"),
     ],
 )
 def test_links_and_images_to_hosts_outside_the_allowlist(text, rule):
@@ -289,12 +329,26 @@ def test_links_and_images_to_hosts_outside_the_allowlist(text, rule):
         "See [the docs](https://example.org/docs).",
         "![logo](https://cdn.example.org/logo.png)",
         "Visit www.example.org today, or HTTPS://EXAMPLE.ORG./x.",
-        "A relative [link](docs/setup.md) and a double slash a//b.",
-        "In code: `std::vector` at 12:30:45.",
+        "A relative [link](docs/setup.md), an ![icon](img/i.png) and a double slash a//b.",
+        "In code: `std::vector` at 12:30:45, and a [mail](mailto:x) link.",
+        '<img src="./img/local.png"> and <a href="#top">top</a>',
     ],
 )
 def test_allowlisted_hosts_and_relative_links_are_not_findings(text):
     assert _of_kind("exfiltration", text) == []
+
+
+def test_a_url_finding_stops_before_trailing_punctuation():
+    url = "https://" + COLLECTOR + "/x"
+    text = "It went to " + url + "."
+    (finding,) = _of_kind("exfiltration", text)
+    assert text[finding.start : finding.end] == url
+
+
+# ---- exfiltration: encoded runs, invisible characters, addresses, paths ----
+
+BASE64_RUN = base64.b64encode(bytes(range(150))).decode()  # 200 characters
+HEX_RUN = ("0123456789abcdef" * 9)[:129]
 
 
 def test_a_long_base64_run_is_exfiltration():
@@ -303,25 +357,64 @@ def test_a_long_base64_run_is_exfiltration():
     assert (finding.rule, text[finding.start : finding.end]) == ("base64-run", BASE64_RUN)
 
 
+def test_a_base64_run_at_the_bound_is_exfiltration():
+    assert _rules("exfiltration", "x " + BASE64_RUN[:MIN_BASE64_RUN] + " y") == ["base64-run"]
+
+
+@pytest.mark.parametrize("width", [64, 76])
+def test_wrapped_base64_is_exfiltration(width):
+    encoded = base64.b64encode(bytes(range(256)) * 2).decode()
+    block = "\n".join(encoded[i : i + width] for i in range(0, len(encoded), width))
+    text = "Attached:\n" + block + "\nThanks"
+    (finding,) = _of_kind("exfiltration", text)
+    assert (finding.rule, text[finding.start : finding.end]) == ("base64-run", block)
+
+
 @pytest.mark.parametrize(
-    "run", [BASE64_RUN[:99], "a" * 300, "0123456789abcdef" * 4, "0123456789abcdef" * 8, "Z" * 150 + "1"]
+    "run",
+    [BASE64_RUN[: MIN_BASE64_RUN - 1], "a" * 300, "0123456789abcdef" * 4, "0123456789abcdef" * 8, "Z" * 150 + "1"],
 )
 def test_short_or_unmixed_runs_are_not_exfiltration(run):
-    """A 99-character base64 run, a long word, a SHA-256 and a SHA-512 digest, capitals and a
-    digit without a small letter."""
+    """A base64 run one short of the bound, a long word, a SHA-256 and a SHA-512 digest,
+    capitals and a digit without a small letter."""
     assert _of_kind("exfiltration", "x " + run + " y") == []
+
+
+def test_commit_hashes_one_per_line_are_not_exfiltration():
+    text = "\n".join(("0123456789abcdef" * 3)[:40] for _ in range(6))
+    assert _of_kind("exfiltration", text) == []
 
 
 def test_a_long_hex_run_is_exfiltration():
     assert _rules("exfiltration", "x " + HEX_RUN + " y") == ["hex-run"]
 
 
+#: Tag characters spelling ``text``, as they could ride behind a black flag.
+def _tags(text):
+    return "".join(chr(0xE0000 + ord(char)) for char in text)
+
+
 @pytest.mark.parametrize(
     "text",
-    ["Fixed\u200b.", "a\u202eb", "tag\U000e0041\U000e0042", "x\ufe01y", "a\u2060b", "\u200b\u200b", "word\u200dword", "mid\ufeffdle"],
+    [
+        "Fixed\u200b.",
+        "a\u202eb",
+        "tag" + _tags("AB"),
+        "x\ufe01y",
+        "a\u2060b",
+        "\u200b\u200b",
+        "word\u200dword",
+        "mid\ufeffdle",
+        "h\ufe0fel\ufe0flo",
+        "caf\u00e9\u200d\u00e9t\u00e9",
+        "`\u200d`",
+        "\U0001f3f4" + _tags("ghp_aa") + "\U000e007f",
+        "\U0001f3f4" + _tags("zzzzz") + "\U000e007f",
+    ],
 )
 def test_an_invisible_character_is_exfiltration(text):
-    assert _rules("exfiltration", text) == ["invisible-character"]
+    assert _rules("exfiltration", text) == ["invisible-character"] * len(_rules("exfiltration", text))
+    assert _rules("exfiltration", text)
 
 
 @pytest.mark.parametrize(
@@ -331,9 +424,10 @@ def test_an_invisible_character_is_exfiltration(text):
         "Love \u2764\ufe0f",
         "family \U0001f468\u200d\U0001f469\u200d\U0001f467",
         "\u2764\ufe0f\u200d\U0001f525",
-        "flag \U0001f3f4\U000e0067\U000e0062\U000e0073\U000e0063\U000e0074\U000e007f",
+        "flag \U0001f3f4" + _tags("gbsct") + "\U000e007f",
         "keycap 1\ufe0f\u20e3",
         "\u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645",
+        "\u0915\u094d\u200d\u0937",
         "\u05e9\u05dc\u05d5\u05dd\u200f!",
     ],
 )
@@ -342,12 +436,30 @@ def test_invisible_characters_that_text_needs_are_not_findings(text):
 
 
 @pytest.mark.parametrize(
-    "address", ["10.0.0.5", "172.16.4.4", "192.168.1.20", "127.0.0.1", "169.254.1.1", "100.64.0.1", "::1", "fe80::1", "fd12:3456::1"]
+    "address",
+    [
+        "10.0.0.5",
+        "172.16.4.4",
+        "192.168.1.20",
+        "127.0.0.1",
+        "169.254.1.1",
+        "100.64.0.1",
+        "::1",
+        "fe80::1",
+        "fd12:3456::1",
+        "192.168.001.020",
+        "010.0.0.1",
+        "\uff11\uff10\uff0e\uff10\uff0e\uff10\uff0e\uff15",
+    ],
 )
 def test_a_private_address_is_exfiltration(address):
     text = "It listens on " + address + ", see."
     (finding,) = _of_kind("exfiltration", text)
     assert (finding.rule, text[finding.start : finding.end]) == ("private-address", address)
+
+
+def test_an_address_after_an_underscore_is_found():
+    assert _rules("exfiltration", "host_10.0.0.5 is up") == ["private-address"]
 
 
 @pytest.mark.parametrize("text", ["8.8.8.8", "172.32.0.1", "192.0.2.1", "version 1.2.3.4.5", "v10.0.0.1", "2001:db8::1", "999.1.1.1"])
@@ -437,6 +549,9 @@ def test_each_secret_rule_finds_its_sample_and_removing_it_loses_the_sample(rule
         ("aws-access-key-id", "ACCA" + "A" * 16),
         ("slack-webhook", "hooks.slack.com/workflows/" + "A" * 43),
         ("private-key", "-----BEGIN " + "PGP PRIVATE KEY BLOCK" + "-----"),
+        ("npm-token", "NPM_" + "A" * 36),
+        ("grafana-service-account-token", "GLSA_" + "A" * 32 + "_" + "A" * 8),
+        ("slack-app-token", "XAPP-1-A-1-A"),
     ],
 )
 def test_every_prefix_variant_passes_the_literal_prefilter(rule, token):
@@ -449,6 +564,25 @@ def test_a_token_of_a_new_rule_wrapped_across_lines_is_found_where_it_starts():
     text = "Key:\n" + "glpat-" + "a" * 10 + "\r\n" + "a" * 10 + " end"
     (finding,) = [f for f in _detect(text) if f.kind == "secret"]
     assert (finding.rule, finding.start, finding.end) == ("gitlab-token", 5, len(text) - 4)
+
+
+@pytest.mark.parametrize(
+    "splitter", ["\ufe0f", "\u200b", "\u00ad", "\u2060", "**", "<b></b>", "<!-- x -->", "`"]
+)
+def test_a_token_split_by_invisible_characters_or_markup_is_a_secret(splitter):
+    text = "Use " + "ghp_" + "a" * 18 + splitter + "a" * 18 + " now."
+    (finding,) = [f for f in _detect(text) if f.kind == "secret"]
+    assert (finding.rule, finding.start, finding.end) == ("github-token", 4, len(text) - 5)
+
+
+def test_an_encoded_private_key_header_is_a_secret():
+    assert "private-key" in _secret_rules_found("-----BEGIN&#32;RSA PRIVATE KEY-----")
+
+
+def test_a_token_glued_to_a_word_after_stripping_is_not_a_secret():
+    """The word check of the stripped reading: a token continuing a word is no token."""
+    assert _secret_rules_found("x" + "ghp_" + "a" * 18 + "\u200b" + "a" * 18) == set()
+    assert _secret_rules_found("x " + "ghp_" + "a" * 18 + "\u200b" + "a" * 18) == {"github-token"}
 
 
 # ---- the mutation checks for the other checks and detectors ----
@@ -554,13 +688,18 @@ _TABLE = (
 
 @pytest.mark.parametrize("text, options", _TABLE)
 def test_no_finding_holds_the_text_it_matched(text, options):
+    """The matched text appears nowhere in a finding, in any letter case, and its normalised
+    form appears in no field but the rule id, a constant of the module (``env-file`` holds
+    the ``env`` of ``.env``)."""
     findings = _detect(text, **options)
     assert findings
     for finding in findings:
         value = text[finding.start : finding.end]
-        assert value
-        assert value not in repr(finding)
-        assert value not in json.dumps(finding.to_dict(), ensure_ascii=False)
+        record = (repr(finding) + json.dumps(finding.to_dict(), ensure_ascii=False)).casefold()
+        assert value.casefold() not in record, finding
+        fields = {name: field for name, field in finding.to_dict().items() if name != "rule"}
+        folded = normalise(value).text
+        assert not folded or folded not in json.dumps(fields, ensure_ascii=False).casefold(), finding
 
 
 # ---- fingerprints and the key ----
@@ -575,8 +714,19 @@ def test_a_fingerprint_is_stable_across_calls_and_changes_with_the_key():
 
 
 def test_every_form_of_a_term_has_one_fingerprint():
-    fingerprints = {_of_kind("vocabulary", form)[0].fingerprint for form in HERON_FORMS.values()}
+    fingerprints = {_of_kind("vocabulary", "x " + form + " y")[0].fingerprint for form in HERON_FORMS.values()}
     assert len(fingerprints) == 1
+
+
+def test_a_secret_fingerprint_keeps_letter_case_and_ignores_how_the_token_is_split():
+    def fingerprint(token):
+        (finding,) = [f for f in _detect("Use " + token + " now") if f.kind == "secret"]
+        return finding.fingerprint
+
+    token = "ghp_" + "AbCd" * 9
+    assert fingerprint(token) != fingerprint(token.lower())
+    assert fingerprint(token) == fingerprint(token[:20] + "\u200b" + token[20:]) == fingerprint(token[:20] + "\n" + token[20:])
+    assert fingerprint(token) == hmac.new(KEY, token.encode(), sha256).hexdigest()
 
 
 def test_a_key_may_be_a_callable():
@@ -588,8 +738,17 @@ def test_the_fingerprint_key_is_created_once_and_owner_only(tmp_path):
     key = fingerprint_key(state_dir)
     assert len(key) == DFLT_KEY_BYTES
     assert fingerprint_key(state_dir) == key
+    assert [path.name for path in state_dir.iterdir()] == [DFLT_KEY_FILE]
     if os.name == "posix":
         assert stat.S_IMODE((state_dir / DFLT_KEY_FILE).stat().st_mode) == 0o600
+
+
+def test_processes_racing_to_create_the_key_all_read_the_same_one(tmp_path):
+    for trial in range(20):
+        state_dir = tmp_path / f"trial-{trial}"
+        with ThreadPoolExecutor(max_workers=8) as pool:
+            keys = set(pool.map(lambda _: fingerprint_key(state_dir), range(8)))
+        assert len(keys) == 1
 
 
 def test_a_short_key_file_is_refused(tmp_path):
@@ -604,18 +763,17 @@ def test_the_default_key_is_read_only_when_there_is_a_finding(tmp_path, monkeypa
     assert not (tmp_path / DFLT_KEY_FILE).exists()
     token = "ghp_" + "a" * 36
     (finding,) = detect("Use " + token, disclosure={})
-    folded = normalise(token).text.encode()
-    assert finding.fingerprint == hmac.new(fingerprint_key(tmp_path), folded, sha256).hexdigest()
+    assert finding.fingerprint == hmac.new(fingerprint_key(tmp_path), token.encode(), sha256).hexdigest()
 
 
 # ---- the record, the inputs, the time bound ----
 
 
 def test_to_dict_is_json_ready_and_carries_every_field():
-    finding = Finding(kind="vocabulary", start=1, end=6, entity="project:heron", label="amber", sealed_from=("bram",), rule="term", severity=4, fingerprint="f")
+    finding = Finding(kind="vocabulary", start=1, end=6, entity=HERON, label="amber", sealed_from=("p-02",), rule="term", severity=4, fingerprint="f")
     assert json.loads(json.dumps(finding.to_dict())) == {
-        "kind": "vocabulary", "start": 1, "end": 6, "entity": "project:heron", "label": "amber",
-        "sealed_from": ["bram"], "rule": "term", "severity": 4, "fingerprint": "f",
+        "kind": "vocabulary", "start": 1, "end": 6, "entity": HERON, "label": "amber",
+        "sealed_from": ["p-02"], "rule": "term", "severity": 4, "fingerprint": "f",
     }  # fmt: skip
 
 
@@ -646,8 +804,17 @@ def test_findings_are_ordered_by_position():
 
 @pytest.mark.parametrize(
     "text",
-    [LONG_WORD, "\uff28\u00e9-x\u00a0" * 250_000, ("![a](" + "x" * 8 + ")") * 71_429, "https://" * 125_000, "/Us" "ers/" * 142_858],
-    ids=["0.1-long-word", "non-ascii", "markdown-images", "urls", "paths"],
+    [
+        LONG_WORD,
+        "\uff28\u00e9-x\u00a0" * 250_000,
+        ("![a](" + "x" * 8 + ")") * 71_429,
+        "https://" * 125_000,
+        "/Us" "ers/" * 142_858,
+        "a\u200bb" * 333_334,
+        "He<b></b>ron &amp; " * 52_632,
+        ('<img src="//' + COLLECTOR + '/p.png">') * 25_642,
+    ],
+    ids=["0.1-long-word", "non-ascii", "markdown-images", "urls", "paths", "invisible", "markup", "html-images"],
 )
 def test_a_million_character_message_is_scanned_within_the_bound(text):
     options = dict(canary_terms=[CANARY], personal_terms=[ADDRESS])

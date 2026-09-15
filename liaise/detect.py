@@ -10,37 +10,50 @@ finding means for a send is the policy's decision (liaise discussion 32, §5.4).
 The six kinds (discussion §5.2):
 
 - ``secret``: the 0.1 leak scan's token shapes and private-key header, unchanged, and a
-  curated set of distinctive-prefix rules (:data:`SECRET_RULES`). Tokens wrapped across
-  lines are found too. There is no generic-entropy rule: its precision is too low to
-  divert on (research §5.2).
-- ``canary``: a ``canary_terms`` entry anywhere after normalisation, even inside a word.
+  curated set of distinctive-prefix rules (:data:`SECRET_RULES`). A token split by line
+  breaks, invisible characters, emphasis marks or HTML markup is found too. There is no
+  generic-entropy rule: its precision is too low to divert on (research §5.2).
+- ``canary``: a ``canary_terms`` entry anywhere after normalisation, even inside a word or
+  percent-encoded.
 - ``vocabulary``: a term of ``disclosure["vocabulary"]`` whose entity is not a person, as
   a whole word after normalisation.
 - ``third_party``: the same for a person's term (entity ``person:<id>``), unless that person
   is a reader, one of ``disclosure["people"]``. A reader is never a third party.
-- ``exfiltration``: inline, reference-style, HTML and autolinked URLs and images whose
-  host is not in ``allowlist`` (a host or any of its subdomains); base64 runs of
-  :data:`MIN_BASE64_RUN` characters and hex runs of :data:`MIN_HEX_RUN`; invisible
-  characters, except where emoji, flags, bidirectional text or joining scripts need
-  them; private, loopback, shared and link-local addresses; local paths and ``.env``
-  files (the 0.1 path patterns).
+- ``exfiltration``: link and image destinations whose host is not in ``allowlist`` (a host
+  or any of its subdomains), read as a browser reads them (Markdown inline and reference
+  links and images, HTML attributes, autolinks and bare URLs); base64 runs, wrapped or not,
+  and hex runs; invisible characters, except where emoji, the three subdivision flags,
+  joining scripts or right-to-left text need them; private, loopback, shared and
+  link-local addresses; local paths and ``.env`` files (the 0.1 path patterns).
 - ``personal``: a ``personal_terms`` entry as a whole word after normalisation, and any
   email address (the 0.1 pattern).
 
+**Two readings.** Terms and secrets are looked for in the message as written and, when it
+holds markup, as a Markdown or HTML reader sees it (:func:`render`): tags, comments and
+backslash escapes removed, character references and percent-escapes decoded. A finding
+in either reading counts, so a plain-text reader and a rendering one are both covered.
+
 **Normalisation** (:func:`normalise`, research §5.5) folds each character by
 compatibility decomposition (NFKD, so full-width and other compatibility forms fold as
-NFKC folds them) and case folding, drops combining marks (so an added accent does not
-hide a term), maps a small set of Cyrillic, Greek and Latin letters that look like ASCII
-letters to them, and removes invisible format characters and separators (whitespace,
-hyphens and dashes, underscores and dots). An offset map sends every normalised character
-back to the character of the message it came from, so a finding's positions cover the
-text as written. Whole-word matching is judged against the message: a match must not
-continue a word on either side, looking past invisible characters and marks.
+NFKC folds them), maps confusable letters to the ASCII letter they imitate (Unicode's
+confusables data, plus the small capitals and Cyrillic and Greek shapes it does not map),
+case-folds, drops combining marks, and removes invisible characters, separators
+(whitespace, dashes and minus signs, underscores, dots) and the Markdown marks ``*``,
+``~``, backtick and backslash. An offset map sends every normalised character back to the
+characters of the message it came from, so a finding covers the text as written.
 
-**Fingerprints** are HMAC-SHA256 over the normalised value (the value itself when
-normalisation leaves nothing, as for invisible characters), keyed by
-:func:`fingerprint_key`: 32 random bytes in ``<state_dir>/fingerprint.key``, created on
-first use with owner-only permissions. The key is read only when there is a finding.
+**Whole words.** A term matches when it neither continues a word on either side (judged on
+the message, past invisible characters and marks) nor spans a word break the term does
+not have: ``He-ron`` and ``H e r o n`` are "Heron", ``on a`` is not "Ona". Canary terms
+match anywhere.
+
+**Fingerprints** are HMAC-SHA256, keyed by :func:`fingerprint_key` (32 random bytes in
+``<state_dir>/fingerprint.key``, created on first use, owner-only), over the value as a
+reader sees it: normalised for the kinds that match terms and addresses (``canary``,
+``vocabulary``, ``third_party``, ``personal``), so every disguise of a term correlates;
+exact for ``secret`` and ``exfiltration``, which are case-sensitive, with only line
+breaks, invisible characters, emphasis marks and markup removed. The value itself is used
+when that leaves nothing. The key is read only when there is a finding.
 
 **Severity** (discussion §5.2): ``secret`` and ``canary`` 5; ``exfiltration`` 4; a term
 sealed from one of the readers 4; a term labelled above the readers' least clearance
@@ -56,27 +69,33 @@ module imports neither acquaint nor correspond: ``disclosure`` is the JSON of
 **Sources.** The secret rules after the six 0.1 shapes and the private-key header adapt
 the regular expressions of the rules with the same or similar ids in gitleaks' default
 configuration (``config/gitleaks.toml``, MIT licence, copyright (c) 2019 Zachary Rice;
-the notice is reproduced beside :data:`SECRET_RULES`). Capturing and trailing-terminator
+the notice is reproduced beside :data:`SECRET_RULES`): capturing and trailing-terminator
 groups are dropped, since the scan adds its own word boundary, unescaped dots are
-escaped and unbounded repetitions are bounded. No rule comes from a share-alike source.
-The confusable letters are a hand-picked subset of those Unicode's confusables data
-(UTS #39, Unicode License v3) maps to ASCII letters.
+escaped and unbounded repetitions are bounded. ``data/confusables.json`` is a selection
+of Unicode's confusables data (UTS #39, Unicode License v3; the notice travels in the
+file), regenerated by ``misc/scripts/make_confusables.py``. No rule or table comes from a
+share-alike source.
 """
 
 from __future__ import annotations
 
 import hmac
+import html
 import ipaddress
+import json
 import os
 import re
 import secrets
+import tempfile
 import unicodedata
 from array import array
 from bisect import bisect_right
 from collections.abc import Callable, Iterable, Iterator, Mapping
+from contextlib import suppress
 from dataclasses import dataclass, field
 from functools import cached_property, lru_cache
 from hashlib import sha256
+from importlib import resources
 from itertools import chain as chain_iterables
 from itertools import compress, repeat
 from pathlib import Path
@@ -85,6 +104,8 @@ from urllib.parse import unquote
 
 #: The kinds a finding can have, in the order :data:`DFLT_DETECTORS` looks for them.
 KINDS = ("secret", "canary", "vocabulary", "exfiltration", "personal", "third_party")
+#: The kinds whose fingerprint is taken over the normalised value.
+FOLDED_KINDS = frozenset({"canary", "vocabulary", "third_party", "personal"})
 #: Traffic-light labels, least restrictive first (discussion decision 3).
 LABELS = ("clear", "green", "amber", "red")
 #: The label of a vocabulary entry that has none: amber for a project or an organisation,
@@ -108,14 +129,20 @@ SEVERITY_NARROW_AUDIENCE = 1
 DFLT_STATE_DIR = Path("~/.local/share/liaise")
 DFLT_KEY_FILE = "fingerprint.key"
 DFLT_KEY_BYTES = 32
-KEY_FILE_MODE = 0o600
 STATE_DIR_MODE = 0o700
 
 #: The shortest base64 run that is a finding: 75 bytes of data.
 MIN_BASE64_RUN = 100
+#: The shortest line of a wrapped base64 block (PEM wraps at 64, MIME at 76).
+MIN_WRAPPED_BASE64_LINE = 60
 #: The shortest hex run that is a finding: longer than a SHA-512 digest, so digests and
 #: commit hashes quoted in a message are not findings.
 MIN_HEX_RUN = 129
+#: How much of a link destination is read for its host.
+MAX_DESTINATION = 2048
+
+#: The package data file of confusable characters.
+CONFUSABLES_RESOURCE = "confusables.json"
 
 # ---- the 0.1 leak-scan patterns (liaise.gate reads them from here) ----
 
@@ -138,6 +165,15 @@ TOKEN_RULES = (
     "aws-access-key",
     "hugging-face-token",
     "slack-token",
+)
+#: The literals every match of each of :data:`TOKEN_SHAPES` contains, in order.
+TOKEN_LITERALS = (
+    ("ghp_", "gho_", "ghu_", "ghs_", "ghr_"),
+    ("github_pat_",),
+    ("sk-",),
+    ("AKIA",),
+    ("hf_",),
+    ("xoxb-", "xoxa-", "xoxp-", "xoxr-", "xoxs-"),
 )
 #: The most characters an email address's local part holds (RFC 5321), a DNS label
 #: holds, and labels a domain name holds.
@@ -189,7 +225,7 @@ class Finding:
 
     ``start`` and ``end`` are offsets into the message as written. ``entity``, ``label``
     and ``sealed_from`` are set for terms from the disclosure. ``rule`` names the pattern
-    or check that matched; ``fingerprint`` is the keyed HMAC of the normalised value.
+    or check that matched; ``fingerprint`` is the keyed HMAC of the value.
     """
 
     kind: str
@@ -221,32 +257,32 @@ class FingerprintKeyError(Exception):
     """The fingerprint key file exists but cannot be used."""
 
 
-# ---- normalisation ----
+# ---- characters ----
 
 #: Invisible format characters (every character of general category ``Cf``) and the other
 #: default-ignorable characters that render as nothing: the combining grapheme joiner,
 #: Hangul fillers, Khmer inherent vowels, Mongolian variation selectors and the variation
 #: selectors. ``test_detect`` checks that every ``Cf`` character is here.
 _INVISIBLE_RANGES = (
-    ("­", "­"),
-    ("͏", "͏"),
-    ("؀", "؅"),
-    ("؜", "؜"),
-    ("۝", "۝"),
-    ("܏", "܏"),
-    ("࢐", "࢑"),
-    ("࣢", "࣢"),
-    ("ᅟ", "ᅠ"),
-    ("឴", "឵"),
-    ("᠋", "᠏"),
-    ("​", "‏"),
-    ("‪", "‮"),
-    ("⁠", "⁯"),
-    ("ㅤ", "ㅤ"),
-    ("︀", "️"),
-    ("﻿", "﻿"),
-    ("ﾠ", "ﾠ"),
-    ("￹", "￻"),
+    ("\u00ad", "\u00ad"),
+    ("\u034f", "\u034f"),
+    ("\u0600", "\u0605"),
+    ("\u061c", "\u061c"),
+    ("\u06dd", "\u06dd"),
+    ("\u070f", "\u070f"),
+    ("\u0890", "\u0891"),
+    ("\u08e2", "\u08e2"),
+    ("\u115f", "\u1160"),
+    ("\u17b4", "\u17b5"),
+    ("\u180b", "\u180f"),
+    ("\u200b", "\u200f"),
+    ("\u202a", "\u202e"),
+    ("\u2060", "\u206f"),
+    ("\u3164", "\u3164"),
+    ("\ufe00", "\ufe0f"),
+    ("\ufeff", "\ufeff"),
+    ("\uffa0", "\uffa0"),
+    ("\ufff9", "\ufffb"),
     ("\U000110bd", "\U000110bd"),
     ("\U000110cd", "\U000110cd"),
     ("\U00013430", "\U0001343f"),
@@ -264,21 +300,37 @@ _INVISIBLE_RUN = re.compile(f"[{_INVISIBLE_CLASS}]+")
 #: Combining marks, dropped by normalisation. Spacing marks (``Mc``) carry a syllable's
 #: sound in many scripts and are kept.
 _MARK_CATEGORIES = frozenset({"Mn", "Me"})
-#: Separators besides whitespace, dash punctuation and connector punctuation: the dots.
-_DOTS = frozenset(".·․‧・．･")
+#: Separators besides whitespace, dash punctuation and connector punctuation: dots,
+#: minus signs and hyphen-like symbols, and the Markdown marks that disappear when rendered.
 _SEPARATOR_CATEGORIES = frozenset({"Pd", "Pc"})
-#: Letters that render like an ASCII letter, as they are after case folding.
-_CONFUSABLES = {
-    # Cyrillic
-    "а": "a", "в": "b", "е": "e", "һ": "h", "н": "h", "і": "i", "ј": "j", "к": "k",
-    "ӏ": "l", "м": "m", "о": "o", "р": "p", "ԛ": "q", "ѕ": "s", "т": "t", "ԝ": "w",
-    "х": "x", "у": "y", "ү": "y", "ԁ": "d", "с": "c",
-    # Greek
-    "α": "a", "β": "b", "ε": "e", "ι": "i", "κ": "k", "ο": "o", "ρ": "p", "τ": "t",
-    "χ": "x", "ζ": "z",
-    # Latin and Armenian
-    "ı": "i", "ȷ": "j", "ɑ": "a", "ɡ": "g", "ɩ": "i", "օ": "o", "ս": "u",
+_OTHER_SEPARATORS = frozenset(
+    ".\u00b7\u2024\u2027\u30fb\uff0e\uff65"  # dots
+    "\u2212\u2043\u02d7\u2796"  # minus signs and hyphen-like symbols
+    "*~`\\"  # Markdown emphasis, strikethrough, code and escape marks
+)
+#: Letters Unicode's confusables data does not map to ASCII that still read as an ASCII
+#: letter: small capitals, and Cyrillic and Greek small letters shaped like one.
+_LOOKALIKES = {
+    "ᴀ": "a", "ʙ": "b", "ᴄ": "c", "ᴅ": "d", "ᴇ": "e", "ꜰ": "f", "ɢ": "g", "ʜ": "h",
+    "ɪ": "i", "ᴊ": "j", "ᴋ": "k", "ʟ": "l", "ᴍ": "m", "ɴ": "n", "ᴏ": "o", "ᴘ": "p",
+    "ʀ": "r", "ꜱ": "s", "ᴛ": "t", "ᴜ": "u", "ᴠ": "v", "ᴡ": "w", "ʏ": "y", "ᴢ": "z",
+    "в": "b", "к": "k", "м": "m", "н": "h", "т": "t", "η": "n", "ε": "e",
 }  # fmt: skip
+
+
+@lru_cache(maxsize=None)
+def _prototypes() -> dict[str, str]:
+    """``{character: the ASCII letter or digit it imitates}``, from the package data."""
+    data = resources.files("liaise.data").joinpath(CONFUSABLES_RESOURCE)
+    record = json.loads(data.read_text(encoding="utf-8"))
+    table = {
+        source: prototype
+        for prototype, sources in record["prototypes"].items()
+        for source in sources
+    }
+    for char, prototype in _LOOKALIKES.items():
+        table.setdefault(char, prototype)
+    return table
 
 
 @lru_cache(maxsize=None)
@@ -296,18 +348,140 @@ def _vanishes(char: str) -> bool:
     return (
         _is_transparent(char)
         or char.isspace()
-        or char in _DOTS
+        or char in _OTHER_SEPARATORS
         or unicodedata.category(char) in _SEPARATOR_CATEGORIES
     )
 
 
 @lru_cache(maxsize=None)
 def _fold(char: str) -> str:
-    """What one character contributes to the normalised text: nothing, or its folded form."""
-    decomposed = unicodedata.normalize(
-        "NFKD", unicodedata.normalize("NFKD", char).casefold()
-    )
-    return "".join(_CONFUSABLES.get(c, c) for c in decomposed if not _vanishes(c))
+    """What one character contributes to the normalised text: nothing, or its folded form.
+
+    Confusables are mapped before case folding, since a capital and its small letter can
+    imitate different letters (Greek capital eta is H, small eta is n), and again after.
+    """
+    prototypes = _prototypes()
+    decomposed = unicodedata.normalize("NFKD", char)
+    mapped = "".join(prototypes.get(c, c) for c in decomposed)
+    folded = unicodedata.normalize("NFKD", mapped.casefold())
+    return "".join(prototypes.get(c, c) for c in folded if not _vanishes(c))
+
+
+# ---- views ----
+
+
+@dataclass(frozen=True)
+class View:
+    """``text`` derived from ``source``, and where each of its characters came from.
+
+    ``text[i]`` came from ``source[start_of(i):end_of(i)]``. ``origins`` is None when
+    ``text`` is ``source``; ``ends`` is None when each character came from one character.
+    """
+
+    source: str
+    text: str
+    origins: Optional[array] = None
+    ends: Optional[array] = None
+
+    def start_of(self, index: int) -> int:
+        """Where the source of ``text[index]`` starts."""
+        return index if self.origins is None else self.origins[index]
+
+    def end_of(self, index: int) -> int:
+        """Where the source of ``text[index]`` ends."""
+        return self.ends[index] if self.ends is not None else self.start_of(index) + 1
+
+    def source_span(self, start: int, end: int) -> tuple[int, int]:
+        """The span of ``source`` that ``text[start:end]`` came from."""
+        return self.start_of(start), self.end_of(end - 1)
+
+    def derive(self, text: str, origins: array, ends: Optional[array] = None) -> "View":
+        """A view of ``text``, whose characters came from this view's text at ``origins``
+        (to ``ends``, or one character each), mapped back to this view's source."""
+        if self.origins is None and self.ends is None:
+            return View(self.source, text, origins, ends)
+        lasts = origins if ends is None else array("q", map((-1).__add__, ends))
+        if self.origins is None:
+            starts = origins
+        else:
+            starts = array("q", map(self.origins.__getitem__, origins))
+        if self.ends is not None:
+            stops = array("q", map(self.ends.__getitem__, lasts))
+        elif self.origins is not None:
+            stops = array("q", map((1).__add__, map(self.origins.__getitem__, lasts)))
+        else:
+            stops = array("q", map((1).__add__, lasts))
+        return View(self.source, text, starts, stops)
+
+
+def _view_of(text: str) -> View:
+    return View(text, text)
+
+
+def _without(view: View, pattern: re.Pattern) -> View:
+    """``view`` with every match of ``pattern`` removed from its text."""
+    text, pieces, origins, position = view.text, [], array("q"), 0
+    for match in pattern.finditer(text):
+        pieces.append(text[position : match.start()])
+        origins.extend(range(position, match.start()))
+        position = match.end()
+    pieces.append(text[position:])
+    origins.extend(range(position, len(text)))
+    return view.derive("".join(pieces), origins)
+
+
+#: What rendering Markdown or HTML removes (a comment, a tag, a backslash escape) or
+#: decodes (a character reference, a run of percent-escapes).
+_MARKUP = re.compile(
+    r"(?P<drop><!--[^<]{0,4096}?-->|</?[A-Za-z][^<>]{0,1024}>|\\(?=[!-/:-@\[-`{-~]))"
+    r"|(?P<decode>&(?:#[0-9]{1,7}|#[xX][0-9A-Fa-f]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});"
+    r"|(?:%[0-9A-Fa-f]{2}){1,64})"
+)
+_MARKUP_CHARS = "<&%\\"
+
+
+def _decoded(token: str) -> str:
+    if token.startswith("&"):
+        return html.unescape(token)
+    try:
+        return unquote(token, errors="strict")
+    except UnicodeDecodeError:
+        return token
+
+
+def render(text: str) -> Optional[View]:
+    """``text`` as a Markdown or HTML reader sees it, or None when rendering changes nothing.
+
+    Comments, tags and backslash escapes are removed; character references and
+    percent-escapes are decoded.
+
+    >>> render("He<b></b>r&#111;n%21").text
+    'Heron!'
+    """
+    if not any(char in text for char in _MARKUP_CHARS):
+        return None
+    pieces, origins, ends, position = [], array("q"), array("q"), 0
+    for match in _MARKUP.finditer(text):
+        token = match.group()
+        replacement = "" if match.lastgroup == "drop" else _decoded(token)
+        if replacement == token:
+            continue
+        pieces.append(text[position : match.start()])
+        origins.extend(range(position, match.start()))
+        ends.extend(range(position + 1, match.start() + 1))
+        pieces.append(replacement)
+        origins.extend(repeat(match.start(), len(replacement)))
+        ends.extend(repeat(match.end(), len(replacement)))
+        position = match.end()
+    if not position:
+        return None
+    pieces.append(text[position:])
+    origins.extend(range(position, len(text)))
+    ends.extend(range(position + 1, len(text) + 1))
+    return View(text, "".join(pieces), origins, ends)
+
+
+# ---- normalisation ----
 
 
 def _alnum_beside(source: str, index: int, step: int) -> bool:
@@ -318,68 +492,106 @@ def _alnum_beside(source: str, index: int, step: int) -> bool:
     return 0 <= index < len(source) and source[index].isalnum()
 
 
-@dataclass(frozen=True)
-class Normalised:
-    """A message folded for matching (``text``), and where each character came from.
+def _has_visible_space(gap: str) -> bool:
+    rendered = render(gap)
+    return any(map(str.isspace, rendered.text if rendered else gap))
 
-    ``origins[i]`` is the index in ``source`` of the character ``text[i]`` came from.
+
+@dataclass(frozen=True)
+class FoldedTerm:
+    """A term as normalisation folds it, and where its own words break.
+
+    ``breaks`` holds each index ``k`` of ``text`` such that the term had a separator
+    between ``text[k - 1]`` and ``text[k]``. ``lead`` and ``trail`` are the characters the
+    term starts and ends with that folding drops (the ``~`` of ``~/notes``); a match
+    covers them too when the message has them.
     """
 
-    source: str
     text: str
-    origins: array
+    breaks: frozenset[int]
+    lead: str = ""
+    trail: str = ""
 
-    def spans(self, term: str, *, whole_word: bool = True) -> Iterator[tuple[int, int]]:
-        """Where the normalised ``term`` occurs, as ``(start, end)`` in ``source``.
 
-        With ``whole_word``, a match must not continue a word of the message on either
-        side. Occurrences of the same term do not overlap.
+@dataclass(frozen=True)
+class Normalised(View):
+    """A view of a message folded for matching terms."""
+
+    def spans(
+        self, term: FoldedTerm, *, whole_word: bool = True
+    ) -> Iterator[tuple[int, int]]:
+        """Where ``term`` occurs, as ``(start, end)`` in ``source``.
+
+        With ``whole_word``, a match must not continue a word of the message on either side,
+        and must not span a word break the term does not have, unless every letter of it is
+        spaced apart. Occurrences of the same term do not overlap.
         """
-        if not term:
+        if not term.text:
             return
-        index = self.text.find(term)
+        index = self.text.find(term.text)
         while index >= 0:
-            end = index + len(term)
-            if not whole_word or (self._starts_word(index) and self._ends_word(end)):
-                yield self._source_span(index, end)
-                index = self.text.find(term, end)
+            end = index + len(term.text)
+            if not whole_word or self._is_word(term, index, end):
+                yield self._covering_span(term, index, end)
+                index = self.text.find(term.text, end)
             else:
-                index = self.text.find(term, index + 1)
+                index = self.text.find(term.text, index + 1)
+
+    def _is_word(self, term: FoldedTerm, index: int, end: int) -> bool:
+        return (
+            self._starts_word(index)
+            and self._ends_word(end)
+            and self._joined_as(term, index, end)
+        )
 
     def _starts_word(self, index: int) -> bool:
         if not self.text[index].isalnum():
             return True
-        if index and self.origins[index - 1] == self.origins[index]:
+        if index and self.end_of(index - 1) > self.start_of(index):
             return not self.text[index - 1].isalnum()  # inside one folded character
-        return not _alnum_beside(self.source, self.origins[index] - 1, -1)
+        return not _alnum_beside(self.source, self.start_of(index) - 1, -1)
 
     def _ends_word(self, end: int) -> bool:
         if not self.text[end - 1].isalnum():
             return True
-        if end < len(self.text) and self.origins[end] == self.origins[end - 1]:
+        if end < len(self.text) and self.end_of(end - 1) > self.start_of(end):
             return not self.text[end].isalnum()
-        return not _alnum_beside(self.source, self.origins[end - 1] + 1, 1)
+        return not _alnum_beside(self.source, self.end_of(end - 1), 1)
 
-    def _source_span(self, index: int, end: int) -> tuple[int, int]:
-        stop = self.origins[end - 1] + 1
-        while stop < len(self.source) and (
-            unicodedata.category(self.source[stop]) in _MARK_CATEGORIES
+    def _joined_as(self, term: FoldedTerm, index: int, end: int) -> bool:
+        """Whether the characters of a match are joined as the term's are: space between
+        them only where the term breaks, or between every letter."""
+        spaced = joined = False
+        for offset in range(1, end - index):
+            if offset in term.breaks:
+                continue
+            left, right = self.end_of(index + offset - 1), self.start_of(index + offset)
+            if left > right:
+                continue  # one character of the message folded to several
+            if _has_visible_space(self.source[left:right]):
+                spaced = True
+            else:
+                joined = True
+            if spaced and joined:
+                return False
+        return True
+
+    def _covering_span(self, term: FoldedTerm, index: int, end: int) -> tuple[int, int]:
+        """The span of a match, with its trailing marks and the term's dropped lead and
+        trail where the message has them."""
+        source = self.source
+        start, stop = self.source_span(index, end)
+        while (
+            stop < len(source)
+            and unicodedata.category(source[stop]) in _MARK_CATEGORIES
         ):
             stop += 1
-        return self.origins[index], stop
-
-
-def normalise(text: str) -> Normalised:
-    """Fold ``text`` for matching, keeping where each folded character came from.
-
-    >>> folded = normalise("Ｈｅ\\u200b-Ron!")
-    >>> folded.text
-    'heron!'
-    >>> list(folded.spans("heron"))
-    [(0, 7)]
-    """
-    folded, origins = (_fold_ascii if text.isascii() else _fold_characters)(text)
-    return Normalised(source=text, text=folded, origins=origins)
+        lead, trail = term.lead.casefold(), term.trail.casefold()
+        if lead and source[max(0, start - len(lead)) : start].casefold() == lead:
+            start -= len(lead)
+        if trail and source[stop : stop + len(trail)].casefold() == trail:
+            stop += len(trail)
+        return start, stop
 
 
 #: Folding an ASCII character lowers its case or drops it: which of the 128 are kept, and
@@ -405,6 +617,59 @@ def _fold_ascii(text: str) -> tuple[str, array]:
     return text.lower().translate(_ASCII_VANISHING), origins
 
 
+def _folded(view: View) -> Normalised:
+    folded, origins = (_fold_ascii if view.text.isascii() else _fold_characters)(
+        view.text
+    )
+    derived = view.derive(folded, origins)
+    return Normalised(derived.source, derived.text, derived.origins, derived.ends)
+
+
+def normalise(text: str) -> Normalised:
+    """Fold ``text`` for matching, keeping where each folded character came from.
+
+    >>> folded = normalise("Ｈｅ\\u200b-Ron!")
+    >>> folded.text
+    'heron!'
+    >>> list(folded.spans(fold_term("Heron")))
+    [(0, 7)]
+    """
+    return _folded(_view_of(text))
+
+
+def fold_term(term: str) -> FoldedTerm:
+    """``term`` folded as :func:`normalise` folds a message, with its word breaks."""
+    folded = normalise(term)
+    if not folded.text:
+        return FoldedTerm("", frozenset())
+    breaks = frozenset(
+        offset
+        for offset in range(1, len(folded.text))
+        if any(
+            not _is_transparent(char)
+            for char in term[folded.end_of(offset - 1) : folded.start_of(offset)]
+        )
+    )
+    lead = term[: folded.start_of(0)]
+    trail = term[folded.end_of(len(folded.text) - 1) :]
+    return FoldedTerm(folded.text, breaks, lead, trail)
+
+
+def _folded_value(value: str) -> str:
+    rendered = render(value)
+    return "".join(map(_fold, rendered.text if rendered else value))
+
+
+#: What does not change a secret as a reader sees it: line breaks, invisible characters,
+#: and the Markdown emphasis, strikethrough and code marks.
+_STRIPPABLE = re.compile(f"[\\r\\n*~`{_INVISIBLE_CLASS}]+")
+
+
+def _stripped_value(value: str) -> str:
+    rendered = render(value)
+    return _STRIPPABLE.sub("", rendered.text if rendered else value)
+
+
 # ---- fingerprint key ----
 
 
@@ -418,6 +683,32 @@ def _configured_state_dir() -> Path:
         return DFLT_STATE_DIR.expanduser()
 
 
+def _create_key_file(path: Path, key_bytes: int) -> Optional[bytes]:
+    """Write a new key to ``path`` atomically: None when another process wrote it first.
+
+    The key is written in full to an owner-only temporary file, which is then linked (or,
+    on Windows, renamed) into place; neither replaces an existing file.
+    """
+    descriptor, temporary = tempfile.mkstemp(
+        dir=path.parent, prefix=".fingerprint-", suffix=".tmp"
+    )
+    try:
+        key = secrets.token_bytes(key_bytes)
+        with os.fdopen(descriptor, "wb") as file:
+            file.write(key)
+            file.flush()
+            os.fsync(file.fileno())
+        place = os.link if os.name == "posix" else os.rename
+        try:
+            place(temporary, path)
+        except FileExistsError:
+            return None
+        return key
+    finally:
+        with suppress(FileNotFoundError):
+            os.unlink(temporary)
+
+
 def fingerprint_key(
     state_dir: Union[str, os.PathLike, None] = None,
     *,
@@ -427,34 +718,29 @@ def fingerprint_key(
     """The fingerprint key in ``<state_dir>/<key_file>``, created on first use.
 
     ``state_dir`` defaults to the liaise config's, else :data:`DFLT_STATE_DIR`. A new key
-    is ``key_bytes`` random bytes in a file only its owner can read (the directory is
-    created owner-only too). An existing file shorter than ``key_bytes`` raises
-    :class:`FingerprintKeyError`: replacing it would silently change every fingerprint.
+    is ``key_bytes`` random bytes in a file only its owner can read, put in place
+    atomically, so processes racing to create it all read the same key. A directory
+    created here is owner-only. An existing file shorter than ``key_bytes`` raises
+    :class:`FingerprintKeyError`.
     """
     directory = (
         Path(state_dir).expanduser()
         if state_dir is not None
         else _configured_state_dir()
     )
-    path = directory / key_file
     directory.mkdir(parents=True, exist_ok=True, mode=STATE_DIR_MODE)
-    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
-    try:
-        descriptor = os.open(path, flags, KEY_FILE_MODE)
-    except FileExistsError:
-        key = path.read_bytes()
-        if len(key) < key_bytes:
-            raise FingerprintKeyError(
-                f"the fingerprint key in {path} holds {len(key)} bytes, fewer than "
-                f"{key_bytes}. Remove the file to create a new key; fingerprints recorded "
-                "with the old key will no longer match new ones."
-            ) from None
-        return key
-    key = secrets.token_bytes(key_bytes)
-    with os.fdopen(descriptor, "wb") as file:
-        file.write(key)
-        file.flush()
-        os.fsync(file.fileno())
+    path = directory / key_file
+    if not path.exists():
+        created = _create_key_file(path, key_bytes)
+        if created is not None:
+            return created
+    key = path.read_bytes()
+    if len(key) < key_bytes:
+        raise FingerprintKeyError(
+            f"the fingerprint key in {path} holds {len(key)} bytes, fewer than "
+            f"{key_bytes}: it was not written by liaise. Replacing it changes every "
+            "fingerprint, so repeats recorded before will no longer correlate."
+        )
     return key
 
 
@@ -491,9 +777,15 @@ class Scan:
     key: Union[bytes, Callable[[], bytes]] = fingerprint_key
 
     @cached_property
-    def normalised(self) -> Normalised:
-        """The message, folded for matching terms."""
-        return normalise(self.text)
+    def rendered(self) -> Optional[View]:
+        """The message as a Markdown or HTML reader sees it, when that differs."""
+        return render(self.text)
+
+    @cached_property
+    def normalised(self) -> tuple[Normalised, ...]:
+        """The readings of the message folded for matching terms: as written, and rendered."""
+        readings = (_view_of(self.text), self.rendered)
+        return tuple(_folded(reading) for reading in readings if reading is not None)
 
     @cached_property
     def readers(self) -> frozenset[str]:
@@ -525,24 +817,42 @@ class Scan:
 
     def allows(self, host: str) -> bool:
         """Whether ``host`` is an allowlisted host or a subdomain of one."""
-        return any(
+        return bool(host) and any(
             host == allowed or host.endswith("." + allowed)
             for allowed in self._allowed_hosts
         )
 
+    def spans(
+        self, term: FoldedTerm, *, whole_word: bool = True
+    ) -> list[tuple[int, int]]:
+        """Where ``term`` occurs in any reading of the message, in order."""
+        found = {
+            span
+            for reading in self.normalised
+            for span in reading.spans(term, whole_word=whole_word)
+        }
+        return sorted(found)
+
     @cached_property
-    def _fingerprints(self) -> dict[str, str]:
+    def _fingerprints(self) -> dict[tuple[bool, bool, str], str]:
         return {}
 
-    def fingerprint(self, start: int, end: int) -> str:
-        """The keyed fingerprint of ``text[start:end]``, normalised."""
-        value = self.text[start:end]
-        folded = "".join(map(_fold, value)) or value
-        if folded not in self._fingerprints:
-            message = folded.encode("utf-8", "surrogatepass")
+    def fingerprint(
+        self, start: int, end: int, *, fold: bool, material: Optional[str] = None
+    ) -> str:
+        """The keyed fingerprint of ``text[start:end]``: normalised with ``fold``, else as
+        a reader sees it; or of ``material`` exactly, when a check names what it found."""
+        exact = material is not None
+        value = material if exact else self.text[start:end]
+        if (fold, exact, value) not in self._fingerprints:
+            if exact:
+                hashed = value
+            else:
+                hashed = (_folded_value if fold else _stripped_value)(value) or value
+            message = hashed.encode("utf-8", "surrogatepass")
             digest = hmac.new(self._key, message, sha256).hexdigest()
-            self._fingerprints[folded] = digest
-        return self._fingerprints[folded]
+            self._fingerprints[fold, exact, value] = digest
+        return self._fingerprints[fold, exact, value]
 
     def finding(
         self,
@@ -555,8 +865,11 @@ class Scan:
         entity: Optional[str] = None,
         label: Optional[str] = None,
         sealed_from: tuple[str, ...] = (),
+        material: Optional[str] = None,
     ) -> Finding:
-        """A :class:`Finding` for ``text[start:end]``, fingerprinted."""
+        """A :class:`Finding` for ``text[start:end]``, fingerprinted as its kind says, or
+        over ``material`` when given."""
+        fold = kind in FOLDED_KINDS
         return Finding(
             kind=kind,
             start=start,
@@ -566,17 +879,12 @@ class Scan:
             sealed_from=sealed_from,
             rule=rule,
             severity=severity,
-            fingerprint=self.fingerprint(start, end),
+            fingerprint=self.fingerprint(start, end, fold=fold, material=material),
         )
 
 
 #: ``(scan) -> findings``: one detector, or one check within a detector.
 Detector = Callable[[Scan], Iterable[Finding]]
-
-
-def _holds_a_literal(text: str, literals: tuple[str, ...]) -> bool:
-    """Whether ``text`` holds one of ``literals``; true when there are none to require."""
-    return not literals or any(literal in text for literal in literals)
 
 
 def chain(*detectors: Detector, name: str = "chained") -> Detector:
@@ -590,6 +898,16 @@ def chain(*detectors: Detector, name: str = "chained") -> Detector:
     return chained
 
 
+def _holds_a_literal(
+    text: str, literals: tuple[str, ...], *, ignore_case: bool = False
+) -> bool:
+    """Whether ``text`` holds one of ``literals``; true when there are none to require."""
+    if not literals:
+        return True
+    haystack = text.casefold() if ignore_case else text
+    return any(literal in haystack for literal in literals)
+
+
 # ---- secret ----
 
 
@@ -597,16 +915,16 @@ def chain(*detectors: Detector, name: str = "chained") -> Detector:
 class SecretRule:
     """A secret's shape: ``rule`` names it in findings, ``pattern`` is its expression.
 
-    ``word_start``: a match must start a word. ``wrappable``: the rule is also looked for
-    in the message with its line breaks removed, so a token wrapped across lines is found;
-    its word boundary is then checked against the message itself, since removing a line
-    break can glue a word to a token. A wrappable pattern must not fail after an unbounded
-    repetition, or that scan, which has no word boundary to anchor it, turns quadratic.
+    ``literals``: strings one of which every match contains (in case-folded text, with
+    ``ignore_case``). A text holding none is not scanned for the rule, which matters because
+    a pattern that starts at a word boundary cannot use the regular-expression engine's
+    fast search for a literal prefix. Empty: always scanned.
 
-    ``literals``: strings one of which every match contains. A text holding none of them
-    is not scanned for the rule, which matters because a pattern that starts at a word
-    boundary cannot use the regular-expression engine's fast search for a literal prefix.
-    Empty: always scanned.
+    ``word_start``: a match must start a word. ``wrappable``: the rule is also looked for in
+    the message with line breaks, invisible characters and emphasis marks removed, so a
+    token split by them is found; its word boundary is then checked against the message.
+    A wrappable pattern must not fail after an unbounded repetition, or that scan, which
+    has no word boundary to anchor it, turns quadratic.
     """
 
     rule: str
@@ -614,10 +932,11 @@ class SecretRule:
     literals: tuple[str, ...] = ()
     word_start: bool = True
     wrappable: bool = True
+    ignore_case: bool = False
 
     def may_match(self, text: str) -> bool:
         """Whether ``text`` holds one of :attr:`literals`, or the rule has none."""
-        return _holds_a_literal(text, self.literals)
+        return _holds_a_literal(text, self.literals, ignore_case=self.ignore_case)
 
     @cached_property
     def in_text(self) -> re.Pattern:
@@ -625,8 +944,8 @@ class SecretRule:
         return re.compile(rf"\b{self.pattern}" if self.word_start else self.pattern)
 
     @cached_property
-    def in_unwrapped(self) -> re.Pattern:
-        """The pattern as it is looked for in the message without its line breaks."""
+    def in_stripped(self) -> re.Pattern:
+        """The pattern as it is looked for in the message with the strippable removed."""
         return re.compile(self.pattern)
 
 
@@ -656,20 +975,7 @@ class SecretRule:
 
 #: The secret rules :func:`secret_detector` uses by default: the 0.1 token shapes and
 #: private-key header, then distinctive-prefix rules adapted from gitleaks (the gitleaks id
-#: follows each).
-#: The literals every match of each of :data:`TOKEN_SHAPES` contains, in order.
-TOKEN_LITERALS = (
-    ("ghp_", "gho_", "ghu_", "ghs_", "ghr_"),
-    ("github_pat_",),
-    ("sk-",),
-    ("AKIA",),
-    ("hf_",),
-    ("xoxb-", "xoxa-", "xoxp-", "xoxr-", "xoxs-"),
-)
-
-#: The secret rules :func:`secret_detector` uses by default: the 0.1 token shapes and
-#: private-key header, then distinctive-prefix rules adapted from gitleaks (the gitleaks id
-#: follows each).
+#: precedes each).
 SECRET_RULES: tuple[SecretRule, ...] = (
     *(
         SecretRule(rule, shape, literals)
@@ -687,7 +993,7 @@ SECRET_RULES: tuple[SecretRule, ...] = (
     # gcp-api-key
     SecretRule("google-api-key", r"AIza[\w-]{35}", ("AIza",)),
     # npm-access-token
-    SecretRule("npm-token", r"npm_[A-Za-z0-9]{36}", ("npm_",)),
+    SecretRule("npm-token", r"(?i:npm_[a-z0-9]{36})", ("npm_",), ignore_case=True),
     # pypi-upload-token
     SecretRule(
         "pypi-token", r"pypi-AgEIcHlwaS5vcmc[\w-]{50,1000}", ("pypi-AgEIcHlwaS5vcmc",)
@@ -722,8 +1028,9 @@ SECRET_RULES: tuple[SecretRule, ...] = (
     # slack-app-token
     SecretRule(
         "slack-app-token",
-        r"xapp-\d-[A-Za-z0-9]{1,64}-\d{1,16}-[A-Za-z0-9]{1,128}",
+        r"(?i:xapp-\d-[A-Z0-9]{1,64}-\d{1,16}-[a-z0-9]{1,128})",
         ("xapp-",),
+        ignore_case=True,
     ),
     # doppler-api-token
     SecretRule("doppler-token", r"dp\.pt\.[A-Za-z0-9]{43}", ("dp.pt.",)),
@@ -742,8 +1049,9 @@ SECRET_RULES: tuple[SecretRule, ...] = (
     # grafana-service-account-token
     SecretRule(
         "grafana-service-account-token",
-        r"glsa_[A-Za-z0-9]{32}_[A-Fa-f0-9]{8}",
+        r"(?i:glsa_[a-z0-9]{32}_[a-f0-9]{8})",
         ("glsa_",),
+        ignore_case=True,
     ),
     # perplexity-api-key
     SecretRule("perplexity-api-key", r"pplx-[A-Za-z0-9]{48}", ("pplx-",)),
@@ -759,7 +1067,7 @@ SECRET_RULES: tuple[SecretRule, ...] = (
         r"ops_eyJ[A-Za-z0-9+/]{250,}={0,3}",
         ("ops_eyJ",),
     ),
-    # jwt
+    # jwt; not wrappable: its bounded parts would still make the unanchored scan slow
     SecretRule(
         "jwt",
         r"ey[A-Za-z0-9]{17,4096}\.ey[A-Za-z0-9/\\_-]{17,4096}"
@@ -769,35 +1077,16 @@ SECRET_RULES: tuple[SecretRule, ...] = (
     ),
 )
 
-_LINE_BREAK = re.compile(r"[\r\n]")
 _WORD_CHAR = re.compile(r"\w")
-
-
-@dataclass(frozen=True)
-class _Unwrapped:
-    """A message without its line breaks, and where each removal happened in it."""
-
-    text: str
-    removed_at: tuple[int, ...]
-
-    def source_span(self, start: int, end: int) -> tuple[int, int]:
-        def source(index: int) -> int:
-            return index + bisect_right(self.removed_at, index)
-
-        return source(start), source(end - 1) + 1
-
-
-def _without_line_breaks(text: str) -> _Unwrapped:
-    breaks = (match.start() for match in _LINE_BREAK.finditer(text))
-    removed_at = tuple(position - count for count, position in enumerate(breaks))
-    return _Unwrapped(_LINE_BREAK.sub("", text), removed_at)
 
 
 def secret_detector(rules: Iterable[SecretRule] = SECRET_RULES) -> Detector:
     """A detector of ``rules``: a ``secret`` finding for each match, severity 5.
 
-    A token found both on one line and with the line breaks removed is one finding, as
-    long as the longer of the two matches.
+    Each rule is looked for in the message and, when it holds markup, in its rendering;
+    each wrappable rule also in both with line breaks, invisible characters and emphasis
+    marks removed. A token found in several of these is one finding, as long as the
+    longest match.
     """
     rules = tuple(rules)
 
@@ -808,19 +1097,22 @@ def secret_detector(rules: Iterable[SecretRule] = SECRET_RULES) -> Detector:
         def keep(rule: str, start: int, end: int) -> None:
             ends[rule, start] = max(end, ends.get((rule, start), end))
 
-        for rule in rules:
-            if not rule.may_match(text):
-                continue
-            for match in rule.in_text.finditer(text):
-                keep(rule.rule, match.start(), match.end())
+        readings = [_view_of(text)] + ([scan.rendered] if scan.rendered else [])
+        for reading in readings:
+            for rule in rules:
+                if rule.may_match(reading.text):
+                    for match in rule.in_text.finditer(reading.text):
+                        keep(rule.rule, *reading.source_span(*match.span()))
         wrappable = [rule for rule in rules if rule.wrappable]
-        if wrappable and _LINE_BREAK.search(text):
-            unwrapped = _without_line_breaks(text)
+        for reading in readings:
+            if not wrappable or not _STRIPPABLE.search(reading.text):
+                continue
+            stripped = _without(reading, _STRIPPABLE)
             for rule in wrappable:
-                if not rule.may_match(unwrapped.text):
+                if not rule.may_match(stripped.text):
                     continue
-                for match in rule.in_unwrapped.finditer(unwrapped.text):
-                    start, end = unwrapped.source_span(match.start(), match.end())
+                for match in rule.in_stripped.finditer(stripped.text):
+                    start, end = stripped.source_span(*match.span())
                     if rule.word_start and start and _WORD_CHAR.match(text[start - 1]):
                         continue
                     keep(rule.rule, start, end)
@@ -839,14 +1131,14 @@ def detect_canaries(scan: Scan) -> Iterator[Finding]:
     """A ``canary`` finding, severity 5, wherever a canary term occurs, even inside a word:
     a canary is unique by construction, so a match anywhere is the alarm."""
     for term in scan.canary_terms:
-        for start, end in scan.normalised.spans(normalise(term).text, whole_word=False):
+        for start, end in scan.spans(fold_term(term), whole_word=False):
             yield scan.finding(
                 "canary", start, end, rule="canary-term", severity=SEVERITY_CANARY
             )
 
 
-def _vocabulary_entries(scan: Scan) -> Iterator[tuple[str, Mapping]]:
-    """Each vocabulary entry with a term, and its term normalised."""
+def _vocabulary_entries(scan: Scan) -> Iterator[tuple[FoldedTerm, Mapping]]:
+    """Each vocabulary entry with a term, and its term folded."""
     for index, entry in enumerate(scan.disclosure.get("vocabulary") or ()):
         if not isinstance(entry, Mapping):
             raise TypeError(
@@ -854,8 +1146,8 @@ def _vocabulary_entries(scan: Scan) -> Iterator[tuple[str, Mapping]]:
                 "not a mapping with a 'term'"
             )
         term = entry.get("term")
-        folded = normalise(term).text if isinstance(term, str) else ""
-        if folded:
+        folded = fold_term(term) if isinstance(term, str) else None
+        if folded and folded.text:
             yield folded, entry
 
 
@@ -882,7 +1174,7 @@ def _term_findings(scan: Scan, *, people: bool) -> Iterator[Finding]:
         )
         sealed_from = _ids(entry.get("sealed_from"))
         severity = _term_severity(scan, label, sealed_from)
-        for start, end in scan.normalised.spans(folded):
+        for start, end in scan.spans(folded):
             yield scan.finding(
                 kind,
                 start,
@@ -907,46 +1199,17 @@ def detect_third_parties(scan: Scan) -> Iterator[Finding]:
     return _term_findings(scan, people=True)
 
 
-# ---- exfiltration ----
+# ---- exfiltration: links and images ----
 
-_HOST_END = r"[^\s/\\?#<>\"'`()\[\]{}|^]"
-#: A URL with a scheme and an authority. The authority ends where a browser ends it: a
-#: backslash counts as a slash (WHATWG URL), so ``https://a.example\@b.example`` is a.
-_SCHEME_URL = re.compile(
-    rf"(?<![A-Za-z0-9+.-])[A-Za-z][A-Za-z0-9+.-]{{0,31}}://(?P<authority>{_HOST_END}*)"
-)
-#: A scheme-relative URL (``//host/path``) where it is a destination: an inline link or
-#: image, a reference definition, or an HTML attribute.
-_RELATIVE_DESTINATION = re.compile(
-    r"(?:\]\([ \t]{0,8}<?"
-    r"|^[ \t]{0,3}\[[^\[\]\n]{1,999}\]:[ \t]{0,8}<?"
-    r"|\b(?:src|srcset|href|poster|action|background)[ \t]{0,8}=[ \t]{0,8}[\"']?)"
-    rf"(?P<url>//(?P<authority>{_HOST_END}+))",
-    re.IGNORECASE | re.MULTILINE,
-)
-#: A ``www.`` host without a scheme, which GitHub and many renderers autolink.
-_BARE_WWW = re.compile(
-    r"(?<![\w.@/:-])(?P<authority>www\.[A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63}){1,126})"
-)
-_URL_TAIL = re.compile(r"[^\s<>\"'`]*")
-_URL_TRAILING_PUNCTUATION = ".,:;!?*_~'\")]}"
-#: Where an image's URL starts: after ``![alt](``, or an ``<img>``'s ``src``.
-_INLINE_IMAGE_DESTINATION = re.compile(r"!\[[^\[\]\n]{0,999}\]\([ \t]{0,8}<?")
-_HTML_IMAGE_SOURCE = re.compile(
-    r"<img\b[^<>]{0,999}?\bsrc(?:set)?[ \t]{0,8}=[ \t]{0,8}[\"']?", re.IGNORECASE
-)
-#: A reference-style image (``![alt][label]``, ``![label][]``, ``![label]``), and a
-#: reference definition (``[label]: url``).
-_IMAGE_REFERENCE = re.compile(
-    r"!\[(?P<text>[^\[\]\n]{0,999})\](?:\[(?P<label>[^\[\]\n]{0,999})\])?"
-)
-_REFERENCE_DEFINITION = re.compile(
-    r"^[ \t]{0,3}\[(?P<label>[^\[\]\n]{1,999})\]:[ \t]{0,8}<?", re.MULTILINE
-)
-
-
-def _reference_label(label: str) -> str:
-    return " ".join(label.split()).casefold()
+#: Schemes whose URLs a browser reads with any number of slashes or backslashes before the
+#: host (WHATWG URL's special schemes, less ``file``, which names no remote host).
+_SPECIAL_SCHEMES = frozenset({"http", "https", "ws", "wss", "ftp"})
+_HOSTLESS_SCHEMES = frozenset({"file"})
+_C0_AND_SPACE = "".join(map(chr, range(0x21)))
+_URL_IGNORED = re.compile(r"[\t\n\r]")
+_SCHEME = re.compile(r"([A-Za-z][A-Za-z0-9+.-]{0,31}):")
+_AUTHORITY = re.compile(r"[^/\\?#]*")
+_MARKDOWN_ESCAPE = re.compile(r"\\(?=[!-/:-@\[-`{-~])")
 
 
 def _host(authority: str) -> str:
@@ -959,79 +1222,266 @@ def _host(authority: str) -> str:
     return unquote(host).strip().rstrip(".").lower()
 
 
-def _image_url_starts(text: str) -> set[int]:
-    """Where each URL that an image loads starts: inline, HTML or by reference."""
-    starts = {match.end() for match in _INLINE_IMAGE_DESTINATION.finditer(text)}
-    starts.update(match.end() for match in _HTML_IMAGE_SOURCE.finditer(text))
-    labels = {
-        _reference_label(match.group("label") or match.group("text"))
-        for match in _IMAGE_REFERENCE.finditer(text)
-    }
-    starts.update(
-        match.end()
-        for match in _REFERENCE_DEFINITION.finditer(text)
-        if _reference_label(match.group("label")) in labels
-    )
-    return starts
+def _url_host(url: str) -> Optional[str]:
+    """The host a browser resolves ``url`` to; ``""`` when it has an authority whose host
+    cannot be read; None when it names no host (a relative URL, or a scheme without one)."""
+    scheme = _SCHEME.match(url)
+    if scheme:
+        name, rest = scheme.group(1).lower(), url[scheme.end() :]
+        if name in _HOSTLESS_SCHEMES:
+            return None
+        if name in _SPECIAL_SCHEMES:
+            rest = rest.lstrip("/\\")
+        elif rest.startswith("//"):
+            rest = rest[2:]
+        else:
+            return None
+    elif len(url) > 1 and url[0] in "/\\" and url[1] in "/\\":
+        rest = url.lstrip("/\\")
+    else:
+        return None
+    return _host(_AUTHORITY.match(rest).group())
 
 
-def scan_links(scan: Scan) -> Iterator[Finding]:
-    """An ``exfiltration`` finding for each URL whose host is not allowlisted.
+@lru_cache(maxsize=4096)
+def _destination_hosts(value: str) -> frozenset[str]:
+    """The hosts a link or image destination may resolve to.
 
-    Its rule is ``image-host`` when an image loads it (inline, reference-style or HTML),
-    else ``link-host``. The finding spans the URL; a URL's path stops where the next URL
-    starts, so a run of URLs is scanned once.
+    The value is read as a browser reads it (character references decoded, tabs and line
+    breaks removed, surrounding spaces stripped), both with and without Markdown's
+    backslash escapes applied, since a renderer may or may not apply them.
     """
-    text = scan.text
-    candidates = []  # (start, authority end, authority); each kind only if it can occur
+    url = _URL_IGNORED.sub("", html.unescape(value)).strip(_C0_AND_SPACE)
+    readings = {url, _MARKDOWN_ESCAPE.sub("", url)}
+    return frozenset(host for host in map(_url_host, readings) if host is not None)
+
+
+def _srcset_hosts(value: str) -> frozenset[str]:
+    """The hosts of every candidate of a ``srcset``: comma-separated URLs, each with an
+    optional descriptor."""
+    urls = (candidate.split()[0] for candidate in value.split(",") if candidate.split())
+    return frozenset().union(*map(_destination_hosts, urls))
+
+
+#: A Markdown inline destination starts after ``](``; an image's after ``![...](``.
+_INLINE_DESTINATION = re.compile(r"\]\(")
+_INLINE_IMAGE = re.compile(r"!\[(?:[^\[\]]|\[[^\[\]]{0,999}\]){0,999}\]\(")
+#: A reference definition (``[label]: destination``), and a reference-style image
+#: (``![alt][label]``, ``![label][]``, ``![label]``).
+_REFERENCE_DEFINITION = re.compile(
+    r"^[ \t]{0,3}\[(?P<label>[^\[\]\n]{1,999})\]:", re.MULTILINE
+)
+_IMAGE_REFERENCE = re.compile(
+    r"!\[(?P<text>[^\[\]\n]{0,999})\](?:\[(?P<label>[^\[\]\n]{0,999})\])?"
+)
+#: A Markdown destination: after up to one line break, bracketed or bare.
+_DESTINATION_VALUE = re.compile(
+    rf"[ \t]{{0,8}}(?:\r?\n[ \t]{{0,8}})?"
+    rf"(?:<(?P<bracketed>[^<>\n]{{0,{MAX_DESTINATION}}})"
+    rf"|(?P<bare>[^\s()<>]{{1,{MAX_DESTINATION}}}))"
+)
+#: HTML attributes whose URL loads without a click, and those that link.
+_LOADING_ATTRIBUTES = frozenset(
+    {"src", "srcset", "poster", "background", "data", "lowsrc", "dynsrc"}
+)
+_HTML_ATTRIBUTE = re.compile(
+    r"(?<![\w-])(?P<name>src|srcset|poster|background|data|lowsrc|dynsrc"
+    r"|href|action|formaction)"
+    r"[ \t\r\n]{0,8}=[ \t\r\n]{0,8}"
+    rf"(?:\"(?P<double>[^\"]{{0,{MAX_DESTINATION}}})"
+    rf"|'(?P<single>[^']{{0,{MAX_DESTINATION}}})"
+    rf"|(?P<bare>[^\s\"'=<>`]{{1,{MAX_DESTINATION}}}))",
+    re.IGNORECASE,
+)
+#: A Markdown autolink: ``<scheme:...>``.
+_AUTOLINK = re.compile(
+    rf"<(?P<value>[A-Za-z][A-Za-z0-9+.-]{{1,31}}:[^\s<>]{{0,{MAX_DESTINATION}}})>"
+)
+_HOST_END = r"[^\s/\\?#<>\"'`()\[\]{}|^]"
+#: A URL in plain text, with a scheme and an authority.
+_SCHEME_URL = re.compile(
+    rf"(?<![A-Za-z0-9+.-])[A-Za-z][A-Za-z0-9+.-]{{0,31}}://(?P<authority>{_HOST_END}*)"
+)
+#: A ``www.`` host without a scheme, which GitHub and many renderers autolink.
+_BARE_WWW = re.compile(
+    r"(?<![\w.@/:-])(?P<authority>www\.[A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63}){1,126})"
+)
+_URL_TAIL = re.compile(r"[^\s<>\"'`]*")
+_URL_TRAILING_PUNCTUATION = ".,:;!?*_~'\")]}"
+
+
+def _reference_label(label: str) -> str:
+    return " ".join(label.split()).casefold()
+
+
+def _markdown_destinations(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
+    """``(start, end, hosts, image)`` for each inline and reference destination."""
+
+    def destination(position: int):
+        match = _DESTINATION_VALUE.match(text, position)
+        if match is None:
+            return None
+        group = "bracketed" if match.group("bracketed") is not None else "bare"
+        return match.start(group), match.end(group), match.group(group)
+
+    if "](" in text:
+        images = {match.end() for match in _INLINE_IMAGE.finditer(text)}
+        for opening in _INLINE_DESTINATION.finditer(text):
+            found = destination(opening.end())
+            if found:
+                start, end, value = found
+                yield start, end, _destination_hosts(value), opening.end() in images
+    if "]:" in text:
+        labels = {
+            _reference_label(match.group("label") or match.group("text"))
+            for match in _IMAGE_REFERENCE.finditer(text)
+        }
+        for definition in _REFERENCE_DEFINITION.finditer(text):
+            found = destination(definition.end())
+            if found:
+                start, end, value = found
+                image = _reference_label(definition.group("label")) in labels
+                yield start, end, _destination_hosts(value), image
+
+
+def _html_destinations(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
+    """``(start, end, hosts, image)`` for each URL attribute, and each autolink."""
+    if "=" in text:
+        for match in _HTML_ATTRIBUTE.finditer(text):
+            group = next(
+                g for g in ("double", "single", "bare") if match.group(g) is not None
+            )
+            name, value = match.group("name").lower(), match.group(group)
+            hosts = (
+                _srcset_hosts(value) if name == "srcset" else _destination_hosts(value)
+            )
+            image = name in _LOADING_ATTRIBUTES
+            yield match.start(group), match.end(group), hosts, image
+    if "<" in text:
+        for match in _AUTOLINK.finditer(text):
+            value = match.group("value")
+            yield (
+                match.start("value"),
+                match.end("value"),
+                _destination_hosts(value),
+                False,
+            )
+
+
+def _text_urls(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
+    """``(start, end, hosts, image)`` for each URL written in plain text. A URL's path
+    stops where the next one starts, so a run of URLs is scanned once."""
+    candidates = []
     if "://" in text:
-        candidates += [(m.start(), m.end("authority"), m.group("authority")) for m in _SCHEME_URL.finditer(text)]  # fmt: skip
-    if "//" in text:
-        candidates += [(m.start("url"), m.end("authority"), m.group("authority")) for m in _RELATIVE_DESTINATION.finditer(text)]  # fmt: skip
+        candidates += [(m.start(), m.end("authority"), None) for m in _SCHEME_URL.finditer(text)]  # fmt: skip
     if "www." in text:
         candidates += [(m.start(), m.end("authority"), m.group("authority")) for m in _BARE_WWW.finditer(text)]  # fmt: skip
-    if not candidates:
-        return
     candidates.sort()
-    image_starts = _image_url_starts(text)
-    for index, (start, authority_end, authority) in enumerate(candidates):
-        host = _host(authority)
-        if not host or scan.allows(host):
-            continue
+    for index, (start, authority_end, bare_host) in enumerate(candidates):
         limit = candidates[index + 1][0] if index + 1 < len(candidates) else len(text)
         end = _URL_TAIL.match(text, authority_end, max(limit, authority_end)).end()
         while end > authority_end and text[end - 1] in _URL_TRAILING_PUNCTUATION:
             end -= 1
-        rule = "image-host" if start in image_starts else "link-host"
+        if bare_host is not None:
+            hosts = frozenset({_host(bare_host)})
+        else:
+            hosts = frozenset(filter(None, _destination_hosts(text[start:end])))
+        yield start, end, hosts, False
+
+
+def scan_links(scan: Scan) -> Iterator[Finding]:
+    """An ``exfiltration`` finding for each link or image whose host is not allowlisted.
+
+    Destinations are read in Markdown (inline and reference), HTML attributes, autolinks
+    and plain text, each as a browser resolves it; a destination is found when any
+    reading of it names a host outside the allowlist, or an authority with no readable
+    host. The rule is ``image-host`` when the URL loads without a click (a Markdown image,
+    or an attribute such as ``src``), else ``link-host``. The finding spans the URL.
+    """
+    found: dict[int, tuple[int, bool]] = {}
+    candidates = chain_iterables(
+        _markdown_destinations(scan.text),
+        _html_destinations(scan.text),
+        _text_urls(scan.text),
+    )
+    for start, end, hosts, image in candidates:
+        if not any(not scan.allows(host) for host in hosts):
+            continue
+        previous_end, previous_image = found.get(start, (end, False))
+        found[start] = (max(end, previous_end), image or previous_image)
+    for start, (end, image) in sorted(found.items()):
         yield scan.finding(
-            "exfiltration", start, end, rule=rule, severity=SEVERITY_EXFILTRATION
+            "exfiltration",
+            start,
+            end,
+            rule="image-host" if image else "link-host",
+            severity=SEVERITY_EXFILTRATION,
         )
 
 
+# ---- exfiltration: encoded runs ----
+
 _BASE64_RUN = re.compile(
     rf"(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]{{{MIN_BASE64_RUN},}}={{0,2}}"
+)
+#: Lines of base64 as PEM and MIME wrap them, each at least
+#: :data:`MIN_WRAPPED_BASE64_LINE` long, then a last line of any length.
+_WRAPPED_BASE64 = re.compile(
+    rf"^(?:[A-Za-z0-9+/]{{{MIN_WRAPPED_BASE64_LINE},}}={{0,2}}\r?\n)+[A-Za-z0-9+/]*={{0,2}}",
+    re.MULTILINE,
 )
 _HEX_RUN = re.compile(rf"(?<![0-9A-Fa-f])[0-9A-Fa-f]{{{MIN_HEX_RUN},}}(?![0-9A-Fa-f])")
 _DIGIT = re.compile(r"[0-9]")
 _UPPER = re.compile(r"[A-Z]")
 _LOWER = re.compile(r"[a-z]")
 _HEX_LETTER = re.compile(r"[A-Fa-f]")
+_LINE_BREAKS = re.compile(r"\s+")
+
+
+def _mixes_base64_classes(run: str) -> bool:
+    return bool(_DIGIT.search(run) and _UPPER.search(run) and _LOWER.search(run))
+
+
+def _base64_block(block: str) -> str:
+    """The base64 part of a wrapped block: all of it, less a last line that breaks the
+    length's multiple of four when the lines before keep it (a word after the block)."""
+    block = block.rstrip()
+    body, _, _ = block.rpartition("\n")
+
+    def length(text: str) -> int:
+        return len(_LINE_BREAKS.sub("", text))
+
+    if body and length(block) % 4 and not length(body) % 4:
+        return body.rstrip()
+    return block
 
 
 def scan_base64_runs(scan: Scan) -> Iterator[Finding]:
     """An ``exfiltration`` finding for each base64 or base64url run of at least
-    :data:`MIN_BASE64_RUN` characters that mixes digits, capitals and small letters, which
-    encoded data does and a long word or path rarely does."""
+    :data:`MIN_BASE64_RUN` characters, on one line or wrapped over several, that mixes
+    digits, capitals and small letters, which encoded data does and a long word or path
+    rarely does."""
+    blocks = []  # disjoint, in order
+    for match in _WRAPPED_BASE64.finditer(scan.text):
+        block = _base64_block(match.group())
+        run = _LINE_BREAKS.sub("", block)
+        if len(run) >= MIN_BASE64_RUN and _mixes_base64_classes(run):
+            blocks.append((match.start(), match.start() + len(block)))
+    block_starts = [start for start, _ in blocks]
+    runs = []
     for match in _BASE64_RUN.finditer(scan.text):
-        run = match.group()
-        if _DIGIT.search(run) and _UPPER.search(run) and _LOWER.search(run):
-            yield scan.finding(
-                "exfiltration",
-                match.start(),
-                match.end(),
-                rule="base64-run",
-                severity=SEVERITY_EXFILTRATION,
-            )
+        index = bisect_right(block_starts, match.start()) - 1
+        inside = index >= 0 and match.end() <= blocks[index][1]
+        if not inside and _mixes_base64_classes(match.group()):
+            runs.append(match.span())
+    for start, end in sorted(blocks + runs):
+        yield scan.finding(
+            "exfiltration",
+            start,
+            end,
+            rule="base64-run",
+            severity=SEVERITY_EXFILTRATION,
+        )
 
 
 def scan_hex_runs(scan: Scan) -> Iterator[Finding]:
@@ -1049,80 +1499,135 @@ def scan_hex_runs(scan: Scan) -> Iterator[Finding]:
             )
 
 
-_BOM = "﻿"
-_PRESENTATION_SELECTORS = frozenset({"︎", "️"})
-_EMOJI_JOINING = frozenset({"‍", "️"})
+# ---- exfiltration: invisible characters ----
+
+_BOM = "\ufeff"
+_PRESENTATION_SELECTORS = frozenset({"\ufe0e", "\ufe0f"})
+_EMOJI_JOINING = frozenset({"\u200d", "\ufe0f"})
 #: The longest run of joiners and selectors inside an emoji sequence (VS16, then ZWJ).
 _MAX_EMOJI_JOINING_RUN = 2
+_KEYCAP_BASES = frozenset("0123456789#*")
+_KEYCAP = "\u20e3"
 _BLACK_FLAG = "\U0001f3f4"
 _CANCEL_TAG = "\U000e007f"
-_FIRST_TAG, _LAST_TAG = "\U000e0020", "\U000e007e"
-#: The most tag characters a subdivision flag holds before its cancel tag.
-_MAX_FLAG_TAGS = 6
-_JOINERS = frozenset({"‌", "‍"})
-_BIDI_MARKS = frozenset({"‎", "‏"})
+_TAG_OFFSET = 0xE0000
+#: The tag sequences of the only subdivision flags Unicode recommends for general
+#: interchange (England, Scotland, Wales). Any other tag run renders as nothing.
+_FLAG_TAGS = frozenset({"gbeng", "gbsct", "gbwls"})
+_JOINERS = frozenset({"\u200c", "\u200d"})
+#: Scripts whose spelling uses the zero-width joiner and non-joiner: Arabic, Syriac and
+#: Thaana, and the Brahmic scripts from Devanagari to Sinhala.
+_JOINING_SCRIPTS = (
+    ("\u0600", "\u08ff"),
+    ("\u0900", "\u0dff"),
+    ("\ufb50", "\ufdff"),
+    ("\ufe70", "\ufefc"),
+)
+_BIDI_MARKS = frozenset({"\u200e", "\u200f"})
 _PICTOGRAPHIC_CATEGORIES = frozenset({"So", "Sk"})
 _RIGHT_TO_LEFT = frozenset({"R", "AL"})
 
 
+def _pictographic(char: str) -> bool:
+    return (
+        bool(char)
+        and not char.isascii()
+        and unicodedata.category(char) in _PICTOGRAPHIC_CATEGORIES
+    )
+
+
 def _needed_invisible(text: str, start: int, end: int) -> bool:
     """Whether the invisible run ``text[start:end]`` is one that text needs to render: a
-    byte-order mark opening the text, a single emoji presentation selector, the joiners
-    of an emoji sequence, a subdivision flag's tags, a joiner between letters of a
-    joining script, or a direction mark beside right-to-left text."""
+    byte-order mark opening the text, an emoji presentation selector after a symbol or a
+    keycap base, the joiners of an emoji sequence, one of the three subdivision flags'
+    tags, a joiner inside a word of a joining script, or a direction mark beside
+    right-to-left text."""
     run = text[start:end]
     before = text[start - 1] if start else ""
     after = text[end] if end < len(text) else ""
 
-    def pictographic(char: str) -> bool:
-        return bool(char) and unicodedata.category(char) in _PICTOGRAPHIC_CATEGORIES
+    def symbol(char: str) -> bool:
+        return (
+            bool(char) and not char.isascii() and unicodedata.category(char)[0] in "SP"
+        )
+
+    def joining_script(char: str) -> bool:
+        return bool(char) and any(low <= char <= high for low, high in _JOINING_SCRIPTS)
 
     def right_to_left(char: str) -> bool:
         return bool(char) and unicodedata.bidirectional(char) in _RIGHT_TO_LEFT
 
-    def non_ascii_letter(char: str) -> bool:
-        return bool(char) and char.isalpha() and not char.isascii()
-
     if run == _BOM and start == 0:
         return True
     if run in _PRESENTATION_SELECTORS:
-        return True
+        return symbol(before) or (before in _KEYCAP_BASES and after == _KEYCAP)
     if (
         len(run) <= _MAX_EMOJI_JOINING_RUN
         and set(run) <= _EMOJI_JOINING
-        and pictographic(before)
-        and ("‍" not in run or pictographic(after))
+        and _pictographic(before)
+        and ("\u200d" not in run or _pictographic(after))
     ):
         return True
-    if (
-        before == _BLACK_FLAG
-        and 1 < len(run) <= _MAX_FLAG_TAGS + 1
-        and run[-1] == _CANCEL_TAG
-        and all(_FIRST_TAG <= char <= _LAST_TAG for char in run[:-1])
-    ):
-        return True
-    if run in _JOINERS and non_ascii_letter(before) and non_ascii_letter(after):
+    if before == _BLACK_FLAG and run.endswith(_CANCEL_TAG):
+        codes = [ord(char) - _TAG_OFFSET for char in run[:-1]]
+        tags = (
+            "".join(map(chr, codes)) if all(0 < code < 0x80 for code in codes) else ""
+        )
+        return tags in _FLAG_TAGS
+    if run in _JOINERS and joining_script(before) and joining_script(after):
         return True
     return run in _BIDI_MARKS and (right_to_left(before) or right_to_left(after))
 
 
+_WHITESPACE = re.compile(r"\s")
+
+
 def scan_invisible_characters(scan: Scan) -> Iterator[Finding]:
-    """An ``exfiltration`` finding for each run of invisible characters the text does not
-    need to render (see :func:`_needed_invisible`): zero-width spaces, direction
-    overrides, tag characters, variation selectors used to carry data."""
-    for match in _INVISIBLE_RUN.finditer(scan.text):
-        if not _needed_invisible(scan.text, match.start(), match.end()):
-            yield scan.finding(
-                "exfiltration",
-                match.start(),
-                match.end(),
-                rule="invisible-character",
-                severity=SEVERITY_EXFILTRATION,
-            )
+    """An ``exfiltration`` finding for each word holding invisible characters the text does
+    not need to render (see :func:`_needed_invisible`): zero-width spaces, direction
+    overrides, tag characters, variation selectors used to carry data.
+
+    The runs within one word (no whitespace between them) are one finding, spanning them,
+    fingerprinted over the invisible characters alone: a word stuffed with them is one
+    thing to show the operator, and a message of them costs one finding, not thousands.
+    """
+    text = scan.text
+
+    def region_finding(start: int, end: int, runs: list[str]) -> Finding:
+        return scan.finding(
+            "exfiltration",
+            start,
+            end,
+            rule="invisible-character",
+            severity=SEVERITY_EXFILTRATION,
+            material="".join(runs),
+        )
+
+    region_start = region_end = None
+    runs: list[str] = []
+    for match in _INVISIBLE_RUN.finditer(text):
+        start, end = match.span()
+        if _needed_invisible(text, start, end):
+            continue
+        if runs and not _WHITESPACE.search(text, region_end, start):
+            region_end = end
+            runs.append(match.group())
+            continue
+        if runs:
+            yield region_finding(region_start, region_end, runs)
+        region_start, region_end, runs = start, end, [match.group()]
+    if runs:
+        yield region_finding(region_start, region_end, runs)
 
 
-_IPV4 = re.compile(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?!\w|\.\d)")
+# ---- exfiltration: addresses and paths ----
+
+#: Dotted IPv4 addresses, in any decimal digits (``\d`` includes full-width digits).
+_IPV4 = re.compile(r"(?<![0-9A-Za-z.])(?:\d{1,3}\.){3}\d{1,3}(?![0-9A-Za-z]|\.\d)")
 _IPV6 = re.compile(r"(?<![\w:.])[0-9A-Fa-f:]{2,39}(?![\w:])")
+#: Dots other than the full stop that a reader, or a URL parser, reads as one.
+_DOTS_AS_FULL_STOP = str.maketrans({"\uff0e": ".", "\u3002": ".", "\uff61": "."})
+_OCTAL_DIGITS = frozenset("01234567")
 #: Private (RFC 1918 and unique-local), loopback, shared (RFC 6598) and link-local
 #: networks: addresses that say something about the inside of a network.
 INTERNAL_NETWORKS = tuple(
@@ -1141,28 +1646,53 @@ INTERNAL_NETWORKS = tuple(
 )
 
 
-def _internal(candidate: str) -> bool:
+def _internal(address: ipaddress._BaseAddress) -> bool:
+    return any(address in network for network in INTERNAL_NETWORKS)
+
+
+def _internal_ipv4(candidate: str) -> bool:
+    """Whether a dotted IPv4 address is internal read as decimal, or, when an octet has a
+    leading zero, as a URL parser reads it (octal)."""
+    parts = candidate.split(".")
+    readings = [[int(part) for part in parts]]
+    if any(len(part) > 1 and part[0] == "0" for part in parts) and all(
+        set(part) <= _OCTAL_DIGITS for part in parts
+    ):
+        readings.append(
+            [int(part, 8) if part[0] == "0" else int(part) for part in parts]
+        )
+    return any(
+        all(octet <= 255 for octet in octets)
+        and _internal(ipaddress.IPv4Address(bytes(octets)))
+        for octets in readings
+    )
+
+
+def _internal_ipv6(candidate: str) -> bool:
+    if candidate.count(":") < 2:
+        return False
     try:
-        address = ipaddress.ip_address(candidate)
+        return _internal(ipaddress.IPv6Address(candidate))
     except ValueError:
         return False
-    return any(address in network for network in INTERNAL_NETWORKS)
 
 
 def scan_private_addresses(scan: Scan) -> Iterator[Finding]:
     """An ``exfiltration`` finding for each IPv4 or IPv6 address in
     :data:`INTERNAL_NETWORKS`."""
-    matches = [*_IPV4.finditer(scan.text)]
-    matches += [m for m in _IPV6.finditer(scan.text) if m.group().count(":") >= 2]
+    text = scan.text.translate(
+        _DOTS_AS_FULL_STOP
+    )  # one character for one: same offsets
+    matches = [m for m in _IPV4.finditer(text) if _internal_ipv4(m.group())]
+    matches += [m for m in _IPV6.finditer(text) if _internal_ipv6(m.group())]
     for match in matches:
-        if _internal(match.group()):
-            yield scan.finding(
-                "exfiltration",
-                match.start(),
-                match.end(),
-                rule="private-address",
-                severity=SEVERITY_EXFILTRATION,
-            )
+        yield scan.finding(
+            "exfiltration",
+            match.start(),
+            match.end(),
+            rule="private-address",
+            severity=SEVERITY_EXFILTRATION,
+        )
 
 
 @dataclass(frozen=True)
@@ -1251,7 +1781,7 @@ _EMAIL = re.compile(EMAIL_PATTERN)
 def scan_personal_terms(scan: Scan) -> Iterator[Finding]:
     """A ``personal`` finding for each whole-word occurrence of a personal term."""
     for term in scan.personal_terms:
-        for start, end in scan.normalised.spans(normalise(term).text):
+        for start, end in scan.spans(fold_term(term)):
             yield scan.finding(
                 "personal",
                 start,
@@ -1315,7 +1845,8 @@ def detect(
     ``allowlist`` holds the hosts a link may point at, subdomains included.
     ``canary_terms`` and ``personal_terms`` are the subject's canaries and the operator's
     own addresses, handles and paths. ``key`` is the fingerprint key (or a callable that
-    returns it); by default :func:`fingerprint_key`, read only when there is a finding.
+    returns it); by default :func:`fingerprint_key` with the configured state directory,
+    read only when there is a finding. A caller with a config in hand should pass it.
 
     >>> key = b"k" * 32
     >>> [f.kind for f in detect("Use " + "ghp_" + "a" * 36, disclosure={}, key=key)]
