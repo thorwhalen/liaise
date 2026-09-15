@@ -276,7 +276,9 @@ def run(
     the same plan and changes nothing: nothing is sent, labelled, started, cancelled,
     deployed, locked or written. ``--subject`` ticks one subject alone. Without ``--once``
     or ``--dry-run``, it ticks every minute, printing each plan, until interrupted; the
-    scheduled job (``liaise schedule install``) passes ``--once``.
+    scheduled job (``liaise schedule install``) passes ``--once``. An inactive subject
+    (``active = false``) is not ticked; ``--subject`` may name one with ``--dry-run``
+    alone, to see what a tick would do.
 
     ``resolver``, ``workspace`` and ``triage`` are the tick's seams of those names (see
     :func:`liaise.tick.run_once`); None keeps the tick's own default.
@@ -410,7 +412,7 @@ def unhold(
 
 @_expected_errors(ConfigError)
 def subject_list(*, root: Optional[str] = None) -> str:
-    """Every configured subject with its bindings, flagging any binding that could never match."""
+    """Every configured subject with its bindings, flagging an inactive one and any binding that could never match."""
     config_root = _root(root)
     subjects = load_subjects(config_root)
     if not subjects:
@@ -423,7 +425,8 @@ def subject_list(*, root: Optional[str] = None) -> str:
             if problems
             else ""
         )
-        lines.append(f"{slug}\t{', '.join(subject.bindings)}{flag}")
+        inert = "" if subject.active else "  [inactive: active = false]"
+        lines.append(f"{slug}\t{', '.join(subject.bindings)}{inert}{flag}")
     return "\n".join(lines)
 
 
@@ -465,10 +468,17 @@ def setup(
 ) -> str:
     """Create SUBJECT's labels in each GitHub repository it binds. Idempotent.
 
-    Those are its claim labels and one ``<label_prefix><state>`` label per case state.
+    Those are its claim labels and one ``<label_prefix><state>`` label per case state. An
+    inactive subject (``active = false``) is refused, since creating labels changes its
+    repositories.
     """
     config_root = _root(root)
     found = _subject_named(load_subjects(config_root), subject, root=config_root)
+    if not found.active:
+        raise ConfigError(
+            f"subject {subject!r} is inactive (active = false), so liaise setup creates "
+            f"no labels in its repositories; set active = true in its file first"
+        )
     return "\n".join(setup_labels(labeler if labeler is not None else GhCli(), found))
 
 

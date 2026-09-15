@@ -12,6 +12,12 @@ conversation, so two subjects polling the same one would starve each other:
 :func:`load_subjects` refuses that. Several bindings of one subject may share a
 conversation (see :func:`poll_ref`).
 
+**An inert subject.** ``active = false`` declares a subject that no tick acts on. It is
+loaded, validated, shown and used as gate context, but :func:`liaise.tick.run_once` polls
+none of its bindings and starts, delivers, nudges and labels none of its cases, and
+``liaise setup`` refuses it. It is part of the file, not a hold, so ``liaise unhold
+global`` does not lift it, and a reader of the file sees it.
+
 Like :mod:`liaise.config`, this module knows only the file's shape and defaults.
 Every real value lives under ``~/.config/liaise/subjects/``, never in this package.
 Every table has defaults, so a minimal subject file needs only::
@@ -316,6 +322,9 @@ class Subject:
     processor: ProcessorConfig = field(default_factory=ProcessorConfig)
     #: The file this subject was loaded from, when it was.
     source: Optional[str] = None
+    #: False for a subject declared but inert: loaded, shown and used as gate context, but
+    #: no tick polls, starts, delivers, nudges or labels anything of it.
+    active: bool = True
 
     def reply_mode_for(self, person: Optional[str]) -> str:
         """``direct`` or ``draft``: the person's override, else the subject's default."""
@@ -395,9 +404,9 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
 
     Each binding is kept as :func:`normalize_binding` gives it. Raises
     :class:`~liaise.config.ConfigError` naming the file and the fix for a missing file,
-    invalid TOML, a missing ``bindings``, ``policy.people`` or ``policy.roles``, and any
-    value outside its vocabulary (workspace and delivery kinds, ``delivery.per``, reply
-    modes, permissions, grades, roles).
+    invalid TOML, a missing ``bindings``, ``policy.people`` or ``policy.roles``, an
+    ``active`` that is not true or false, and any value outside its vocabulary (workspace
+    and delivery kinds, ``delivery.per``, reply modes, permissions, grades, roles).
     """
     path = Path(path)
     raw = _read_toml(path)
@@ -457,6 +466,7 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
             permission_mode=processor.get("permission_mode", DFLT_PERMISSION_MODE)
         ),
         source=str(path),
+        active=_boolean(raw, "active", default=True, path=path, dotted="active"),
     )
 
 
@@ -557,6 +567,17 @@ def _string_table(
             f'{name} = {{ key = "value" }}; got {value!r}.'
         )
     return dict(value)
+
+
+def _boolean(
+    raw: Mapping[str, Any], name: str, *, default: bool, path: Path, dotted: str
+) -> bool:
+    value = raw.get(name, default)
+    if not isinstance(value, bool):
+        raise ConfigError(
+            f"{path}: {dotted} must be true or false, as in {name} = false; got {value!r}."
+        )
+    return value
 
 
 def _choice(value: Any, allowed: tuple[str, ...], *, path: Path, dotted: str) -> str:

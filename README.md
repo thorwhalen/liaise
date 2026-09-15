@@ -45,6 +45,8 @@ A subject is one body of work, an app or a site, configured in `~/.config/liaise
 
 **One subject per conversation.** Bindings that name the same conversation are polled once. Two subjects may not bind the same conversation: correspond keeps one cursor for it, so the first subject would take every event, and `liaise` refuses that configuration when it loads.
 
+**An inert subject.** `active = false` at the top of a subject file declares the subject without letting a tick touch its repositories. It loads, `liaise subject list` and `subject show` mark it, and its policy still judges any message sent to its conversations. But no tick polls its bindings, opens or starts a case, delivers, nudges, collects a run or sets a label, and `liaise setup` refuses it. `liaise run --once --dry-run --subject <slug>` still shows what a tick would do; without `--dry-run`, naming it is refused. Commit a subject for someone else's repository this way, review it in place, and set `active = true` when the first tick may act. It is a property of the file, not a hold, so `liaise unhold global` does not lift it. Its bindings still count when `liaise` checks that no two subjects bind one conversation, so setting `active = true` can never start two subjects polling the same one.
+
 A subject file with every setting, most of them at their defaults:
 
 ```toml
@@ -55,6 +57,7 @@ brief = "~/.config/liaise/briefs/example-app.md"   # for anyone without a brief 
 verify = "npm test"
 delivery = { kind = "deploy", per = "batch", command = "./deploy.sh" }   # kind: deploy or pr_only
 label_prefix = "liaise:"
+active = true                                 # false: loaded and shown, but no tick acts on it
 
 [policy]
 default_reply_mode = "draft"                  # direct or draft
