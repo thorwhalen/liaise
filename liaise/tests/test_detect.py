@@ -187,9 +187,29 @@ def test_a_term_is_matched_as_a_whole_word_only(text):
     assert _of_kind("vocabulary", text) == []
 
 
-@pytest.mark.parametrize("text", ["We move on a new plan.", "Moving on, a new plan.", "Go on and on a bit."])
+@pytest.mark.parametrize(
+    "text",
+    ["We move on a new plan.", "Moving on, a new plan.", "Go on and on a bit.", "<td>on</td><td>a</td>", "on<br>a plan"],
+)
 def test_a_match_does_not_span_a_word_break_the_term_does_not_have(text):
     assert _of_kind("third_party", text) == []
+
+
+@pytest.mark.parametrize(
+    "form",
+    [
+        "He<!-- < -->ron",
+        "He<!--" + "x" * 5000 + "-->ron",
+        'He<b title="' + "x" * 1100 + '">ron',
+        "He<?x?>ron",
+        "He-\nron",
+        "He-\r\n  ron",
+    ],
+)
+def test_heron_across_long_or_odd_markup_or_a_hyphenated_wrap_is_found(form):
+    text = "Update: " + form + " slips."
+    (finding,) = _of_kind("vocabulary", text)
+    assert text[finding.start : finding.end] == form
 
 
 @pytest.mark.parametrize("text", ["Heron's date", "(Heron)", "Heron.", "\u00abHeron\u00bb", "heron_v2"])
@@ -339,6 +359,57 @@ def test_allowlisted_hosts_and_relative_links_are_not_findings(text):
     assert _of_kind("exfiltration", text) == []
 
 
+@pytest.mark.parametrize(
+    "text",
+    [
+        "![x](//example.org(x)@" + COLLECTOR + "/p.png)",
+        "![x](//example.org\\(@" + COLLECTOR + "/p.png)",
+        "> ![s][b]\n>\n> [b]: //" + COLLECTOR + "/p.png",
+        "![s][b\\]]\n\n[b\\]]: //" + COLLECTOR + "/p.png",
+        "![s][b c]\n\n[b\nc]: //" + COLLECTOR + "/p.png",
+        "- a\n\n  - b\n\n    ![s][q]\n\n    [q]: //" + COLLECTOR + "/p.png",
+    ],
+)
+def test_a_host_is_found_whatever_markdown_construct_holds_it(text):
+    assert _of_kind("exfiltration", text)
+
+
+@pytest.mark.parametrize(
+    "text, rule",
+    [
+        ('<video poster="https:' + COLLECTOR + '/p.png">', "image-host"),
+        ('<table background="https:' + COLLECTOR + '/b.png">', "image-host"),
+        ('<object data="https:' + COLLECTOR + '/o">', "image-host"),
+        ('<img lowsrc="https:' + COLLECTOR + '/l.png">', "image-host"),
+        ('<img dynsrc="https:' + COLLECTOR + '/d.avi">', "image-host"),
+        ('<a href="https:' + COLLECTOR + '/x">', "link-host"),
+        ('<form action="https:' + COLLECTOR + '/x">', "link-host"),
+        ('<button formaction="https:' + COLLECTOR + '/x">', "link-host"),
+        ('<img src="ws:' + COLLECTOR + '/p.png">', "image-host"),
+        ('<img src="wss:' + COLLECTOR + '/p.png">', "image-host"),
+        ('<img src="ftp:' + COLLECTOR + '/p.png">', "image-host"),
+    ],
+)
+def test_every_url_attribute_and_special_scheme_is_read(text, rule):
+    """Special schemes with no slashes, which only the attribute parser reads."""
+    assert _rules("exfiltration", text) == [rule]
+
+
+def test_a_scheme_that_is_not_special_names_no_host_without_slashes():
+    assert _of_kind("exfiltration", '<img src="gopher:' + COLLECTOR + '/p.png">') == []
+
+
+def test_tabs_inside_a_url_are_ignored():
+    assert _of_kind("exfiltration", '<img src="https://exam\tple.org/p.png">') == []
+    text = '<img src="https://collec\ttor.example.net/p.png">'
+    assert _rules("exfiltration", text) == ["image-host"]
+
+
+@pytest.mark.parametrize("text", ["[link](https://) TODO", '`<a href="https://">`', "See https:// for it."])
+def test_a_url_with_nothing_after_its_slashes_is_not_a_finding(text):
+    assert _of_kind("exfiltration", text) == []
+
+
 def test_a_url_finding_stops_before_trailing_punctuation():
     url = "https://" + COLLECTOR + "/x"
     text = "It went to " + url + "."
@@ -362,13 +433,21 @@ def test_a_base64_run_at_the_bound_is_exfiltration():
     assert _rules("exfiltration", "x " + BASE64_RUN[:MIN_BASE64_RUN] + " y") == ["base64-run"]
 
 
-@pytest.mark.parametrize("width", [64, 76])
-def test_wrapped_base64_is_exfiltration(width):
-    encoded = base64.b64encode(bytes(range(256)) * 2).decode()
-    block = "\n".join(encoded[i : i + width] for i in range(0, len(encoded), width))
-    text = "Attached:\n" + block + "\nThanks"
+WRAPPED = base64.b64encode(bytes(range(256)) * 2).decode()
+
+
+@pytest.mark.parametrize("width, prefix", [(40, ""), (56, ""), (64, ""), (76, ""), (76, "    "), (76, "> ")])
+def test_wrapped_base64_is_exfiltration(width, prefix):
+    lines = [WRAPPED[i : i + width] for i in range(0, len(WRAPPED), width)]
+    block = "\n".join(prefix + line for line in lines)
+    text = "Attached:\n" + block + "\nBest"
     (finding,) = _of_kind("exfiltration", text)
-    assert (finding.rule, text[finding.start : finding.end]) == ("base64-run", block)
+    assert (finding.rule, text[finding.start : finding.end]) == ("base64-run", block[len(prefix) :])
+
+
+def test_base64_wrapped_narrower_than_the_bound_is_no_block():
+    block = "\n".join(WRAPPED[i : i + 39] for i in range(0, len(WRAPPED), 39))
+    assert _of_kind("exfiltration", block) == []
 
 
 @pytest.mark.parametrize(
@@ -411,6 +490,9 @@ def _tags(text):
         "`\u200d`",
         "\U0001f3f4" + _tags("ghp_aa") + "\U000e007f",
         "\U0001f3f4" + _tags("zzzzz") + "\U000e007f",
+        "don’️t know",
+        "“q”️",
+        "a —️ b",
     ],
 )
 def test_an_invisible_character_is_exfiltration(text):
@@ -430,10 +512,18 @@ def test_an_invisible_character_is_exfiltration(text):
         "\u0645\u06cc\u200c\u062e\u0648\u0627\u0647\u0645",
         "\u0915\u094d\u200d\u0937",
         "\u05e9\u05dc\u05d5\u05dd\u200f!",
+        "wow\u203c\ufe0f",
     ],
 )
 def test_invisible_characters_that_text_needs_are_not_findings(text):
     assert _of_kind("exfiltration", text) == []
+
+
+def test_invisible_runs_within_a_word_are_one_finding_over_the_invisible_characters():
+    text = "a\u200bb\u200bc d\u200be"
+    findings = _of_kind("exfiltration", text)
+    assert [(f.start, f.end) for f in findings] == [(1, 4), (7, 8)]
+    assert findings[0].fingerprint == hmac.new(KEY, "\u200b\u200b".encode(), sha256).hexdigest()
 
 
 @pytest.mark.parametrize(
@@ -450,6 +540,7 @@ def test_invisible_characters_that_text_needs_are_not_findings(text):
         "fd12:3456::1",
         "192.168.001.020",
         "010.0.0.1",
+        "012.0.0.1",
         "\uff11\uff10\uff0e\uff10\uff0e\uff10\uff0e\uff15",
     ],
 )
@@ -687,14 +778,24 @@ _TABLE = (
 )
 
 
+#: Every rule id the module has: a finding's rule must be one, so it can carry no text.
+KNOWN_RULES = (
+    {rule.rule for rule in SECRET_RULES}
+    | {rule.rule for rule in LOCAL_PATH_RULES}
+    | {"canary-term", "term", "person-name", "image-host", "link-host", "base64-run", "hex-run"}
+    | {"invisible-character", "private-address", "personal-term", "email-address"}
+)
+
+
 @pytest.mark.parametrize("text, options", _TABLE)
 def test_no_finding_holds_the_text_it_matched(text, options):
-    """The matched text appears nowhere in a finding, in any letter case, and its normalised
-    form appears in no field but the rule id, a constant of the module (``env-file`` holds
-    the ``env`` of ``.env``)."""
+    """The matched text appears nowhere in a finding, in any letter case; its normalised
+    form appears in no field but the rule id, which must be one of the module's rule ids
+    (``env-file`` holds the ``env`` of ``.env``)."""
     findings = _detect(text, **options)
     assert findings
     for finding in findings:
+        assert finding.rule in KNOWN_RULES, finding
         value = text[finding.start : finding.end]
         record = (repr(finding) + json.dumps(finding.to_dict(), ensure_ascii=False)).casefold()
         assert value.casefold() not in record, finding
@@ -777,11 +878,24 @@ def test_a_key_file_that_stays_busy_raises(tmp_path, monkeypatch):
 
     monkeypatch.setattr(Path, "read_bytes", busy)
     monkeypatch.setattr(detect_module, "KEY_READ_RETRY_S", 0)
-    with pytest.raises(PermissionError):
+    with pytest.raises(FingerprintKeyError, match="cannot be read"):
         fingerprint_key(tmp_path)
 
 
-def test_a_short_key_file_is_refused(tmp_path):
+def test_the_key_is_created_where_hard_links_are_refused(tmp_path, monkeypatch):
+    def refuse(source, target):
+        raise PermissionError("hard links are not supported on this filesystem")
+
+    monkeypatch.setattr(os, "link", refuse)
+    monkeypatch.setattr(os, "rename", refuse)
+    key = fingerprint_key(tmp_path)
+    assert len(key) == DFLT_KEY_BYTES
+    assert fingerprint_key(tmp_path) == key
+    assert [path.name for path in tmp_path.iterdir()] == [DFLT_KEY_FILE]
+
+
+def test_a_short_key_file_is_refused(tmp_path, monkeypatch):
+    monkeypatch.setattr(detect_module, "KEY_READ_RETRY_S", 0)
     (tmp_path / DFLT_KEY_FILE).write_bytes(b"short")
     with pytest.raises(FingerprintKeyError, match="fewer than 32"):
         fingerprint_key(tmp_path)

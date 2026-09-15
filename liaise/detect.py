@@ -30,8 +30,10 @@ The six kinds (discussion §5.2):
 
 **Two readings.** Terms and secrets are looked for in the message as written and, when it
 holds markup, as a Markdown or HTML reader sees it (:func:`render`): tags, comments and
-backslash escapes removed, character references and percent-escapes decoded. A finding
-in either reading counts, so a plain-text reader and a rendering one are both covered.
+backslash escapes removed (a block tag reading as a space), character references and
+percent-escapes decoded. A finding in either reading counts, so a plain-text reader and a
+rendering one are both covered; the price is that markup a renderer hides can still read
+as a word break to the plain-text reading.
 
 **Normalisation** (:func:`normalise`, research §5.5) folds each character by
 compatibility decomposition (NFKD, so full-width and other compatibility forms fold as
@@ -42,10 +44,10 @@ case-folds, drops combining marks, and removes invisible characters, separators
 ``~``, backtick and backslash. An offset map sends every normalised character back to the
 characters of the message it came from, so a finding covers the text as written.
 
-**Whole words.** A term matches when it neither continues a word on either side (judged on
-the message, past invisible characters and marks) nor spans a word break the term does
-not have: ``He-ron`` and ``H e r o n`` are "Heron", ``on a`` is not "Ona". Canary terms
-match anywhere.
+**Whole words.** A term matches when it neither continues a word on either side (judged in
+the reading, past invisible characters and marks) nor spans a word break the term does
+not have: ``He-ron``, a hyphenated line wrap and ``H e r o n`` are "Heron"; ``on a`` and
+``He ron`` are not. Canary terms match anywhere.
 
 **Fingerprints** are HMAC-SHA256, keyed by :func:`fingerprint_key` (32 random bytes in
 ``<state_dir>/fingerprint.key``, created on first use, owner-only), over the value as a
@@ -130,16 +132,20 @@ SEVERITY_NARROW_AUDIENCE = 1
 DFLT_STATE_DIR = Path("~/.local/share/liaise")
 DFLT_KEY_FILE = "fingerprint.key"
 DFLT_KEY_BYTES = 32
+KEY_FILE_MODE = 0o600
 STATE_DIR_MODE = 0o700
-#: How often, and how far apart, a busy key file is read again: on Windows a reader can
-#: meet a sharing violation while another process moves its new key into place.
-KEY_READ_ATTEMPTS = 10
+#: How often, and how far apart, a key file is read again while it is busy (on Windows a
+#: reader can meet a sharing violation while another process moves its new key into
+#: place) or shorter than a key (another process is still writing it).
+KEY_READ_ATTEMPTS = 20
 KEY_READ_RETRY_S = 0.05
 
 #: The shortest base64 run that is a finding: 75 bytes of data.
 MIN_BASE64_RUN = 100
-#: The shortest line of a wrapped base64 block (PEM wraps at 64, MIME at 76).
-MIN_WRAPPED_BASE64_LINE = 60
+#: The narrowest width of a wrapped base64 block (PEM wraps at 64, MIME at 76), and the
+#: shortest unpadded last line that reads as the end of the data.
+MIN_WRAPPED_BASE64_LINE = 40
+MIN_BASE64_TAIL = 8
 #: The shortest hex run that is a finding: longer than a SHA-512 digest, so digests and
 #: commit hashes quoted in a message are not findings.
 MIN_HEX_RUN = 129
@@ -323,9 +329,9 @@ _LOOKALIKES = {
 }  # fmt: skip
 
 
-#: How many characters' folds and classes are cached: every character of ordinary text,
-#: without letting a message of a million distinct code points hold them all.
-_CHARACTER_CACHE_SIZE = 1 << 16
+#: How many characters' folds and classes are cached: most assigned characters, while
+#: bounding the memory a message of distinct code points can take.
+_CHARACTER_CACHE_SIZE = 1 << 18
 
 
 @lru_cache(maxsize=None)
@@ -440,14 +446,23 @@ def _without(view: View, pattern: re.Pattern) -> View:
     return view.derive("".join(pieces), origins)
 
 
-#: What rendering Markdown or HTML removes (a comment, a tag, a backslash escape) or
-#: decodes (a character reference, a run of percent-escapes).
-_MARKUP = re.compile(
-    r"(?P<drop><!--[^<]{0,4096}?-->|</?[A-Za-z][^<>]{0,1024}>|\\(?=[!-/:-@\[-`{-~]))"
-    r"|(?P<decode>&(?:#[0-9]{1,7}|#[xX][0-9A-Fa-f]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});"
-    r"|(?:%[0-9A-Fa-f]{2}){1,64})"
+#: Where rendering Markdown or HTML may change the text: a comment, a tag, a processing
+#: instruction or declaration, a character reference, a run of percent-escapes, or a
+#: backslash escape.
+_MARKUP_START = re.compile(
+    r"<(?:!--|[!?/A-Za-z])"
+    r"|&(?:#[0-9]{1,7}|#[xX][0-9A-Fa-f]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});"
+    r"|(?:%[0-9A-Fa-f]{2}){1,64}"
+    r"|\\(?=[!-/:-@\[-`{-~])"
 )
 _MARKUP_CHARS = "<&%\\"
+_TAG_NAME = re.compile(r"</?([A-Za-z][A-Za-z0-9-]*)")
+#: Elements a renderer shows as a break between words: a tag of one reads as a space.
+_BREAKING_TAGS = frozenset(
+    "address article aside blockquote br dd details div dl dt figcaption figure footer "
+    "h1 h2 h3 h4 h5 h6 header hr img li main nav ol p pre section summary table tbody "
+    "td tfoot th thead tr ul".split()
+)
 
 
 def _decoded(token: str) -> str:
@@ -462,27 +477,52 @@ def _decoded(token: str) -> str:
 def render(text: str) -> Optional[View]:
     """``text`` as a Markdown or HTML reader sees it, or None when rendering changes nothing.
 
-    Comments, tags and backslash escapes are removed; character references and
-    percent-escapes are decoded.
+    Comments (to ``-->``, or to the end of the text when unclosed), tags, processing
+    instructions, declarations and backslash escapes are removed, a tag of a block
+    element or a line break reading as a space; character references and percent-escapes
+    are decoded. Each piece of markup is read once, so rendering is linear in the text.
 
     >>> render("He<b></b>r&#111;n%21").text
     'Heron!'
+    >>> render("on<br>a").text
+    'on a'
     """
     if not any(char in text for char in _MARKUP_CHARS):
         return None
-    pieces, origins, ends, position = [], array("q"), array("q"), 0
-    for match in _MARKUP.finditer(text):
-        token = match.group()
-        replacement = "" if match.lastgroup == "drop" else _decoded(token)
-        if replacement == token:
-            continue
-        pieces.append(text[position : match.start()])
-        origins.extend(range(position, match.start()))
-        ends.extend(range(position + 1, match.start() + 1))
+    pieces, origins, ends = [], array("q"), array("q")
+    position, unclosed_tag_at = 0, len(text)
+
+    def replace(start: int, stop: int, replacement: str) -> None:
+        pieces.append(text[position:start])
+        origins.extend(range(position, start))
+        ends.extend(range(position + 1, start + 1))
         pieces.append(replacement)
-        origins.extend(repeat(match.start(), len(replacement)))
-        ends.extend(repeat(match.end(), len(replacement)))
-        position = match.end()
+        origins.extend(repeat(start, len(replacement)))
+        ends.extend(repeat(stop, len(replacement)))
+
+    for match in _MARKUP_START.finditer(text):
+        start, token = match.start(), match.group()
+        if start < position:
+            continue  # inside markup already removed
+        if token == "<!--":
+            close = text.find("-->", match.end())
+            stop, replacement = (len(text) if close < 0 else close + 3), ""
+        elif token.startswith("<"):
+            close = -1 if start >= unclosed_tag_at else text.find(">", match.end())
+            if close < 0:  # no ">" from here on: no later "<" closes either
+                unclosed_tag_at = min(unclosed_tag_at, start)
+                continue
+            name = _TAG_NAME.match(text, start)
+            breaking = name is not None and name.group(1).lower() in _BREAKING_TAGS
+            stop, replacement = close + 1, " " if breaking else ""
+        elif token.startswith("\\"):
+            stop, replacement = match.end(), ""
+        else:
+            stop, replacement = match.end(), _decoded(token)
+            if replacement == token:
+                continue
+        replace(start, stop, replacement)
+        position = stop
     if not position:
         return None
     pieces.append(text[position:])
@@ -502,9 +542,14 @@ def _alnum_beside(source: str, index: int, step: int) -> bool:
     return 0 <= index < len(source) and source[index].isalnum()
 
 
-def _has_visible_space(gap: str) -> bool:
-    rendered = render(gap)
-    return any(map(str.isspace, rendered.text if rendered else gap))
+#: A line broken after a hyphen, which joins a word rather than separating two.
+_HYPHENATED_WRAP = re.compile(r"[-‐­][ \t]*\r?\n[ \t]*")
+
+
+def _spaced(gap: str) -> bool:
+    """Whether a gap between two characters of a match reads as a space: whitespace other
+    than a hyphenated line wrap."""
+    return any(map(str.isspace, _HYPHENATED_WRAP.sub("", gap)))
 
 
 @dataclass(frozen=True)
@@ -525,7 +570,15 @@ class FoldedTerm:
 
 @dataclass(frozen=True)
 class Normalised(View):
-    """A view of a message folded for matching terms."""
+    """A reading of a message folded for matching terms.
+
+    ``reading`` is the text that was folded (the message, or its rendering) and
+    ``reading_origins[i]`` the index in it of the character ``text[i]`` came from. Word
+    boundaries and spacing are judged in the reading, as its reader sees them.
+    """
+
+    reading: str = ""
+    reading_origins: Optional[array] = None
 
     def spans(
         self, term: FoldedTerm, *, whole_word: bool = True
@@ -557,16 +610,18 @@ class Normalised(View):
     def _starts_word(self, index: int) -> bool:
         if not self.text[index].isalnum():
             return True
-        if index and self.end_of(index - 1) > self.start_of(index):
+        at = self.reading_origins[index]
+        if index and self.reading_origins[index - 1] == at:
             return not self.text[index - 1].isalnum()  # inside one folded character
-        return not _alnum_beside(self.source, self.start_of(index) - 1, -1)
+        return not _alnum_beside(self.reading, at - 1, -1)
 
     def _ends_word(self, end: int) -> bool:
         if not self.text[end - 1].isalnum():
             return True
-        if end < len(self.text) and self.end_of(end - 1) > self.start_of(end):
+        at = self.reading_origins[end - 1]
+        if end < len(self.text) and self.reading_origins[end] == at:
             return not self.text[end].isalnum()
-        return not _alnum_beside(self.source, self.end_of(end - 1), 1)
+        return not _alnum_beside(self.reading, at + 1, 1)
 
     def _joined_as(self, term: FoldedTerm, index: int, end: int) -> bool:
         """Whether the characters of a match are joined as the term's are: space between
@@ -575,10 +630,11 @@ class Normalised(View):
         for offset in range(1, end - index):
             if offset in term.breaks:
                 continue
-            left, right = self.end_of(index + offset - 1), self.start_of(index + offset)
-            if left > right:
-                continue  # one character of the message folded to several
-            if _has_visible_space(self.source[left:right]):
+            left = self.reading_origins[index + offset - 1]
+            right = self.reading_origins[index + offset]
+            if left == right:
+                continue  # one character folded to several
+            if _spaced(self.reading[left + 1 : right]):
                 spaced = True
             else:
                 joined = True
@@ -628,11 +684,12 @@ def _fold_ascii(text: str) -> tuple[str, array]:
 
 
 def _folded(view: View) -> Normalised:
-    folded, origins = (_fold_ascii if view.text.isascii() else _fold_characters)(
-        view.text
-    )
+    fold = _fold_ascii if view.text.isascii() else _fold_characters
+    folded, origins = fold(view.text)
     derived = view.derive(folded, origins)
-    return Normalised(derived.source, derived.text, derived.origins, derived.ends)
+    return Normalised(
+        derived.source, derived.text, derived.origins, derived.ends, view.text, origins
+    )
 
 
 def normalise(text: str) -> Normalised:
@@ -715,26 +772,57 @@ def _create_key_file(path: Path, key_bytes: int) -> Optional[bytes]:
             place(temporary, path)
         except FileExistsError:
             return None
-        except PermissionError:
+        except OSError:
             if path.exists():
-                return None
-            raise
+                return None  # another process placed its key meanwhile
+            return _write_key_exclusively(path, key)  # hard links refused (EPERM, ...)
         return key
     finally:
         with suppress(FileNotFoundError, PermissionError):
             os.unlink(temporary)
 
 
-def _read_key(path: Path) -> bytes:
-    """``path``'s bytes, read again up to :data:`KEY_READ_ATTEMPTS` times while the file is
-    busy (a Windows sharing violation reports as a permission error)."""
+def _write_key_exclusively(path: Path, key: bytes) -> Optional[bytes]:
+    """Write ``key`` to ``path`` unless a file is there (None then). Not atomic: a reader
+    can meet the file before it is full, which :func:`_read_key` waits out."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+    try:
+        descriptor = os.open(path, flags, KEY_FILE_MODE)
+    except FileExistsError:
+        return None
+    with os.fdopen(descriptor, "wb") as file:
+        file.write(key)
+        file.flush()
+        os.fsync(file.fileno())
+    return key
+
+
+def _read_key(path: Path, key_bytes: int) -> bytes:
+    """The key in ``path``, read again up to :data:`KEY_READ_ATTEMPTS` times while the file
+    is busy (a Windows sharing violation reports as a permission error) or shorter than
+    ``key_bytes`` (another process may still be writing it)."""
     for attempt in range(1, KEY_READ_ATTEMPTS + 1):
+        last = attempt == KEY_READ_ATTEMPTS
         try:
-            return path.read_bytes()
-        except PermissionError:
-            if attempt == KEY_READ_ATTEMPTS:
-                raise
-            time.sleep(KEY_READ_RETRY_S)
+            key = path.read_bytes()
+        except PermissionError as error:
+            if last:
+                raise FingerprintKeyError(
+                    f"the fingerprint key in {path} cannot be read ({error}); liaise "
+                    "creates it readable by its owner, so check the file's owner and "
+                    "mode, or what else holds it open"
+                ) from error
+        else:
+            if len(key) >= key_bytes:
+                return key
+            if last:
+                raise FingerprintKeyError(
+                    f"the fingerprint key in {path} holds {len(key)} bytes, fewer than "
+                    f"{key_bytes}: it was not written by liaise. Replacing it changes "
+                    "every fingerprint, so repeats recorded before will no longer "
+                    "correlate."
+                )
+        time.sleep(KEY_READ_RETRY_S)
     raise AssertionError("unreachable: the last attempt returns or raises")
 
 
@@ -763,14 +851,7 @@ def fingerprint_key(
         created = _create_key_file(path, key_bytes)
         if created is not None:
             return created
-    key = _read_key(path)
-    if len(key) < key_bytes:
-        raise FingerprintKeyError(
-            f"the fingerprint key in {path} holds {len(key)} bytes, fewer than "
-            f"{key_bytes}: it was not written by liaise. Replacing it changes every "
-            "fingerprint, so repeats recorded before will no longer correlate."
-        )
-    return key
+    return _read_key(path, key_bytes)
 
 
 # ---- the scan ----
@@ -1269,6 +1350,10 @@ def _url_host(url: str) -> Optional[str]:
         rest = url.lstrip("/\\")
     else:
         return None
+    if (
+        not rest
+    ):  # nothing after the slashes loads nothing, unless the read was cut short
+        return "" if len(url) >= MAX_DESTINATION else None
     return _host(_AUTHORITY.match(rest).group())
 
 
@@ -1399,23 +1484,61 @@ def _html_destinations(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
 
 def _text_urls(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
     """``(start, end, hosts, image)`` for each URL written in plain text. A URL's path
-    stops where the next one starts, so a run of URLs is scanned once."""
+    stops where the next one starts, so a run of URLs is scanned once. A host with no dot,
+    no port and nothing after it (``https://exam`` cut by a tab) is no link: GitHub's
+    autolinker needs a dot, and a single-label host shows itself by a port or a path."""
     candidates = []
     if "://" in text:
-        candidates += [(m.start(), m.end("authority"), None) for m in _SCHEME_URL.finditer(text)]  # fmt: skip
+        candidates += [(m.start(), m.end("authority"), m.group("authority"), False) for m in _SCHEME_URL.finditer(text)]  # fmt: skip
     if "www." in text:
-        candidates += [(m.start(), m.end("authority"), m.group("authority")) for m in _BARE_WWW.finditer(text)]  # fmt: skip
+        candidates += [(m.start(), m.end("authority"), m.group("authority"), True) for m in _BARE_WWW.finditer(text)]  # fmt: skip
     candidates.sort()
-    for index, (start, authority_end, bare_host) in enumerate(candidates):
+    for index, (start, authority_end, authority, bare) in enumerate(candidates):
         limit = candidates[index + 1][0] if index + 1 < len(candidates) else len(text)
         end = _URL_TAIL.match(text, authority_end, max(limit, authority_end)).end()
         while end > authority_end and text[end - 1] in _URL_TRAILING_PUNCTUATION:
             end -= 1
-        if bare_host is not None:
-            hosts = frozenset({_host(bare_host)})
+        if bare:
+            hosts = frozenset({_host(authority)})
         else:
             hosts = frozenset(filter(None, _destination_hosts(text[start:end])))
-        yield start, end, hosts, False
+            if end == authority_end and ":" not in authority:
+                hosts = frozenset(h for h in hosts if "." in h or h == "localhost")
+        if hosts:
+            yield start, end, hosts, False
+
+
+#: Two or more slashes or backslashes, not inside a word or a path, then an authority,
+#: which may keep Markdown's escaped punctuation for a renderer to unescape.
+_LOOSE_AUTHORITY = re.compile(
+    r"(?<![\w/\\])[/\\]{2,}"
+    r"(?P<authority>(?:[^\s/\\?#<>\"'`\[\]{}|^]|\\[!-/:-@\[-`{-~]){1,253})"
+)
+_HOST_TRAILING_PUNCTUATION = ")].,;:!?'\""
+
+
+def _loose_urls(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
+    """``(start, end, hosts, image)`` for each ``//host`` anywhere in the text whose host
+    looks like one (it has a dot, or is ``localhost``), read with and without Markdown
+    escapes. This backs the parsers: a construct they do not model (a reference definition
+    inside a list or a quote, parentheses in a destination) still names its host here."""
+    if "//" not in text and "\\\\" not in text:
+        return
+    for match in _LOOSE_AUTHORITY.finditer(text):
+        authority = match.group("authority")
+        readings = (authority.partition("\\")[0], _MARKDOWN_ESCAPE.sub("", authority))
+        hosts = frozenset(
+            host
+            for host in (
+                _host(_AUTHORITY.match(reading).group()).rstrip(
+                    _HOST_TRAILING_PUNCTUATION
+                )
+                for reading in readings
+            )
+            if "." in host or host == "localhost"
+        )
+        if hosts:
+            yield match.start(), match.end("authority"), hosts, False
 
 
 def scan_links(scan: Scan) -> Iterator[Finding]:
@@ -1423,21 +1546,35 @@ def scan_links(scan: Scan) -> Iterator[Finding]:
 
     Destinations are read in Markdown (inline and reference), HTML attributes, autolinks
     and plain text, each as a browser resolves it; a destination is found when any
-    reading of it names a host outside the allowlist, or an authority with no readable
-    host. The rule is ``image-host`` when the URL loads without a click (a Markdown image,
-    or an attribute such as ``src``), else ``link-host``. The finding spans the URL.
+    reading of it names a host outside the allowlist, or an authority whose host cannot
+    be read. Then every ``//host`` anywhere (:func:`_loose_urls`) not inside a URL
+    already found. The rule is ``image-host`` when the URL loads without a click (a
+    Markdown image, or an attribute such as ``src``), else ``link-host``. The finding
+    spans the URL.
     """
+    text = scan.text
     found: dict[int, tuple[int, bool]] = {}
-    candidates = chain_iterables(
-        _markdown_destinations(scan.text),
-        _html_destinations(scan.text),
-        _text_urls(scan.text),
+    image_starts: set[int] = set()
+
+    def consider(start: int, end: int, hosts: frozenset, image: bool) -> None:
+        if any(not scan.allows(host) for host in hosts):
+            previous_end, previous_image = found.get(start, (end, False))
+            found[start] = (max(end, previous_end), image or previous_image)
+
+    parsed = chain_iterables(
+        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
     )
-    for start, end, hosts, image in candidates:
-        if not any(not scan.allows(host) for host in hosts):
-            continue
-        previous_end, previous_image = found.get(start, (end, False))
-        found[start] = (max(end, previous_end), image or previous_image)
+    for start, end, hosts, image in parsed:
+        if image:
+            image_starts.add(start)
+        consider(start, end, hosts, image)
+    spans = sorted(found.items())
+    starts = [start for start, _ in spans]
+    for start, end, hosts, _ in _loose_urls(text):
+        index = bisect_right(starts, start) - 1
+        if index >= 0 and starts[index] < start < spans[index][1][0]:
+            continue  # inside a URL already found
+        consider(start, end, hosts, start in image_starts)
     for start, (end, image) in sorted(found.items()):
         yield scan.finding(
             "exfiltration",
@@ -1453,49 +1590,71 @@ def scan_links(scan: Scan) -> Iterator[Finding]:
 _BASE64_RUN = re.compile(
     rf"(?<![A-Za-z0-9+/_-])[A-Za-z0-9+/_-]{{{MIN_BASE64_RUN},}}={{0,2}}"
 )
-#: Lines of base64 as PEM and MIME wrap them, each at least
-#: :data:`MIN_WRAPPED_BASE64_LINE` long, then a last line of any length.
-_WRAPPED_BASE64 = re.compile(
-    rf"^(?:[A-Za-z0-9+/]{{{MIN_WRAPPED_BASE64_LINE},}}={{0,2}}\r?\n)+[A-Za-z0-9+/]*={{0,2}}",
-    re.MULTILINE,
+#: A line that may belong to a wrapped base64 block: after any indentation or ``>`` quote
+#: marks, nothing but base64 characters.
+_BASE64_LINE = re.compile(
+    r"^[ \t>]*(?P<body>[A-Za-z0-9+/]+={0,2})[ \t]*\r?$", re.MULTILINE
 )
 _HEX_RUN = re.compile(rf"(?<![0-9A-Fa-f])[0-9A-Fa-f]{{{MIN_HEX_RUN},}}(?![0-9A-Fa-f])")
 _DIGIT = re.compile(r"[0-9]")
 _UPPER = re.compile(r"[A-Z]")
 _LOWER = re.compile(r"[a-z]")
 _HEX_LETTER = re.compile(r"[A-Fa-f]")
-_LINE_BREAKS = re.compile(r"\s+")
 
 
 def _mixes_base64_classes(run: str) -> bool:
     return bool(_DIGIT.search(run) and _UPPER.search(run) and _LOWER.search(run))
 
 
-def _base64_block(block: str) -> str:
-    """The base64 part of a wrapped block: all of it, less a last line that breaks the
-    length's multiple of four when the lines before keep it (a word after the block)."""
-    block = block.rstrip()
-    body, _, _ = block.rpartition("\n")
+def _base64_block(text: str, lines: list[tuple[int, int]]) -> Optional[tuple[int, int]]:
+    """The span of a wrapped base64 block made of ``lines`` (body spans of one width but a
+    shorter last), or None. A shorter last line counts only when it reads as the end of
+    data (padded, or long and mixed), not as a word such as a signature after the block."""
+    width = lines[0][1] - lines[0][0]
+    last = text[lines[-1][0] : lines[-1][1]]
+    if len(last) < width and not (
+        last.endswith("=")
+        or (len(last) >= MIN_BASE64_TAIL and _mixes_base64_classes(last))
+    ):
+        lines = lines[:-1]
+    if len(lines) < 2 or width < MIN_WRAPPED_BASE64_LINE:
+        return None
+    run = "".join(text[start:end] for start, end in lines)
+    if len(run) < MIN_BASE64_RUN or not _mixes_base64_classes(run):
+        return None
+    return lines[0][0], lines[-1][1]
 
-    def length(text: str) -> int:
-        return len(_LINE_BREAKS.sub("", text))
 
-    if body and length(block) % 4 and not length(body) % 4:
-        return body.rstrip()
-    return block
+def _wrapped_base64_blocks(text: str) -> list[tuple[int, int]]:
+    """The spans of base64 wrapped over adjacent lines of one width, after any indentation
+    or quote marks, in order."""
+    blocks, lines, width, previous_end = [], [], 0, -2
+    for match in _BASE64_LINE.finditer(text):
+        start, end = match.span("body")
+        continues = (
+            lines
+            and match.start() == previous_end + 1
+            and lines[-1][1] - lines[-1][0] == width
+            and end - start <= width
+        )
+        if continues:
+            lines.append((start, end))
+        else:
+            if lines and (block := _base64_block(text, lines)):
+                blocks.append(block)
+            lines, width = [(start, end)], end - start
+        previous_end = match.end()
+    if lines and (block := _base64_block(text, lines)):
+        blocks.append(block)
+    return blocks
 
 
 def scan_base64_runs(scan: Scan) -> Iterator[Finding]:
     """An ``exfiltration`` finding for each base64 or base64url run of at least
-    :data:`MIN_BASE64_RUN` characters, on one line or wrapped over several, that mixes
-    digits, capitals and small letters, which encoded data does and a long word or path
-    rarely does."""
-    blocks = []  # disjoint, in order
-    for match in _WRAPPED_BASE64.finditer(scan.text):
-        block = _base64_block(match.group())
-        run = _LINE_BREAKS.sub("", block)
-        if len(run) >= MIN_BASE64_RUN and _mixes_base64_classes(run):
-            blocks.append((match.start(), match.start() + len(block)))
+    :data:`MIN_BASE64_RUN` characters, on one line or wrapped over several (indented or
+    quoted too), that mixes digits, capitals and small letters, which encoded data does and
+    a long word or path rarely does."""
+    blocks = _wrapped_base64_blocks(scan.text)  # disjoint, in order
     block_starts = [start for start, _ in blocks]
     runs = []
     for match in _BASE64_RUN.finditer(scan.text):
@@ -1532,6 +1691,9 @@ def scan_hex_runs(scan: Scan) -> Iterator[Finding]:
 
 _BOM = "\ufeff"
 _PRESENTATION_SELECTORS = frozenset({"\ufe0e", "\ufe0f"})
+#: The punctuation that has an emoji presentation (double exclamation, exclamation question,
+#: wavy dash, part alternation mark); other punctuation takes no presentation selector.
+_EMOJI_PUNCTUATION = frozenset("\u203c\u2049\u3030\u303d")
 _EMOJI_JOINING = frozenset({"\u200d", "\ufe0f"})
 #: The longest run of joiners and selectors inside an emoji sequence (VS16, then ZWJ).
 _MAX_EMOJI_JOINING_RUN = 2
@@ -1576,8 +1738,9 @@ def _needed_invisible(text: str, start: int, end: int) -> bool:
     after = text[end] if end < len(text) else ""
 
     def symbol(char: str) -> bool:
-        return (
-            bool(char) and not char.isascii() and unicodedata.category(char)[0] in "SP"
+        return bool(char) and (
+            (not char.isascii() and unicodedata.category(char)[0] == "S")
+            or char in _EMOJI_PUNCTUATION
         )
 
     def joining_script(char: str) -> bool:
