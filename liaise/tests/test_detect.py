@@ -23,6 +23,7 @@ import time
 import unicodedata
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha256
+from pathlib import Path
 
 import pytest
 
@@ -749,6 +750,35 @@ def test_processes_racing_to_create_the_key_all_read_the_same_one(tmp_path):
         with ThreadPoolExecutor(max_workers=8) as pool:
             keys = set(pool.map(lambda _: fingerprint_key(state_dir), range(8)))
         assert len(keys) == 1
+
+
+def test_a_busy_key_file_is_read_again(tmp_path, monkeypatch):
+    """What a Windows reader meets while another process moves its key into place."""
+    key = fingerprint_key(tmp_path)
+    read_bytes, calls = Path.read_bytes, []
+
+    def busy_twice(path):
+        calls.append(path)
+        if len(calls) < 3:
+            raise PermissionError("the file is in use by another process")
+        return read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", busy_twice)
+    monkeypatch.setattr(detect_module, "KEY_READ_RETRY_S", 0)
+    assert fingerprint_key(tmp_path) == key
+    assert len(calls) == 3
+
+
+def test_a_key_file_that_stays_busy_raises(tmp_path, monkeypatch):
+    fingerprint_key(tmp_path)
+
+    def busy(path):
+        raise PermissionError("the file is in use by another process")
+
+    monkeypatch.setattr(Path, "read_bytes", busy)
+    monkeypatch.setattr(detect_module, "KEY_READ_RETRY_S", 0)
+    with pytest.raises(PermissionError):
+        fingerprint_key(tmp_path)
 
 
 def test_a_short_key_file_is_refused(tmp_path):

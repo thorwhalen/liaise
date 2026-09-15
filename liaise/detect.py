@@ -87,6 +87,7 @@ import os
 import re
 import secrets
 import tempfile
+import time
 import unicodedata
 from array import array
 from bisect import bisect_right
@@ -130,6 +131,10 @@ DFLT_STATE_DIR = Path("~/.local/share/liaise")
 DFLT_KEY_FILE = "fingerprint.key"
 DFLT_KEY_BYTES = 32
 STATE_DIR_MODE = 0o700
+#: How often, and how far apart, a busy key file is read again: on Windows a reader can
+#: meet a sharing violation while another process moves its new key into place.
+KEY_READ_ATTEMPTS = 10
+KEY_READ_RETRY_S = 0.05
 
 #: The shortest base64 run that is a finding: 75 bytes of data.
 MIN_BASE64_RUN = 100
@@ -692,7 +697,9 @@ def _create_key_file(path: Path, key_bytes: int) -> Optional[bytes]:
     """Write a new key to ``path`` atomically: None when another process wrote it first.
 
     The key is written in full to an owner-only temporary file, which is then linked (or,
-    on Windows, renamed) into place; neither replaces an existing file.
+    on Windows, renamed) into place; neither replaces an existing file. On Windows,
+    placing it while another process places its own can be refused as busy rather than
+    as existing; that also means another process wrote it first.
     """
     descriptor, temporary = tempfile.mkstemp(
         dir=path.parent, prefix=".fingerprint-", suffix=".tmp"
@@ -708,10 +715,27 @@ def _create_key_file(path: Path, key_bytes: int) -> Optional[bytes]:
             place(temporary, path)
         except FileExistsError:
             return None
+        except PermissionError:
+            if path.exists():
+                return None
+            raise
         return key
     finally:
-        with suppress(FileNotFoundError):
+        with suppress(FileNotFoundError, PermissionError):
             os.unlink(temporary)
+
+
+def _read_key(path: Path) -> bytes:
+    """``path``'s bytes, read again up to :data:`KEY_READ_ATTEMPTS` times while the file is
+    busy (a Windows sharing violation reports as a permission error)."""
+    for attempt in range(1, KEY_READ_ATTEMPTS + 1):
+        try:
+            return path.read_bytes()
+        except PermissionError:
+            if attempt == KEY_READ_ATTEMPTS:
+                raise
+            time.sleep(KEY_READ_RETRY_S)
+    raise AssertionError("unreachable: the last attempt returns or raises")
 
 
 def fingerprint_key(
@@ -739,7 +763,7 @@ def fingerprint_key(
         created = _create_key_file(path, key_bytes)
         if created is not None:
             return created
-    key = path.read_bytes()
+    key = _read_key(path)
     if len(key) < key_bytes:
         raise FingerprintKeyError(
             f"the fingerprint key in {path} holds {len(key)} bytes, fewer than "
