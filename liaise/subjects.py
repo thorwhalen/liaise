@@ -57,7 +57,7 @@ from liaise.config import (
     EscalateConfig,
     Markers,
 )
-from liaise.model import PERMISSIONS, require_one_of
+from liaise.model import CASE_STATES, PERMISSIONS, require_one_of
 
 #: Subject files live in this directory under the config root.
 DFLT_SUBJECTS_SUBDIR = "subjects"
@@ -163,7 +163,9 @@ class Policy:
     person to a role. ``permissions`` maps a role to the permissions it grants, and
     ``grades`` a permission to the authenticity grades it accepts. ``relays`` are
     authors whose ``claim_labels`` (routing label to person) count as claims. See
-    :mod:`liaise.access`.
+    :mod:`liaise.access`. ``waiting_labels`` (person to label) is the mirror of
+    ``claim_labels``: a label liaise writes on a case's issues while the case waits on that
+    person, where a claim label is one it reads (see :mod:`liaise.projection`).
     """
 
     people: Mapping[str, str]
@@ -188,6 +190,12 @@ class Policy:
     deployed_nudge_days: int = DFLT_DEPLOYED_NUDGE_DAYS
     #: Person id to the brief a run on their case reads (see :meth:`Subject.brief_for`).
     briefs: Mapping[str, str] = field(default_factory=dict)
+    #: Person id to the label a case's issues carry while the case waits on them.
+    waiting_labels: Mapping[str, str] = field(default_factory=dict)
+
+
+#: Each person's waiting label when a subject sets ``policy.waiting_labels = true``.
+DFLT_WAITING_LABEL = "needs-{person}"
 
 
 def address_key(address: str) -> str:
@@ -428,12 +436,20 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
     workspace = _table(raw, "workspace", path=path, dotted="workspace")
     delivery = _table(raw, "delivery", path=path, dotted="delivery")
     processor = _table(raw, "processor", path=path, dotted="processor")
+    policy = _policy_from(_table(raw, "policy", path=path, dotted="policy"), path=path)
+    label_prefix = raw.get("label_prefix", DFLT_LABEL_PREFIX)
+    state_labels = {f"{label_prefix}{state}" for state in CASE_STATES}
+    clashing = sorted(set(policy.waiting_labels.values()) & state_labels)
+    if clashing:
+        raise ConfigError(
+            f"{path}: policy.waiting_labels uses {', '.join(map(repr, clashing))}, which "
+            f"is a state label, so projecting a state would take it off. Choose another "
+            f"label."
+        )
     return Subject(
         slug=path.stem,
         bindings=bindings,
-        policy=_policy_from(
-            _table(raw, "policy", path=path, dotted="policy"), path=path
-        ),
+        policy=policy,
         display_name=raw.get("display_name", path.stem),
         workspace=Workspace(
             kind=_choice(
@@ -461,7 +477,7 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
             ),
             command=delivery.get("command", ""),
         ),
-        label_prefix=raw.get("label_prefix", DFLT_LABEL_PREFIX),
+        label_prefix=label_prefix,
         processor=ProcessorConfig(
             permission_mode=processor.get("permission_mode", DFLT_PERMISSION_MODE)
         ),
@@ -644,6 +660,10 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
                 f"or remove the brief."
             )
 
+    waiting_labels = _waiting_labels(
+        raw, roles=roles, claim_labels=claim_labels, path=path
+    )
+
     reply_modes = _string_table(
         raw, "reply_modes", path=path, dotted="policy.reply_modes"
     )
@@ -724,4 +744,56 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
         ),
         deployed_nudge_days=deployed_nudge_days,
         briefs=briefs,
+        waiting_labels=waiting_labels,
     )
+
+
+def _waiting_labels(
+    raw: Mapping[str, Any],
+    *,
+    roles: Mapping[str, str],
+    claim_labels: Mapping[str, str],
+    path: Path,
+) -> dict[str, str]:
+    """``policy.waiting_labels``: off, a table of person to label, or ``true`` for everyone.
+
+    ``true`` gives every person with a role :data:`DFLT_WAITING_LABEL`. Each label must be
+    a person's with a role, not empty, not another person's, and not a claim label, which
+    projecting it would take off.
+    """
+    dotted = "policy.waiting_labels"
+    value = raw.get("waiting_labels", False)
+    if value is False:
+        return {}
+    if value is True:
+        labels = {person: DFLT_WAITING_LABEL.format(person=person) for person in roles}
+    elif isinstance(value, dict):
+        labels = _string_table(raw, "waiting_labels", path=path, dotted=dotted)
+    else:
+        raise ConfigError(
+            f"{path}: {dotted} must be true, false or a table of person to label, as in "
+            f'waiting_labels = {{ pat = "needs-pat" }}; got {value!r}.'
+        )
+    owners: dict[str, str] = {}
+    for person, label in labels.items():
+        if person not in roles:
+            raise ConfigError(
+                f"{path}: {dotted} has a label for {person!r}, who has no entry in "
+                f"policy.roles, so no case could ever wait on them. Give {person!r} a "
+                f"role, or remove the label."
+            )
+        if not label.strip():
+            raise ConfigError(f"{path}: {dotted} gives {person!r} an empty label.")
+        if label in claim_labels:
+            raise ConfigError(
+                f"{path}: {dotted} gives {person!r} the label {label!r}, which is also a "
+                f"claim label, so projecting it would take the claim off. Choose another "
+                f"label."
+            )
+        other = owners.setdefault(label, person)
+        if other != person:
+            raise ConfigError(
+                f"{path}: {dotted} gives {other!r} and {person!r} the same label "
+                f"{label!r}, so it could not say which of them a case waits on."
+            )
+    return labels
