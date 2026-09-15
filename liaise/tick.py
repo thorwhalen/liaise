@@ -259,6 +259,9 @@ WorkspaceFactory = Callable[..., Optional[SharedCheckout]]
 #: triage seam (#19). The tick starts the cases group by group, each group in its order,
 #: and a case left out is not started this tick. None keeps the tick's own order.
 Triage = Callable[[Sequence[Case]], Iterable[Iterable[Case]]]
+#: How a draft kept because a hold kept its effects waiting begins its reason, before the
+#: hold's scope: ``held: effect:deploy``.
+HELD_REASON_PREFIX = "held: "
 
 
 @dataclass(frozen=True)
@@ -1562,7 +1565,7 @@ class _Tick:
             self._deliver(subject, immediate)  # a deploy per issue: a batch of one, now
 
     def _hold_send(self, send: Send, hold: Hold) -> None:
-        reason = f"held: {hold.scope}"
+        reason = f"{HELD_REASON_PREFIX}{hold.scope}"
         draft = make_draft(
             at=self.now,
             outcome=send.purpose,

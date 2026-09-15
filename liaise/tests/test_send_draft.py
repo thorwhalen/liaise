@@ -10,7 +10,9 @@ release settles draft reply mode and nothing else.
 from __future__ import annotations
 
 import copy
+import io
 import sys
+import tempfile
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
@@ -25,6 +27,7 @@ from liaise.model import Approval, Hold, RunRecord
 from liaise.outcomes import make_draft
 from liaise.subjects import load_subjects
 from liaise.testing import FakeGitHubChannel, demo_registry
+from liaise.tests.conftest import write_executable_script
 from liaise.tick import run_lock, run_lock_path
 
 NOW = datetime(2026, 9, 11, 12, 0, tzinfo=timezone.utc)
@@ -67,6 +70,7 @@ class World:
             REPO, 1, author="pat", title="Dates", body="The dates look short.", labels=("partner:pat",), created_at=NOW
         )
         self.registry = demo_registry(github=self.github)
+        self.previews: list[str] = []
         self.store: dict = {}
         ledger = Ledger(self.store)
         ledger.new_case(SLUG, ISSUE, reporter="pat", at=NOW)
@@ -88,8 +92,14 @@ class World:
             case = replace(case, state=state)
         self.ledger.save_case(case)
 
-    def send(self, *args, **kwargs) -> str:
-        kwargs = dict(root=str(self.root), registry=self.registry, store=self.store, now=LATER, **kwargs)
+    def send(self, *args, answer=True, **kwargs) -> str:
+        """``liaise case send-draft`` for the case, the operator answering ``answer`` to what it shows."""
+
+        def confirm(preview):
+            self.previews.append(preview)
+            return answer(self) if callable(answer) else answer
+
+        kwargs = dict(root=str(self.root), registry=self.registry, store=self.store, now=LATER, confirm=confirm, **kwargs)
         return cli.case_send_draft(CASE, *args, **kwargs)
 
     def reject(self, *args, **kwargs) -> str:
@@ -141,7 +151,8 @@ def test_a_released_draft_holding_a_leak_is_diverted_and_stays_on_the_case(world
     assert str(raised.value).startswith(
         f"draft [0] of {CASE} was not sent: diverted by leak_scan: leak scan: local path. It stays on the case"
     )
-    assert world.posted() == []
+    assert raised.value.code == cli.DIVERTED_EXIT_CODE
+    assert world.previews == [] and world.posted() == []  # nothing to confirm: it cannot go
     case = world.case()
     (draft,) = case.drafts
     assert (draft["text"], draft["reason"], case.state) == (LEAK, "leak scan: local path", "needs-owner")
@@ -223,7 +234,7 @@ def test_a_dry_run_judges_and_plans_and_changes_nothing(world):
     [
         ("needs-owner", "ask", "needs-partner"),
         ("needs-owner", "reply", "needs-partner"),
-        ("needs-owner", "escalate", "needs-partner"),
+        ("needs-owner", "escalate", "needs-owner"),  # it may be a refusal: the operator moves it
         ("needs-owner", "deliver", "needs-owner"),  # a held deploy did not go out with its message
         ("needs-owner", "nudge", "needs-owner"),
         ("needs-partner", "ask", "needs-partner"),  # where the tick leaves a diverted ask
@@ -246,11 +257,14 @@ def test_a_channel_that_refuses_the_message_keeps_the_draft_with_the_failure(wor
     world.github.send_error = ChannelError("issue is locked", kind="permission")
     world.hold_drafts(_draft())
 
-    with pytest.raises(cw.CommandError, match=f"draft \\[0\\] of {CASE} was not sent: send failed: "):
+    with pytest.raises(cw.CommandError, match=f"draft \\[0\\] of {CASE} was not sent: send failed: ") as raised:
         world.send()
 
+    assert raised.value.code == 1
     (kept,) = world.case().drafts
-    assert kept["reason"].startswith("send failed: ") and kept["text"] == f"@pat {TEXT}"
+    assert kept["reason"].startswith("send failed: ")
+    assert kept["text"] == TEXT  # without the mention: the next release adds the handle of that day
+    assert world.case().entries[-1].text == f"@pat {TEXT}"  # what was attempted
     assert world.case().state == "needs-owner"
     assert world.case().entries[-1].detail["decision"] == "send" and world.case().entries[-1].detail["error"]
 
@@ -262,7 +276,8 @@ def test_only_the_named_draft_is_sent_and_the_others_stay(world):
 
     assert world.posted() == ["@pat Second."]
     assert [draft["text"] for draft in world.case().drafts] == ["First.", "Third."]
-    assert output.splitlines()[-1] == f"drafts left on {CASE}: 2"
+    assert output.splitlines()[-2:] == [f"{CASE} stays needs-owner", f"drafts left on {CASE}: 2"]
+    assert world.case().state == "needs-owner"  # two drafts still wait on the operator
 
 
 def _seed_run(world):
@@ -356,6 +371,137 @@ def test_the_gate_sees_the_operators_approval_and_the_case(world):
     assert seen == [("ask", TEXT, CASE, Approval(by="operator", at=LATER))]
     assert release.attempt.sent and release.filters == 1
     assert world.posted() == [TEXT]  # no mention: this gate has only the spy
+
+
+def test_judging_without_sending_records_a_divert_and_leaves_a_passing_draft_alone(world):
+    subjects = load_subjects(world.root)
+    world.hold_drafts(_draft())
+    before = copy.deepcopy(world.store)
+
+    judged = cases.send_draft(world.ledger, subjects, CASE, now=LATER, registry=world.registry, send=False)
+
+    assert judged.attempt.sent and world.store == before and world.posted() == []
+    world.hold_drafts(_draft(LEAK))
+    judged = cases.send_draft(world.ledger, subjects, CASE, now=LATER, registry=world.registry, send=False)
+    assert judged.attempt.decision.diverted == "leak scan: local path"
+    assert world.case().drafts[0]["reason"] == "leak scan: local path" and world.posted() == []
+
+
+# ---- the operator confirms (review of #29) ----
+
+
+def test_without_a_terminal_nothing_is_sent(world, monkeypatch):
+    world.hold_drafts(_draft())
+    monkeypatch.setattr(sys, "stdin", io.StringIO("y\n"))  # an answer piped in is not a person
+    before = copy.deepcopy(world.store)
+
+    with pytest.raises(cw.CommandError, match="there is no terminal here, so nothing was sent"):
+        cli.case_send_draft(CASE, root=str(world.root), registry=world.registry, store=world.store, now=LATER)
+
+    assert world.store == before and world.posted() == []
+
+
+def test_the_operator_reads_where_it_goes_the_verdict_and_the_exact_text_and_may_decline(world):
+    world.hold_drafts(_draft())
+    before = copy.deepcopy(world.store)
+
+    output = world.send(answer=False)
+
+    assert output == f"nothing sent: draft [0] of {CASE} stays on the case"
+    assert world.store == before and world.posted() == []
+    (preview,) = world.previews
+    lines = preview.splitlines()
+    assert lines[:2] == [f"draft [0] of {CASE}: ask to pat on {ISSUE}", "gate: passed (5 filters)"]
+    assert f"then {CASE} moves from needs-owner to needs-partner" in lines
+    assert lines[-3:] == ["--- the message, as it would be sent ---", f"@pat {TEXT}", "---"]
+
+
+def test_an_edit_that_changed_nothing_says_so_before_anything_goes(world):
+    world.hold_drafts(_draft())
+
+    world.send(edit=True, editor=lambda text: text, answer=False)  # a GUI editor that did not wait
+
+    assert "your edit changed nothing: this is the draft as it was" in world.previews[0].splitlines()
+
+
+def test_a_draft_that_changed_while_the_operator_read_it_is_not_sent(world):
+    world.hold_drafts(_draft("Is the October cut-off expected?"))
+
+    def meanwhile(world):
+        world.hold_drafts(_draft("Something else entirely."))  # a reject in another terminal, say
+        return True
+
+    with pytest.raises(cw.CommandError, match=f"draft \\[0\\] of {CASE} changed while you had it open"):
+        world.send(answer=meanwhile)
+    assert world.posted() == []
+
+
+def test_a_delivery_message_a_hold_kept_is_refused_since_the_delivery_never_ran(world):
+    world.hold_drafts(_draft("Deployed: try it now.", outcome="deliver", reason="held: effect:deploy"))
+    before = copy.deepcopy(world.store)
+
+    with pytest.raises(cw.CommandError, match="a hold kept that delivery from running \\(held: effect:deploy\\)"):
+        world.send()
+
+    assert world.store == before and world.posted() == []
+
+
+def test_an_effect_deploy_hold_keeps_a_delivery_message_and_lets_a_question_go(world):
+    world.ledger.set_hold(Hold(scope="effect:deploy", mode="block"))
+    world.hold_drafts(_draft("Deployed: try it now.", outcome="deliver", reason="deslop: 1 enforced finding(s)"))
+
+    with pytest.raises(cw.CommandError, match="the hold on effect:deploy \\(block\\) keeps this case's delivery waiting"):
+        world.send()
+
+    world.hold_drafts(_draft())
+    world.send()
+    assert world.posted() == [f"@pat {TEXT}"]
+
+
+class _StoreThatFailsWhenTold(dict):
+    fail = False
+
+    def __setitem__(self, key, value):
+        if self.fail:
+            raise OSError("disk full")
+        super().__setitem__(key, value)
+
+
+def test_a_send_the_ledger_cannot_record_says_it_went_out_and_not_to_send_it_again(world):
+    world.store = _StoreThatFailsWhenTold(world.store)
+    world.hold_drafts(_draft())
+
+    def break_the_store(world):
+        world.store.fail = True
+        return True
+
+    with pytest.raises(cw.CommandError, match=f"draft \\[0\\] of {CASE} was sent as https://.* do not send it again"):
+        world.send(answer=break_the_store)
+    assert world.posted() == [f"@pat {TEXT}"]
+
+
+def test_the_editor_edits_a_file_in_a_directory_removed_with_its_backups(tmp_path, monkeypatch):
+    body = (
+        "import pathlib, sys\n"
+        "path = pathlib.Path(sys.argv[1])\n"
+        "path.write_text(path.read_text() + ' Edited.')\n"
+        "pathlib.Path(str(path) + '~').write_text('a backup')\n"
+    )
+    script = write_executable_script(tmp_path / "editor", body)
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(scratch))
+    monkeypatch.setenv("VISUAL", str(script))
+
+    assert cli.edit_in_editor("Hello.") == "Hello. Edited."
+    assert list(scratch.iterdir()) == []
+
+
+def test_an_editor_that_fails_sends_nothing(tmp_path, monkeypatch):
+    monkeypatch.setenv("VISUAL", str(write_executable_script(tmp_path / "editor", "import sys\nsys.exit(3)\n")))
+
+    with pytest.raises(ValueError, match="exited with 3, so nothing was sent"):
+        cli.edit_in_editor("Hello.")
 
 
 # ---- rejecting ----

@@ -159,10 +159,11 @@ liaise case reject-draft example-app-2 1 --reason "answered on a call"
 
 - `case show` numbers the drafts `[0]`, `[1]`, and so on. The index can be left out when the case holds only one.
 - `send-draft` runs the gate again on the draft, with the owner's approval recorded. Draft reply mode lets it through; the leak scan, deslop and the mention still judge it. It is not a way around the gate: a draft held for a leak is diverted again until its text changes.
-- `--edit` opens the text in `$VISUAL` or `$EDITOR`, and the gate judges what was saved. An edit that is diverted stays on the case, so the next `--edit` starts from it.
-- Sent: the draft leaves the case, and the send is recorded as the owner's, with the time. A case in `needs-owner` moves to `needs-partner` when the draft was an `ask`, `reply` or `propose`, or an escalation's text. A `deliver` message or the tick's own nudge leaves the state alone.
-- Not sent, because the gate diverted it or its channel refused it: the draft stays with the new reason, and the command exits nonzero.
-- It refuses while a tick runs, while a `block` or `cancel` hold covers the case (`drain` lets it go), and while a run of the case is in flight. It also refuses a draft with no destination (`no channel to reach <person>`): send that one yourself, then reject it.
+- **It asks the owner.** It prints where the message goes, the gate's verdict and the exact text, and sends only when the owner types `y` at their own terminal. Never run it on the owner's behalf, and never pipe it an answer: without a terminal it refuses, and that is the point. `--dry-run` shows the same without asking.
+- `--edit` opens the text in `$VISUAL` or `$EDITOR`, and the gate judges what was saved. An edit that is diverted stays on the case, so the next `--edit` starts from it. A GUI editor needs its wait flag (`code --wait`); without it, the confirmation says the edit changed nothing.
+- Sent: the draft leaves the case, and the send is recorded as the owner's, with the time. Once no draft is left, a case in `needs-owner` moves to `needs-partner` when the draft was an `ask`, `reply` or `propose`. An escalation's text, a `deliver` message or the tick's own nudge leaves the state alone.
+- Not sent, because the gate diverted it or its channel refused it: the draft stays with the new reason, and the command exits 2 for a divert, 1 for a refusal.
+- It refuses while a tick runs, while a `block` or `cancel` hold covers the case (`drain` lets it go), and while a run of the case is in flight. It also refuses a draft with no destination (`no channel to reach <person>`): send that one yourself, then reject it. And it refuses a `deliver` message a hold kept: the delivery it announces never ran.
 - `reject-draft` needs `--reason`. It sends nothing and leaves the state as it is; move the case on with `liaise case set-state`.
 - Both take `--dry-run`, which writes nothing.
 

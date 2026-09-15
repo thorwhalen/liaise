@@ -44,7 +44,7 @@ import tempfile
 import time
 from collections import ChainMap
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from contextlib import ExitStack, suppress
+from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -97,6 +97,20 @@ TICK_RUNNING = (
 EDITOR_ENV_VARS = ("VISUAL", "EDITOR")
 #: The editor ``liaise case send-draft --edit`` opens when no variable names one.
 DFLT_EDITOR = "notepad" if sys.platform == "win32" else "vi"
+#: The file ``--edit`` puts the draft in, inside a temporary directory of its own.
+DRAFT_FILE_NAME = "draft.md"
+#: What ``liaise case send-draft`` asks at the terminal, and the answers that send.
+CONFIRM_PROMPT = "send it? [y/N] "
+CONFIRM_ANSWERS = ("y", "yes")
+#: The exit code of a draft command whose message the gate diverted: the message is held
+#: for the operator, as ``liaise vet`` is planned to say (discussion 32, §5.8).
+DIVERTED_EXIT_CODE = 2
+#: Why ``liaise case send-draft`` sends nothing without a terminal to ask at.
+NO_TERMINAL = (
+    "liaise case send-draft sends a draft only once you confirm it at a terminal, and "
+    "there is no terminal here, so nothing was sent: run it in your own shell "
+    "(--dry-run asks nothing)"
+)
 
 
 def _expected_errors(*kinds: type[Exception]) -> Callable[[Callable], Callable]:
@@ -171,33 +185,54 @@ def _hold_run_lock(
 def edit_in_editor(text: str) -> str:
     """``text`` as the operator leaves it in their editor: ``$VISUAL``, ``$EDITOR``, else vi.
 
-    The text is written to a temporary file only its owner can read, which is removed once
-    the editor exits. Raises ``ValueError`` when the editor cannot be started or exits
+    The text goes in a file in a temporary directory only its owner can read, and the
+    directory is removed once the editor exits, with any backup the editor left there. An
+    editor that returns before the operator has saved, such as a GUI editor started
+    without its wait flag (``code --wait``), hands the text back unchanged, and the
+    confirmation says so. On Windows the command runs through the shell, which a ``.cmd``
+    editor needs. Raises ``ValueError`` when the editor cannot be started or exits
     nonzero, so nothing is sent.
     """
     command = next(
         (os.environ[name] for name in EDITOR_ENV_VARS if os.environ.get(name)),
         DFLT_EDITOR,
     )
-    descriptor, path = tempfile.mkstemp(prefix="liaise-draft-", suffix=".md")
-    try:
-        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
-            file.write(text)
+    with tempfile.TemporaryDirectory(prefix="liaise-draft-") as folder:
+        path = Path(folder) / DRAFT_FILE_NAME
+        path.write_text(text, encoding="utf-8")
         try:
-            argv = [*shlex.split(command, posix=os.name != "nt"), path]
-            exit_code = subprocess.run(argv, check=False).returncode
+            if os.name == "nt":
+                edit = subprocess.run(f'{command} "{path}"', shell=True, check=False)
+            else:
+                edit = subprocess.run([*shlex.split(command), str(path)], check=False)
         except OSError as error:
             raise ValueError(
                 f"the editor {command!r} could not be started ({error}); set $EDITOR"
             ) from error
-        if exit_code != 0:
+        if edit.returncode != 0:
             raise ValueError(
-                f"the editor {command!r} exited with {exit_code}, so nothing was sent"
+                f"the editor {command!r} exited with {edit.returncode}, so nothing was "
+                f"sent"
             )
-        return Path(path).read_text(encoding="utf-8")
-    finally:
-        with suppress(OSError):
-            os.unlink(path)
+        return path.read_text(encoding="utf-8")
+
+
+def confirm_at_terminal(preview: str) -> bool:
+    """Show ``preview`` and ask, at the operator's terminal, whether to send it; True for yes.
+
+    A draft is released by a person at a terminal, not by whatever can run a command, so
+    this raises ``ValueError`` when standard input is not a terminal: a processor run, or
+    an agent's shell. It is a check on the ordinary way of running the command, not a
+    sandbox: the hook of discussion 32, §5.8, is the defence for commands an agent writes.
+    """
+    if not sys.stdin.isatty():
+        raise ValueError(NO_TERMINAL)
+    print(preview, flush=True)
+    try:
+        answer = input(CONFIRM_PROMPT)
+    except EOFError:
+        return False
+    return answer.strip().casefold() in CONFIRM_ANSWERS
 
 
 # ---- the loop ----
@@ -561,7 +596,51 @@ def _one_index(case_id: str, index: Sequence[int]) -> Optional[int]:
     return index[0] if index else None
 
 
-@_expected_errors(ConfigError, ValueError)
+def _draft_not_sent(
+    release: cases.DraftRelease, case_id: str, *, dry_run: bool
+) -> cw.CommandError:
+    """The one-screen refusal for a released draft the gate diverted or its channel refused.
+
+    A divert exits :data:`DIVERTED_EXIT_CODE`, and a refusal cw's usual error code.
+    """
+    attempt, label = release.attempt, f"draft [{release.index}] of {case_id}"
+    decision = attempt.decision
+    diverted = decision.send is None
+    why = (
+        f"diverted by {decision.diverted_by}: {decision.diverted}"
+        if diverted
+        else f"send failed: {attempt.failure}"
+    )
+    kept = (
+        ""
+        if dry_run
+        else f". It stays on the case with that reason; edit it with liaise case "
+        f"send-draft {case_id} {release.index} --edit"
+    )
+    verb = "would not be sent" if dry_run else "was not sent"
+    notes = [f"  note: {note}" for note in decision.notes]
+    message = "\n".join([f"{label} {verb}: {why}{kept}", *notes])
+    return cw.CommandError(message, **({"code": DIVERTED_EXIT_CODE} if diverted else {}))
+
+
+def _draft_preview(release: cases.DraftRelease, case_id: str, *, edit: bool) -> str:
+    """What the operator reads before confirming: where it goes, the verdict, the exact text."""
+    outbound = release.attempt.outbound
+    lines = [
+        f"draft [{release.index}] of {case_id}: {outbound.purpose} to "
+        f"{outbound.recipient} on {outbound.ref}",
+        f"gate: passed ({release.filters} filters)",
+        *(f"  note: {note}" for note in release.attempt.decision.notes),
+    ]
+    if edit and not release.edited:
+        lines.append("your edit changed nothing: this is the draft as it was")
+    if release.moved:
+        lines.append(f"then {case_id} moves from {release.moved[0]} to {release.moved[1]}")
+    lines += ["--- the message, as it would be sent ---", outbound.text, "---"]
+    return "\n".join(lines)
+
+
+@_expected_errors(ConfigError, ValueError, cases.DraftSentNotRecorded)
 def case_send_draft(
     case_id: str,
     *index: int,
@@ -572,83 +651,90 @@ def case_send_draft(
     store: Optional[MutableMapping[str, Any]] = None,
     now: Optional[datetime] = None,
     editor: Optional[Callable[[str], str]] = None,
+    confirm: Optional[Callable[[str], bool]] = None,
 ) -> str:
     """Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.
 
-    ``liaise case show`` numbers the drafts. The gate runs again on the text, with your
+    ``liaise case show`` numbers the drafts. The gate judges the text again, with your
     approval recorded: draft reply mode lets it through, and the leak scan, deslop and the
     mention judge it as they judge any message. ``--edit`` opens the text in ``$VISUAL`` or
     ``$EDITOR`` first, and the gate judges what you saved.
 
-    Once sent, the draft leaves the case and the send is recorded as yours. A case in
-    needs-owner moves on as a sent message moves it (an ask, to needs-partner). A message
-    that is diverted, or that its channel refuses, is not sent: the draft stays on the case,
-    holding the text that was judged and the reason, and the command exits nonzero.
-    ``--dry-run`` judges and plans, and changes nothing.
+    It then shows you where the message goes, the gate's verdict and the message exactly as
+    it would be sent, and sends it only once you answer ``y`` at a terminal. Without a
+    terminal, as in an agent's shell or a processor run, it sends nothing.
+
+    Once sent, the draft leaves the case and the send is recorded as yours. When no draft
+    is left, a case in needs-owner moves on as a sent message moves it: an ask, a reply or
+    a proposal, to needs-partner. A message the gate diverts is not sent: the draft stays
+    on the case with the reason, and the command exits 2. A message its channel refuses
+    stays the same way, and exits 1. ``--dry-run`` judges and plans, asks nothing, and
+    records nothing.
 
     It holds the run lock, as ``set-state`` does, and refuses while a tick runs. It also
-    refuses while a hold keeps the case's messages waiting, and while a run of the case is
-    in flight.
+    refuses while a hold keeps the case's messages waiting, while a run of the case is in
+    flight, and for a delivery message whose delivery a hold kept from running.
     """
     config_root = _root(root)
     global_config = load_global_config(config_root)
     subjects = load_subjects(config_root)
     ledger_store = _ledger_store(global_config, store, create=not dry_run)
-    ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
-    draft_index, text, seen = _one_index(case_id, index), None, None
+    ledger = Ledger(ledger_store)
+    draft_index, text, opened = _one_index(case_id, index), None, None
     if edit:  # before the lock: an editor can stay open far longer than a tick waits
-        draft_index, seen = cases.find_draft(ledger, case_id, index=draft_index)
-        text = (editor or edit_in_editor)(seen.get("text") or "")
-    with ExitStack() as between_ticks:
-        if not dry_run:
-            _hold_run_lock(between_ticks, global_config, case_id, done="sent")
-        release = cases.send_draft(
-            ledger,
-            subjects,
-            case_id,
-            index=draft_index,
-            text=text,
-            seen=seen,
-            now=now,
-            registry=registry,
-            dry_run=dry_run,
-        )
-    label = f"draft [{release.index}] of {case_id}"
-    attempt = release.attempt
-    notes = [f"  note: {note}" for note in attempt.decision.notes]
-    if not attempt.sent:
-        decision = attempt.decision
-        why = (
-            f"diverted by {decision.diverted_by}: {decision.diverted}"
-            if decision.send is None
-            else f"send failed: {attempt.failure}"
-        )
-        kept = (
-            ""
-            if dry_run
-            else f". It stays on the case with that reason; edit it with liaise case "
-            f"send-draft {case_id} {release.index} --edit"
-        )
-        verb = "would not be sent" if dry_run else "was not sent"
-        raise cw.CommandError("\n".join([f"{label} {verb}: {why}{kept}", *notes]))
-    ref = release.draft.get("ref")
-    url = getattr(attempt.result, "url", None)
-    head = (
-        f"{'would send' if dry_run else 'sent'} {label} on {ref} "
-        f"(gate: passed, {release.filters} filters)"
+        draft_index, opened = cases.find_draft(ledger, case_id, index=draft_index)
+        text = (editor or edit_in_editor)(opened.get("text") or "")
+    release = functools.partial(
+        cases.send_draft, subjects=subjects, case_id=case_id, text=text, now=now,
+        registry=registry,
+    )  # fmt: skip
+
+    preview = release(
+        Ledger(ChainMap({}, ledger_store)), index=draft_index, seen=opened, dry_run=True
     )
+    bound = dict(index=preview.index, seen=preview.draft)  # what the operator was shown
+    if not preview.attempt.sent:
+        if dry_run:
+            raise _draft_not_sent(preview, case_id, dry_run=True)
+        with ExitStack() as between_ticks:  # record why, sending nothing
+            _hold_run_lock(between_ticks, global_config, case_id, done="changed")
+            judged = release(ledger, send=False, **bound)
+        if judged.attempt.sent:
+            raise cw.CommandError(
+                f"the gate's verdict on draft [{preview.index}] of {case_id} changed while "
+                f"it was judged, so nothing was sent; run the command again"
+            )
+        raise _draft_not_sent(judged, case_id, dry_run=False)
+    if not dry_run:
+        if not (confirm or confirm_at_terminal)(
+            _draft_preview(preview, case_id, edit=edit)
+        ):
+            return f"nothing sent: draft [{preview.index}] of {case_id} stays on the case"
+        with ExitStack() as between_ticks:
+            _hold_run_lock(between_ticks, global_config, case_id, done="sent")
+            preview = release(ledger, **bound)
+        if not preview.attempt.sent:
+            raise _draft_not_sent(preview, case_id, dry_run=False)
+
+    label = f"draft [{preview.index}] of {case_id}"
+    url = getattr(preview.attempt.result, "url", None)
+    head = (
+        f"{'would send' if dry_run else 'sent'} {label} on {preview.draft.get('ref')} "
+        f"(gate: passed, {preview.filters} filters)"
+    )
+    notes = [f"  note: {note}" for note in preview.attempt.decision.notes]
     lines = [head + (f": {url}" if url and not dry_run else ""), *notes]
-    if release.moved:
-        before, after = release.moved
+    if preview.moved:
+        before, after = preview.moved
         verb = "would move" if dry_run else "moved"
         lines.append(
             f"{verb} {case_id} from {before} to {after}; its labels follow on the next "
             f"tick"
         )
     else:
-        lines.append(f"{case_id} stays {release.case.state}")
-    if release.case.drafts:
-        lines.append(f"drafts left on {case_id}: {len(release.case.drafts)}")
+        lines.append(f"{case_id} stays {preview.case.state}")
+    if preview.case.drafts:
+        lines.append(f"drafts left on {case_id}: {len(preview.case.drafts)}")
     return "\n".join(lines)
 
 
@@ -739,7 +825,7 @@ _SEAMS = {
         "list": ("store",),
         "show": ("store",),
         "set-state": ("store", "now"),
-        "send-draft": ("registry", "store", "now", "editor"),
+        "send-draft": ("registry", "store", "now", "editor", "confirm"),
         "reject-draft": ("store", "now"),
     },
     "setup": ("labeler",),
@@ -762,8 +848,8 @@ def _hidden(seams: Mapping[str, Any]) -> dict[str, Any]:
 #: draft's INDEX is a number (see :func:`_one_index`).
 _ARGUMENTS = {
     "case": {
-        "send-draft": {"index": {"type": int}},
-        "reject-draft": {"index": {"type": int}},
+        "send-draft": {"index": {"type": int, "metavar": "INDEX"}},
+        "reject-draft": {"index": {"type": int, "metavar": "INDEX"}},
     }
 }
 

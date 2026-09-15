@@ -133,7 +133,7 @@ def test_the_draft_commands_take_an_optional_index_and_hide_their_seams():
     assert list(parser.parse_args(["case", "send-draft", f"{SLUG}-1"]).index) == []
     rejected = parser.parse_args(["case", "reject-draft", f"{SLUG}-1", "0", "--reason", "answered on a call"])
     assert (list(rejected.index), rejected.reason) == ([0], "answered on a call")
-    for seam in ("--registry", "--store", "--now", "--editor"):
+    for seam in ("--registry", "--store", "--now", "--editor", "--confirm"):
         with pytest.raises(SystemExit):
             parser.parse_args(["case", "send-draft", f"{SLUG}-1", seam, "x"])
     with pytest.raises(SystemExit):
