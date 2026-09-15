@@ -34,6 +34,13 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from typing import Callable, Optional, Union
 
+from liaise.detect import (
+    EMAIL_PATTERN,
+    ENV_FILE_PATTERN,
+    LOCAL_PATH_PATTERNS,
+    PRIVATE_KEY_PATTERN,
+    TOKEN_SHAPES,
+)
 from liaise.model import Case
 from liaise.subjects import Subject
 
@@ -42,67 +49,22 @@ DRAFT_REPLY_MODE = "draft"
 #: The channel whose messages must @mention their recipient to reach them.
 MENTION_CHANNEL = "github"
 
-#: The token shapes :func:`leak_scan` diverts on, each without the word boundary it starts
-#: at: the GitHub (``ghp_`` and its siblings, ``github_pat_``), ``sk-`` API key, AWS access
-#: key, Hugging Face (``hf_``) and Slack (``xoxb-`` and its siblings) shapes.
-_TOKEN_SHAPES = (
-    r"gh[pousr]_[A-Za-z0-9]{20,}",
-    r"github_pat_\w{20,}",
-    r"sk-[\w-]{20,}",
-    r"AKIA[0-9A-Z]{16}\b",
-    r"hf_[A-Za-z0-9]{30,}",
-    r"xox[baprs]-[A-Za-z0-9-]{10,}",
-)
-#: The most characters an email address's local part holds (RFC 5321), a DNS label
-#: holds, and labels a domain name holds.
-_EMAIL_LOCAL_MAX = 64
-_DNS_LABEL_MAX = 63
-_DNS_LABELS_MAX = 127
-#: How many words may name a private key's type (``ENCRYPTED``, ``OPENSSH``), and how long
-#: each may be.
-_KEY_TYPE_WORDS_MAX = 4
-_KEY_TYPE_WORD_MAX = 16
-_EMAIL_LOCAL_CHAR = r"[\w.%+-]"
-_DNS_LABEL = rf"[A-Za-z0-9-]{{1,{_DNS_LABEL_MAX}}}"
-#: An email address. Its local part is anchored where it starts and bounded, so a long run
-#: of word characters is tried once, not once per character, which made the scan quadratic
-#: in its length. A local part longer than the bound is still found, from its last
-#: character. Each domain label and the label count are bounded too.
-_EMAIL_PATTERN = (
-    rf"(?:(?<!{_EMAIL_LOCAL_CHAR}){_EMAIL_LOCAL_CHAR}{{1,{_EMAIL_LOCAL_MAX}}}"
-    rf"|{_EMAIL_LOCAL_CHAR})"
-    rf"@{_DNS_LABEL}(?:\.{_DNS_LABEL}){{0,{_DNS_LABELS_MAX}}}"
-    rf"\.[A-Za-z]{{2,{_DNS_LABEL_MAX}}}"
-)
-#: A private key's first line: PEM's ``-----BEGIN ... PRIVATE KEY-----``, its type's words
-#: bounded, or PGP's ``-----BEGIN PGP PRIVATE KEY BLOCK-----``.
-_PRIVATE_KEY_PATTERN = (
-    r"-----BEGIN "
-    rf"(?:(?:[A-Z0-9]{{1,{_KEY_TYPE_WORD_MAX}}} ){{0,{_KEY_TYPE_WORDS_MAX}}}PRIVATE KEY"
-    r"|PGP PRIVATE KEY BLOCK)-----"
-)
-#: What :func:`leak_scan` diverts on, as (kind, pattern). Local paths are home
-#: directories on macOS, Linux and Windows (its backslashes single, or doubled as JSON
-#: writes them), a Windows home through a WSL mount, and macOS's temporary directories.
-#: An env file is a path ending in ``.env``. No pattern has an unbounded quantifier ahead
-#: of a character it requires, so the scan stays linear in the message's length.
+#: What :func:`leak_scan` diverts on, as (kind, pattern): the 0.1 patterns, which
+#: :mod:`liaise.detect` owns. Local paths are home directories on macOS, Linux and Windows,
+#: a Windows home through a WSL mount, and macOS's temporary directories. An env file is a
+#: path ending in ``.env``. No pattern has an unbounded quantifier ahead of a character it
+#: requires, so the scan stays linear in the message's length.
 _LEAK_PATTERNS = (
-    ("local path", re.compile(r"(?<![\w.~-])/(?:Users|home|root)/")),
-    (
-        "local path",
-        re.compile(r"\b[A-Za-z]:(?:\\{1,2}|/)Users(?:\\{1,2}|/)", re.IGNORECASE),
-    ),
-    ("local path", re.compile(r"(?<![\w.~-])/mnt/[A-Za-z]/Users/", re.IGNORECASE)),
-    ("local path", re.compile(r"(?<![\w.~-])/(?:private/var|var/folders)/")),
-    ("env file", re.compile(r"(?<=[\\/])\.env(?![\w-]|\.\w)")),
-    ("email", re.compile(_EMAIL_PATTERN)),
-    ("private key", re.compile(_PRIVATE_KEY_PATTERN)),
-    *(("token", re.compile(rf"\b{shape}")) for shape in _TOKEN_SHAPES),
+    *(("local path", pattern) for pattern in LOCAL_PATH_PATTERNS),
+    ("env file", ENV_FILE_PATTERN),
+    ("email", re.compile(EMAIL_PATTERN)),
+    ("private key", re.compile(PRIVATE_KEY_PATTERN)),
+    *(("token", re.compile(rf"\b{shape}")) for shape in TOKEN_SHAPES),
 )
 #: The token shapes as :func:`leak_scan` looks for them in the text with its line breaks
 #: removed, so a token wrapped across lines is still found. Their word boundary is checked
 #: against the message itself, since removing a line break can glue a word to a token.
-_UNWRAPPED_TOKEN_PATTERNS = tuple(re.compile(shape) for shape in _TOKEN_SHAPES)
+_UNWRAPPED_TOKEN_PATTERNS = tuple(re.compile(shape) for shape in TOKEN_SHAPES)
 #: The characters that break a line, and one that continues a word.
 _LINE_BREAKS = frozenset("\r\n")
 _WORD_CHAR = re.compile(r"\w")
