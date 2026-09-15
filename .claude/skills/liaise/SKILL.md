@@ -37,7 +37,8 @@ In 0.1 a partner is a person on a subject: the repository or site they give feed
    - `briefs`: how to talk to this person (tone, what they care about, which decisions are theirs). The agent reads it on every run of their cases. A top-level `brief` is the fallback for anyone without one. Write it at the path you give.
    - `reply_modes = { pat = "direct" }` lets one person's replies go out without the owner; the default `draft` keeps every reply for the owner to send.
    - `notify = { pat = "github:pat" }` when the handle to mention is not their first `github:` address.
-2. **Create the labels.** `liaise setup <slug>` creates the subject's claim labels and every `liaise:` state label in each repository it binds. Safe to run again.
+   - `active = false`, at the top of the file, for a subject on a repository someone else owns, or one not yet reviewed. The file loads, `subject show` prints it and the dry run below works, but no tick polls, opens, starts, delivers, nudges or labels anything until you set `active = true`. Leave it false until the owner says the first tick may act.
+2. **Create the labels.** `liaise setup <slug>` creates the subject's claim labels and every `liaise:` state label in each repository it binds. Safe to run again. It refuses an inactive subject, since labels change the repository: set `active = true` first.
 3. **Check the file.** `liaise subject show <slug>` prints it with every default applied; you want `binding problems: none` at the end.
 4. **Check the plan.** `liaise run --once --dry-run --subject <slug>` shows how each report is taken in. `opened example-app-4 (... pat via relay-label)` or `via handle` is right; `unrouted: <reason>` is not (see below). The per-case lines then say what would start.
 5. **Schedule it**, if it is not already: `liaise schedule install` (once for every subject).

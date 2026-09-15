@@ -445,11 +445,20 @@ def _group_deliveries(
 
 
 def _selected_slugs(
-    subjects: Mapping[str, Subject], only: Optional[Union[str, Collection[str]]]
+    subjects: Mapping[str, Subject],
+    only: Optional[Union[str, Collection[str]]],
+    *,
+    dry_run: bool = False,
 ) -> tuple[str, ...]:
-    """The slugs to run, sorted: all of ``subjects``, or those ``only`` names."""
+    """The slugs to tick, sorted: every active subject's, or those ``only`` names.
+
+    An inactive subject (``active = false``) is never ticked, except when a dry run names
+    it in ``only``: a dry run changes nothing, and it is how the operator sees what a tick
+    would do. Raises :class:`~liaise.config.ConfigError` for an unknown slug in ``only``,
+    and for an inactive one outside a dry run.
+    """
     if only is None:
-        return tuple(sorted(subjects))
+        return tuple(sorted(slug for slug, found in subjects.items() if found.active))
     wanted = {only} if isinstance(only, str) else set(only)
     unknown = sorted(wanted - set(subjects))
     if unknown:
@@ -457,6 +466,13 @@ def _selected_slugs(
         raise ConfigError(
             f"no subject {', '.join(map(repr, unknown))} is configured; the subjects "
             f"are: {known}. Each is a file subjects/<slug>.toml under the config root."
+        )
+    inactive = sorted(slug for slug in wanted if not subjects[slug].active)
+    if inactive and not dry_run:
+        raise ConfigError(
+            f"subject {', '.join(map(repr, inactive))} is inactive (active = false), so "
+            f"no tick acts on it: add --dry-run to see what a tick would do, or set "
+            f"active = true in its file"
         )
     return tuple(sorted(wanted))
 
@@ -502,7 +518,9 @@ def run_once(
       before they start; None keeps the tick's own order, oldest first.
 
     ``only`` is a slug or slugs to run alone; an unknown one raises
-    :class:`~liaise.config.ConfigError`. ``now`` is the tick's clock (the current UTC
+    :class:`~liaise.config.ConfigError`. An inactive subject (``active = false``) is not
+    ticked: ``only`` may name one in a dry run alone, and outside one that raises
+    :class:`~liaise.config.ConfigError` too. ``now`` is the tick's clock (the current UTC
     time when None). ``lost_run_deadline`` is how long after the tick cancelled a run for
     its wall clock a run that will not stop is waited on (:data:`LOST_RUN_DEADLINE`), and
     ``closed_recheck_interval`` how long a case whose issue was read closed goes before
@@ -515,7 +533,7 @@ def run_once(
     tick = _Tick(
         subjects,
         Ledger(ChainMap({}, store) if dry_run else store),
-        slugs=_selected_slugs(subjects, only),
+        slugs=_selected_slugs(subjects, only, dry_run=dry_run),
         registry=registry,
         processor=(
             processor
@@ -545,6 +563,13 @@ def run_once(
     stamps = nullcontext() if dry_run else _stamp_run(store, now=now)
     with lock, stamps:
         tick.say(f"tick at {now.isoformat()}" + (" [dry run]" if dry_run else ""))
+        for slug in sorted(subjects):
+            if subjects[slug].active:
+                continue
+            if slug in tick.slugs:
+                tick.say(f"subject {slug}: inactive (active = false); planned, as a dry run")
+            elif only is None:
+                tick.say(f"subject {slug}: inactive (active = false), not ticked")
         tick.intake_all()
         tick.reconcile()
         tick.start_all()
@@ -827,8 +852,9 @@ def status_lines(
         mine = [case for case in cases if case.subject == slug]
         today = ledger.daily_count(slug, now.date())
         cap = subjects[slug].policy.budget.daily_dispatches
+        inert = "" if subjects[slug].active else " (inactive: no tick acts on it)"
         lines.append(
-            f"subject {slug}: {len(mine)} case(s), {today}/{cap} dispatches today"
+            f"subject {slug}: {len(mine)} case(s), {today}/{cap} dispatches today{inert}"
         )
         for state in CASE_STATES:
             ids = [case.id for case in mine if case.state == state]
@@ -1104,6 +1130,18 @@ class _Tick:
                 f"run {run.run_id} belongs to subject {run.subject}, which is not "
                 f"configured, so it cannot be reconciled"
             )
+        inert = [
+            run
+            for run in runs
+            if run.subject in self.subjects and not self.subjects[run.subject].active
+        ]
+        for run in inert:
+            if run.subject not in self.slugs:
+                self.problem(
+                    f"run {run.run_id} belongs to subject {run.subject}, which is "
+                    f"inactive (active = false), so it is not collected and its outcomes "
+                    f"wait: set active = true to collect it"
+                )
         mine = [run for run in runs if run.subject in self.slugs]
         self.say(f"reconcile: {len(mine)} run(s) in flight")
         for run in mine:
@@ -2450,7 +2488,7 @@ class _Tick:
             case
             for case in (*touched, *drifted)
             if case is not None
-            and case.subject in self.subjects
+            and case.subject in self.slugs  # an inactive subject's issues keep their labels
             and _github_issue_ref(case) is not None
         ]
         self.say(f"labels: {len(targets)} case(s)")
