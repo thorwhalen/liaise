@@ -191,7 +191,9 @@ class DraftSentNotRecorded(RuntimeError):
         url = getattr(attempt.result, "url", None)
         where = f" as {url}" if url else ""
         take_off = (
-            f' Take it off with {reject} --reason "sent, not recorded".' if reject else ""
+            f' Take it off with {reject} --reason "sent, not recorded".'
+            if reject
+            else ""
         )
         return cls(
             f"{label} was sent{where}, but the ledger could not record it "
@@ -258,7 +260,9 @@ def release_draft(
     - a hold on the subject, the recipient, the repository, the checkout or, for a
       ``deliver`` message, the delivery, that keeps effects waiting.
     """
-    ref, recipient, purpose = (draft.get(key) for key in ("ref", "recipient", "outcome"))
+    ref, recipient, purpose = (
+        draft.get(key) for key in ("ref", "recipient", "outcome")
+    )
     if not ref:
         raise ValueError(
             f"{label} has no destination ({draft.get('reason')}): send it yourself, then "

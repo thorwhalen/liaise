@@ -644,7 +644,9 @@ def _not_sent(held: _Held, release: Any, *, dry_run: bool) -> cw.CommandError:
     verb = "would not be sent" if dry_run else "was not sent"
     notes = [f"  note: {note}" for note in decision.notes]
     message = "\n".join([f"{held.label} {verb}: {why}{kept}", *notes])
-    return cw.CommandError(message, **({"code": DIVERTED_EXIT_CODE} if diverted else {}))
+    return cw.CommandError(
+        message, **({"code": DIVERTED_EXIT_CODE} if diverted else {})
+    )
 
 
 def _preview(held: _Held, release: Any, *, edit: bool, then: Sequence[str]) -> str:
@@ -962,13 +964,18 @@ def message_send(
     if result.sent:
         url = getattr(attempt.result, "url", None)
         verb = "would send a message" if dry_run else f"sent message {message.id}"
-        head = f"{verb} to {recipient} on {ref} (gate: passed, {result.filters} filters)"
+        head = (
+            f"{verb} to {recipient} on {ref} (gate: passed, {result.filters} filters)"
+        )
         return "\n".join([head + (f": {url}" if url and not dry_run else ""), *notes])
     if result.hold is not None:
         why, held_back = f"the hold on {result.hold.scope} ({result.hold.mode})", True
     elif attempt.decision.send is None:
         decision = attempt.decision
-        why, held_back = f"diverted by {decision.diverted_by}: {decision.diverted}", True
+        why, held_back = (
+            f"diverted by {decision.diverted_by}: {decision.diverted}",
+            True,
+        )
     else:
         why, held_back = f"send failed: {attempt.failure}", False
     head = (

@@ -858,7 +858,11 @@ def status_lines(
         held = sorted(
             ledger.messages(state=MESSAGE_HELD), key=lambda m: (m.updated_at, m.id)
         )
-    except (ValueError, TypeError, KeyError) as error:  # a record this liaise cannot read
+    except (
+        ValueError,
+        TypeError,
+        KeyError,
+    ) as error:  # a record this liaise cannot read
         lines.append(f"{heading}: unreadable ({_error_text(error)})")
     else:
         lines.append(f"{heading}: {len(held)}")

@@ -142,7 +142,9 @@ def find_message(ledger: Ledger, message_id: str) -> OutboundMessage:
     return message
 
 
-def held_message(ledger: Ledger, message_id: str, *, verb: str = "send") -> OutboundMessage:
+def held_message(
+    ledger: Ledger, message_id: str, *, verb: str = "send"
+) -> OutboundMessage:
     """The held message ``message_id``. Raises ``ValueError`` for one missing or not held.
 
     ``verb`` says, in the error, what there is nothing to do.
@@ -291,8 +293,14 @@ def send_message(
     )
     if not dry_run:
         try:
-            waiting = next(ledger.messages(subject=subject.slug, state=MESSAGE_HELD), None)
-        except (ValueError, TypeError, KeyError):  # an unreadable record: tell the operator
+            waiting = next(
+                ledger.messages(subject=subject.slug, state=MESSAGE_HELD), None
+            )
+        except (
+            ValueError,
+            TypeError,
+            KeyError,
+        ):  # an unreadable record: tell the operator
             waiting = None
         try:
             ledger.save_message(message)
@@ -300,15 +308,21 @@ def send_message(
             if state != MESSAGE_SENT:
                 raise
             label = f"the message to {recipient} on {ref}"
-            raise DraftSentNotRecorded.after(label, attempt, error, reject=None) from error
-        if state == MESSAGE_HELD and waiting is None:  # once, when the queue stops being empty
+            raise DraftSentNotRecorded.after(
+                label, attempt, error, reject=None
+            ) from error
+        if (
+            state == MESSAGE_HELD and waiting is None
+        ):  # once, when the queue stops being empty
             notice = dict(subject=subject.slug, cause=cause)
             (notify_fn or notify)(
                 notice_title(NOTICE_MESSAGE_HELD, **notice),
                 notice_body(NOTICE_MESSAGE_HELD, **notice),
                 priority=DFLT_OPERATOR_PRIORITY,
             )
-    return MessageSent(message=message, attempt=attempt, filters=len(filters), hold=hold)
+    return MessageSent(
+        message=message, attempt=attempt, filters=len(filters), hold=hold
+    )
 
 
 def send_held_message(
