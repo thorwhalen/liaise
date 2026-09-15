@@ -22,6 +22,7 @@
 - [liaise.migrate](_autosummary/liaise.migrate.html.md): Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.
 - [liaise.model](_autosummary/liaise.model.html.md): The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.
 - [liaise.outcomes](_autosummary/liaise.outcomes.html.md): Outcomes: what a processor run reports, checked, then planned into actions.
+- [liaise.policy](_autosummary/liaise.policy.html.md): Policy and verdict for outbound messages: from findings and an audience to a flow.
 - [liaise.processor](_autosummary/liaise.processor.html.md): Processors (design §3.6): what runs a case’s work, detached, and how that run ended.
 - [liaise.projection](_autosummary/liaise.projection.html.md): Label projection: a case’s state, shown on each of its GitHub issues as one label.
 - [liaise.prompt](_autosummary/liaise.prompt.html.md): The prompt composer: the whole prompt a processor run on one case starts from.
@@ -33,7 +34,7 @@
 - [liaise.tick](_autosummary/liaise.tick.html.md): The tick: one pass of liaise 0.1’s loop (design §3.1).
 - [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 - [For AI agents](ai-agents.html.md): `liaise` ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 15:14 UTC** from commit <a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 16:11 UTC** from commit <a href="https://github.com/tho...
 
 ---
 

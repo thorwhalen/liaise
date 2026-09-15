@@ -1,0 +1,47 @@
+liaise.policy
+=============
+
+.. automodule:: liaise.policy
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      FLOWS
+      ROUTES
+      SCOPES
+      TIERS
+      AXES
+      RULES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      above
+      audience_hash
+      audience_in_words
+      audience_record
+      canonical_json
+      evaluate
+      facts_of
+      flow_rank
+      least_cleared_reader
+      most_restrictive
+      payload_hash
+      payload_of
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Facts
+      Hit
+      OutboundPolicy
+      Provenance
+      Reader
+      Reason
+      Rule
+      Verdict
+   

@@ -1058,6 +1058,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
 | [`model`](liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |
 | [`outcomes`](liaise.outcomes.html.md#module-liaise.outcomes)     | Outcomes: what a processor run reports, checked, then planned into actions.                                          |
+| [`policy`](liaise.policy.html.md#module-liaise.policy)         | Policy and verdict for outbound messages: from findings and an audience to a flow.                                   |
 | [`processor`](liaise.processor.html.md#module-liaise.processor)   | Processors (design §3.6): what runs a case's work, detached, and how that run ended.                                 |
 | [`projection`](liaise.projection.html.md#module-liaise.projection) | Label projection: a case's state, shown on each of its GitHub issues as one label.                                   |
 | [`prompt`](liaise.prompt.html.md#module-liaise.prompt)         | The prompt composer: the whole prompt a processor run on one case starts from.                                       |
