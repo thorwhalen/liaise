@@ -75,34 +75,41 @@ _WORD_CHAR = re.compile(r"\w")
 _GITHUB_LOGIN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}")
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class Outbound:
     """A message liaise would send: ``text`` for ``recipient`` (a person id) at ``ref``.
 
-    ``ref`` is the encoded conversation or address it goes to
-    (``github:example/app#12``), and ``channel`` that ref's channel. ``purpose`` is the
-    outcome kind it carries out (``ask``, ``reply``, ``propose``, ``deliver``).
+    ``ref`` is the encoded conversation or address it goes to (``github:example/app#12``,
+    or ``github:example/app`` to open an issue there), and ``channel`` is that ref's
+    channel. ``purpose`` is the outcome kind it carries out (``ask``, ``reply``,
+    ``propose``, ``deliver``). ``title`` is the title of the issue it opens, when it opens
+    one; the leak scan judges it with the text. ``case_id`` is the case the message belongs
+    to, or None for a message an agent sends outside any case (``liaise message send``).
     """
 
-    case_id: str
     ref: str
     channel: str
     recipient: str
     purpose: str
     text: str
+    title: Optional[str] = None
+    case_id: Optional[str] = None
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class GateContext:
     """What the filters may consult: the subject and its policy, the case, the time.
 
-    ``approval`` is the operator's release of this message (``liaise case send-draft``).
-    It is None for every message the tick sends on its own.
+    ``case`` is the case the message belongs to, or None for a message outside any case.
+    The subject is the subject either way, so its policy, leak terms, public channels and
+    people all apply; no filter of the 0.1 gate reads the case. ``approval`` is the
+    operator's release of this message (``liaise case send-draft``, ``liaise message
+    send-draft``), and is None for every message sent without one.
     """
 
     subject: Subject
-    case: Case
     now: datetime
+    case: Optional[Case] = None
     approval: Optional[Approval] = None
 
 
@@ -182,8 +189,8 @@ def leak_scan(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
     ``policy.leak_terms`` as a whole word in any case. Tokens are also looked for with the
     text's line breaks removed, so a token wrapped across lines is found. The reason
     names each kind found and the notes say where, never what. It never redacts: a leak
-    is for the operator to fix. A channel outside ``policy.public_channels`` passes
-    unscanned.
+    is for the operator to fix. A title is scanned the same way, and its notes say "of the
+    title". A channel outside ``policy.public_channels`` passes unscanned.
     """
 
     def without_line_breaks(text: str) -> tuple[str, list[int]]:
@@ -191,42 +198,48 @@ def leak_scan(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
         kept = [index for index, char in enumerate(text) if char not in _LINE_BREAKS]
         return "".join(text[index] for index in kept), kept
 
+    def hits_in(text: str) -> list[tuple[str, int]]:
+        """Each ``(kind, start)`` of what must not be made public in ``text``, once each."""
+        unwrapped, positions = without_line_breaks(text)
+        found = [
+            (kind, match.start())
+            for kind, pattern in _LEAK_PATTERNS
+            for match in pattern.finditer(text)
+        ]
+        unwrapped_starts = (
+            positions[match.start()]
+            for pattern in _UNWRAPPED_TOKEN_PATTERNS
+            for match in pattern.finditer(unwrapped)
+        )
+        found += [
+            ("token", start)
+            for start in unwrapped_starts
+            if start == 0 or not _WORD_CHAR.fullmatch(text[start - 1])
+        ]
+        found += [
+            ("leak term", match.start())
+            for term in policy.leak_terms
+            if term
+            for match in re.finditer(
+                rf"(?<!\w){re.escape(term)}(?!\w)", text, flags=re.IGNORECASE
+            )
+        ]
+        return list(dict.fromkeys(found))  # a token on one line is found by both scans
+
     policy = ctx.subject.policy
     if outbound.channel not in policy.public_channels:
         return Pass(outbound)
-    text = outbound.text
-    unwrapped, positions = without_line_breaks(text)
-    found = [
-        (kind, match.start())
-        for kind, pattern in _LEAK_PATTERNS
-        for match in pattern.finditer(text)
-    ]
-    unwrapped_starts = (
-        positions[match.start()]
-        for pattern in _UNWRAPPED_TOKEN_PATTERNS
-        for match in pattern.finditer(unwrapped)
-    )
-    found += [
-        ("token", start)
-        for start in unwrapped_starts
-        if start == 0 or not _WORD_CHAR.fullmatch(text[start - 1])
-    ]
-    found += [
-        ("leak term", match.start())
-        for term in policy.leak_terms
-        if term
-        for match in re.finditer(
-            rf"(?<!\w){re.escape(term)}(?!\w)", text, flags=re.IGNORECASE
-        )
-    ]
-    hits = list(dict.fromkeys(found))  # a token on one line is found by both scans
-    if not hits:
+    places = [("", hits_in(outbound.text))]
+    if outbound.title:
+        places.append((" of the title", hits_in(outbound.title)))
+    kinds = dict.fromkeys(kind for _, hits in places for kind, _ in hits)
+    if not kinds:
         return Pass(outbound)
-    kinds = dict.fromkeys(kind for kind, _ in hits)
     return Divert(
         f"leak scan: {', '.join(kinds)}",
         notes=tuple(
-            f"leak scan: {kind} at character {start}"
+            f"leak scan: {kind} at character {start}{where}"
+            for where, hits in places
             for kind, start in sorted(hits, key=lambda hit: hit[1])
         ),
     )

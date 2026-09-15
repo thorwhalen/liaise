@@ -1,11 +1,18 @@
 """Releasing a message: through the gate, then through correspond, as one step.
 
 Every message liaise sends goes through :func:`gate_and_send`. That covers what the tick
-sends for a run's outcomes, the tick's own notices, and a draft the operator releases
-with ``liaise case send-draft``. It runs :func:`liaise.gate.run_gate`, and only a message
-the gate passed reaches ``correspond.send``, as the filters left it. It records nothing:
-what a :class:`SendAttempt` means for a case, a draft or a notification is for its caller
-to keep.
+sends for a run's outcomes, the tick's own notices, a message an agent sends outside any
+case (``liaise message send``), and a draft the operator releases. It runs
+:func:`liaise.gate.run_gate`, and only a message the gate passed reaches
+``correspond.send``, as the filters left it. It records nothing: what a
+:class:`SendAttempt` means for a case, a message or a notification is for its caller to
+keep.
+
+**Releasing a held message.** :func:`release_draft` is the one way a message held for the
+operator goes out, whether it waits on a case (``liaise case send-draft``) or outside any
+(``liaise message send-draft``). It checks what must stop a release, runs
+:func:`gate_and_send` with the operator's :class:`~liaise.model.Approval` on the context,
+and hands back the ledger entry and the draft to keep, for the caller to record.
 
 One path for every sender is what makes the gate a gate. A filter added to it applies to
 all of them at once, and none of them has a way to send around it.
@@ -15,9 +22,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from datetime import datetime
+from types import MappingProxyType
 from typing import Any, Optional
 
 import correspond
+from correspond.channels.github import REF_RE
+from correspond.model import ConversationRef
 
 from liaise.gate import (
     DFLT_OUTBOUND_FILTERS,
@@ -27,9 +38,21 @@ from liaise.gate import (
     OutboundFilter,
     run_gate,
 )
+from liaise.holds import blocking_hold, scopes_for
+from liaise.ledger import Ledger
+from liaise.model import Approval, Case, LedgerEntry
+from liaise.outcomes import HELD_REASON_PREFIX, make_draft
+from liaise.subjects import Subject
 
 #: Why a send failed when the channel said no without saying why.
 DFLT_REFUSAL = "the channel refused it"
+#: The outcome whose message announces a delivery.
+DELIVER_PURPOSE = "deliver"
+#: The entry kind a released or rejected draft is recorded as: a gate decision, as the
+#: tick's are.
+DRAFT_ENTRY_KIND = "gate"
+#: The channel whose references name repositories.
+GITHUB_CHANNEL = "github"
 
 
 def error_text(error: BaseException) -> str:
@@ -39,6 +62,19 @@ def error_text(error: BaseException) -> str:
     'ValueError: no such channel'
     """
     return f"{type(error).__name__}: {error}"
+
+
+def github_repo(ref: Optional[str]) -> Optional[str]:
+    """``owner/repo`` of the repository a GitHub reference names, itself or one of its issues.
+
+    >>> github_repo("github:example/app#12"), github_repo("github:example/app")
+    ('example/app', 'example/app')
+    >>> github_repo("webinbox:example-site") is None
+    True
+    """
+    channel, _, native_id = (ref or "").partition(":")
+    match = REF_RE.match(native_id) if channel == GITHUB_CHANNEL else None
+    return f"{match['owner']}/{match['repo']}" if match else None
 
 
 @dataclass(frozen=True)
@@ -80,10 +116,10 @@ def gate_and_send(
 
     The gate is :func:`liaise.gate.run_gate` with ``outbound_filters``, and a message it
     diverts is not sent. A passed message goes to ``correspond.send`` as the filters left
-    it, on ``registry`` (correspond's own when None). ``dry_run`` asks correspond for its
-    plan and sends nothing. A channel that refuses the message, or raises, becomes a
-    ``failure`` on the attempt rather than an exception, so the caller still has the message
-    to keep.
+    it, its title included, on ``registry`` (correspond's own when None). ``dry_run`` asks
+    correspond for its plan and sends nothing. A channel that refuses the message, or
+    raises, becomes a ``failure`` on the attempt rather than an exception, so the caller
+    still has the message to keep.
     """
     decision = run_gate(outbound, ctx, outbound_filters=outbound_filters)
     passed = decision.send
@@ -91,7 +127,11 @@ def gate_and_send(
         return SendAttempt(decision)
     try:
         result = correspond.send(
-            passed.ref, passed.text, dry_run=dry_run, registry=registry
+            passed.ref,
+            passed.text,
+            title=passed.title,
+            dry_run=dry_run,
+            registry=registry,
         )
     except Exception as error:  # an unknown channel, an adapter that raised
         return SendAttempt(
@@ -105,3 +145,199 @@ def gate_and_send(
         failure=result.error or DFLT_REFUSAL,
         failure_kind=result.error_kind,
     )
+
+
+# ---- releasing a held message ----
+
+
+class DraftSentNotRecorded(RuntimeError):
+    """A released message went out, and the ledger then failed to record that it did."""
+
+    @classmethod
+    def after(
+        cls,
+        label: str,
+        attempt: SendAttempt,
+        error: BaseException,
+        *,
+        reject: Optional[str],
+    ) -> DraftSentNotRecorded:
+        """The error for ``label``, which ``attempt`` sent and the ledger failed to record.
+
+        ``reject`` is the command that takes the held message off, so it is not sent twice,
+        or None when there is no record to take it off.
+        """
+        url = getattr(attempt.result, "url", None)
+        where = f" as {url}" if url else ""
+        take_off = (
+            f' Take it off with {reject} --reason "sent, not recorded".' if reject else ""
+        )
+        return cls(
+            f"{label} was sent{where}, but the ledger could not record it "
+            f"({error_text(error)}): do not send it again.{take_off}"
+        )
+
+
+@dataclass(frozen=True)
+class DraftOutcome:
+    """What :func:`release_draft` did with one held message, for its caller to record.
+
+    ``attempt`` is the gate's decision and the send, ``filters`` how many filters the gate
+    ran it through, and ``edited`` whether the operator's text replaced the draft's.
+    ``entry`` is the ``gate`` entry the release is recorded as. ``kept`` is the draft that
+    stays for the operator when nothing went out, and None once the message is sent. Both
+    are None for a plan (``send=False``) that the gate passed: nothing happened to record.
+    """
+
+    attempt: SendAttempt
+    filters: int
+    edited: bool
+    entry: Optional[LedgerEntry] = None
+    kept: Optional[dict[str, Any]] = None
+
+
+def release_draft(
+    draft: Mapping[str, Any],
+    *,
+    subject: Subject,
+    ledger: Ledger,
+    label: str,
+    reject: str,
+    by: str,
+    now: datetime,
+    case: Optional[Case] = None,
+    text: Optional[str] = None,
+    detail: Mapping[str, Any] = MappingProxyType({}),
+    registry: Optional[Mapping[str, Any]] = None,
+    send: bool = True,
+    dry_run: bool = False,
+    outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
+) -> DraftOutcome:
+    """Release ``draft`` (a :func:`liaise.outcomes.make_draft` item) as ``by``, through the gate.
+
+    The message is the draft's text, or ``text`` when the operator edited it, with the
+    draft's title. It goes to the draft's ``ref``, for its ``recipient``, carrying out its
+    ``outcome``, on the case ``case`` or outside any when that is None. It passes through
+    :func:`gate_and_send` with an :class:`~liaise.model.Approval` by ``by`` at ``now`` on
+    the context: draft reply mode lets it through, and every other filter judges it as it
+    judges any message, the mention included.
+
+    It asks no one and records nothing. Its caller shows the operator the verdict first,
+    from a dry run, and records the outcome's ``entry`` (with ``detail`` added to it) and,
+    when nothing went out, its ``kept`` draft. The kept draft holds the operator's text
+    without the mention the gate adds, and the new reason. ``send=False`` asks the channel
+    only for its plan. A dry run judges and plans as a send would. ``label`` names the
+    message in errors, and ``reject`` is the command that takes it off.
+
+    Raises ``ValueError``, sending nothing, for any of these:
+
+    - a draft with no destination, or no text;
+    - a ``deliver`` message a hold kept, whose delivery never ran;
+    - a hold on the subject, the recipient, the repository, the checkout or, for a
+      ``deliver`` message, the delivery, that keeps effects waiting.
+    """
+    ref, recipient, purpose = (draft.get(key) for key in ("ref", "recipient", "outcome"))
+    if not ref:
+        raise ValueError(
+            f"{label} has no destination ({draft.get('reason')}): send it yourself, then "
+            f"take it off with {reject}"
+        )
+    try:
+        channel = ConversationRef.parse(ref).channel
+    except Exception as error:  # correspond's InvalidRef, or anything a bad ref raises
+        raise ValueError(f"{label} goes to {ref!r}: {error_text(error)}") from error
+    delivers = purpose == DELIVER_PURPOSE
+    if delivers and str(draft.get("reason") or "").startswith(HELD_REASON_PREFIX):
+        raise ValueError(
+            f"{label} tells {recipient} a change is live, but a hold kept that delivery "
+            f"from running ({draft.get('reason')}), so nothing was sent: deliver the "
+            f"change first, then take this draft off with {reject}"
+        )
+    body = (draft.get("text") or "") if text is None else text
+    if not body.strip():
+        hint = "; write it with --edit" if text is None else ""
+        raise ValueError(f"{label} has no text to send{hint}")
+    refs = (ref, *(case.conversations if case is not None else ()))
+    scopes = scopes_for(
+        subject=subject.slug,
+        person=recipient or None,
+        repo=next(filter(None, map(github_repo, refs)), None),
+        checkout=subject.workspace.path or None,
+        effect=subject.delivery.kind if delivers else None,
+        processor=False,
+    )
+    hold = blocking_hold(ledger, scopes, for_="effect")
+    if hold is not None:
+        waiting = "this delivery" if delivers else "these messages"
+        raise ValueError(
+            f"{label} was not sent: the hold on {hold.scope} ({hold.mode}) keeps "
+            f"{waiting} waiting; liaise unhold {hold.scope} first"
+        )
+
+    approval = Approval(by=by, at=now)
+    filters = tuple(outbound_filters)
+    outbound = Outbound(
+        ref=ref,
+        channel=channel,
+        recipient=recipient,
+        purpose=purpose,
+        text=body,
+        title=draft.get("title"),
+        case_id=case.id if case is not None else None,
+    )
+    context = GateContext(subject=subject, case=case, now=now, approval=approval)
+    attempt = gate_and_send(
+        outbound,
+        context,
+        registry=registry,
+        dry_run=dry_run or not send,
+        outbound_filters=filters,
+    )
+    decision = attempt.decision
+    edited = text is not None and text != draft.get("text")
+    if attempt.sent and not send and not dry_run:
+        return DraftOutcome(attempt, len(filters), edited)  # a plan: nothing to record
+    recorded = {
+        "purpose": purpose,
+        "ref": ref,
+        "notes": list(decision.notes),
+        **detail,
+        "held_for": draft.get("reason"),
+        "edited": edited,
+        "approval": approval.to_dict(),
+    }
+    if attempt.sent:
+        url = getattr(attempt.result, "url", None)
+        verdict = {"decision": "send", "url": url}
+        entry = LedgerEntry(
+            at=now,
+            kind=DRAFT_ENTRY_KIND,
+            actor=by,
+            text=attempt.outbound.text,
+            detail={**recorded, **verdict},
+        )
+        return DraftOutcome(attempt, len(filters), edited, entry=entry)
+    if decision.send is None:
+        reason = decision.diverted
+        verdict = {"decision": "divert", "reason": reason}
+    else:
+        reason = f"send failed: {attempt.failure}"
+        verdict = {"decision": "send", "error": attempt.failure}
+    entry = LedgerEntry(
+        at=now,
+        kind=DRAFT_ENTRY_KIND,
+        actor=by,
+        text=decision.send.text if decision.send is not None else body,
+        detail={**recorded, **verdict},
+    )
+    kept = make_draft(
+        at=now,
+        outcome=purpose,
+        recipient=recipient,
+        ref=ref,
+        text=body,  # the gate adds the mention again, for the handle of that day
+        reason=reason,
+        notes=decision.notes,
+        title=draft.get("title"),
+    )
+    return DraftOutcome(attempt, len(filters), edited, entry=entry, kept=kept)

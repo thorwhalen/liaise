@@ -298,7 +298,7 @@ def _seed_run(world):
             (_draft(),),
             lambda world: world.ledger.set_hold(Hold(scope=f"subject:{SLUG}", mode="block")),
             (),
-            f"the hold on subject:{SLUG} \\(block\\) keeps this case's messages waiting",
+            f"the hold on subject:{SLUG} \\(block\\) keeps these messages waiting",
         ),
         (
             (_draft(),),
@@ -450,7 +450,7 @@ def test_an_effect_deploy_hold_keeps_a_delivery_message_and_lets_a_question_go(w
     world.ledger.set_hold(Hold(scope="effect:deploy", mode="block"))
     world.hold_drafts(_draft("Deployed: try it now.", outcome="deliver", reason="deslop: 1 enforced finding(s)"))
 
-    with pytest.raises(cw.CommandError, match="the hold on effect:deploy \\(block\\) keeps this case's delivery waiting"):
+    with pytest.raises(cw.CommandError, match="the hold on effect:deploy \\(block\\) keeps this delivery waiting"):
         world.send()
 
     world.hold_drafts(_draft())

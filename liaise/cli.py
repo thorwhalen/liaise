@@ -11,6 +11,12 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
     liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
     liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
+    liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
+        [--purpose PURPOSE] [--dry-run]
+    liaise message list [--state STATE]
+    liaise message show MESSAGE_ID
+    liaise message send-draft MESSAGE_ID [--edit] [--dry-run]
+    liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
     liaise subject list
     liaise subject show SLUG
     liaise setup SUBJECT
@@ -47,11 +53,11 @@ from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from contextlib import ExitStack
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, NamedTuple, Optional
 
 import cw
 
-from liaise import cases, holds, migrate
+from liaise import cases, holds, messages, migrate
 from liaise.access import Resolver
 from liaise.config import (
     DFLT_CONFIG_ROOT,
@@ -62,8 +68,10 @@ from liaise.config import (
 from liaise.github import GhCli, GitHub, GitHubError
 from liaise.ledger import DFLT_LEDGER_SUBDIR, Ledger, default_ledger_store
 from liaise.model import HOLD_MODES, require_one_of
+from liaise.notify import notify
 from liaise.processor import ClaudeHeadless
 from liaise.projection import setup_labels
+from liaise.release import DraftSentNotRecorded
 from liaise.schedule import (
     DFLT_INTERVAL_MINUTES,
     install_schedule,
@@ -89,10 +97,13 @@ DFLT_LOOP_SECONDS = 60
 STOPPED = "stopped"
 #: How ``liaise subject show`` prints an empty or unset value.
 NONE_SHOWN = cases.NONE_SHOWN
-#: What a case command that writes says, changing nothing, while a tick holds the run lock.
+#: What a command that writes a case or a message says, changing nothing, while a tick
+#: holds the run lock.
 TICK_RUNNING = (
-    "a liaise tick is running, so {case_id} was not {done}; try again shortly ({busy})"
+    "a liaise tick is running, so {what} was not {done}; try again shortly ({busy})"
 )
+#: The ``--text-file`` that reads a message's text from standard input.
+STDIN_FILE_NAME = "-"
 #: The environment variables that name the operator's editor, the first one set winning.
 EDITOR_ENV_VARS = ("VISUAL", "EDITOR")
 #: The editor ``liaise case send-draft --edit`` opens when no variable names one.
@@ -105,11 +116,10 @@ CONFIRM_ANSWERS = ("y", "yes")
 #: The exit code of a draft command whose message the gate diverted: the message is held
 #: for the operator, as ``liaise vet`` is planned to say (discussion 32, §5.8).
 DIVERTED_EXIT_CODE = 2
-#: Why ``liaise case send-draft`` sends nothing without a terminal to ask at.
+#: Why ``send-draft`` sends nothing without a terminal to ask at.
 NO_TERMINAL = (
-    "liaise case send-draft sends a draft only once you confirm it at a terminal, and "
-    "there is no terminal here, so nothing was sent: run it in your own shell "
-    "(--dry-run asks nothing)"
+    "a held message is sent only once you confirm it at a terminal, and there is no "
+    "terminal here, so nothing was sent: run it in your own shell (--dry-run asks nothing)"
 )
 
 
@@ -167,18 +177,19 @@ def _subject_named(
 
 
 def _hold_run_lock(
-    stack: ExitStack, global_config: GlobalConfig, case_id: str, *, done: str
+    stack: ExitStack, global_config: GlobalConfig, what: str, *, done: str
 ) -> None:
     """Take the run lock into ``stack``, or refuse in one line while a tick holds it.
 
-    A case command that writes holds the lock, so a tick cannot start meanwhile and write
-    over it. It does not wait: the refusal says what was not ``done``.
+    A command that writes a case or a message holds the lock, so a tick cannot start
+    meanwhile and write over it. It does not wait: the refusal says ``what`` was not
+    ``done``.
     """
     lock_path = run_lock_path(Path(global_config.state_dir).expanduser())
     try:
         stack.enter_context(run_lock(lock_path))
     except RunLockHeld as busy:
-        message = TICK_RUNNING.format(case_id=case_id, done=done, busy=busy)
+        message = TICK_RUNNING.format(what=what, done=done, busy=busy)
         raise cw.CommandError(message) from busy
 
 
@@ -596,14 +607,25 @@ def _one_index(case_id: str, index: Sequence[int]) -> Optional[int]:
     return index[0] if index else None
 
 
-def _draft_not_sent(
-    release: cases.DraftRelease, case_id: str, *, dry_run: bool
-) -> cw.CommandError:
-    """The one-screen refusal for a released draft the gate diverted or its channel refused.
+class _Held(NamedTuple):
+    """A held message as a release command names it."""
+
+    #: How its lines and refusals name it: ``draft [0] of example-app-1``.
+    label: str
+    #: Where it stays when it is not sent: ``on the case``, ``held``.
+    stays: str
+    #: The command that edits and sends it again.
+    command: str
+    #: What a refusal for a running tick names.
+    owner: str
+
+
+def _not_sent(held: _Held, release: Any, *, dry_run: bool) -> cw.CommandError:
+    """The refusal for a held message the gate diverted or its channel refused.
 
     A divert exits :data:`DIVERTED_EXIT_CODE`, and a refusal cw's usual error code.
     """
-    attempt, label = release.attempt, f"draft [{release.index}] of {case_id}"
+    attempt = release.attempt
     decision = attempt.decision
     diverted = decision.send is None
     why = (
@@ -614,37 +636,84 @@ def _draft_not_sent(
     kept = (
         ""
         if dry_run
-        else f". It stays on the case with that reason; edit it with liaise case "
-        f"send-draft {case_id} {release.index} --edit"
+        else f". It stays {held.stays} with that reason; edit it with {held.command} --edit"
     )
     verb = "would not be sent" if dry_run else "was not sent"
     notes = [f"  note: {note}" for note in decision.notes]
-    message = "\n".join([f"{label} {verb}: {why}{kept}", *notes])
-    return cw.CommandError(
-        message, **({"code": DIVERTED_EXIT_CODE} if diverted else {})
-    )
+    message = "\n".join([f"{held.label} {verb}: {why}{kept}", *notes])
+    return cw.CommandError(message, **({"code": DIVERTED_EXIT_CODE} if diverted else {}))
 
 
-def _draft_preview(release: cases.DraftRelease, case_id: str, *, edit: bool) -> str:
+def _preview(held: _Held, release: Any, *, edit: bool, then: Sequence[str]) -> str:
     """What the operator reads before confirming: where it goes, the verdict, the exact text."""
     outbound = release.attempt.outbound
     lines = [
-        f"draft [{release.index}] of {case_id}: {outbound.purpose} to "
-        f"{outbound.recipient} on {outbound.ref}",
+        f"{held.label}: {outbound.purpose} to {outbound.recipient} on {outbound.ref}",
         f"gate: passed ({release.filters} filters)",
         *(f"  note: {note}" for note in release.attempt.decision.notes),
     ]
     if edit and not release.edited:
         lines.append("your edit changed nothing: this is the draft as it was")
-    if release.moved:
-        lines.append(
-            f"then {case_id} moves from {release.moved[0]} to {release.moved[1]}"
-        )
+    lines += then
+    if outbound.title:
+        lines.append(f"title: {outbound.title}")
     lines += ["--- the message, as it would be sent ---", outbound.text, "---"]
     return "\n".join(lines)
 
 
-@_expected_errors(ConfigError, ValueError, cases.DraftSentNotRecorded)
+def _release_after_confirmation(
+    release: Callable[..., Any],
+    *,
+    first: Mapping[str, Any],
+    bind: Callable[[Any], Mapping[str, Any]],
+    held: Callable[[Any], _Held],
+    then: Callable[[Any], Sequence[str]],
+    ledger_store: MutableMapping[str, Any],
+    global_config: GlobalConfig,
+    dry_run: bool,
+    edit: bool,
+    confirm: Callable[[str], bool],
+) -> tuple[Any, bool]:
+    """Judge a held message, show the operator the verdict and the text, send it once confirmed.
+
+    ``release(ledger, **kwargs)`` is :func:`liaise.cases.send_draft` or
+    :func:`liaise.messages.send_held_message`, with all but the ledger bound. It is judged
+    first, as a dry run on an overlay of the ledger, with ``first``. A message the gate
+    diverts, or its channel refuses, is never shown: outside a dry run its reason is
+    recorded, sending nothing, and the command fails. One the gate passes is shown to
+    ``confirm`` and, once confirmed, sent under the run lock, bound by ``bind`` to what the
+    operator was shown. This is the one path both ``send-draft`` commands take.
+
+    Returns ``(release, True)`` for the release made, or the judgement in a dry run, and
+    ``(judgement, False)`` when the operator declined.
+    """
+    judged = release(Ledger(ChainMap({}, ledger_store)), dry_run=True, **first)
+    names = held(judged)
+    if not judged.attempt.sent:
+        if dry_run:
+            raise _not_sent(names, judged, dry_run=True)
+        with ExitStack() as between_ticks:  # record why, sending nothing
+            _hold_run_lock(between_ticks, global_config, names.owner, done="changed")
+            recorded = release(Ledger(ledger_store), send=False, **bind(judged))
+        if recorded.attempt.sent:
+            raise cw.CommandError(
+                f"the gate's verdict on {names.label} changed while it was judged, so "
+                f"nothing was sent; run the command again"
+            )
+        raise _not_sent(names, recorded, dry_run=False)
+    if dry_run:
+        return judged, True
+    if not confirm(_preview(names, judged, edit=edit, then=then(judged))):
+        return judged, False
+    with ExitStack() as between_ticks:
+        _hold_run_lock(between_ticks, global_config, names.owner, done="sent")
+        released = release(Ledger(ledger_store), **bind(judged))
+    if not released.attempt.sent:
+        raise _not_sent(names, released, dry_run=False)
+    return released, True
+
+
+@_expected_errors(ConfigError, ValueError, DraftSentNotRecorded)
 def case_send_draft(
     case_id: str,
     *index: int,
@@ -681,66 +750,63 @@ def case_send_draft(
     """
     config_root = _root(root)
     global_config = load_global_config(config_root)
-    subjects = load_subjects(config_root)
     ledger_store = _ledger_store(global_config, store, create=not dry_run)
-    ledger = Ledger(ledger_store)
     draft_index, text, opened = _one_index(case_id, index), None, None
     if edit:  # before the lock: an editor can stay open far longer than a tick waits
+        ledger = Ledger(ledger_store)
         draft_index, opened = cases.find_draft(ledger, case_id, index=draft_index)
         text = (editor or edit_in_editor)(opened.get("text") or "")
-    release = functools.partial(
-        cases.send_draft, subjects=subjects, case_id=case_id, text=text, now=now,
-        registry=registry,
-    )  # fmt: skip
 
-    preview = release(
-        Ledger(ChainMap({}, ledger_store)), index=draft_index, seen=opened, dry_run=True
+    def moves(judged: cases.DraftRelease) -> list[str]:
+        if not judged.moved:
+            return []
+        return [f"then {case_id} moves from {judged.moved[0]} to {judged.moved[1]}"]
+
+    done, confirmed = _release_after_confirmation(
+        functools.partial(
+            cases.send_draft,
+            subjects=load_subjects(config_root),
+            case_id=case_id,
+            text=text,
+            now=now,
+            registry=registry,
+        ),
+        first=dict(index=draft_index, seen=opened),
+        bind=lambda judged: dict(index=judged.index, seen=judged.draft),
+        held=lambda judged: _Held(
+            label=f"draft [{judged.index}] of {case_id}",
+            stays="on the case",
+            command=f"liaise case send-draft {case_id} {judged.index}",
+            owner=case_id,
+        ),
+        then=moves,
+        ledger_store=ledger_store,
+        global_config=global_config,
+        dry_run=dry_run,
+        edit=edit,
+        confirm=confirm or confirm_at_terminal,
     )
-    bound = dict(index=preview.index, seen=preview.draft)  # what the operator was shown
-    if not preview.attempt.sent:
-        if dry_run:
-            raise _draft_not_sent(preview, case_id, dry_run=True)
-        with ExitStack() as between_ticks:  # record why, sending nothing
-            _hold_run_lock(between_ticks, global_config, case_id, done="changed")
-            judged = release(ledger, send=False, **bound)
-        if judged.attempt.sent:
-            raise cw.CommandError(
-                f"the gate's verdict on draft [{preview.index}] of {case_id} changed while "
-                f"it was judged, so nothing was sent; run the command again"
-            )
-        raise _draft_not_sent(judged, case_id, dry_run=False)
-    if not dry_run:
-        if not (confirm or confirm_at_terminal)(
-            _draft_preview(preview, case_id, edit=edit)
-        ):
-            return (
-                f"nothing sent: draft [{preview.index}] of {case_id} stays on the case"
-            )
-        with ExitStack() as between_ticks:
-            _hold_run_lock(between_ticks, global_config, case_id, done="sent")
-            preview = release(ledger, **bound)
-        if not preview.attempt.sent:
-            raise _draft_not_sent(preview, case_id, dry_run=False)
-
-    label = f"draft [{preview.index}] of {case_id}"
-    url = getattr(preview.attempt.result, "url", None)
+    label = f"draft [{done.index}] of {case_id}"
+    if not confirmed:
+        return f"nothing sent: {label} stays on the case"
+    url = getattr(done.attempt.result, "url", None)
     head = (
-        f"{'would send' if dry_run else 'sent'} {label} on {preview.draft.get('ref')} "
-        f"(gate: passed, {preview.filters} filters)"
+        f"{'would send' if dry_run else 'sent'} {label} on {done.draft.get('ref')} "
+        f"(gate: passed, {done.filters} filters)"
     )
-    notes = [f"  note: {note}" for note in preview.attempt.decision.notes]
+    notes = [f"  note: {note}" for note in done.attempt.decision.notes]
     lines = [head + (f": {url}" if url and not dry_run else ""), *notes]
-    if preview.moved:
-        before, after = preview.moved
+    if done.moved:
+        before, after = done.moved
         verb = "would move" if dry_run else "moved"
         lines.append(
             f"{verb} {case_id} from {before} to {after}; its labels follow on the next "
             f"tick"
         )
     else:
-        lines.append(f"{case_id} stays {preview.case.state}")
-    if preview.case.drafts:
-        lines.append(f"drafts left on {case_id}: {len(preview.case.drafts)}")
+        lines.append(f"{case_id} stays {done.case.state}")
+    if done.case.drafts:
+        lines.append(f"drafts left on {case_id}: {len(done.case.drafts)}")
     return "\n".join(lines)
 
 
@@ -785,6 +851,239 @@ def case_reject_draft(
     )
 
 
+# ---- messages outside a case ----
+
+
+def _message_text(text: str, text_file: str) -> str:
+    """The message's text: ``--text``, or the file ``--text-file`` names (``-``: standard input).
+
+    Raises ``ValueError`` unless exactly one is given, and for a file that cannot be read.
+    """
+    if bool(text) == bool(text_file):
+        raise ValueError(
+            "give the message's text with exactly one of --text and --text-file "
+            f"(--text-file {STDIN_FILE_NAME} reads standard input)"
+        )
+    if text:
+        return text
+    if text_file == STDIN_FILE_NAME:
+        return sys.stdin.read()
+    try:
+        return Path(text_file).expanduser().read_text(encoding="utf-8")
+    except OSError as error:
+        raise ValueError(f"cannot read --text-file {text_file}: {error}") from error
+
+
+@_expected_errors(ConfigError, ValueError, DraftSentNotRecorded)
+def message_send(
+    recipient: str,
+    *,
+    ref: str = "",
+    text: str = "",
+    text_file: str = "",
+    title: str = "",
+    purpose: str = messages.DFLT_MESSAGE_PURPOSE,
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    registry: Optional[Mapping[str, Any]] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+    notify_fn: Optional[Callable[..., Any]] = None,
+) -> str:
+    """Send a message to PERSON outside any case, through the gate, or hold it for the operator.
+
+    ``--ref`` is the conversation it goes to, and a subject must bind it: an issue
+    (``github:example/app#12``), or a repository with ``--title`` to open an issue. That
+    subject's policy judges it, through the filters every message passes: reply mode, the
+    leak scan (of the title too), the writing card, deslop and the mention. The text is
+    ``--text`` or ``--text-file`` (``-`` reads standard input). ``--purpose`` is ``ask``,
+    the default, ``reply`` or ``propose``.
+
+    The message is sent, or held when the gate diverts it, its channel refuses it, or a
+    hold keeps the subject's, the person's or the repository's messages waiting. A held
+    message is recorded with its reason, and the operator is told a message waits, never
+    what it says. The command then exits 2, or 1 for a refusal, and the operator sends the
+    message with ``liaise message send-draft``. Nothing opens a case or sets a label.
+    ``--dry-run`` judges and plans, and records and tells nothing.
+    """
+    if not ref:
+        raise ValueError(
+            "a message needs --ref, the conversation it goes to: an issue such as "
+            "github:example/app#12, or a repository with --title to open an issue"
+        )
+    body = _message_text(text, text_file)
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    topic_env = global_config.notify.ntfy_topic_env
+    result = messages.send_message(
+        Ledger(ledger_store),
+        load_subjects(config_root),
+        recipient,
+        ref=ref,
+        text=body,
+        title=title or None,
+        purpose=purpose,
+        now=now,
+        registry=registry,
+        notify_fn=notify_fn or functools.partial(notify, topic_env=topic_env),
+        dry_run=dry_run,
+    )
+    message, attempt = result.message, result.attempt
+    notes = [f"  note: {note}" for note in (attempt.decision.notes if attempt else ())]
+    if result.sent:
+        url = getattr(attempt.result, "url", None)
+        verb = "would send a message" if dry_run else f"sent message {message.id}"
+        head = f"{verb} to {recipient} on {ref} (gate: passed, {result.filters} filters)"
+        return "\n".join([head + (f": {url}" if url and not dry_run else ""), *notes])
+    if result.hold is not None:
+        why, held_back = f"the hold on {result.hold.scope} ({result.hold.mode})", True
+    elif attempt.decision.send is None:
+        decision = attempt.decision
+        why, held_back = f"diverted by {decision.diverted_by}: {decision.diverted}", True
+    else:
+        why, held_back = f"send failed: {attempt.failure}", False
+    head = (
+        f"the message to {recipient} on {ref} would be held: {why}"
+        if dry_run
+        else f"the message to {recipient} on {ref} is held as {message.id}: {why}. "
+        f"liaise status lists it for the operator, who sends it with liaise message "
+        f"send-draft {message.id}"
+    )
+    code = {"code": DIVERTED_EXIT_CODE} if held_back else {}
+    raise cw.CommandError("\n".join([head, *notes]), **code)
+
+
+@_expected_errors(ConfigError, ValueError)
+def message_list(
+    *,
+    state: Optional[str] = None,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """Every message sent or held outside a case, a line each: id, state, and where it goes.
+
+    ``--state held`` lists what waits on you. It changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=False)
+    return "\n".join(messages.message_lines(ledger_store, state=state))
+
+
+@_expected_errors(ConfigError, ValueError)
+def message_show(
+    message_id: str,
+    *,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.
+
+    It changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=False)
+    return "\n".join(messages.message_show_lines(ledger_store, message_id))
+
+
+@_expected_errors(ConfigError, ValueError, DraftSentNotRecorded)
+def message_send_draft(
+    message_id: str,
+    *,
+    edit: bool = False,
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    registry: Optional[Mapping[str, Any]] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+    editor: Optional[Callable[[str], str]] = None,
+    confirm: Optional[Callable[[str], bool]] = None,
+) -> str:
+    """Send a held message you approved, through the gate, as ``liaise case send-draft`` does.
+
+    The gate judges it again with your approval recorded, and ``--edit`` opens it in your
+    editor first. It shows where the message goes, the verdict and the exact text, and sends
+    once you answer ``y`` at a terminal. A message the gate diverts stays held with the
+    reason and exits 2; one its channel refuses exits 1. ``--dry-run`` judges and plans,
+    asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps
+    the message waiting.
+    """
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    text, opened = None, None
+    if edit:  # before the lock: an editor can stay open far longer than a tick waits
+        held = messages.held_message(Ledger(ledger_store), message_id)
+        opened = messages.message_draft(held)
+        text = (editor or edit_in_editor)(opened.get("text") or "")
+    names = _Held(
+        label=f"message {message_id}",
+        stays="held",
+        command=f"liaise message send-draft {message_id}",
+        owner=message_id,
+    )
+    done, confirmed = _release_after_confirmation(
+        functools.partial(
+            messages.send_held_message,
+            subjects=load_subjects(config_root),
+            message_id=message_id,
+            text=text,
+            now=now,
+            registry=registry,
+        ),
+        first=dict(seen=opened),
+        bind=lambda judged: dict(seen=judged.draft),
+        held=lambda judged: names,
+        then=lambda judged: (),
+        ledger_store=ledger_store,
+        global_config=global_config,
+        dry_run=dry_run,
+        edit=edit,
+        confirm=confirm or confirm_at_terminal,
+    )
+    if not confirmed:
+        return f"nothing sent: message {message_id} stays held"
+    outbound = done.attempt.outbound
+    url = getattr(done.attempt.result, "url", None)
+    head = (
+        f"{'would send' if dry_run else 'sent'} message {message_id} to "
+        f"{outbound.recipient} on {outbound.ref} (gate: passed, {done.filters} filters)"
+    )
+    notes = [f"  note: {note}" for note in done.attempt.decision.notes]
+    return "\n".join([head + (f": {url}" if url and not dry_run else ""), *notes])
+
+
+@_expected_errors(ConfigError, ValueError)
+def message_reject_draft(
+    message_id: str,
+    *,
+    reason: str = "",
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+) -> str:
+    """Decline a held message, recording ``--reason``.
+
+    Nothing is sent: the message is recorded as rejected, with its reason and its text. It
+    holds the run lock. ``--dry-run`` changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
+    with ExitStack() as between_ticks:
+        if not dry_run:
+            _hold_run_lock(between_ticks, global_config, message_id, done="changed")
+        rejected = messages.reject_message(
+            ledger, message_id, reason=reason, now=now, dry_run=dry_run
+        )
+    verb = "would reject" if dry_run else "rejected"
+    return (
+        f"{verb} message {message_id} ({rejected.purpose} to {rejected.recipient} on "
+        f"{rejected.ref}): {reason.strip()}"
+    )
+
+
 #: SSOT command tree consumed by ``__main__.py`` and any later surface (MCP, HTTP). Named
 #: explicitly, so the commands read ``liaise subject show`` and ``liaise migrate-config``.
 _dispatch_funcs = {
@@ -798,6 +1097,13 @@ _dispatch_funcs = {
         "set-state": case_set_state,
         "send-draft": case_send_draft,
         "reject-draft": case_reject_draft,
+    },
+    "message": {
+        "send": message_send,
+        "list": message_list,
+        "show": message_show,
+        "send-draft": message_send_draft,
+        "reject-draft": message_reject_draft,
     },
     "subject": {"list": subject_list, "show": subject_show},
     "setup": setup,
@@ -831,6 +1137,13 @@ _SEAMS = {
         "list": ("store",),
         "show": ("store",),
         "set-state": ("store", "now"),
+        "send-draft": ("registry", "store", "now", "editor", "confirm"),
+        "reject-draft": ("store", "now"),
+    },
+    "message": {
+        "send": ("registry", "store", "now", "notify_fn"),
+        "list": ("store",),
+        "show": ("store",),
         "send-draft": ("registry", "store", "now", "editor", "confirm"),
         "reject-draft": ("store", "now"),
     },

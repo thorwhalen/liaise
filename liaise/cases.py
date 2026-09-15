@@ -32,18 +32,19 @@ from datetime import datetime, timezone
 from types import MappingProxyType
 from typing import Any, Optional
 
-from correspond.model import ConversationRef
-
-from liaise.gate import DFLT_OUTBOUND_FILTERS, GateContext, Outbound, OutboundFilter
-from liaise.holds import DFLT_SET_BY, blocking_hold, scopes_for
+from liaise.gate import DFLT_OUTBOUND_FILTERS, OutboundFilter
+from liaise.holds import DFLT_SET_BY
 from liaise.ledger import Ledger
-from liaise.model import CASE_STATES, Approval, Case, LedgerEntry, require_one_of
-from liaise.outcomes import make_draft
+from liaise.model import CASE_STATES, Case, LedgerEntry, require_one_of
 from liaise.processor import RUNNING
-from liaise.projection import github_issue
-from liaise.release import SendAttempt, error_text, gate_and_send
+from liaise.release import (
+    DRAFT_ENTRY_KIND,
+    DraftSentNotRecorded,
+    SendAttempt,
+    release_draft,
+)
 from liaise.subjects import Subject
-from liaise.tick import HELD_REASON_PREFIX, RUN_DEPLOY_FAILED
+from liaise.tick import RUN_DEPLOY_FAILED
 
 #: Who a state set with :func:`set_case_state` is recorded as set by.
 OPERATOR_ACTOR = DFLT_SET_BY
@@ -72,14 +73,6 @@ NEEDS_OWNER = "needs-owner"
 STATE_AFTER_SENT_DRAFT = MappingProxyType(
     dict.fromkeys(("ask", "reply", "propose"), "needs-partner")
 )
-#: The outcome whose message announces a delivery.
-DELIVER_PURPOSE = "deliver"
-#: The entry kind a sent or rejected draft is recorded as: a gate decision, as the tick's are.
-DRAFT_ENTRY_KIND = "gate"
-
-
-class DraftSentNotRecorded(RuntimeError):
-    """A released draft went out, and the ledger then failed to record that it did."""
 
 
 def _no_case(case_id: str) -> str:
@@ -92,7 +85,7 @@ def _stamp(moment: datetime) -> str:
     return moment.isoformat(timespec="seconds")
 
 
-def _entry_line(entry: LedgerEntry) -> str:
+def entry_line(entry: LedgerEntry) -> str:
     """One entry on one line: when, what, by whom, its detail, and the start of its text."""
     detail = ", ".join(
         f"{key}={value}"
@@ -190,7 +183,7 @@ def case_show_lines(
         lines += indented(draft.get("text"))
     shown = case.entries[-entries:] if entries > 0 else ()
     lines.append(f"latest entries: {len(shown)} of {len(case.entries)}")
-    lines += [f"  {_entry_line(entry)}" for entry in shown]
+    lines += [f"  {entry_line(entry)}" for entry in shown]
     return lines
 
 
@@ -321,12 +314,6 @@ def find_draft(
     return pick_draft(case, index)
 
 
-def _github_repo_of(refs: Iterable[Optional[str]]) -> Optional[str]:
-    """``owner/repo`` of the first GitHub issue among ``refs``, or None."""
-    issues = (github_issue(ref) for ref in refs if ref)
-    return next((issue[0] for issue in issues if issue is not None), None)
-
-
 def send_draft(
     ledger: Ledger,
     subjects: Mapping[str, Subject],
@@ -344,9 +331,8 @@ def send_draft(
 ) -> DraftRelease:
     """Send the case ``case_id``'s draft at ``index`` as ``by``, through the gate again.
 
-    The message is the draft's text, or ``text`` when the operator edited it. It goes to
-    the draft's ``ref``, for its ``recipient``, carrying out its ``outcome``. It passes
-    through :func:`liaise.release.gate_and_send`, with an :class:`~liaise.model.Approval`
+    The message is the draft's text, or ``text`` when the operator edited it. It goes out
+    through :func:`liaise.release.release_draft`, with an :class:`~liaise.model.Approval`
     by ``by`` at ``now`` (the current UTC time when None) on the gate's context. Draft
     reply mode lets it through, and every other filter judges it as it would a message
     the tick sends, the mention included.
@@ -372,10 +358,8 @@ def send_draft(
     - a case the ledger does not hold, one with a run in flight, or one whose subject is
       not in ``subjects``;
     - a draft :func:`pick_draft` cannot pick, or one that changed since ``seen``;
-    - a draft with no destination, or no text to send;
-    - a ``deliver`` message a hold kept, whose delivery never ran;
-    - a hold that keeps the case's messages, or for a ``deliver`` message its delivery,
-      waiting.
+    - anything :func:`liaise.release.release_draft` refuses: no destination or no text, a
+      ``deliver`` message a hold kept, a hold that keeps the case's effects waiting.
 
     Raises :class:`DraftSentNotRecorded` when the message went out and the ledger then
     failed to record it.
@@ -402,140 +386,53 @@ def send_draft(
             f"{label} changed while you had it open, so nothing was sent; read it again "
             f"with liaise case show {case_id}"
         )
-    ref, recipient, purpose = (
-        draft.get("ref"),
-        draft.get("recipient"),
-        draft.get("outcome"),
-    )
-    if not ref:
-        raise ValueError(
-            f"{label} has no destination ({draft.get('reason')}): send it yourself, "
-            f"then take it off the case with liaise case reject-draft {case_id} {index}"
-        )
-    try:
-        channel = ConversationRef.parse(ref).channel
-    except Exception as error:  # correspond's InvalidRef, or anything a bad ref raises
-        raise ValueError(f"{label} goes to {ref!r}: {error_text(error)}") from error
-    delivers = purpose == DELIVER_PURPOSE
-    if delivers and str(draft.get("reason") or "").startswith(HELD_REASON_PREFIX):
-        raise ValueError(
-            f"{label} tells {recipient} a change is live, but a hold kept that delivery "
-            f"from running ({draft.get('reason')}), so nothing was sent: deliver the "
-            f"change first, then take this draft off the case with liaise case "
-            f"reject-draft {case_id} {index}"
-        )
-    body = (draft.get("text") or "") if text is None else text
-    if not body.strip():
-        hint = "; write it with --edit" if text is None else ""
-        raise ValueError(f"{label} has no text to send{hint}")
-    scopes = scopes_for(
-        subject=subject.slug,
-        person=recipient or None,
-        repo=_github_repo_of((ref, *case.conversations)),
-        checkout=subject.workspace.path or None,
-        effect=subject.delivery.kind if delivers else None,
-        processor=False,
-    )
-    hold = blocking_hold(ledger, scopes, for_="effect")
-    if hold is not None:
-        waiting = "delivery" if delivers else "messages"
-        raise ValueError(
-            f"{label} was not sent: the hold on {hold.scope} ({hold.mode}) keeps this "
-            f"case's {waiting} waiting; liaise unhold {hold.scope} first"
-        )
-
-    at = now if now is not None else datetime.now(timezone.utc)
-    approval = Approval(by=by, at=at)
-    filters = tuple(outbound_filters)
-    outbound = Outbound(
-        case_id=case.id,
-        ref=ref,
-        channel=channel,
-        recipient=recipient,
-        purpose=purpose,
-        text=body,
-    )
-    context = GateContext(subject=subject, case=case, now=at, approval=approval)
-    attempt = gate_and_send(
-        outbound,
-        context,
+    reject = f"liaise case reject-draft {case_id} {index}"
+    outcome = release_draft(
+        draft,
+        subject=subject,
+        ledger=ledger,
+        label=label,
+        reject=reject,
+        by=by,
+        now=now if now is not None else datetime.now(timezone.utc),
+        case=case,
+        text=text,
+        detail={"draft": index},
         registry=registry,
-        dry_run=dry_run or not send,
-        outbound_filters=filters,
+        send=send,
+        dry_run=dry_run,
+        outbound_filters=outbound_filters,
     )
-    decision = attempt.decision
-    edited = text is not None and text != draft.get("text")
     release = functools.partial(
         DraftRelease,
         index=index,
         draft=draft,
-        attempt=attempt,
-        filters=len(filters),
-        edited=edited,
+        attempt=outcome.attempt,
+        filters=outcome.filters,
+        edited=outcome.edited,
     )
-    if attempt.sent and not send and not dry_run:
+    if outcome.entry is None:
         return release(case=case)  # only a plan: nothing went out, so nothing changes
-    detail = {
-        "purpose": purpose,
-        "ref": ref,
-        "notes": list(decision.notes),
-        "draft": index,
-        "held_for": draft.get("reason"),
-        "edited": edited,
-        "approval": approval.to_dict(),
-    }
     others = (*case.drafts[:index], *case.drafts[index + 1 :])
-    url = getattr(attempt.result, "url", None)
     moved = None
-    if attempt.sent:
-        entry = LedgerEntry(
-            at=at,
-            kind=DRAFT_ENTRY_KIND,
-            actor=by,
-            text=attempt.outbound.text,
-            detail={**detail, "decision": "send", "url": url},
-        )
-        after = replace(case, drafts=others).with_entry(entry)
-        target = STATE_AFTER_SENT_DRAFT.get(purpose)
+    if outcome.kept is None:
+        after = replace(case, drafts=others).with_entry(outcome.entry)
+        target = STATE_AFTER_SENT_DRAFT.get(draft.get("outcome"))
         if case.state == NEEDS_OWNER and target is not None and not others:
+            at = outcome.entry.at
             after = after.with_state(target, at=at, actor=by, reason=f"sent {label}")
             moved = (case.state, target)
     else:
-        if decision.send is None:
-            reason = decision.diverted
-            outcome = {"decision": "divert", "reason": reason}
-        else:
-            reason = f"send failed: {attempt.failure}"
-            outcome = {"decision": "send", "error": attempt.failure}
-        entry = LedgerEntry(
-            at=at,
-            kind=DRAFT_ENTRY_KIND,
-            actor=by,
-            text=decision.send.text if decision.send is not None else body,
-            detail={**detail, **outcome},
-        )
-        held = make_draft(
-            at=at,
-            outcome=purpose,
-            recipient=recipient,
-            ref=ref,
-            text=body,  # the gate adds the mention again, for the handle of that day
-            reason=reason,
-            notes=decision.notes,
-        )
-        drafts = (*case.drafts[:index], held, *case.drafts[index + 1 :])
-        after = replace(case, drafts=drafts).with_entry(entry)
+        drafts = (*case.drafts[:index], outcome.kept, *case.drafts[index + 1 :])
+        after = replace(case, drafts=drafts).with_entry(outcome.entry)
     if not dry_run:
         try:
             ledger.save_case(after)
         except Exception as error:
-            if not attempt.sent:
+            if outcome.kept is not None:
                 raise
-            where = f" as {url}" if url else ""
-            raise DraftSentNotRecorded(
-                f"{label} was sent{where}, but the ledger could not record it "
-                f"({error_text(error)}): do not send it again. Take it off the case with "
-                f'liaise case reject-draft {case_id} {index} --reason "sent, not recorded"'
+            raise DraftSentNotRecorded.after(
+                label, outcome.attempt, error, reject=reject
             ) from error
     return release(case=after, moved=moved)
 

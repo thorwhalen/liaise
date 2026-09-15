@@ -66,6 +66,9 @@ OUTCOME_KINDS = (
 PERMISSIONS = ("report", "request_work", "approve_candidate")
 #: How a :class:`Hold` stops work in its scope.
 HOLD_MODES = ("block", "drain", "cancel")
+#: Where an :class:`OutboundMessage` stands: held for the operator, sent, or declined.
+MESSAGE_STATES = ("held", "sent", "rejected")
+MESSAGE_HELD, MESSAGE_SENT, MESSAGE_REJECTED = MESSAGE_STATES
 
 
 def require_one_of(value: Any, allowed: tuple[str, ...], *, what: str) -> Any:
@@ -266,6 +269,43 @@ class Approval(_Record):
 
     by: str
     at: datetime
+
+
+@dataclass(frozen=True)
+class OutboundMessage(_Record):
+    """A message an agent sent, or asked to send, outside any case (``liaise message send``).
+
+    ``id`` is ``<subject>-m<hex>``. ``recipient`` (a person id), ``ref``, ``purpose``,
+    ``title`` and ``text`` are the message, as it was last judged. ``state`` is one of
+    :data:`MESSAGE_STATES`, and while it is ``held``, ``reason`` and ``notes`` say why.
+    ``entries`` is its append-only history of gate decisions, as a case keeps its own. A
+    message has no reporter, no run and no label: it is not a unit of work.
+    """
+
+    id: str
+    subject: str
+    recipient: str
+    ref: str
+    purpose: str
+    text: str
+    state: str
+    created_at: datetime
+    updated_at: datetime
+    title: Optional[str] = None
+    reason: Optional[str] = None
+    notes: tuple[str, ...] = ()
+    entries: tuple[LedgerEntry, ...] = ()
+
+    def __post_init__(self) -> None:
+        require_one_of(self.state, MESSAGE_STATES, what="message state")
+
+    def with_entry(self, entry: LedgerEntry) -> OutboundMessage:
+        """This message with ``entry`` appended, and ``updated_at`` moved forward to it."""
+        return replace(
+            self,
+            entries=(*self.entries, entry),
+            updated_at=max(self.updated_at, entry.at),
+        )
 
 
 @dataclass(frozen=True)
