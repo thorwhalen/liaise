@@ -318,6 +318,11 @@ _LOOKALIKES = {
 }  # fmt: skip
 
 
+#: How many characters' folds and classes are cached: every character of ordinary text,
+#: without letting a message of a million distinct code points hold them all.
+_CHARACTER_CACHE_SIZE = 1 << 16
+
+
 @lru_cache(maxsize=None)
 def _prototypes() -> dict[str, str]:
     """``{character: the ASCII letter or digit it imitates}``, from the package data."""
@@ -333,12 +338,12 @@ def _prototypes() -> dict[str, str]:
     return table
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_CHARACTER_CACHE_SIZE)
 def _is_invisible(char: str) -> bool:
     return _INVISIBLE_CHAR.match(char) is not None
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_CHARACTER_CACHE_SIZE)
 def _is_transparent(char: str) -> bool:
     """Whether whole-word matching looks past ``char``: an invisible character or a mark."""
     return _is_invisible(char) or unicodedata.category(char) in _MARK_CATEGORIES
@@ -353,7 +358,7 @@ def _vanishes(char: str) -> bool:
     )
 
 
-@lru_cache(maxsize=None)
+@lru_cache(maxsize=_CHARACTER_CACHE_SIZE)
 def _fold(char: str) -> str:
     """What one character contributes to the normalised text: nothing, or its folded form.
 
