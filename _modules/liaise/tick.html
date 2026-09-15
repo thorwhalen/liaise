@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../../_static/documentation_options.js?v=360bc84d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.2" />
+  <meta name="docsearch:version" content="0.1.3" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -1164,11 +1164,20 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_selected_slugs</span><span class="p">(</span>
-    <span class="n">subjects</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">],</span> <span class="n">only</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span>
+    <span class="n">subjects</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">],</span>
+    <span class="n">only</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""The slugs to run, sorted: all of ``subjects``, or those ``only`` names."""</span>
+<span class="w">    </span><span class="sd">"""The slugs to tick, sorted: every active subject's, or those ``only`` names.</span>
+
+<span class="sd">    An inactive subject (``active = false``) is never ticked, except when a dry run names</span>
+<span class="sd">    it in ``only``: a dry run changes nothing, and it is how the operator sees what a tick</span>
+<span class="sd">    would do. Raises :class:`~liaise.config.ConfigError` for an unknown slug in ``only``,</span>
+<span class="sd">    and for an inactive one outside a dry run.</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">only</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">subjects</span><span class="p">))</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">slug</span> <span class="k">for</span> <span class="n">slug</span><span class="p">,</span> <span class="n">found</span> <span class="ow">in</span> <span class="n">subjects</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">found</span><span class="o">.</span><span class="n">active</span><span class="p">))</span>
     <span class="n">wanted</span> <span class="o">=</span> <span class="p">{</span><span class="n">only</span><span class="p">}</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">only</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">set</span><span class="p">(</span><span class="n">only</span><span class="p">)</span>
     <span class="n">unknown</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">wanted</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">subjects</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
@@ -1176,6 +1185,13 @@ window.runMermaid = runMermaid;</script>
         <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"no subject </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span><span class="w"> </span><span class="n">unknown</span><span class="p">))</span><span class="si">}</span><span class="s2"> is configured; the subjects "</span>
             <span class="sa">f</span><span class="s2">"are: </span><span class="si">{</span><span class="n">known</span><span class="si">}</span><span class="s2">. Each is a file subjects/&lt;slug&gt;.toml under the config root."</span>
+        <span class="p">)</span>
+    <span class="n">inactive</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">slug</span> <span class="k">for</span> <span class="n">slug</span> <span class="ow">in</span> <span class="n">wanted</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">subjects</span><span class="p">[</span><span class="n">slug</span><span class="p">]</span><span class="o">.</span><span class="n">active</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">inactive</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"subject </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span><span class="w"> </span><span class="n">inactive</span><span class="p">))</span><span class="si">}</span><span class="s2"> is inactive (active = false), so "</span>
+            <span class="sa">f</span><span class="s2">"no tick acts on it: add --dry-run to see what a tick would do, or set "</span>
+            <span class="sa">f</span><span class="s2">"active = true in its file"</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">wanted</span><span class="p">))</span>
 
@@ -1223,7 +1239,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">      before they start; None keeps the tick's own order, oldest first.</span>
 
 <span class="sd">    ``only`` is a slug or slugs to run alone; an unknown one raises</span>
-<span class="sd">    :class:`~liaise.config.ConfigError`. ``now`` is the tick's clock (the current UTC</span>
+<span class="sd">    :class:`~liaise.config.ConfigError`. An inactive subject (``active = false``) is not</span>
+<span class="sd">    ticked: ``only`` may name one in a dry run alone, and outside one that raises</span>
+<span class="sd">    :class:`~liaise.config.ConfigError` too. ``now`` is the tick's clock (the current UTC</span>
 <span class="sd">    time when None). ``lost_run_deadline`` is how long after the tick cancelled a run for</span>
 <span class="sd">    its wall clock a run that will not stop is waited on (:data:`LOST_RUN_DEADLINE`), and</span>
 <span class="sd">    ``closed_recheck_interval`` how long a case whose issue was read closed goes before</span>
@@ -1236,7 +1254,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">tick</span> <span class="o">=</span> <span class="n">_Tick</span><span class="p">(</span>
         <span class="n">subjects</span><span class="p">,</span>
         <span class="n">Ledger</span><span class="p">(</span><span class="n">ChainMap</span><span class="p">({},</span> <span class="n">store</span><span class="p">)</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="n">store</span><span class="p">),</span>
-        <span class="n">slugs</span><span class="o">=</span><span class="n">_selected_slugs</span><span class="p">(</span><span class="n">subjects</span><span class="p">,</span> <span class="n">only</span><span class="p">),</span>
+        <span class="n">slugs</span><span class="o">=</span><span class="n">_selected_slugs</span><span class="p">(</span><span class="n">subjects</span><span class="p">,</span> <span class="n">only</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">),</span>
         <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
         <span class="n">processor</span><span class="o">=</span><span class="p">(</span>
             <span class="n">processor</span>
@@ -1266,6 +1284,13 @@ window.runMermaid = runMermaid;</script>
     <span class="n">stamps</span> <span class="o">=</span> <span class="n">nullcontext</span><span class="p">()</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="n">_stamp_run</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">lock</span><span class="p">,</span> <span class="n">stamps</span><span class="p">:</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"tick at </span><span class="si">{</span><span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="p">(</span><span class="s2">" [dry run]"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">slug</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">subjects</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">subjects</span><span class="p">[</span><span class="n">slug</span><span class="p">]</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">slug</span> <span class="ow">in</span> <span class="n">tick</span><span class="o">.</span><span class="n">slugs</span><span class="p">:</span>
+                <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"subject </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: inactive (active = false); planned, as a dry run"</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">only</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"subject </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: inactive (active = false), not ticked"</span><span class="p">)</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">intake_all</span><span class="p">()</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">reconcile</span><span class="p">()</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">start_all</span><span class="p">()</span>
@@ -1569,8 +1594,9 @@ window.runMermaid = runMermaid;</script>
         <span class="n">mine</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span> <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="o">==</span> <span class="n">slug</span><span class="p">]</span>
         <span class="n">today</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">daily_count</span><span class="p">(</span><span class="n">slug</span><span class="p">,</span> <span class="n">now</span><span class="o">.</span><span class="n">date</span><span class="p">())</span>
         <span class="n">cap</span> <span class="o">=</span> <span class="n">subjects</span><span class="p">[</span><span class="n">slug</span><span class="p">]</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">budget</span><span class="o">.</span><span class="n">daily_dispatches</span>
+        <span class="n">inert</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">subjects</span><span class="p">[</span><span class="n">slug</span><span class="p">]</span><span class="o">.</span><span class="n">active</span> <span class="k">else</span> <span class="s2">" (inactive: no tick acts on it)"</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"subject </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mine</span><span class="p">)</span><span class="si">}</span><span class="s2"> case(s), </span><span class="si">{</span><span class="n">today</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2"> dispatches today"</span>
+            <span class="sa">f</span><span class="s2">"subject </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mine</span><span class="p">)</span><span class="si">}</span><span class="s2"> case(s), </span><span class="si">{</span><span class="n">today</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">cap</span><span class="si">}</span><span class="s2"> dispatches today</span><span class="si">{</span><span class="n">inert</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">CASE_STATES</span><span class="p">:</span>
             <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">mine</span> <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">state</span><span class="p">]</span>
@@ -1600,7 +1626,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">held</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span>
             <span class="n">ledger</span><span class="o">.</span><span class="n">messages</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">MESSAGE_HELD</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">updated_at</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
         <span class="p">)</span>
-    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">,</span> <span class="ne">KeyError</span><span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># a record this liaise cannot read</span>
+    <span class="k">except</span> <span class="p">(</span>
+        <span class="ne">ValueError</span><span class="p">,</span>
+        <span class="ne">TypeError</span><span class="p">,</span>
+        <span class="ne">KeyError</span><span class="p">,</span>
+    <span class="p">)</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># a record this liaise cannot read</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">heading</span><span class="si">}</span><span class="s2">: unreadable (</span><span class="si">{</span><span class="n">_error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">heading</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">held</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -1847,6 +1877,18 @@ window.runMermaid = runMermaid;</script>
                 <span class="sa">f</span><span class="s2">"run </span><span class="si">{</span><span class="n">run</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2"> belongs to subject </span><span class="si">{</span><span class="n">run</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">, which is not "</span>
                 <span class="sa">f</span><span class="s2">"configured, so it cannot be reconciled"</span>
             <span class="p">)</span>
+        <span class="n">inert</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">run</span>
+            <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">runs</span>
+            <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">subject</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subjects</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">subjects</span><span class="p">[</span><span class="n">run</span><span class="o">.</span><span class="n">subject</span><span class="p">]</span><span class="o">.</span><span class="n">active</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">inert</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">subject</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slugs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"run </span><span class="si">{</span><span class="n">run</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2"> belongs to subject </span><span class="si">{</span><span class="n">run</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">, which is "</span>
+                    <span class="sa">f</span><span class="s2">"inactive (active = false), so it is not collected and its outcomes "</span>
+                    <span class="sa">f</span><span class="s2">"wait: set active = true to collect it"</span>
+                <span class="p">)</span>
         <span class="n">mine</span> <span class="o">=</span> <span class="p">[</span><span class="n">run</span> <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">runs</span> <span class="k">if</span> <span class="n">run</span><span class="o">.</span><span class="n">subject</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slugs</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"reconcile: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mine</span><span class="p">)</span><span class="si">}</span><span class="s2"> run(s) in flight"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">run</span> <span class="ow">in</span> <span class="n">mine</span><span class="p">:</span>
@@ -3193,7 +3235,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">case</span>
             <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">touched</span><span class="p">,</span> <span class="o">*</span><span class="n">drifted</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="ow">and</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subjects</span>
+            <span class="ow">and</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slugs</span>  <span class="c1"># an inactive subject's issues keep their labels</span>
             <span class="ow">and</span> <span class="n">_github_issue_ref</span><span class="p">(</span><span class="n">case</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"labels: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span><span class="si">}</span><span class="s2"> case(s)"</span><span class="p">)</span>

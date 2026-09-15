@@ -711,7 +711,7 @@ Bases: `_Record`
 
 What a finished run returned: its outcomes, what it cost, and how it ended.
 
-### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None)
+### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -723,6 +723,14 @@ Whether `permission` may be used at authenticity `grade` on this subject.
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+#### active *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= True*
+
+loaded, shown and used as gate context, but
+no tick polls, starts, delivers, nudges or labels anything of it.
+
+* **Type:**
+  False for a subject declared but inert
 
 #### brief_for(person)
 
@@ -999,7 +1007,9 @@ See the module docstring for the steps. The seams, each with a working default:
   before they start; None keeps the tick’s own order, oldest first.
 
 `only` is a slug or slugs to run alone; an unknown one raises
-[`ConfigError`](liaise.config.html.md#liaise.config.ConfigError). `now` is the tick’s clock (the current UTC
+[`ConfigError`](liaise.config.html.md#liaise.config.ConfigError). An inactive subject (`active = false`) is not
+ticked: `only` may name one in a dry run alone, and outside one that raises
+[`ConfigError`](liaise.config.html.md#liaise.config.ConfigError) too. `now` is the tick’s clock (the current UTC
 time when None). `lost_run_deadline` is how long after the tick cancelled a run for
 its wall clock a run that will not stop is waited on (`LOST_RUN_DEADLINE`), and
 `closed_recheck_interval` how long a case whose issue was read closed goes before

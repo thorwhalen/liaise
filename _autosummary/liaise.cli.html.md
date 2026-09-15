@@ -59,30 +59,30 @@ traceback.
 
 ### Functions
 
-| [`case_list`](#liaise.cli.case_list)(\*[, state, root, store])                | Every case in the ledger, a line each: its id, its state and its conversations.              |
-|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| [`case_reject_draft`](#liaise.cli.case_reject_draft)(case_id, \*index[, reason, ...]) | Decline CASE_ID's draft INDEX, or its only one, recording `--reason`.                        |
-| [`case_send_draft`](#liaise.cli.case_send_draft)(case_id, \*index[, edit, ...])     | Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.         |
-| [`case_set_state`](#liaise.cli.case_set_state)(case_id, state, \*[, reason, ...])  | Move CASE_ID to STATE, as you: how a case in needs-owner, or deployed, moves on.             |
-| [`case_show`](#liaise.cli.case_show)(case_id, \*[, root, store])              | CASE_ID as the ledger holds it: what a notification from liaise leaves out.                  |
-| [`confirm_at_terminal`](#liaise.cli.confirm_at_terminal)(preview)                       | Show `preview` and ask, at the operator's terminal, whether to send it; True for yes.        |
-| [`edit_in_editor`](#liaise.cli.edit_in_editor)(text)                               | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.             |
-| [`hold`](#liaise.cli.hold)(scope, \*[, mode, reason, root, store])       | Stop work in SCOPE until `liaise unhold`.                                                    |
-| [`message_list`](#liaise.cli.message_list)(\*[, state, root, store])             | Every message sent or held outside a case, a line each: id, state, and where it goes.        |
-| [`message_reject_draft`](#liaise.cli.message_reject_draft)(message_id, \*[, ...])        | Decline a held message, recording `--reason`.                                                |
-| [`message_send`](#liaise.cli.message_send)(recipient, \*[, ref, text, ...])      | Send a message to PERSON outside any case, through the gate, or hold it for the operator.    |
-| [`message_send_draft`](#liaise.cli.message_send_draft)(message_id, \*[, edit, ...])    | Send a held message you approved, through the gate, as `liaise case send-draft` does.        |
-| [`message_show`](#liaise.cli.message_show)(message_id, \*[, root, store])        | MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.     |
-| [`migrate_config`](#liaise.cli.migrate_config)(\*[, root, apply])                  | Derive 0.1 subject files from a 0.0.x configuration, and print the plan.                     |
-| [`run`](#liaise.cli.run)(\*[, root, once, dry_run, subject, ...])       | One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.     |
-| [`schedule_install`](#liaise.cli.schedule_install)(\*[, root, ...])                  | Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux).          |
-| [`schedule_status_cmd`](#liaise.cli.schedule_status_cmd)()                              | Whether the scheduled job is installed.                                                      |
-| [`schedule_uninstall`](#liaise.cli.schedule_uninstall)()                               | Remove the scheduled job.                                                                    |
-| [`setup`](#liaise.cli.setup)(subject, \*[, root, labeler])                | Create SUBJECT's labels in each GitHub repository it binds.                                  |
-| [`status`](#liaise.cli.status)(\*[, root, store, now])                     | What the ledger says, changing nothing: the last run, holds, runs, cases, what waits on you. |
-| [`subject_list`](#liaise.cli.subject_list)(\*[, root])                           | Every configured subject with its bindings, flagging any binding that could never match.     |
-| [`subject_show`](#liaise.cli.subject_show)(slug, \*[, root])                     | The subject SLUG as liaise reads it, every default applied, and its binding problems.        |
-| [`unhold`](#liaise.cli.unhold)(scope, \*[, root, store])                   | Lift the hold on SCOPE, whoever set it.                                                      |
+| [`case_list`](#liaise.cli.case_list)(\*[, state, root, store])                | Every case in the ledger, a line each: its id, its state and its conversations.                              |
+|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
+| [`case_reject_draft`](#liaise.cli.case_reject_draft)(case_id, \*index[, reason, ...]) | Decline CASE_ID's draft INDEX, or its only one, recording `--reason`.                                        |
+| [`case_send_draft`](#liaise.cli.case_send_draft)(case_id, \*index[, edit, ...])     | Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.                         |
+| [`case_set_state`](#liaise.cli.case_set_state)(case_id, state, \*[, reason, ...])  | Move CASE_ID to STATE, as you: how a case in needs-owner, or deployed, moves on.                             |
+| [`case_show`](#liaise.cli.case_show)(case_id, \*[, root, store])              | CASE_ID as the ledger holds it: what a notification from liaise leaves out.                                  |
+| [`confirm_at_terminal`](#liaise.cli.confirm_at_terminal)(preview)                       | Show `preview` and ask, at the operator's terminal, whether to send it; True for yes.                        |
+| [`edit_in_editor`](#liaise.cli.edit_in_editor)(text)                               | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.                             |
+| [`hold`](#liaise.cli.hold)(scope, \*[, mode, reason, root, store])       | Stop work in SCOPE until `liaise unhold`.                                                                    |
+| [`message_list`](#liaise.cli.message_list)(\*[, state, root, store])             | Every message sent or held outside a case, a line each: id, state, and where it goes.                        |
+| [`message_reject_draft`](#liaise.cli.message_reject_draft)(message_id, \*[, ...])        | Decline a held message, recording `--reason`.                                                                |
+| [`message_send`](#liaise.cli.message_send)(recipient, \*[, ref, text, ...])      | Send a message to PERSON outside any case, through the gate, or hold it for the operator.                    |
+| [`message_send_draft`](#liaise.cli.message_send_draft)(message_id, \*[, edit, ...])    | Send a held message you approved, through the gate, as `liaise case send-draft` does.                        |
+| [`message_show`](#liaise.cli.message_show)(message_id, \*[, root, store])        | MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.                     |
+| [`migrate_config`](#liaise.cli.migrate_config)(\*[, root, apply])                  | Derive 0.1 subject files from a 0.0.x configuration, and print the plan.                                     |
+| [`run`](#liaise.cli.run)(\*[, root, once, dry_run, subject, ...])       | One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.                     |
+| [`schedule_install`](#liaise.cli.schedule_install)(\*[, root, ...])                  | Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux).                          |
+| [`schedule_status_cmd`](#liaise.cli.schedule_status_cmd)()                              | Whether the scheduled job is installed.                                                                      |
+| [`schedule_uninstall`](#liaise.cli.schedule_uninstall)()                               | Remove the scheduled job.                                                                                    |
+| [`setup`](#liaise.cli.setup)(subject, \*[, root, labeler])                | Create SUBJECT's labels in each GitHub repository it binds.                                                  |
+| [`status`](#liaise.cli.status)(\*[, root, store, now])                     | What the ledger says, changing nothing: the last run, holds, runs, cases, what waits on you.                 |
+| [`subject_list`](#liaise.cli.subject_list)(\*[, root])                           | Every configured subject with its bindings, flagging an inactive one and any binding that could never match. |
+| [`subject_show`](#liaise.cli.subject_show)(slug, \*[, root])                     | The subject SLUG as liaise reads it, every default applied, and its binding problems.                        |
+| [`unhold`](#liaise.cli.unhold)(scope, \*[, root, store])                   | Lift the hold on SCOPE, whoever set it.                                                                      |
 
 ### liaise.cli.CONFIRM_PROMPT *= 'send it? [y/N] '*
 
@@ -342,7 +342,9 @@ Prints the tick’s plan, a line per event, case, run and decision. `--dry-run` 
 the same plan and changes nothing: nothing is sent, labelled, started, cancelled,
 deployed, locked or written. `--subject` ticks one subject alone. Without `--once`
 or `--dry-run`, it ticks every minute, printing each plan, until interrupted; the
-scheduled job (`liaise schedule install`) passes `--once`.
+scheduled job (`liaise schedule install`) passes `--once`. An inactive subject
+(`active = false`) is not ticked; `--subject` may name one with `--dry-run`
+alone, to see what a tick would do.
 
 `resolver`, `workspace` and `triage` are the tick’s seams of those names (see
 [`liaise.tick.run_once()`](liaise.tick.html.md#liaise.tick.run_once)); None keeps the tick’s own default.
@@ -379,7 +381,9 @@ Remove the scheduled job. Idempotent.
 
 Create SUBJECT’s labels in each GitHub repository it binds. Idempotent.
 
-Those are its claim labels and one `<label_prefix><state>` label per case state.
+Those are its claim labels and one `<label_prefix><state>` label per case state. An
+inactive subject (`active = false`) is refused, since creating labels changes its
+repositories.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -397,7 +401,7 @@ queue, the drafts waiting for the operator, and the latest digest notes.
 
 ### liaise.cli.subject_list(, root=None)
 
-Every configured subject with its bindings, flagging any binding that could never match.
+Every configured subject with its bindings, flagging an inactive one and any binding that could never match.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

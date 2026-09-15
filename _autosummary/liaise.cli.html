@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../_static/documentation_options.js?v=360bc84d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.cases" href="liaise.cases.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.2" />
+  <meta name="docsearch:version" content="0.1.3" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -549,7 +549,7 @@ traceback.</p>
 <td><p>What the ledger says, changing nothing: the last run, holds, runs, cases, what waits on you.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.subject_list" title="liaise.cli.subject_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_list</span></code></a>(*[, root])</p></td>
-<td><p>Every configured subject with its bindings, flagging any binding that could never match.</p></td>
+<td><p>Every configured subject with its bindings, flagging an inactive one and any binding that could never match.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.subject_show" title="liaise.cli.subject_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_show</span></code></a>(slug, *[, root])</p></td>
 <td><p>The subject SLUG as liaise reads it, every default applied, and its binding problems.</p></td>
@@ -883,7 +883,9 @@ is touched.</p>
 the same plan and changes nothing: nothing is sent, labelled, started, cancelled,
 deployed, locked or written. <code class="docutils literal notranslate"><span class="pre">--subject</span></code> ticks one subject alone. Without <code class="docutils literal notranslate"><span class="pre">--once</span></code>
 or <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code>, it ticks every minute, printing each plan, until interrupted; the
-scheduled job (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">schedule</span> <span class="pre">install</span></code>) passes <code class="docutils literal notranslate"><span class="pre">--once</span></code>.</p>
+scheduled job (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">schedule</span> <span class="pre">install</span></code>) passes <code class="docutils literal notranslate"><span class="pre">--once</span></code>. An inactive subject
+(<code class="docutils literal notranslate"><span class="pre">active</span> <span class="pre">=</span> <span class="pre">false</span></code>) is not ticked; <code class="docutils literal notranslate"><span class="pre">--subject</span></code> may name one with <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code>
+alone, to see what a tick would do.</p>
 <p><code class="docutils literal notranslate"><span class="pre">resolver</span></code>, <code class="docutils literal notranslate"><span class="pre">workspace</span></code> and <code class="docutils literal notranslate"><span class="pre">triage</span></code> are the tick’s seams of those names (see
 <a class="reference internal" href="liaise.tick.html#liaise.tick.run_once" title="liaise.tick.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.tick.run_once()</span></code></a>); None keeps the tick’s own default.</p>
 <dl class="field-list simple">
@@ -933,7 +935,9 @@ environment, such as one a deploy command reads.</p>
 <dt class="sig sig-object py" id="liaise.cli.setup">
 <span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">setup</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#setup"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.setup" title="Link to this definition">#</a></dt>
 <dd><p>Create SUBJECT’s labels in each GitHub repository it binds. Idempotent.</p>
-<p>Those are its claim labels and one <code class="docutils literal notranslate"><span class="pre">&lt;label_prefix&gt;&lt;state&gt;</span></code> label per case state.</p>
+<p>Those are its claim labels and one <code class="docutils literal notranslate"><span class="pre">&lt;label_prefix&gt;&lt;state&gt;</span></code> label per case state. An
+inactive subject (<code class="docutils literal notranslate"><span class="pre">active</span> <span class="pre">=</span> <span class="pre">false</span></code>) is refused, since creating labels changes its
+repositories.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -958,7 +962,7 @@ queue, the drafts waiting for the operator, and the latest digest notes.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.cli.subject_list">
 <span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">subject_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#subject_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.subject_list" title="Link to this definition">#</a></dt>
-<dd><p>Every configured subject with its bindings, flagging any binding that could never match.</p>
+<dd><p>Every configured subject with its bindings, flagging an inactive one and any binding that could never match.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>

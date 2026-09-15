@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../_static/documentation_options.js?v=360bc84d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.testing" href="liaise.testing.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.2" />
+  <meta name="docsearch:version" content="0.1.3" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -958,7 +958,9 @@ on <code class="docutils literal notranslate"><span class="pre">global_config.no
 before they start; None keeps the tick’s own order, oldest first.</p></li>
 </ul>
 <p><code class="docutils literal notranslate"><span class="pre">only</span></code> is a slug or slugs to run alone; an unknown one raises
-<a class="reference internal" href="liaise.config.html#liaise.config.ConfigError" title="liaise.config.ConfigError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfigError</span></code></a>. <code class="docutils literal notranslate"><span class="pre">now</span></code> is the tick’s clock (the current UTC
+<a class="reference internal" href="liaise.config.html#liaise.config.ConfigError" title="liaise.config.ConfigError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfigError</span></code></a>. An inactive subject (<code class="docutils literal notranslate"><span class="pre">active</span> <span class="pre">=</span> <span class="pre">false</span></code>) is not
+ticked: <code class="docutils literal notranslate"><span class="pre">only</span></code> may name one in a dry run alone, and outside one that raises
+<a class="reference internal" href="liaise.config.html#liaise.config.ConfigError" title="liaise.config.ConfigError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfigError</span></code></a> too. <code class="docutils literal notranslate"><span class="pre">now</span></code> is the tick’s clock (the current UTC
 time when None). <code class="docutils literal notranslate"><span class="pre">lost_run_deadline</span></code> is how long after the tick cancelled a run for
 its wall clock a run that will not stop is waited on (<a class="reference internal" href="#liaise.tick.LOST_RUN_DEADLINE" title="liaise.tick.LOST_RUN_DEADLINE"><code class="xref py py-data docutils literal notranslate"><span class="pre">LOST_RUN_DEADLINE</span></code></a>), and
 <code class="docutils literal notranslate"><span class="pre">closed_recheck_interval</span></code> how long a case whose issue was read closed goes before

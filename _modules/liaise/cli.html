@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../../_static/documentation_options.js?v=360bc84d"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.2" />
+  <meta name="docsearch:version" content="0.1.3" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -997,7 +997,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    the same plan and changes nothing: nothing is sent, labelled, started, cancelled,</span>
 <span class="sd">    deployed, locked or written. ``--subject`` ticks one subject alone. Without ``--once``</span>
 <span class="sd">    or ``--dry-run``, it ticks every minute, printing each plan, until interrupted; the</span>
-<span class="sd">    scheduled job (``liaise schedule install``) passes ``--once``.</span>
+<span class="sd">    scheduled job (``liaise schedule install``) passes ``--once``. An inactive subject</span>
+<span class="sd">    (``active = false``) is not ticked; ``--subject`` may name one with ``--dry-run``</span>
+<span class="sd">    alone, to see what a tick would do.</span>
 
 <span class="sd">    ``resolver``, ``workspace`` and ``triage`` are the tick's seams of those names (see</span>
 <span class="sd">    :func:`liaise.tick.run_once`); None keeps the tick's own default.</span>
@@ -1143,7 +1145,7 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.subject_list">[docs]</a>
 <span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">subject_list</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Every configured subject with its bindings, flagging any binding that could never match."""</span>
+<span class="w">    </span><span class="sd">"""Every configured subject with its bindings, flagging an inactive one and any binding that could never match."""</span>
     <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
     <span class="n">subjects</span> <span class="o">=</span> <span class="n">load_subjects</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">subjects</span><span class="p">:</span>
@@ -1156,7 +1158,8 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">problems</span>
             <span class="k">else</span> <span class="s2">""</span>
         <span class="p">)</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">bindings</span><span class="p">)</span><span class="si">}{</span><span class="n">flag</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">inert</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">subject</span><span class="o">.</span><span class="n">active</span> <span class="k">else</span> <span class="s2">"  [inactive: active = false]"</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="se">\t</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">bindings</span><span class="p">)</span><span class="si">}{</span><span class="n">inert</span><span class="si">}{</span><span class="n">flag</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span></div>
 
 
@@ -1204,10 +1207,17 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Create SUBJECT's labels in each GitHub repository it binds. Idempotent.</span>
 
-<span class="sd">    Those are its claim labels and one ``&lt;label_prefix&gt;&lt;state&gt;`` label per case state.</span>
+<span class="sd">    Those are its claim labels and one ``&lt;label_prefix&gt;&lt;state&gt;`` label per case state. An</span>
+<span class="sd">    inactive subject (``active = false``) is refused, since creating labels changes its</span>
+<span class="sd">    repositories.</span>
 <span class="sd">    """</span>
     <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
     <span class="n">found</span> <span class="o">=</span> <span class="n">_subject_named</span><span class="p">(</span><span class="n">load_subjects</span><span class="p">(</span><span class="n">config_root</span><span class="p">),</span> <span class="n">subject</span><span class="p">,</span> <span class="n">root</span><span class="o">=</span><span class="n">config_root</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="o">.</span><span class="n">active</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"subject </span><span class="si">{</span><span class="n">subject</span><span class="si">!r}</span><span class="s2"> is inactive (active = false), so liaise setup creates "</span>
+            <span class="sa">f</span><span class="s2">"no labels in its repositories; set active = true in its file first"</span>
+        <span class="p">)</span>
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">setup_labels</span><span class="p">(</span><span class="n">labeler</span> <span class="k">if</span> <span class="n">labeler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">(),</span> <span class="n">found</span><span class="p">))</span></div>
 
 
@@ -1405,7 +1415,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would not be sent"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">"was not sent"</span>
     <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
     <span class="n">message</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">why</span><span class="si">}{</span><span class="n">kept</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span>
-    <span class="k">return</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"code"</span><span class="p">:</span> <span class="n">DIVERTED_EXIT_CODE</span><span class="p">}</span> <span class="k">if</span> <span class="n">diverted</span> <span class="k">else</span> <span class="p">{}))</span>
+    <span class="k">return</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span>
+        <span class="n">message</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"code"</span><span class="p">:</span> <span class="n">DIVERTED_EXIT_CODE</span><span class="p">}</span> <span class="k">if</span> <span class="n">diverted</span> <span class="k">else</span> <span class="p">{})</span>
+    <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_preview</span><span class="p">(</span><span class="n">held</span><span class="p">:</span> <span class="n">_Held</span><span class="p">,</span> <span class="n">release</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">then</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1731,13 +1743,18 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
         <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would send a message"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"sent message </span><span class="si">{</span><span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">"</span>
-        <span class="n">head</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> (gate: passed, </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> (gate: passed, </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
+        <span class="p">)</span>
         <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">head</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">": </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">url</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">),</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span>
     <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">hold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">why</span><span class="p">,</span> <span class="n">held_back</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"the hold on </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">hold</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span> <span class="kc">True</span>
     <span class="k">elif</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">decision</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span>
-        <span class="n">why</span><span class="p">,</span> <span class="n">held_back</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"diverted by </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted_by</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="kc">True</span>
+        <span class="n">why</span><span class="p">,</span> <span class="n">held_back</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"diverted by </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted_by</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="kc">True</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">why</span><span class="p">,</span> <span class="n">held_back</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"send failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="kc">False</span>
     <span class="n">head</span> <span class="o">=</span> <span class="p">(</span>

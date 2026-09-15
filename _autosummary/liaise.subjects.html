@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../_static/documentation_options.js?v=360bc84d"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.schedule" href="liaise.schedule.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.2" />
+  <meta name="docsearch:version" content="0.1.3" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -419,6 +419,11 @@ for each person (<code class="docutils literal notranslate"><span class="pre">br
 conversation, so two subjects polling the same one would starve each other:
 <a class="reference internal" href="#liaise.subjects.load_subjects" title="liaise.subjects.load_subjects"><code class="xref py py-func docutils literal notranslate"><span class="pre">load_subjects()</span></code></a> refuses that. Several bindings of one subject may share a
 conversation (see <a class="reference internal" href="#liaise.subjects.poll_ref" title="liaise.subjects.poll_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">poll_ref()</span></code></a>).</p>
+<p><strong>An inert subject.</strong> <code class="docutils literal notranslate"><span class="pre">active</span> <span class="pre">=</span> <span class="pre">false</span></code> declares a subject that no tick acts on. It is
+loaded, validated, shown and used as gate context, but <a class="reference internal" href="liaise.tick.html#liaise.tick.run_once" title="liaise.tick.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.tick.run_once()</span></code></a> polls
+none of its bindings and starts, delivers, nudges and labels none of its cases, and
+<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">setup</span></code> refuses it. It is part of the file, not a hold, so <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">unhold</span>
+<span class="pre">global</span></code> does not lift it, and a reader of the file sees it.</p>
 <p>Like <a class="reference internal" href="liaise.config.html#module-liaise.config" title="liaise.config"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.config</span></code></a>, this module knows only the file’s shape and defaults.
 Every real value lives under <code class="docutils literal notranslate"><span class="pre">~/.config/liaise/subjects/</span></code>, never in this package.
 Every table has defaults, so a minimal subject file needs only:</p>
@@ -634,7 +639,7 @@ a binding’s conditions, so it never gets that far).</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.subjects.Subject">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">Subject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slug</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bindings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">brief</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delivery</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'liaise:'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#Subject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.Subject" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">Subject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slug</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bindings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">display_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">brief</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delivery</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'liaise:'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">active</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#Subject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.Subject" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A resolved subject: <code class="docutils literal notranslate"><span class="pre">subjects/&lt;slug&gt;.toml</span></code> with every default applied.</p>
 <dl class="field-list simple">
@@ -646,6 +651,18 @@ a binding’s conditions, so it never gets that far).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="liaise.subjects.Subject.active">
+<span class="sig-name descname"><span class="pre">active</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">True</span></span><a class="headerlink" href="#liaise.subjects.Subject.active" title="Link to this definition">#</a></dt>
+<dd><p>loaded, shown and used as gate context, but
+no tick polls, starts, delivers, nudges or labels anything of it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>False for a subject declared but inert</p>
 </dd>
 </dl>
 </dd></dl>
@@ -773,9 +790,9 @@ Each problem names the subject’s file and the binding.</p>
 <dd><p>Load and resolve one subject file into a <a class="reference internal" href="#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a>, its slug the file’s stem.</p>
 <p>Each binding is kept as <a class="reference internal" href="#liaise.subjects.normalize_binding" title="liaise.subjects.normalize_binding"><code class="xref py py-func docutils literal notranslate"><span class="pre">normalize_binding()</span></code></a> gives it. Raises
 <a class="reference internal" href="liaise.config.html#liaise.config.ConfigError" title="liaise.config.ConfigError"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConfigError</span></code></a> naming the file and the fix for a missing file,
-invalid TOML, a missing <code class="docutils literal notranslate"><span class="pre">bindings</span></code>, <code class="docutils literal notranslate"><span class="pre">policy.people</span></code> or <code class="docutils literal notranslate"><span class="pre">policy.roles</span></code>, and any
-value outside its vocabulary (workspace and delivery kinds, <code class="docutils literal notranslate"><span class="pre">delivery.per</span></code>, reply
-modes, permissions, grades, roles).</p>
+invalid TOML, a missing <code class="docutils literal notranslate"><span class="pre">bindings</span></code>, <code class="docutils literal notranslate"><span class="pre">policy.people</span></code> or <code class="docutils literal notranslate"><span class="pre">policy.roles</span></code>, an
+<code class="docutils literal notranslate"><span class="pre">active</span></code> that is not true or false, and any value outside its vocabulary (workspace
+and delivery kinds, <code class="docutils literal notranslate"><span class="pre">delivery.per</span></code>, reply modes, permissions, grades, roles).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a></span></p>
@@ -950,6 +967,7 @@ naming each when several name it equally closely.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.ReadinessPolicy"><code class="docutils literal notranslate"><span class="pre">ReadinessPolicy</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Subject"><code class="docutils literal notranslate"><span class="pre">Subject</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Subject.accepts"><code class="docutils literal notranslate"><span class="pre">Subject.accepts()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Subject.active"><code class="docutils literal notranslate"><span class="pre">Subject.active</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Subject.brief_for"><code class="docutils literal notranslate"><span class="pre">Subject.brief_for()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Subject.notify_address_for"><code class="docutils literal notranslate"><span class="pre">Subject.notify_address_for()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Subject.notify_addresses_for"><code class="docutils literal notranslate"><span class="pre">Subject.notify_addresses_for()</span></code></a></li>

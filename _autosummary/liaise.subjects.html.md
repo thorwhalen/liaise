@@ -14,6 +14,12 @@ conversation, so two subjects polling the same one would starve each other:
 [`load_subjects()`](#liaise.subjects.load_subjects) refuses that. Several bindings of one subject may share a
 conversation (see [`poll_ref()`](#liaise.subjects.poll_ref)).
 
+**An inert subject.** `active = false` declares a subject that no tick acts on. It is
+loaded, validated, shown and used as gate context, but [`liaise.tick.run_once()`](liaise.tick.html.md#liaise.tick.run_once) polls
+none of its bindings and starts, delivers, nudges and labels none of its cases, and
+`liaise setup` refuses it. It is part of the file, not a hold, so `liaise unhold
+global` does not lift it, and a reader of the file sees it.
+
 Like [`liaise.config`](liaise.config.html.md#module-liaise.config), this module knows only the file’s shape and defaults.
 Every real value lives under `~/.config/liaise/subjects/`, never in this package.
 Every table has defaults, so a minimal subject file needs only:
@@ -144,7 +150,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.html.md#module-liaise.readiness)).
 
-### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None)
+### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -156,6 +162,14 @@ Whether `permission` may be used at authenticity `grade` on this subject.
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+#### active *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= True*
+
+loaded, shown and used as gate context, but
+no tick polls, starts, delivers, nudges or labels anything of it.
+
+* **Type:**
+  False for a subject declared but inert
 
 #### brief_for(person)
 
@@ -249,9 +263,9 @@ Load and resolve one subject file into a [`Subject`](#liaise.subjects.Subject), 
 
 Each binding is kept as [`normalize_binding()`](#liaise.subjects.normalize_binding) gives it. Raises
 [`ConfigError`](liaise.config.html.md#liaise.config.ConfigError) naming the file and the fix for a missing file,
-invalid TOML, a missing `bindings`, `policy.people` or `policy.roles`, and any
-value outside its vocabulary (workspace and delivery kinds, `delivery.per`, reply
-modes, permissions, grades, roles).
+invalid TOML, a missing `bindings`, `policy.people` or `policy.roles`, an
+`active` that is not true or false, and any value outside its vocabulary (workspace
+and delivery kinds, `delivery.per`, reply modes, permissions, grades, roles).
 
 * **Return type:**
   [`Subject`](#liaise.subjects.Subject)
