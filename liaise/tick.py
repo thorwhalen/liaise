@@ -2492,7 +2492,11 @@ class _Tick:
 
         def recorded(case: Case, **detail: Any) -> dict[str, Any]:
             waiting = waiting_label(case, self.subjects[case.subject])
-            return {"state": case.state, **({"waiting": waiting} if waiting else {}), **detail}
+            return {
+                "state": case.state,
+                **({"waiting": waiting} if waiting else {}),
+                **detail,
+            }
 
         touched = [self.ledger.get_case(case_id) for case_id in list(self.touched)]
         drifted = [

@@ -120,7 +120,9 @@ def project_labels(
     claims = subject.policy.claim_labels
     candidates = dict.fromkeys((*subject.policy.waiting_labels.values(), *stale))
     not_waiting = [
-        label for label in candidates if label and label != waiting and label not in claims
+        label
+        for label in candidates
+        if label and label != waiting and label not in claims
     ]
     shown = f"{current} and {waiting}" if waiting else current
     removing = f"any other {prefix} state label" + (
