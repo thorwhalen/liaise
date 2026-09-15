@@ -50,10 +50,14 @@ def ascii_prototypes(confusables: str) -> dict[str, str]:
             (char,), (prototype,) = source, target
             if not char.isascii() and prototype.isascii() and prototype.isalnum():
                 grouped[prototype].append(char)
-    return {prototype: "".join(sorted(grouped[prototype])) for prototype in sorted(grouped)}
+    return {
+        prototype: "".join(sorted(grouped[prototype])) for prototype in sorted(grouped)
+    }
 
 
-def main(confusables_source: str = CONFUSABLES_URL, license_source: str = LICENSE_URL) -> None:
+def main(
+    confusables_source: str = CONFUSABLES_URL, license_source: str = LICENSE_URL
+) -> None:
     confusables = _read(confusables_source)
     record = {
         "source": CONFUSABLES_URL,
@@ -63,8 +67,12 @@ def main(confusables_source: str = CONFUSABLES_URL, license_source: str = LICENS
         "notice": _read(license_source),
         "prototypes": ascii_prototypes(confusables),
     }
-    OUTPUT.write_text(json.dumps(record, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-    print(f"wrote {sum(map(len, record['prototypes'].values()))} sources to {OUTPUT.name}")
+    OUTPUT.write_text(
+        json.dumps(record, ensure_ascii=False, indent=1) + "\n", encoding="utf-8"
+    )
+    print(
+        f"wrote {sum(map(len, record['prototypes'].values()))} sources to {OUTPUT.name}"
+    )
 
 
 if __name__ == "__main__":

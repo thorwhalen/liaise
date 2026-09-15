@@ -663,7 +663,9 @@ A new protocol beside `Reader`, `Writer` and `Verifier`, graded in `Capabilities
 
 ```python
 class AudienceReader(Protocol):
-    def audience(self, ref: ConversationRef, *, draft: Draft | None = None) -> Audience: ...
+    def audience(
+        self, ref: ConversationRef, *, draft: Draft | None = None
+    ) -> Audience: ...
 ```
 
 `Audience`, frozen and JSON round-trippable like every correspond type:
