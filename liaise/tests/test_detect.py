@@ -156,6 +156,7 @@ HERON_FORMS = {
     "html-tag": "He<b></b>ron",
     "html-comment": "He<!-- -->ron",
     "character-reference": "H&#101;ron",
+    "zero-padded-reference": "H&#00000000101;ron",
 }
 
 
@@ -338,6 +339,7 @@ def test_a_reference_style_image_to_a_host_outside_the_allowlist():
         ('<img src="https://example.org@\n' + COLLECTOR + '/p.png">', "image-host"),
         ('<img src="https:/\n/' + COLLECTOR + '/p.png">', "image-host"),
         ('<img srcset="https://example.org/a.png 1x, //' + COLLECTOR + '/b.png 2x">', "image-host"),
+        ('<img alt=">" src="https:' + COLLECTOR + '/p.png">', "image-host"),
     ],
 )
 def test_links_and_images_to_hosts_outside_the_allowlist(text, rule):
@@ -353,6 +355,7 @@ def test_links_and_images_to_hosts_outside_the_allowlist(text, rule):
         "A relative [link](docs/setup.md), an ![icon](img/i.png) and a double slash a//b.",
         "In code: `std::vector` at 12:30:45, and a [mail](mailto:x) link.",
         '<img src="./img/local.png"> and <a href="#top">top</a>',
+        "```\ncurl -d data=//x -d src=build\n```",
     ],
 )
 def test_allowlisted_hosts_and_relative_links_are_not_findings(text):

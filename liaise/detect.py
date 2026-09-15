@@ -451,7 +451,7 @@ def _without(view: View, pattern: re.Pattern) -> View:
 #: backslash escape.
 _MARKUP_START = re.compile(
     r"<(?:!--|[!?/A-Za-z])"
-    r"|&(?:#[0-9]{1,7}|#[xX][0-9A-Fa-f]{1,6}|[A-Za-z][A-Za-z0-9]{1,31});"
+    r"|&(?:#[0-9]{1,32}|#[xX][0-9A-Fa-f]{1,32}|[A-Za-z][A-Za-z0-9]{1,31});"
     r"|(?:%[0-9A-Fa-f]{2}){1,64}"
     r"|\\(?=[!-/:-@\[-`{-~])"
 )
@@ -1458,8 +1458,31 @@ def _markdown_destinations(text: str) -> Iterator[tuple[int, int, frozenset, boo
                 yield start, end, _destination_hosts(value), image
 
 
+#: How far back an attribute looks for the ``<`` of the tag it would belong to.
+MAX_TAG_LOOKBACK = 1024
+_TAG_OPEN = re.compile(r"<[A-Za-z]")
+
+
+def _named_host(host: str) -> bool:
+    """Whether ``host`` reads as a host outside markup: it has a dot, or is ``localhost``."""
+    return "." in host or host == "localhost"
+
+
+def _inside_tag(text: str, position: int) -> bool:
+    """Whether ``position`` is inside an HTML start tag: the last ``<`` before it, within
+    :data:`MAX_TAG_LOOKBACK` characters, opens a tag that no ``>`` has closed yet."""
+    opening = text.rfind("<", max(0, position - MAX_TAG_LOOKBACK), position)
+    return (
+        opening >= 0
+        and text.rfind(">", opening, position) < 0
+        and _TAG_OPEN.match(text, opening) is not None
+    )
+
+
 def _html_destinations(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
-    """``(start, end, hosts, image)`` for each URL attribute, and each autolink."""
+    """``(start, end, hosts, image)`` for each URL attribute, and each autolink. An
+    attribute that is not plainly inside a tag (``data=//x`` in a code block) counts only
+    hosts that read as hosts (:func:`_named_host`)."""
     if "=" in text:
         for match in _HTML_ATTRIBUTE.finditer(text):
             group = next(
@@ -1469,6 +1492,8 @@ def _html_destinations(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
             hosts = (
                 _srcset_hosts(value) if name == "srcset" else _destination_hosts(value)
             )
+            if not _inside_tag(text, match.start()):
+                hosts = frozenset(filter(_named_host, hosts))
             image = name in _LOADING_ATTRIBUTES
             yield match.start(group), match.end(group), hosts, image
     if "<" in text:
@@ -1503,7 +1528,7 @@ def _text_urls(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
         else:
             hosts = frozenset(filter(None, _destination_hosts(text[start:end])))
             if end == authority_end and ":" not in authority:
-                hosts = frozenset(h for h in hosts if "." in h or h == "localhost")
+                hosts = frozenset(filter(_named_host, hosts))
         if hosts:
             yield start, end, hosts, False
 
@@ -1535,7 +1560,7 @@ def _loose_urls(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
                 )
                 for reading in readings
             )
-            if "." in host or host == "localhost"
+            if _named_host(host)
         )
         if hosts:
             yield match.start(), match.end("authority"), hosts, False
