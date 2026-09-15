@@ -43,6 +43,7 @@ roles = { pat = "partner" }
 | [`GRADES`](#liaise.subjects.GRADES)                        | Authenticity grades, weakest first, as correspond names them.                                                                                                      |
 | [`REF_WILDCARDS`](#liaise.subjects.REF_WILDCARDS)                 | What makes a binding's conversation part a glob, which v0.1 cannot poll ("?" starts a binding's conditions, so it never gets that far).                            |
 | [`CASE_INSENSITIVE_REF_CHANNELS`](#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS) | Channels whose conversation references ignore case, so their bindings load lower-cased (see [`normalize_binding()`](#liaise.subjects.normalize_binding)). |
+| [`DFLT_WAITING_LABEL`](#liaise.subjects.DFLT_WAITING_LABEL)            | Each person's waiting label when a subject sets `policy.waiting_labels = true`.                                                                                    |
 
 ### Functions
 
@@ -94,6 +95,10 @@ it; `issue` for each case, right after that case’s outcomes.
 
 Subject files live in this directory under the config root.
 
+### liaise.subjects.DFLT_WAITING_LABEL *= 'needs-{person}'*
+
+Each person’s waiting label when a subject sets `policy.waiting_labels = true`.
+
 ### *class* liaise.subjects.Delivery(kind='deploy', per='batch', command='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -109,7 +114,7 @@ succeeded. `pr_only` stops at a pull request and runs nothing.
 
 Authenticity grades, weakest first, as correspond names them.
 
-### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>)
+### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -119,7 +124,9 @@ Who is who on a subject, what each may do, and how liaise answers them.
 person to a role. `permissions` maps a role to the permissions it grants, and
 `grades` a permission to the authenticity grades it accepts. `relays` are
 authors whose `claim_labels` (routing label to person) count as claims. See
-[`liaise.access`](liaise.access.html.md#module-liaise.access).
+[`liaise.access`](liaise.access.html.md#module-liaise.access). `waiting_labels` (person to label) is the mirror of
+`claim_labels`: a label liaise writes on a case’s issues while the case waits on that
+person, where a claim label is one it reads (see [`liaise.projection`](liaise.projection.html.md#module-liaise.projection)).
 
 #### briefs *: [Mapping](https://docs.python.org/3/library/typing.html#typing.Mapping)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
@@ -128,6 +135,10 @@ Person id to the brief a run on their case reads (see [`Subject.brief_for()`](#l
 #### deployed_nudge_days *: [int](https://docs.python.org/3/builtins/functions.html#int)* *= 3*
 
 Days a `deployed` case may stay quiet before the partner is nudged, once.
+
+#### waiting_labels *: [Mapping](https://docs.python.org/3/library/typing.html#typing.Mapping)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
+
+Person id to the label a case’s issues carry while the case waits on them.
 
 ### *class* liaise.subjects.ProcessorConfig(permission_mode='auto')
 

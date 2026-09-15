@@ -1,4 +1,4 @@
-> built 2026-09-15 15:11 UTC from de7d7d0 (main) · liaise 0.1.3. Details: build_info.json
+> built 2026-09-15 15:14 UTC from 7c31d11 (main) · liaise 0.1.4. Details: build_info.json
 
 # index.html.md
 
@@ -72,6 +72,7 @@ people = { "github:pat" = "pat", "webinbox:pat" = "pat" }
 roles = { pat = "partner" }
 relays = ["github:example-bot"]               # authors whose claim labels count
 claim_labels = { "partner:pat" = "pat" }      # routing label to the person it claims
+waiting_labels = { pat = "needs-pat" }        # or true: needs-<person> for everyone with a role
 briefs = { pat = "~/.config/liaise/briefs/pat.md" }
 notify = { pat = "github:pat" }               # whom to mention; default: the person's first handle
 leak_terms = []                               # internal words the leak scan diverts on
@@ -125,6 +126,8 @@ A conversation a binding takes in becomes a case (`example-app-1`), kept in the 
 | `liaise:budget`        | is ready, but today’s dispatch cap is used up                             |
 
 Exactly one state label is on an issue. Labels are projections of the ledger: relabelling an issue by hand changes nothing, and the next tick overwrites the label. To move a case, use `liaise case set-state`, and its label follows on the next tick. `liaise` never closes an issue. A case whose issue someone closed is neither started nor nudged, and starts again once `liaise` sees the issue reopened, which is within the hour: it reads a closed case’s issue again at most once an hour.
+
+**Waiting labels.** With `policy.waiting_labels`, a case that waits on its reporter (`needs-partner`) also carries that person’s label, such as `needs-pat`, beside its state label, and loses it once the case moves on; at most one is on an issue. Give a table of person to label, or `true` for `needs-<person>` for everyone with a role. With several people on one subject, the state label alone cannot say who is being waited on; a label per person can, and a list filters on it (`label:needs-pat`). It is the mirror of `claim_labels`: liaise reads a claim label as a claim coming in, and writes a waiting label as a fact going out. So the two may not share a label, and no waiting label may be a state label. `liaise setup` creates both kinds, and turning waiting labels on relabels the waiting cases on the next tick.
 
 **Readiness.** A case is ready once its reporter has been quiet for `quiet_minutes` (10), so a request written across three comments is not picked up mid-sentence. `#startwork#` in their text makes it ready `go_minutes` (2) later, and `#wait#` pauses it until their next `#startwork#`. Only the reporter’s own messages move this clock: not yours, not a relay’s, not `liaise`’s. A case in `needs-partner` starts again only once its reporter writes after its last run; one adopted from 0.0.x in `needs-partner` waits the same way, for them to write after the adoption.
 
@@ -5302,8 +5305,15 @@ see at a glance. [`project_labels()`](_autosummary/liaise.projection.html.md#lia
 label: the other state labels come off, then the current one goes on. It is the one place
 a state label changes, so the one-label invariant is kept there.
 
+**Waiting labels.** When a subject sets `policy.waiting_labels`, a case that waits on a
+person ([`WAITING_STATES`](_autosummary/liaise.projection.html.md#liaise.projection.WAITING_STATES): its reporter was asked) also carries that person’s label,
+`needs-pat`, and the same function keeps that invariant too: at most one waiting label,
+and none once the case waits on no one. With several people on a subject, it is the fact a
+reader filters a backlog by. It is the mirror of a claim label: liaise reads a claim label
+as a claim coming in, and writes a waiting label as a fact going out.
+
 [`setup_labels()`](_autosummary/liaise.projection.html.md#liaise.projection.setup_labels) creates the labels a subject needs in each repository it binds
-(`liaise setup`): its claim labels, and one label per case state.
+(`liaise setup`): its claim labels, its waiting labels, and one label per case state.
 
 The labels go through [`liaise.github.GitHub`](_autosummary/liaise.github.html.md#liaise.github.GitHub) (`GhCli`, or `FakeGitHub` in
 tests), since correspond has no label operations yet. Only a case’s
@@ -5311,11 +5321,13 @@ tests), since correspond has no label operations yet. Only a case’s
 
 ### Module Attributes
 
-| [`GITHUB_CHANNEL`](_autosummary/liaise.projection.html.md#liaise.projection.GITHUB_CHANNEL)          | The channel whose conversations carry labels.                                       |
-|--------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [`LABEL_SPECS_RESOURCE`](_autosummary/liaise.projection.html.md#liaise.projection.LABEL_SPECS_RESOURCE)    | Each state label's description and colour, in `liaise/data`.                        |
-| [`DFLT_LABEL_COLOR`](_autosummary/liaise.projection.html.md#liaise.projection.DFLT_LABEL_COLOR)        | GitHub's own grey.                                                                  |
-| [`CLAIM_LABEL_DESCRIPTION`](_autosummary/liaise.projection.html.md#liaise.projection.CLAIM_LABEL_DESCRIPTION) | What a claim label says on GitHub, formatted with the person it files an issue for. |
+| [`GITHUB_CHANNEL`](_autosummary/liaise.projection.html.md#liaise.projection.GITHUB_CHANNEL)            | The channel whose conversations carry labels.                                       |
+|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`LABEL_SPECS_RESOURCE`](_autosummary/liaise.projection.html.md#liaise.projection.LABEL_SPECS_RESOURCE)      | Each state label's description and colour, in `liaise/data`.                        |
+| [`DFLT_LABEL_COLOR`](_autosummary/liaise.projection.html.md#liaise.projection.DFLT_LABEL_COLOR)          | GitHub's own grey.                                                                  |
+| [`CLAIM_LABEL_DESCRIPTION`](_autosummary/liaise.projection.html.md#liaise.projection.CLAIM_LABEL_DESCRIPTION)   | What a claim label says on GitHub, formatted with the person it files an issue for. |
+| [`WAITING_STATES`](_autosummary/liaise.projection.html.md#liaise.projection.WAITING_STATES)            | its reporter, asked a question or a proposal.                                       |
+| [`WAITING_LABEL_DESCRIPTION`](_autosummary/liaise.projection.html.md#liaise.projection.WAITING_LABEL_DESCRIPTION) | What a waiting label says on GitHub, formatted with the person the case waits on.   |
 
 ### Functions
 
@@ -5324,6 +5336,7 @@ tests), since correspond has no label operations yet. Only a case’s
 | [`github_repos`](_autosummary/liaise.projection.html.md#liaise.projection.github_repos)(subject)                             | The `owner/repo` of each GitHub repository `subject` binds, once each, in binding order.     |
 | [`project_labels`](_autosummary/liaise.projection.html.md#liaise.projection.project_labels)(case, subject, \*, labeler[, ...]) | Label each of `case`'s GitHub issues with its state, and with no other state.                |
 | [`setup_labels`](_autosummary/liaise.projection.html.md#liaise.projection.setup_labels)(labeler, subject)                    | Create the labels `subject` needs in each GitHub repository it binds; a line per repository. |
+| [`waiting_label`](_autosummary/liaise.projection.html.md#liaise.projection.waiting_label)(case, subject)                      | The waiting label `case` carries now: its reporter's while it waits on them, else None.      |
 
 ### liaise.projection.CLAIM_LABEL_DESCRIPTION *= 'Files the issue for {person}. It counts only when a relay sets it.'*
 
@@ -5343,6 +5356,18 @@ The channel whose conversations carry labels.
 ### liaise.projection.LABEL_SPECS_RESOURCE *= 'labels.json'*
 
 Each state label’s description and colour, in `liaise/data`.
+
+### liaise.projection.WAITING_LABEL_DESCRIPTION *= 'Waiting on {person} to answer. liaise sets and removes it.'*
+
+What a waiting label says on GitHub, formatted with the person the case waits on.
+
+### liaise.projection.WAITING_STATES *= ('needs-partner',)*
+
+its reporter, asked a question or a
+proposal. `needs-owner` waits on the operator, who has no waiting label.
+
+* **Type:**
+  The states in which a case waits on a person
 
 ### liaise.projection.github_issue(conversation)
 
@@ -5369,14 +5394,18 @@ names none. Repositories compare without regard to case, as GitHub’s do.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-### liaise.projection.project_labels(case, subject, , labeler, dry_run=False)
+### liaise.projection.project_labels(case, subject, , labeler, dry_run=False, stale=())
 
 Label each of `case`’s GitHub issues with its state, and with no other state.
 
 For every `github:owner/repo#N` conversation of the case, the other
 `<label_prefix><state>` labels are removed and the current one is added (labels
-that are not state labels stay). Returns one line per issue. A dry run returns the
-lines and calls nothing on `labeler`. A `GitHubError` from `labeler` propagates.
+that are not state labels stay). When the subject has waiting labels, the other
+people’s come off too, and [`waiting_label()`](_autosummary/liaise.projection.html.md#liaise.projection.waiting_label) goes on beside the state label while
+the case waits on its reporter. `stale` are waiting labels projected before that the
+subject no longer gives (turned off, or renamed): they come off as well, except a label
+that is now a claim label. Returns one line per issue. A dry run returns the lines and
+calls nothing on `labeler`. A `GitHubError` from `labeler` propagates.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
@@ -5386,12 +5415,23 @@ lines and calls nothing on `labeler`. A `GitHubError` from `labeler` propagates.
 Create the labels `subject` needs in each GitHub repository it binds; a line per repository.
 
 Those are its `policy.claim_labels`, the routing labels a relay puts on the issues it
-files, and one `<label_prefix><state>` label per case state, described and coloured
-as `data/labels.json` says. Idempotent, since `create_label` updates a label that
+files; its `policy.waiting_labels`, coloured as the state they go with; and one
+`<label_prefix><state>` label per case state, described and coloured as
+`data/labels.json` says. Idempotent, since `create_label` updates a label that
 already exists. A `GitHubError` from `labeler` propagates.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### liaise.projection.waiting_label(case, subject)
+
+The waiting label `case` carries now: its reporter’s while it waits on them, else None.
+
+A case waits on its reporter in [`WAITING_STATES`](_autosummary/liaise.projection.html.md#liaise.projection.WAITING_STATES), and the label is
+`policy.waiting_labels[reporter]`. A reporter the policy gives no label has none.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
 # _autosummary/liaise.prompt.html.md
@@ -5869,6 +5909,7 @@ roles = { pat = "partner" }
 | [`GRADES`](_autosummary/liaise.subjects.html.md#liaise.subjects.GRADES)                        | Authenticity grades, weakest first, as correspond names them.                                                                                                      |
 | [`REF_WILDCARDS`](_autosummary/liaise.subjects.html.md#liaise.subjects.REF_WILDCARDS)                 | What makes a binding's conversation part a glob, which v0.1 cannot poll ("?" starts a binding's conditions, so it never gets that far).                            |
 | [`CASE_INSENSITIVE_REF_CHANNELS`](_autosummary/liaise.subjects.html.md#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS) | Channels whose conversation references ignore case, so their bindings load lower-cased (see [`normalize_binding()`](_autosummary/liaise.subjects.html.md#liaise.subjects.normalize_binding)). |
+| [`DFLT_WAITING_LABEL`](_autosummary/liaise.subjects.html.md#liaise.subjects.DFLT_WAITING_LABEL)            | Each person's waiting label when a subject sets `policy.waiting_labels = true`.                                                                                    |
 
 ### Functions
 
@@ -5920,6 +5961,10 @@ it; `issue` for each case, right after that case’s outcomes.
 
 Subject files live in this directory under the config root.
 
+### liaise.subjects.DFLT_WAITING_LABEL *= 'needs-{person}'*
+
+Each person’s waiting label when a subject sets `policy.waiting_labels = true`.
+
 ### *class* liaise.subjects.Delivery(kind='deploy', per='batch', command='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -5935,7 +5980,7 @@ succeeded. `pr_only` stops at a pull request and runs nothing.
 
 Authenticity grades, weakest first, as correspond names them.
 
-### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>)
+### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -5945,7 +5990,9 @@ Who is who on a subject, what each may do, and how liaise answers them.
 person to a role. `permissions` maps a role to the permissions it grants, and
 `grades` a permission to the authenticity grades it accepts. `relays` are
 authors whose `claim_labels` (routing label to person) count as claims. See
-[`liaise.access`](_autosummary/liaise.access.html.md#module-liaise.access).
+[`liaise.access`](_autosummary/liaise.access.html.md#module-liaise.access). `waiting_labels` (person to label) is the mirror of
+`claim_labels`: a label liaise writes on a case’s issues while the case waits on that
+person, where a claim label is one it reads (see [`liaise.projection`](_autosummary/liaise.projection.html.md#module-liaise.projection)).
 
 #### briefs *: [Mapping](https://docs.python.org/3/library/typing.html#typing.Mapping)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
@@ -5954,6 +6001,10 @@ Person id to the brief a run on their case reads (see [`Subject.brief_for()`](_a
 #### deployed_nudge_days *: [int](https://docs.python.org/3/builtins/functions.html#int)* *= 3*
 
 Days a `deployed` case may stay quiet before the partner is nudged, once.
+
+#### waiting_labels *: [Mapping](https://docs.python.org/3/library/typing.html#typing.Mapping)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
+
+Person id to the label a case’s issues carry while the case waits on them.
 
 ### *class* liaise.subjects.ProcessorConfig(permission_mode='auto')
 
@@ -6990,7 +7041,7 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-15 15:11 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/de7d7d0c217c0ea82345878a4e9e329b5d443535"><code>de7d7d0</code></a> on branch <code>main</code>, for **liaise 0.1.3** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-15 15:14 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/7c31d11f50f0f2ae0975b7b2aa2a2c71243bd116"><code>7c31d11</code></a> on branch <code>main</code>, for **liaise 0.1.4** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -6999,7 +7050,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/de7d7d0c217c0ea82345878a4e9e329b5d443535"><code>de7d7d0c217c0ea82345878a4e9e329b5d443535</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/7c31d11f50f0f2ae0975b7b2aa2a2c71243bd116"><code>7c31d11f50f0f2ae0975b7b2aa2a2c71243bd116</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -7010,9 +7061,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/34986533050">34986533050</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/34986895900">34986895900</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>de7d7d0c217c0ea82345878a4e9e329b5d443535</code> (in the history of the built commit) |
+| Event commit | <code>7c31d11f50f0f2ae0975b7b2aa2a2c71243bd116</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -7037,13 +7088,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.3/">0.1.3</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/liaise/0.1.4/">0.1.4</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout de7d7d0c217c0ea82345878a4e9e329b5d443535
+git checkout 7c31d11f50f0f2ae0975b7b2aa2a2c71243bd116
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -16,6 +16,7 @@ liaise.subjects
       GRADES
       REF_WILDCARDS
       CASE_INSENSITIVE_REF_CHANNELS
+      DFLT_WAITING_LABEL
    
    .. rubric:: Functions
 

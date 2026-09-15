@@ -68,6 +68,7 @@ people = { "github:pat" = "pat", "webinbox:pat" = "pat" }
 roles = { pat = "partner" }
 relays = ["github:example-bot"]               # authors whose claim labels count
 claim_labels = { "partner:pat" = "pat" }      # routing label to the person it claims
+waiting_labels = { pat = "needs-pat" }        # or true: needs-<person> for everyone with a role
 briefs = { pat = "~/.config/liaise/briefs/pat.md" }
 notify = { pat = "github:pat" }               # whom to mention; default: the person's first handle
 leak_terms = []                               # internal words the leak scan diverts on
@@ -121,6 +122,8 @@ A conversation a binding takes in becomes a case (`example-app-1`), kept in the 
 | `liaise:budget`        | is ready, but today’s dispatch cap is used up                             |
 
 Exactly one state label is on an issue. Labels are projections of the ledger: relabelling an issue by hand changes nothing, and the next tick overwrites the label. To move a case, use `liaise case set-state`, and its label follows on the next tick. `liaise` never closes an issue. A case whose issue someone closed is neither started nor nudged, and starts again once `liaise` sees the issue reopened, which is within the hour: it reads a closed case’s issue again at most once an hour.
+
+**Waiting labels.** With `policy.waiting_labels`, a case that waits on its reporter (`needs-partner`) also carries that person’s label, such as `needs-pat`, beside its state label, and loses it once the case moves on; at most one is on an issue. Give a table of person to label, or `true` for `needs-<person>` for everyone with a role. With several people on one subject, the state label alone cannot say who is being waited on; a label per person can, and a list filters on it (`label:needs-pat`). It is the mirror of `claim_labels`: liaise reads a claim label as a claim coming in, and writes a waiting label as a fact going out. So the two may not share a label, and no waiting label may be a state label. `liaise setup` creates both kinds, and turning waiting labels on relabels the waiting cases on the next tick.
 
 **Readiness.** A case is ready once its reporter has been quiet for `quiet_minutes` (10), so a request written across three comments is not picked up mid-sentence. `#startwork#` in their text makes it ready `go_minutes` (2) later, and `#wait#` pauses it until their next `#startwork#`. Only the reporter’s own messages move this clock: not yours, not a relay’s, not `liaise`’s. A case in `needs-partner` starts again only once its reporter writes after its last run; one adopted from 0.0.x in `needs-partner` waits the same way, for them to write after the adoption.
 

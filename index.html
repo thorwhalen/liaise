@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="_static/documentation_options.js?v=360bc84d"></script>
+    <script src="_static/documentation_options.js?v=fd825880"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -54,7 +54,7 @@
     <link rel="next" title="API reference" href="api.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.3" />
+  <meta name="docsearch:version" content="0.1.4" />
   
     
     <script src="_static/searchtools.js"></script>
@@ -390,6 +390,7 @@
 <span class="n">roles</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">pat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"partner"</span><span class="w"> </span><span class="p">}</span>
 <span class="n">relays</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">"github:example-bot"</span><span class="p">]</span><span class="w">               </span><span class="c1"># authors whose claim labels count</span>
 <span class="n">claim_labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s2">"partner:pat"</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"pat"</span><span class="w"> </span><span class="p">}</span><span class="w">      </span><span class="c1"># routing label to the person it claims</span>
+<span class="n">waiting_labels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">pat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"needs-pat"</span><span class="w"> </span><span class="p">}</span><span class="w">        </span><span class="c1"># or true: needs-&lt;person&gt; for everyone with a role</span>
 <span class="n">briefs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">pat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"~/.config/liaise/briefs/pat.md"</span><span class="w"> </span><span class="p">}</span>
 <span class="n">notify</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">pat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">"github:pat"</span><span class="w"> </span><span class="p">}</span><span class="w">               </span><span class="c1"># whom to mention; default: the person's first handle</span>
 <span class="n">leak_terms</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span><span class="w">                               </span><span class="c1"># internal words the leak scan diverts on</span>
@@ -462,6 +463,7 @@
 </table>
 </div>
 <p>Exactly one state label is on an issue. Labels are projections of the ledger: relabelling an issue by hand changes nothing, and the next tick overwrites the label. To move a case, use <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">set-state</span></code>, and its label follows on the next tick. <code class="docutils literal notranslate"><span class="pre">liaise</span></code> never closes an issue. A case whose issue someone closed is neither started nor nudged, and starts again once <code class="docutils literal notranslate"><span class="pre">liaise</span></code> sees the issue reopened, which is within the hour: it reads a closed case’s issue again at most once an hour.</p>
+<p><strong>Waiting labels.</strong> With <code class="docutils literal notranslate"><span class="pre">policy.waiting_labels</span></code>, a case that waits on its reporter (<code class="docutils literal notranslate"><span class="pre">needs-partner</span></code>) also carries that person’s label, such as <code class="docutils literal notranslate"><span class="pre">needs-pat</span></code>, beside its state label, and loses it once the case moves on; at most one is on an issue. Give a table of person to label, or <code class="docutils literal notranslate"><span class="pre">true</span></code> for <code class="docutils literal notranslate"><span class="pre">needs-&lt;person&gt;</span></code> for everyone with a role. With several people on one subject, the state label alone cannot say who is being waited on; a label per person can, and a list filters on it (<code class="docutils literal notranslate"><span class="pre">label:needs-pat</span></code>). It is the mirror of <code class="docutils literal notranslate"><span class="pre">claim_labels</span></code>: liaise reads a claim label as a claim coming in, and writes a waiting label as a fact going out. So the two may not share a label, and no waiting label may be a state label. <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">setup</span></code> creates both kinds, and turning waiting labels on relabels the waiting cases on the next tick.</p>
 <p><strong>Readiness.</strong> A case is ready once its reporter has been quiet for <code class="docutils literal notranslate"><span class="pre">quiet_minutes</span></code> (10), so a request written across three comments is not picked up mid-sentence. <code class="docutils literal notranslate"><span class="pre">#startwork#</span></code> in their text makes it ready <code class="docutils literal notranslate"><span class="pre">go_minutes</span></code> (2) later, and <code class="docutils literal notranslate"><span class="pre">#wait#</span></code> pauses it until their next <code class="docutils literal notranslate"><span class="pre">#startwork#</span></code>. Only the reporter’s own messages move this clock: not yours, not a relay’s, not <code class="docutils literal notranslate"><span class="pre">liaise</span></code>’s. A case in <code class="docutils literal notranslate"><span class="pre">needs-partner</span></code> starts again only once its reporter writes after its last run; one adopted from 0.0.x in <code class="docutils literal notranslate"><span class="pre">needs-partner</span></code> waits the same way, for them to write after the adoption.</p>
 </section>
 <section id="identity-and-access">
@@ -796,7 +798,7 @@
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-09-15 15:11 UTC from <a href="https://github.com/thorwhalen/liaise/commit/de7d7d0c217c0ea82345878a4e9e329b5d443535">de7d7d0</a> (main) · liaise 0.1.3 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-09-15 15:14 UTC from <a href="https://github.com/thorwhalen/liaise/commit/7c31d11f50f0f2ae0975b7b2aa2a2c71243bd116">7c31d11</a> (main) · liaise 0.1.4 · <a href="about-this-build.html">about this build</a></p>
 
                 </article>
               

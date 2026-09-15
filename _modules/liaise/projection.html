@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=360bc84d"></script>
+    <script src="../../_static/documentation_options.js?v=fd825880"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.3" />
+  <meta name="docsearch:version" content="0.1.4" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -719,8 +719,15 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">label: the other state labels come off, then the current one goes on. It is the one place</span>
 <span class="sd">a state label changes, so the one-label invariant is kept there.</span>
 
+<span class="sd">**Waiting labels.** When a subject sets ``policy.waiting_labels``, a case that waits on a</span>
+<span class="sd">person (:data:`WAITING_STATES`: its reporter was asked) also carries that person's label,</span>
+<span class="sd">``needs-pat``, and the same function keeps that invariant too: at most one waiting label,</span>
+<span class="sd">and none once the case waits on no one. With several people on a subject, it is the fact a</span>
+<span class="sd">reader filters a backlog by. It is the mirror of a claim label: liaise reads a claim label</span>
+<span class="sd">as a claim coming in, and writes a waiting label as a fact going out.</span>
+
 <span class="sd">:func:`setup_labels` creates the labels a subject needs in each repository it binds</span>
-<span class="sd">(``liaise setup``): its claim labels, and one label per case state.</span>
+<span class="sd">(``liaise setup``): its claim labels, its waiting labels, and one label per case state.</span>
 
 <span class="sd">The labels go through :class:`liaise.github.GitHub` (``GhCli``, or ``FakeGitHub`` in</span>
 <span class="sd">tests), since correspond has no label operations yet. Only a case's</span>
@@ -730,6 +737,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span>
 
@@ -749,6 +757,11 @@ window.runMermaid = runMermaid;</script>
 <span class="n">CLAIM_LABEL_DESCRIPTION</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s2">"Files the issue for </span><span class="si">{person}</span><span class="s2">. It counts only when a relay sets it."</span>
 <span class="p">)</span>
+<span class="c1">#: The states in which a case waits on a person: its reporter, asked a question or a</span>
+<span class="c1">#: proposal. ``needs-owner`` waits on the operator, who has no waiting label.</span>
+<span class="n">WAITING_STATES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"needs-partner"</span><span class="p">,)</span>
+<span class="c1">#: What a waiting label says on GitHub, formatted with the person the case waits on.</span>
+<span class="n">WAITING_LABEL_DESCRIPTION</span> <span class="o">=</span> <span class="s2">"Waiting on </span><span class="si">{person}</span><span class="s2"> to answer. liaise sets and removes it."</span>
 
 
 <div class="viewcode-block" id="github_issue">
@@ -789,36 +802,66 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="waiting_label">
+<a class="viewcode-back" href="../../_autosummary/liaise.projection.html#liaise.projection.waiting_label">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">waiting_label</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The waiting label ``case`` carries now: its reporter's while it waits on them, else None.</span>
+
+<span class="sd">    A case waits on its reporter in :data:`WAITING_STATES`, and the label is</span>
+<span class="sd">    ``policy.waiting_labels[reporter]``. A reporter the policy gives no label has none.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">WAITING_STATES</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">waiting_labels</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">reporter</span><span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="project_labels">
 <a class="viewcode-back" href="../../_autosummary/liaise.projection.html#liaise.projection.project_labels">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">project_labels</span><span class="p">(</span>
-    <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">labeler</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span> <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">labeler</span><span class="p">:</span> <span class="n">GitHub</span><span class="p">,</span>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">stale</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Label each of ``case``'s GitHub issues with its state, and with no other state.</span>
 
 <span class="sd">    For every ``github:owner/repo#N`` conversation of the case, the other</span>
 <span class="sd">    ``&lt;label_prefix&gt;&lt;state&gt;`` labels are removed and the current one is added (labels</span>
-<span class="sd">    that are not state labels stay). Returns one line per issue. A dry run returns the</span>
-<span class="sd">    lines and calls nothing on ``labeler``. A ``GitHubError`` from ``labeler`` propagates.</span>
+<span class="sd">    that are not state labels stay). When the subject has waiting labels, the other</span>
+<span class="sd">    people's come off too, and :func:`waiting_label` goes on beside the state label while</span>
+<span class="sd">    the case waits on its reporter. ``stale`` are waiting labels projected before that the</span>
+<span class="sd">    subject no longer gives (turned off, or renamed): they come off as well, except a label</span>
+<span class="sd">    that is now a claim label. Returns one line per issue. A dry run returns the lines and</span>
+<span class="sd">    calls nothing on ``labeler``. A ``GitHubError`` from ``labeler`` propagates.</span>
 <span class="sd">    """</span>
     <span class="n">prefix</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">label_prefix</span>
     <span class="n">current</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">others</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">CASE_STATES</span> <span class="k">if</span> <span class="n">state</span> <span class="o">!=</span> <span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="p">]</span>
+    <span class="n">waiting</span> <span class="o">=</span> <span class="n">waiting_label</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">subject</span><span class="p">)</span>
+    <span class="n">claims</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">claim_labels</span>
+    <span class="n">candidates</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">((</span><span class="o">*</span><span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">waiting_labels</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="o">*</span><span class="n">stale</span><span class="p">))</span>
+    <span class="n">not_waiting</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">candidates</span> <span class="k">if</span> <span class="n">label</span> <span class="ow">and</span> <span class="n">label</span> <span class="o">!=</span> <span class="n">waiting</span> <span class="ow">and</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">claims</span>
+    <span class="p">]</span>
+    <span class="n">shown</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="n">waiting</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">waiting</span> <span class="k">else</span> <span class="n">current</span>
+    <span class="n">removing</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"any other </span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> state label"</span> <span class="o">+</span> <span class="p">(</span>
+        <span class="s2">" and waiting label"</span> <span class="k">if</span> <span class="n">not_waiting</span> <span class="k">else</span> <span class="s2">""</span>
+    <span class="p">)</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">conversation</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">conversations</span><span class="p">:</span>
         <span class="n">issue</span> <span class="o">=</span> <span class="n">github_issue</span><span class="p">(</span><span class="n">conversation</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">issue</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">continue</span>
         <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">"would label </span><span class="si">{</span><span class="n">conversation</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">, removing any other "</span>
-                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2"> state label"</span>
-            <span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"would label </span><span class="si">{</span><span class="n">conversation</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">shown</span><span class="si">}</span><span class="s2">, removing </span><span class="si">{</span><span class="n">removing</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="k">continue</span>
         <span class="n">repo</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="n">issue</span>
-        <span class="n">labeler</span><span class="o">.</span><span class="n">remove_labels</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">others</span><span class="p">)</span>
-        <span class="n">labeler</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="p">[</span><span class="n">current</span><span class="p">])</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"labelled </span><span class="si">{</span><span class="n">conversation</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">current</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="n">labeler</span><span class="o">.</span><span class="n">remove_labels</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="p">[</span><span class="o">*</span><span class="n">others</span><span class="p">,</span> <span class="o">*</span><span class="n">not_waiting</span><span class="p">])</span>
+        <span class="n">labeler</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="p">[</span><span class="n">current</span><span class="p">,</span> <span class="o">*</span><span class="p">([</span><span class="n">waiting</span><span class="p">]</span> <span class="k">if</span> <span class="n">waiting</span> <span class="k">else</span> <span class="p">[])])</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"labelled </span><span class="si">{</span><span class="n">conversation</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">shown</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">lines</span></div>
 
 
@@ -829,8 +872,9 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""Create the labels ``subject`` needs in each GitHub repository it binds; a line per repository.</span>
 
 <span class="sd">    Those are its ``policy.claim_labels``, the routing labels a relay puts on the issues it</span>
-<span class="sd">    files, and one ``&lt;label_prefix&gt;&lt;state&gt;`` label per case state, described and coloured</span>
-<span class="sd">    as ``data/labels.json`` says. Idempotent, since ``create_label`` updates a label that</span>
+<span class="sd">    files; its ``policy.waiting_labels``, coloured as the state they go with; and one</span>
+<span class="sd">    ``&lt;label_prefix&gt;&lt;state&gt;`` label per case state, described and coloured as</span>
+<span class="sd">    ``data/labels.json`` says. Idempotent, since ``create_label`` updates a label that</span>
 <span class="sd">    already exists. A ``GitHubError`` from ``labeler`` propagates.</span>
 <span class="sd">    """</span>
     <span class="n">repos</span> <span class="o">=</span> <span class="n">github_repos</span><span class="p">(</span><span class="n">subject</span><span class="p">)</span>
@@ -846,6 +890,11 @@ window.runMermaid = runMermaid;</script>
         <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">DFLT_LABEL_COLOR</span><span class="p">,</span> <span class="n">CLAIM_LABEL_DESCRIPTION</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">person</span><span class="o">=</span><span class="n">person</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">claim_labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
     <span class="p">]</span>
+    <span class="n">waiting_color</span> <span class="o">=</span> <span class="n">specs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">WAITING_STATES</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"color"</span><span class="p">,</span> <span class="n">DFLT_LABEL_COLOR</span><span class="p">)</span>
+    <span class="n">waiting</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">waiting_color</span><span class="p">,</span> <span class="n">WAITING_LABEL_DESCRIPTION</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">person</span><span class="o">=</span><span class="n">person</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">person</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">waiting_labels</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">]</span>
     <span class="n">states</span> <span class="o">=</span> <span class="p">[</span>
         <span class="p">(</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">subject</span><span class="o">.</span><span class="n">label_prefix</span><span class="si">}{</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
@@ -854,13 +903,14 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">CASE_STATES</span>
     <span class="p">]</span>
+    <span class="n">counted</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">", </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">waiting</span><span class="p">)</span><span class="si">}</span><span class="s2"> waiting label(s)"</span> <span class="k">if</span> <span class="n">waiting</span> <span class="k">else</span> <span class="s2">""</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">repo</span> <span class="ow">in</span> <span class="n">repos</span><span class="p">:</span>
-        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">description</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">claims</span><span class="p">,</span> <span class="o">*</span><span class="n">states</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">description</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">claims</span><span class="p">,</span> <span class="o">*</span><span class="n">waiting</span><span class="p">,</span> <span class="o">*</span><span class="n">states</span><span class="p">):</span>
             <span class="n">labeler</span><span class="o">.</span><span class="n">create_label</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">: created </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">claims</span><span class="p">)</span><span class="si">}</span><span class="s2"> claim label(s) and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)</span><span class="si">}</span><span class="s2"> state "</span>
-            <span class="sa">f</span><span class="s2">"labels (</span><span class="si">{</span><span class="n">subject</span><span class="o">.</span><span class="n">label_prefix</span><span class="si">}</span><span class="s2">&lt;state&gt;)"</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">repo</span><span class="si">}</span><span class="s2">: created </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">claims</span><span class="p">)</span><span class="si">}</span><span class="s2"> claim label(s)</span><span class="si">{</span><span class="n">counted</span><span class="si">}</span><span class="s2"> and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"state labels (</span><span class="si">{</span><span class="n">subject</span><span class="o">.</span><span class="n">label_prefix</span><span class="si">}</span><span class="s2">&lt;state&gt;)"</span>
         <span class="p">)</span>
     <span class="k">return</span> <span class="n">lines</span></div>
 

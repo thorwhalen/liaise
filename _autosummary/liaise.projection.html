@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=360bc84d"></script>
+    <script src="../_static/documentation_options.js?v=fd825880"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.processor" href="liaise.processor.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.3" />
+  <meta name="docsearch:version" content="0.1.4" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -414,8 +414,14 @@ issues (<code class="docutils literal notranslate"><span class="pre">liaise:work
 see at a glance. <a class="reference internal" href="#liaise.projection.project_labels" title="liaise.projection.project_labels"><code class="xref py py-func docutils literal notranslate"><span class="pre">project_labels()</span></code></a> makes each issue carry exactly the current state’s
 label: the other state labels come off, then the current one goes on. It is the one place
 a state label changes, so the one-label invariant is kept there.</p>
+<p><strong>Waiting labels.</strong> When a subject sets <code class="docutils literal notranslate"><span class="pre">policy.waiting_labels</span></code>, a case that waits on a
+person (<a class="reference internal" href="#liaise.projection.WAITING_STATES" title="liaise.projection.WAITING_STATES"><code class="xref py py-data docutils literal notranslate"><span class="pre">WAITING_STATES</span></code></a>: its reporter was asked) also carries that person’s label,
+<code class="docutils literal notranslate"><span class="pre">needs-pat</span></code>, and the same function keeps that invariant too: at most one waiting label,
+and none once the case waits on no one. With several people on a subject, it is the fact a
+reader filters a backlog by. It is the mirror of a claim label: liaise reads a claim label
+as a claim coming in, and writes a waiting label as a fact going out.</p>
 <p><a class="reference internal" href="#liaise.projection.setup_labels" title="liaise.projection.setup_labels"><code class="xref py py-func docutils literal notranslate"><span class="pre">setup_labels()</span></code></a> creates the labels a subject needs in each repository it binds
-(<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">setup</span></code>): its claim labels, and one label per case state.</p>
+(<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">setup</span></code>): its claim labels, its waiting labels, and one label per case state.</p>
 <p>The labels go through <a class="reference internal" href="liaise.github.html#liaise.github.GitHub" title="liaise.github.GitHub"><code class="xref py py-class docutils literal notranslate"><span class="pre">liaise.github.GitHub</span></code></a> (<code class="docutils literal notranslate"><span class="pre">GhCli</span></code>, or <code class="docutils literal notranslate"><span class="pre">FakeGitHub</span></code> in
 tests), since correspond has no label operations yet. Only a case’s
 <code class="docutils literal notranslate"><span class="pre">github:owner/repo#N</span></code> conversations are projected; any other conversation has no labels.</p>
@@ -434,6 +440,12 @@ tests), since correspond has no label operations yet. Only a case’s
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.projection.CLAIM_LABEL_DESCRIPTION" title="liaise.projection.CLAIM_LABEL_DESCRIPTION"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CLAIM_LABEL_DESCRIPTION</span></code></a></p></td>
 <td><p>What a claim label says on GitHub, formatted with the person it files an issue for.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.projection.WAITING_STATES" title="liaise.projection.WAITING_STATES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WAITING_STATES</span></code></a></p></td>
+<td><p>its reporter, asked a question or a proposal.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.projection.WAITING_LABEL_DESCRIPTION" title="liaise.projection.WAITING_LABEL_DESCRIPTION"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WAITING_LABEL_DESCRIPTION</span></code></a></p></td>
+<td><p>What a waiting label says on GitHub, formatted with the person the case waits on.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -451,6 +463,9 @@ tests), since correspond has no label operations yet. Only a case’s
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.projection.setup_labels" title="liaise.projection.setup_labels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup_labels</span></code></a>(labeler, subject)</p></td>
 <td><p>Create the labels <code class="docutils literal notranslate"><span class="pre">subject</span></code> needs in each GitHub repository it binds; a line per repository.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.projection.waiting_label" title="liaise.projection.waiting_label"><code class="xref py py-obj docutils literal notranslate"><span class="pre">waiting_label</span></code></a>(case, subject)</p></td>
+<td><p>The waiting label <code class="docutils literal notranslate"><span class="pre">case</span></code> carries now: its reporter's while it waits on them, else None.</p></td>
 </tr>
 </tbody>
 </table>
@@ -482,6 +497,24 @@ tests), since correspond has no label operations yet. Only a case’s
 <dt class="sig sig-object py" id="liaise.projection.LABEL_SPECS_RESOURCE">
 <span class="sig-prename descclassname"><span class="pre">liaise.projection.</span></span><span class="sig-name descname"><span class="pre">LABEL_SPECS_RESOURCE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'labels.json'</span></span><a class="headerlink" href="#liaise.projection.LABEL_SPECS_RESOURCE" title="Link to this definition">#</a></dt>
 <dd><p>Each state label’s description and colour, in <code class="docutils literal notranslate"><span class="pre">liaise/data</span></code>.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.projection.WAITING_LABEL_DESCRIPTION">
+<span class="sig-prename descclassname"><span class="pre">liaise.projection.</span></span><span class="sig-name descname"><span class="pre">WAITING_LABEL_DESCRIPTION</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'Waiting</span> <span class="pre">on</span> <span class="pre">{person}</span> <span class="pre">to</span> <span class="pre">answer.</span> <span class="pre">liaise</span> <span class="pre">sets</span> <span class="pre">and</span> <span class="pre">removes</span> <span class="pre">it.'</span></span><a class="headerlink" href="#liaise.projection.WAITING_LABEL_DESCRIPTION" title="Link to this definition">#</a></dt>
+<dd><p>What a waiting label says on GitHub, formatted with the person the case waits on.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.projection.WAITING_STATES">
+<span class="sig-prename descclassname"><span class="pre">liaise.projection.</span></span><span class="sig-name descname"><span class="pre">WAITING_STATES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('needs-partner',)</span></span><a class="headerlink" href="#liaise.projection.WAITING_STATES" title="Link to this definition">#</a></dt>
+<dd><p>its reporter, asked a question or a
+proposal. <code class="docutils literal notranslate"><span class="pre">needs-owner</span></code> waits on the operator, who has no waiting label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The states in which a case waits on a person</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -517,12 +550,16 @@ names none. Repositories compare without regard to case, as GitHub’s do.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.projection.project_labels">
-<span class="sig-prename descclassname"><span class="pre">liaise.projection.</span></span><span class="sig-name descname"><span class="pre">project_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/projection.html#project_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.projection.project_labels" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.projection.</span></span><span class="sig-name descname"><span class="pre">project_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/projection.html#project_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.projection.project_labels" title="Link to this definition">#</a></dt>
 <dd><p>Label each of <code class="docutils literal notranslate"><span class="pre">case</span></code>’s GitHub issues with its state, and with no other state.</p>
 <p>For every <code class="docutils literal notranslate"><span class="pre">github:owner/repo#N</span></code> conversation of the case, the other
 <code class="docutils literal notranslate"><span class="pre">&lt;label_prefix&gt;&lt;state&gt;</span></code> labels are removed and the current one is added (labels
-that are not state labels stay). Returns one line per issue. A dry run returns the
-lines and calls nothing on <code class="docutils literal notranslate"><span class="pre">labeler</span></code>. A <code class="docutils literal notranslate"><span class="pre">GitHubError</span></code> from <code class="docutils literal notranslate"><span class="pre">labeler</span></code> propagates.</p>
+that are not state labels stay). When the subject has waiting labels, the other
+people’s come off too, and <a class="reference internal" href="#liaise.projection.waiting_label" title="liaise.projection.waiting_label"><code class="xref py py-func docutils literal notranslate"><span class="pre">waiting_label()</span></code></a> goes on beside the state label while
+the case waits on its reporter. <code class="docutils literal notranslate"><span class="pre">stale</span></code> are waiting labels projected before that the
+subject no longer gives (turned off, or renamed): they come off as well, except a label
+that is now a claim label. Returns one line per issue. A dry run returns the lines and
+calls nothing on <code class="docutils literal notranslate"><span class="pre">labeler</span></code>. A <code class="docutils literal notranslate"><span class="pre">GitHubError</span></code> from <code class="docutils literal notranslate"><span class="pre">labeler</span></code> propagates.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
@@ -535,12 +572,26 @@ lines and calls nothing on <code class="docutils literal notranslate"><span clas
 <span class="sig-prename descclassname"><span class="pre">liaise.projection.</span></span><span class="sig-name descname"><span class="pre">setup_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">labeler</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/projection.html#setup_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.projection.setup_labels" title="Link to this definition">#</a></dt>
 <dd><p>Create the labels <code class="docutils literal notranslate"><span class="pre">subject</span></code> needs in each GitHub repository it binds; a line per repository.</p>
 <p>Those are its <code class="docutils literal notranslate"><span class="pre">policy.claim_labels</span></code>, the routing labels a relay puts on the issues it
-files, and one <code class="docutils literal notranslate"><span class="pre">&lt;label_prefix&gt;&lt;state&gt;</span></code> label per case state, described and coloured
-as <code class="docutils literal notranslate"><span class="pre">data/labels.json</span></code> says. Idempotent, since <code class="docutils literal notranslate"><span class="pre">create_label</span></code> updates a label that
+files; its <code class="docutils literal notranslate"><span class="pre">policy.waiting_labels</span></code>, coloured as the state they go with; and one
+<code class="docutils literal notranslate"><span class="pre">&lt;label_prefix&gt;&lt;state&gt;</span></code> label per case state, described and coloured as
+<code class="docutils literal notranslate"><span class="pre">data/labels.json</span></code> says. Idempotent, since <code class="docutils literal notranslate"><span class="pre">create_label</span></code> updates a label that
 already exists. A <code class="docutils literal notranslate"><span class="pre">GitHubError</span></code> from <code class="docutils literal notranslate"><span class="pre">labeler</span></code> propagates.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.projection.waiting_label">
+<span class="sig-prename descclassname"><span class="pre">liaise.projection.</span></span><span class="sig-name descname"><span class="pre">waiting_label</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/projection.html#waiting_label"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.projection.waiting_label" title="Link to this definition">#</a></dt>
+<dd><p>The waiting label <code class="docutils literal notranslate"><span class="pre">case</span></code> carries now: its reporter’s while it waits on them, else None.</p>
+<p>A case waits on its reporter in <a class="reference internal" href="#liaise.projection.WAITING_STATES" title="liaise.projection.WAITING_STATES"><code class="xref py py-data docutils literal notranslate"><span class="pre">WAITING_STATES</span></code></a>, and the label is
+<code class="docutils literal notranslate"><span class="pre">policy.waiting_labels[reporter]</span></code>. A reporter the policy gives no label has none.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -598,10 +649,13 @@ already exists. A <code class="docutils literal notranslate"><span class="pre">G
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.DFLT_LABEL_COLOR"><code class="docutils literal notranslate"><span class="pre">DFLT_LABEL_COLOR</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.GITHUB_CHANNEL"><code class="docutils literal notranslate"><span class="pre">GITHUB_CHANNEL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.LABEL_SPECS_RESOURCE"><code class="docutils literal notranslate"><span class="pre">LABEL_SPECS_RESOURCE</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.WAITING_LABEL_DESCRIPTION"><code class="docutils literal notranslate"><span class="pre">WAITING_LABEL_DESCRIPTION</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.WAITING_STATES"><code class="docutils literal notranslate"><span class="pre">WAITING_STATES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.github_issue"><code class="docutils literal notranslate"><span class="pre">github_issue()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.github_repos"><code class="docutils literal notranslate"><span class="pre">github_repos()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.project_labels"><code class="docutils literal notranslate"><span class="pre">project_labels()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.setup_labels"><code class="docutils literal notranslate"><span class="pre">setup_labels()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.projection.waiting_label"><code class="docutils literal notranslate"><span class="pre">waiting_label()</span></code></a></li>
 </ul>
   </nav></div>
 

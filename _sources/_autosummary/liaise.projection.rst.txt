@@ -12,6 +12,8 @@ liaise.projection
       LABEL_SPECS_RESOURCE
       DFLT_LABEL_COLOR
       CLAIM_LABEL_DESCRIPTION
+      WAITING_STATES
+      WAITING_LABEL_DESCRIPTION
    
    .. rubric:: Functions
 
@@ -21,4 +23,5 @@ liaise.projection
       github_repos
       project_labels
       setup_labels
+      waiting_label
    
