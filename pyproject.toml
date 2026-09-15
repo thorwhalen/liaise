@@ -33,6 +33,7 @@ liaise = "liaise.__main__:main"
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "pyyaml>=6.0",
     "ruff>=0.1.0",
 ]
 docs = [
