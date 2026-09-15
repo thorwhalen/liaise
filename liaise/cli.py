@@ -620,7 +620,9 @@ def _draft_not_sent(
     verb = "would not be sent" if dry_run else "was not sent"
     notes = [f"  note: {note}" for note in decision.notes]
     message = "\n".join([f"{label} {verb}: {why}{kept}", *notes])
-    return cw.CommandError(message, **({"code": DIVERTED_EXIT_CODE} if diverted else {}))
+    return cw.CommandError(
+        message, **({"code": DIVERTED_EXIT_CODE} if diverted else {})
+    )
 
 
 def _draft_preview(release: cases.DraftRelease, case_id: str, *, edit: bool) -> str:
@@ -635,7 +637,9 @@ def _draft_preview(release: cases.DraftRelease, case_id: str, *, edit: bool) -> 
     if edit and not release.edited:
         lines.append("your edit changed nothing: this is the draft as it was")
     if release.moved:
-        lines.append(f"then {case_id} moves from {release.moved[0]} to {release.moved[1]}")
+        lines.append(
+            f"then {case_id} moves from {release.moved[0]} to {release.moved[1]}"
+        )
     lines += ["--- the message, as it would be sent ---", outbound.text, "---"]
     return "\n".join(lines)
 
@@ -709,7 +713,9 @@ def case_send_draft(
         if not (confirm or confirm_at_terminal)(
             _draft_preview(preview, case_id, edit=edit)
         ):
-            return f"nothing sent: draft [{preview.index}] of {case_id} stays on the case"
+            return (
+                f"nothing sent: draft [{preview.index}] of {case_id} stays on the case"
+            )
         with ExitStack() as between_ticks:
             _hold_run_lock(between_ticks, global_config, case_id, done="sent")
             preview = release(ledger, **bound)

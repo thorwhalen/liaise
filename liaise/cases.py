@@ -402,7 +402,11 @@ def send_draft(
             f"{label} changed while you had it open, so nothing was sent; read it again "
             f"with liaise case show {case_id}"
         )
-    ref, recipient, purpose = draft.get("ref"), draft.get("recipient"), draft.get("outcome")
+    ref, recipient, purpose = (
+        draft.get("ref"),
+        draft.get("recipient"),
+        draft.get("outcome"),
+    )
     if not ref:
         raise ValueError(
             f"{label} has no destination ({draft.get('reason')}): send it yourself, "
