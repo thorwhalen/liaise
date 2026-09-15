@@ -9,6 +9,8 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise case list [--state STATE]
     liaise case show CASE_ID
     liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
+    liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
+    liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
     liaise subject list
     liaise subject show SLUG
     liaise setup SUBJECT
@@ -17,7 +19,7 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
 
 Every command takes ``--root``, the config root (``~/.config/liaise`` by default), and
 returns the text it prints. The seams (the channel registry, the processor, the labeler,
-the ledger store, the notifier, the sessions directory and the clock) are keyword
+the ledger store, the notifier, the sessions directory, the clock and the editor) are keyword
 arguments with working defaults, hidden from the command line by ``_dispatch_config``:
 tests fill them with fakes, and the command line never shows them.
 
@@ -34,10 +36,15 @@ from __future__ import annotations
 
 import dataclasses
 import functools
+import os
+import shlex
+import subprocess
+import sys
+import tempfile
 import time
 from collections import ChainMap
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
-from contextlib import ExitStack
+from contextlib import ExitStack, suppress
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional
@@ -82,10 +89,14 @@ DFLT_LOOP_SECONDS = 60
 STOPPED = "stopped"
 #: How ``liaise subject show`` prints an empty or unset value.
 NONE_SHOWN = cases.NONE_SHOWN
-#: What ``liaise case set-state`` says, changing nothing, while a tick holds the run lock.
+#: What a case command that writes says, changing nothing, while a tick holds the run lock.
 TICK_RUNNING = (
-    "a liaise tick is running, so {case_id} was not moved; try again shortly ({busy})"
+    "a liaise tick is running, so {case_id} was not {done}; try again shortly ({busy})"
 )
+#: The environment variables that name the operator's editor, the first one set winning.
+EDITOR_ENV_VARS = ("VISUAL", "EDITOR")
+#: The editor ``liaise case send-draft --edit`` opens when no variable names one.
+DFLT_EDITOR = "notepad" if sys.platform == "win32" else "vi"
 
 
 def _expected_errors(*kinds: type[Exception]) -> Callable[[Callable], Callable]:
@@ -139,6 +150,54 @@ def _subject_named(
         f"no subject {slug!r} is configured; the subjects are: {known}. A subject is a "
         f"file such as {path}."
     )
+
+
+def _hold_run_lock(
+    stack: ExitStack, global_config: GlobalConfig, case_id: str, *, done: str
+) -> None:
+    """Take the run lock into ``stack``, or refuse in one line while a tick holds it.
+
+    A case command that writes holds the lock, so a tick cannot start meanwhile and write
+    over it. It does not wait: the refusal says what was not ``done``.
+    """
+    lock_path = run_lock_path(Path(global_config.state_dir).expanduser())
+    try:
+        stack.enter_context(run_lock(lock_path))
+    except RunLockHeld as busy:
+        message = TICK_RUNNING.format(case_id=case_id, done=done, busy=busy)
+        raise cw.CommandError(message) from busy
+
+
+def edit_in_editor(text: str) -> str:
+    """``text`` as the operator leaves it in their editor: ``$VISUAL``, ``$EDITOR``, else vi.
+
+    The text is written to a temporary file only its owner can read, which is removed once
+    the editor exits. Raises ``ValueError`` when the editor cannot be started or exits
+    nonzero, so nothing is sent.
+    """
+    command = next(
+        (os.environ[name] for name in EDITOR_ENV_VARS if os.environ.get(name)),
+        DFLT_EDITOR,
+    )
+    descriptor, path = tempfile.mkstemp(prefix="liaise-draft-", suffix=".md")
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as file:
+            file.write(text)
+        try:
+            argv = [*shlex.split(command, posix=os.name != "nt"), path]
+            exit_code = subprocess.run(argv, check=False).returncode
+        except OSError as error:
+            raise ValueError(
+                f"the editor {command!r} could not be started ({error}); set $EDITOR"
+            ) from error
+        if exit_code != 0:
+            raise ValueError(
+                f"the editor {command!r} exited with {exit_code}, so nothing was sent"
+            )
+        return Path(path).read_text(encoding="utf-8")
+    finally:
+        with suppress(OSError):
+            os.unlink(path)
 
 
 # ---- the loop ----
@@ -478,12 +537,7 @@ def case_set_state(
     ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
     with ExitStack() as between_ticks:
         if not dry_run:
-            lock_path = run_lock_path(Path(global_config.state_dir).expanduser())
-            try:
-                between_ticks.enter_context(run_lock(lock_path))
-            except RunLockHeld as busy:
-                message = TICK_RUNNING.format(case_id=case_id, busy=busy)
-                raise cw.CommandError(message) from busy
+            _hold_run_lock(between_ticks, global_config, case_id, done="moved")
         before = ledger.get_case(case_id)
         moved = cases.set_case_state(ledger, case_id, state, reason=reason, now=now)
     if before is not None and before.state == moved.state:
@@ -495,6 +549,150 @@ def case_set_state(
     )
 
 
+def _one_index(case_id: str, index: Sequence[int]) -> Optional[int]:
+    """The one INDEX a draft command was given, or None without one. Raises ``ValueError`` for more.
+
+    INDEX is ``*index`` in the signature, since cw makes a parameter with a default an
+    option, and the command line spells it ``[INDEX]``.
+    """
+    if len(index) > 1:
+        given = ", ".join(map(str, index))
+        raise ValueError(f"name one draft of {case_id} at a time, not {given}")
+    return index[0] if index else None
+
+
+@_expected_errors(ConfigError, ValueError)
+def case_send_draft(
+    case_id: str,
+    *index: int,
+    edit: bool = False,
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    registry: Optional[Mapping[str, Any]] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+    editor: Optional[Callable[[str], str]] = None,
+) -> str:
+    """Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.
+
+    ``liaise case show`` numbers the drafts. The gate runs again on the text, with your
+    approval recorded: draft reply mode lets it through, and the leak scan, deslop and the
+    mention judge it as they judge any message. ``--edit`` opens the text in ``$VISUAL`` or
+    ``$EDITOR`` first, and the gate judges what you saved.
+
+    Once sent, the draft leaves the case and the send is recorded as yours. A case in
+    needs-owner moves on as a sent message moves it (an ask, to needs-partner). A message
+    that is diverted, or that its channel refuses, is not sent: the draft stays on the case,
+    holding the text that was judged and the reason, and the command exits nonzero.
+    ``--dry-run`` judges and plans, and changes nothing.
+
+    It holds the run lock, as ``set-state`` does, and refuses while a tick runs. It also
+    refuses while a hold keeps the case's messages waiting, and while a run of the case is
+    in flight.
+    """
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    subjects = load_subjects(config_root)
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
+    draft_index, text, seen = _one_index(case_id, index), None, None
+    if edit:  # before the lock: an editor can stay open far longer than a tick waits
+        draft_index, seen = cases.find_draft(ledger, case_id, index=draft_index)
+        text = (editor or edit_in_editor)(seen.get("text") or "")
+    with ExitStack() as between_ticks:
+        if not dry_run:
+            _hold_run_lock(between_ticks, global_config, case_id, done="sent")
+        release = cases.send_draft(
+            ledger,
+            subjects,
+            case_id,
+            index=draft_index,
+            text=text,
+            seen=seen,
+            now=now,
+            registry=registry,
+            dry_run=dry_run,
+        )
+    label = f"draft [{release.index}] of {case_id}"
+    attempt = release.attempt
+    notes = [f"  note: {note}" for note in attempt.decision.notes]
+    if not attempt.sent:
+        decision = attempt.decision
+        why = (
+            f"diverted by {decision.diverted_by}: {decision.diverted}"
+            if decision.send is None
+            else f"send failed: {attempt.failure}"
+        )
+        kept = (
+            ""
+            if dry_run
+            else f". It stays on the case with that reason; edit it with liaise case "
+            f"send-draft {case_id} {release.index} --edit"
+        )
+        verb = "would not be sent" if dry_run else "was not sent"
+        raise cw.CommandError("\n".join([f"{label} {verb}: {why}{kept}", *notes]))
+    ref = release.draft.get("ref")
+    url = getattr(attempt.result, "url", None)
+    head = (
+        f"{'would send' if dry_run else 'sent'} {label} on {ref} "
+        f"(gate: passed, {release.filters} filters)"
+    )
+    lines = [head + (f": {url}" if url and not dry_run else ""), *notes]
+    if release.moved:
+        before, after = release.moved
+        verb = "would move" if dry_run else "moved"
+        lines.append(
+            f"{verb} {case_id} from {before} to {after}; its labels follow on the next "
+            f"tick"
+        )
+    else:
+        lines.append(f"{case_id} stays {release.case.state}")
+    if release.case.drafts:
+        lines.append(f"drafts left on {case_id}: {len(release.case.drafts)}")
+    return "\n".join(lines)
+
+
+@_expected_errors(ConfigError, ValueError)
+def case_reject_draft(
+    case_id: str,
+    *index: int,
+    reason: str = "",
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+) -> str:
+    """Decline CASE_ID's draft INDEX, or its only one, recording ``--reason``.
+
+    Nothing is sent. The draft leaves the case, and your refusal is recorded on the case with
+    its reason and the draft's text. The case's state stays as it is: move it on with
+    ``liaise case set-state``. It holds the run lock, as ``set-state`` does. ``--dry-run``
+    changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
+    with ExitStack() as between_ticks:
+        if not dry_run:
+            _hold_run_lock(between_ticks, global_config, case_id, done="changed")
+        rejection = cases.reject_draft(
+            ledger,
+            case_id,
+            index=_one_index(case_id, index),
+            reason=reason,
+            now=now,
+            dry_run=dry_run,
+        )
+    draft = rejection.draft
+    to = draft.get("ref") or draft.get("recipient")
+    verb = "would reject" if dry_run else "rejected"
+    return (
+        f"{verb} draft [{rejection.index}] of {case_id} ({draft.get('outcome')} to {to}): "
+        f"{reason.strip()}\n{case_id} stays {rejection.case.state}; move it on with "
+        f"liaise case set-state {case_id} STATE"
+    )
+
+
 #: SSOT command tree consumed by ``__main__.py`` and any later surface (MCP, HTTP). Named
 #: explicitly, so the commands read ``liaise subject show`` and ``liaise migrate-config``.
 _dispatch_funcs = {
@@ -502,7 +700,13 @@ _dispatch_funcs = {
     "status": status,
     "hold": hold,
     "unhold": unhold,
-    "case": {"list": case_list, "show": case_show, "set-state": case_set_state},
+    "case": {
+        "list": case_list,
+        "show": case_show,
+        "set-state": case_set_state,
+        "send-draft": case_send_draft,
+        "reject-draft": case_reject_draft,
+    },
     "subject": {"list": subject_list, "show": subject_show},
     "setup": setup,
     "migrate-config": migrate_config,
@@ -531,7 +735,13 @@ _SEAMS = {
     "status": ("store", "now"),
     "hold": ("store",),
     "unhold": ("store",),
-    "case": {"list": ("store",), "show": ("store",), "set-state": ("store", "now")},
+    "case": {
+        "list": ("store",),
+        "show": ("store",),
+        "set-state": ("store", "now"),
+        "send-draft": ("registry", "store", "now", "editor"),
+        "reject-draft": ("store", "now"),
+    },
     "setup": ("labeler",),
 }
 
@@ -548,5 +758,26 @@ def _hidden(seams: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-#: The seams, hidden from the command line; each keeps its default.
-_dispatch_config = _hidden(_SEAMS)
+#: What a command's arguments need beyond their signature, nested as :data:`_SEAMS` is: a
+#: draft's INDEX is a number (see :func:`_one_index`).
+_ARGUMENTS = {
+    "case": {
+        "send-draft": {"index": {"type": int}},
+        "reject-draft": {"index": {"type": int}},
+    }
+}
+
+
+def _merged(base: Mapping[str, Any], extra: Mapping[str, Any]) -> dict[str, Any]:
+    """``base`` with ``extra`` laid over it, a command group's entries merged, not replaced."""
+    merged = dict(base)
+    for name, value in extra.items():
+        if isinstance(value, Mapping) and isinstance(merged.get(name), Mapping):
+            merged[name] = _merged(merged[name], value)
+        else:
+            merged[name] = value
+    return merged
+
+
+#: The seams, hidden from the command line and each keeping its default, and the arguments.
+_dispatch_config = _merged(_hidden(_SEAMS), _ARGUMENTS)

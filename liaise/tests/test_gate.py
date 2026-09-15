@@ -35,7 +35,7 @@ from liaise.gate import (
     run_gate,
     writing_card,
 )
-from liaise.model import Case
+from liaise.model import Approval, Case
 from liaise.subjects import Policy, Subject
 
 NOW = datetime(2026, 9, 11, 12, 0, tzinfo=timezone.utc)
@@ -128,6 +128,41 @@ def test_a_person_override_to_draft_diverts_under_a_direct_default():
 def test_another_persons_override_does_not_apply():
     subject = _subject(default_reply_mode="draft", reply_modes={"someone-else": "direct"})
     assert _gate(subject=subject).diverted == "draft reply mode"
+
+
+# ---- the operator's release (#29) ----
+
+APPROVAL = Approval(by="operator", at=NOW)
+
+
+def _released(subject) -> GateContext:
+    return replace(_context(subject), approval=APPROVAL)
+
+
+def test_the_operators_release_lets_a_draft_through_reply_mode_with_a_note():
+    decision = run_gate(_outbound(), _released(_subject(default_reply_mode="draft")))
+
+    assert decision.send is not None
+    assert decision.notes[0] == f"draft reply mode: released by operator at {NOW.isoformat()}"
+
+
+def test_a_release_settles_reply_mode_and_no_other_filter():
+    draft_mode = _subject(default_reply_mode="draft")
+    leaking = run_gate(_outbound("The log is at " + "/Us" + "ers/someone/app/log.txt"), _released(draft_mode))
+    assert (leaking.diverted_by, leaking.diverted) == ("leak_scan", "leak scan: local path")
+    no_handle = _subject(default_reply_mode="draft", people={"webinbox:pat": "pat"})
+    assert run_gate(_outbound(), _released(no_handle)).diverted_by == "notify_recipient"
+
+
+def test_only_an_approval_releases_a_draft():
+    draft_mode = _subject(default_reply_mode="draft")
+    for stand_in in ({"by": "operator", "at": NOW}, "operator", True):
+        context = replace(_context(draft_mode), approval=stand_in)
+        assert run_gate(_outbound(), context).diverted == "draft reply mode"
+
+
+def test_the_tick_context_carries_no_approval():
+    assert _context().approval is None
 
 
 # ---- leak scan (mutation-checked) ----

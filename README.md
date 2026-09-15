@@ -166,6 +166,8 @@ When a run plans no state of its own, its case moves to `needs-partner` if a mes
 
 The first filter that diverts ends the gate: the message is not sent, it is kept on the case as a draft, and you are told. The gate fails closed: a filter that raises, or answers anything but pass or divert, diverts too. acquaint is optional: without it, or for a person it does not know, the writing card and deslop filters add a note and let the message through. Messages go out through correspond, and one that fails to send is kept as a draft, recorded, and reported to you.
 
+**Sending a draft.** A draft waits for you, and nothing sends it on its own. `liaise case show <case>` numbers each draft, and `liaise case send-draft <case> [INDEX]` sends the one you approve. The gate runs again on it, with your approval recorded on the case: draft reply mode lets it through, and the leak scan, deslop and the mention judge it as they judge any message. `--edit` opens the text in `$VISUAL` or `$EDITOR` first, and the gate judges what you saved, so a path pasted into an edit is stopped like one the agent wrote. A message the gate diverts again, or that its channel refuses, stays on the case with the new reason. Once one is sent, a case in `needs-owner` moves on as a sent message moves it: the text of an `ask`, `reply`, `propose` or escalation takes it to `needs-partner`. `liaise case reject-draft <case> [INDEX] --reason TEXT` takes a draft off the case without sending it, and records why.
+
 ### The processor
 
 `ClaudeHeadless` (the `processor=` seam) runs the `claude` CLI headless: `claude -p` pointing at a prompt file, `--output-format stream-json --verbose`, the subject's `--permission-mode` (`auto` by default, and the same on a resume), `--json-schema` for the outcomes, and `--session-id` for a new session or `--resume` for the case's stored one. The run is spawned detached, in its own process group, so the tick returns at once and the run outlives it. Its environment drops `ANTHROPIC_API_KEY` and `ANTHROPIC_AUTH_TOKEN`, so it runs on the account `claude` is logged in to rather than billing a key. Before each start, preflight checks that `claude` and the checkout exist and that `claude auth status` passes.
@@ -238,6 +240,8 @@ A subject's runs share its checkout (`workspace.path`, behind the `workspace=` s
 - `liaise case list [--state STATE]`: every case, or those in one state, with its conversations. It changes nothing.
 - `liaise case show CASE_ID`: what a notification about the case leaves out: its state, the reason of its last escalation, its last failed deploy with the command's output, each draft waiting for you with its text, and its latest entries. It changes nothing.
 - `liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]`: move a case as you, recorded on the case; this is how a case in `needs-owner` or `deployed` moves on. `intake` has the tick start it again once it is ready, resuming its session. Any state but `working` is allowed, and a case with a run in flight is refused. While a tick is running it refuses too, changing nothing: try again once the tick is done. Its label follows on the next tick; `--dry-run` writes nothing.
+- `liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]`: send a draft you approved, through the gate again with your approval recorded. INDEX is the number `case show` gives the draft, and may be left out when the case holds one. `--edit` opens the text in your editor first. Once sent, the draft leaves the case and a case in `needs-owner` moves on. A diverted or refused draft stays with its new reason, and the command exits nonzero. It refuses while a tick is running, while a hold keeps the case's messages waiting, and while a run of the case is in flight. `--dry-run` judges and plans, and writes nothing.
+- `liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]`: take a draft off the case without sending it, recording why. The case's state stays; move it on with `set-state`.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
 - `liaise setup SUBJECT`: create the subject's claim labels and every state label in each repository it binds. Safe to run again.
 - `liaise migrate-config [--apply]`: derive subject files from a 0.0.x configuration; a dry run unless `--apply`.
@@ -281,7 +285,8 @@ What the migration does:
 
 ## Known limitations
 
-- Held effects are not replayed after unhold: they stay on the case as drafts, and the case in `needs-owner`, for you to send by hand.
+- Held effects are not replayed after unhold: they stay on the case as drafts, and the case in `needs-owner`, for you to send with `liaise case send-draft` or decline with `reject-draft`.
+- A draft held for `no channel to reach <person>` has nowhere to go, so `send-draft` refuses it: send it yourself, then take it off the case with `reject-draft`.
 - Detecting an expired login before a run depends on `claude auth status` exiting non-zero; when it does not, the run itself finds out, and the tick holds the processor after it.
 - A label claim is judged by the issue's author, not by who applied the label, pending who-applied-the-label support upstream in correspond (thorwhalen/correspond#23).
 - GitHub binding refs are lower-cased when a subject loads, a workaround for correspond comparing them case-sensitively (thorwhalen/correspond#24).

@@ -93,7 +93,7 @@ def test_the_command_tree_is_the_0_1_one():
     assert set(commands) == {
         "run", "status", "hold", "unhold", "case", "subject", "setup", "migrate-config", "schedule"
     }
-    assert set(commands["case"]) == {"list", "show", "set-state"}
+    assert set(commands["case"]) == {"list", "show", "set-state", "send-draft", "reject-draft"}
     assert set(commands["subject"]) == {"list", "show"}
     assert set(commands["schedule"]) == {"install", "uninstall", "status"}
 
@@ -124,6 +124,20 @@ def test_the_case_commands_take_their_flags_and_hide_their_seams():
 
 
 # ---- run ----
+
+
+def test_the_draft_commands_take_an_optional_index_and_hide_their_seams():
+    parser = cw.mk_parser(cli._dispatch_funcs, config=cli._dispatch_config, prog="liaise")
+    sent = parser.parse_args(["case", "send-draft", f"{SLUG}-1", "1", "--edit", "--dry-run"])
+    assert (getattr(sent, "case-id"), list(sent.index), sent.edit, sent.dry_run) == (f"{SLUG}-1", [1], True, True)
+    assert list(parser.parse_args(["case", "send-draft", f"{SLUG}-1"]).index) == []
+    rejected = parser.parse_args(["case", "reject-draft", f"{SLUG}-1", "0", "--reason", "answered on a call"])
+    assert (list(rejected.index), rejected.reason) == ([0], "answered on a call")
+    for seam in ("--registry", "--store", "--now", "--editor"):
+        with pytest.raises(SystemExit):
+            parser.parse_args(["case", "send-draft", f"{SLUG}-1", seam, "x"])
+    with pytest.raises(SystemExit):
+        parser.parse_args(["case", "send-draft", f"{SLUG}-1", "first"])  # an index is a number
 
 
 def test_a_dry_run_on_the_default_ledger_creates_nothing(root, tmp_path):
@@ -379,7 +393,7 @@ def test_case_show_prints_what_a_notification_leaves_out(root):
     assert lines[deploy + 1] == "    error: push refused"
     drafts = lines.index("drafts waiting for the operator: 1")
     assert lines[drafts + 1 : drafts + 4] == [
-        f"  {NOW.isoformat()} escalate to github:{REPO}#1: costs money",
+        f"  [0] {NOW.isoformat()} escalate to github:{REPO}#1: costs money",  # the index send-draft takes
         "    It needs a paid plan.",
         "    Go ahead?",
     ]

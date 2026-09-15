@@ -1,6 +1,6 @@
 ---
 name: liaise
-description: Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on "add a partner to liaise", "onboard <name> to liaise", "add a subject to liaise", "check liaise status", "what is liaise waiting on", "hold liaise", "pause liaise for <subject>", "unhold", "why is this issue unrouted", "migrate my liaise config", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue".
+description: Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on "add a partner to liaise", "onboard <name> to liaise", "add a subject to liaise", "check liaise status", "what is liaise waiting on", "hold liaise", "pause liaise for <subject>", "unhold", "why is this issue unrouted", "migrate my liaise config", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue", "send the liaise draft", "approve this draft", "reject a draft".
 ---
 
 # liaise: the owner's agent skill
@@ -69,10 +69,10 @@ digest notes: 1
 - **Runs in flight.** The heartbeat is the last time the run wrote to its stream. The tick stops a run past its `timeout_minutes` (60 by default) and hands the case to the owner as `timed_out`. It signals a run's process only once it has verified, by the process's start time, that it is the one `liaise` started; one it cannot verify is never signalled, and the run is given up 10 minutes after the stop. A run whose pid names another process by now (after a reboot) is collected at once, usually as `crashed`.
 - **Cases by state**, per subject, with today's dispatches against the daily cap. `needs-owner` is the owner's to-do list.
 - **Unrouted.** Messages that matched a binding but could not be routed, with the reason; see "Why an issue isn't moving".
-- **Drafts waiting for the operator.** Messages `liaise` kept instead of sending: draft reply mode, a gate divert (a leak, deslop, no handle to mention), an escalation, held effects, a failed send. Nothing sends them later: the owner sends what they want by hand. `liaise case show <case>` prints each draft's full text.
+- **Drafts waiting for the operator.** Messages `liaise` kept instead of sending: draft reply mode, a gate divert (a leak, deslop, no handle to mention), an escalation, held effects, a failed send. Nothing sends them on its own: the owner sends one with `liaise case send-draft` or declines it with `liaise case reject-draft` (see "Sending or rejecting a draft"). `liaise case show <case>` prints each draft's full text.
 - **Digest notes.** `note` outcomes: what the agent noticed for the owner, never shown to the partner.
 
-Before sending a draft by hand, or choosing a person's reply mode, check who can actually read the thread, not only who it is for. The 0.1 gate's leak scan runs only on channels named in `policy.public_channels` and knows no project name unless it is in `policy.leak_terms`. [references/outbound-safety.md](references/outbound-safety.md) has what that leaves uncovered, and what an owner can set today.
+Before sending a draft, or choosing a person's reply mode, check who can actually read the thread, not only who it is for. The 0.1 gate's leak scan runs only on channels named in `policy.public_channels` and knows no project name unless it is in `policy.leak_terms`. [references/outbound-safety.md](references/outbound-safety.md) has what that leaves uncovered, and what an owner can set today.
 
 ## A notification from liaise
 
@@ -95,7 +95,7 @@ liaise unhold subject:example-app
 - `effect:deploy` holds deliveries only: runs still start and messages still go out, but a delivery waits as a draft.
 - Notifications to the owner always go out, whatever the mode.
 - **Automatic holds.** `liaise` holds `processor` itself after `config_error` or `auth_expired`, and lifts it once preflight passes again (it probes every 30 minutes). It holds `effect:deploy` after a deploy refused for billing, CI minutes or a 403, and that one stays until `liaise unhold effect:deploy`. It never replaces or lifts a hold the owner set.
-- **Unhold sends nothing.** Messages kept while a hold stood stay as drafts, their cases in `needs-owner`.
+- **Unhold sends nothing.** Messages kept while a hold stood stay as drafts, their cases in `needs-owner`. Send them with `liaise case send-draft` once the hold is lifted: it refuses while a `block` or `cancel` hold covers the case.
 
 ## What each `liaise:` label means
 
@@ -129,7 +129,7 @@ Start with `liaise run --once --dry-run --subject <slug>`: its plan has a line p
 - **The budget.** `still over the daily cap (6/6)`: it starts again the next day. `ready, but 1 run(s) in flight (concurrent cap 1)`: it waits for the subject's running run.
 - **A workspace conflict.** `workspace_conflict: live session <name> in <path>`: a Claude Code session, probably the owner's, is working in the checkout; the case tries again in 10 minutes. `the checkout is locked by run <id>`: another run of the subject holds it.
 - **Not ready yet.** `not ready (waiting, 4m to go)` is the quiet window; `paused (partner asked to wait)` is a `#wait#`.
-- **`needs-owner`.** It waits on the owner. Read the case with `liaise case show <case>` (its drafts, the escalation's reason, a failed deploy's output, its latest entries), act on what it needs, then move it on with `liaise case set-state <case> intake` (see "Moving a case on"). Relabelling the issue, the 0.0.x way, changes nothing: the next tick overwrites the label. A case found `working` with no run in flight lands here too, and the owner hears `run lost`.
+- **`needs-owner`.** It waits on the owner. Read the case with `liaise case show <case>` (its drafts, the escalation's reason, a failed deploy's output, its latest entries), act on what it needs (send or reject its drafts: see "Sending or rejecting a draft"), then move it on with `liaise case set-state <case> intake` (see "Moving a case on"). Relabelling the issue, the 0.0.x way, changes nothing: the next tick overwrites the label. A case found `working` with no run in flight lands here too, and the owner hears `run lost`.
 - **Its issue is closed.** `its issue is closed`: a case whose issue was closed is neither started nor nudged. Reopening the issue starts it again, once `liaise` reads it: a closed case's issue is read at most once an hour (`read again in <time>` on the plan line). `its issue could not be read`: the case waits for the next tick. Only reads that fail for good count (the issue not found, or not permitted): three in a row send the case to `needs-owner`, and the owner is told once. A network that is down or a login that expired never does.
 - **Nothing happens at all.** An old `run_started_at` in `liaise status` means the scheduled job stopped (`liaise schedule status`); `interrupted` means its last tick died. `liaise schedule status` saying `installed (outdated: re-run liaise schedule install)` means the job was installed by 0.0.x and kills the runs its ticks start: install it again.
 
@@ -146,6 +146,25 @@ liaise case set-state example-app-2 intake --reason "brief fixed"
 - `liaise case show CASE` prints what a notification leaves out: the case's state, the reason of its last escalation, its last failed deploy with the command's output, each draft waiting for the owner with its text, and its latest entries. It changes nothing.
 - `liaise case set-state CASE STATE [--reason TEXT] [--dry-run]` moves a case as the owner, recorded on the case with the reason. `intake` has the tick start the case again once it is ready, resuming its session. Any state is allowed but `working`, which only a run makes true, and a case with a run in flight is refused until that run is collected. While a tick is running it refuses too, changing nothing: run it again once the tick is done.
 - The case's label follows on the next tick. `--dry-run` says what would change and writes nothing.
+
+## Sending or rejecting a draft
+
+```
+liaise case show example-app-2
+liaise case send-draft example-app-2 0 --dry-run
+liaise case send-draft example-app-2 0
+liaise case send-draft example-app-2 0 --edit
+liaise case reject-draft example-app-2 1 --reason "answered on a call"
+```
+
+- `case show` numbers the drafts `[0]`, `[1]`, and so on. The index can be left out when the case holds only one.
+- `send-draft` runs the gate again on the draft, with the owner's approval recorded. Draft reply mode lets it through; the leak scan, deslop and the mention still judge it. It is not a way around the gate: a draft held for a leak is diverted again until its text changes.
+- `--edit` opens the text in `$VISUAL` or `$EDITOR`, and the gate judges what was saved. An edit that is diverted stays on the case, so the next `--edit` starts from it.
+- Sent: the draft leaves the case, and the send is recorded as the owner's, with the time. A case in `needs-owner` moves to `needs-partner` when the draft was an `ask`, `reply` or `propose`, or an escalation's text. A `deliver` message or the tick's own nudge leaves the state alone.
+- Not sent, because the gate diverted it or its channel refused it: the draft stays with the new reason, and the command exits nonzero.
+- It refuses while a tick runs, while a `block` or `cancel` hold covers the case (`drain` lets it go), and while a run of the case is in flight. It also refuses a draft with no destination (`no channel to reach <person>`): send that one yourself, then reject it.
+- `reject-draft` needs `--reason`. It sends nothing and leaves the state as it is; move the case on with `liaise case set-state`.
+- Both take `--dry-run`, which writes nothing.
 
 ## Migrating from 0.0.x
 
