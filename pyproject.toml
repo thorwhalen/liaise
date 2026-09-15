@@ -95,6 +95,9 @@ doctest_optionflags = [
 [tool.wads.ci]
 project_name = ""
 
+[tool.wads.ci.install]
+extras = "dev"
+
 [tool.wads.ci.commands]
 pre_test = []
 test = []
