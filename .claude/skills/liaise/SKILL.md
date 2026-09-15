@@ -112,6 +112,8 @@ The label is a projection of the case's state in the ledger: `liaise` sets it, t
 | `liaise:deployed` | Delivered: the deploy command ran and succeeded, and the partner was asked to try it. A quiet partner is nudged once, after 3 days, unless the issue was closed. | Nothing: the case is done. A follow-up comment is recorded but starts nothing; `liaise case set-state <case> intake` reopens the work. |
 | `liaise:budget` | Ready, but the subject's daily dispatch cap is used up. The partner was told once, and the owner once that day. | The next day: it starts again. |
 
+**Waiting labels.** A subject with `waiting_labels = { pat = "needs-pat" }` (or `waiting_labels = true`, meaning `needs-<person>` for everyone with a role) also puts the reporter's label on a `needs-partner` case's issue, and takes it off once the case moves on. Use it when a subject has several people, so the issue list shows who owes an answer. `liaise` sets it, like the state label: do not add `needs-<person>` labels by hand on a subject that has them configured, since the next tick overwrites them. A waiting label is written, a claim label is read, and the two may not share a name.
+
 ## Why an issue isn't moving
 
 Start with `liaise run --once --dry-run --subject <slug>`: its plan has a line per case saying what stops it. Then:

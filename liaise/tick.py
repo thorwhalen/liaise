@@ -150,7 +150,7 @@ from liaise.outcomes import (
     plan_outcomes,
 )
 from liaise.processor import FINISHED, FRESH, RESUME, RUNNING, ClaudeHeadless, Job
-from liaise.projection import github_issue, project_labels
+from liaise.projection import github_issue, project_labels, waiting_label
 from liaise.prompt import compose_case_prompt
 from liaise.readiness import compute_readiness, last_partner_activity
 from liaise.release import error_text as _error_text
@@ -2471,22 +2471,33 @@ class _Tick:
         """Show each case's state on its GitHub issues, as their one state label.
 
         The targets are the cases this tick changed, and every other case of the subjects
-        ticked whose state is not the one last projected, such as a case the operator moved
-        with ``liaise case set-state`` between ticks. A projection is recorded on the case
-        as a ``projection`` entry holding the state, its error too when it failed, so a
+        ticked whose labels are not the ones last projected, such as a case the operator
+        moved with ``liaise case set-state`` between ticks, or one whose subject has just
+        turned on waiting labels. A projection is recorded on the case as a ``projection``
+        entry holding the state and its waiting label, its error too when it failed, so a
         failed one is not retried until the case changes.
         """
 
-        def projected_state(case: Case) -> Optional[str]:
+        def projected(case: Case) -> Optional[tuple[Any, Any]]:
             projections = [e for e in case.entries if e.kind == "projection"]
-            return projections[-1].detail.get("state") if projections else None
+            if not projections:
+                return None
+            detail = projections[-1].detail
+            return detail.get("state"), detail.get("waiting")
+
+        def labels_of(case: Case) -> tuple[str, Optional[str]]:
+            return case.state, waiting_label(case, self.subjects[case.subject])
+
+        def recorded(case: Case, **detail: Any) -> dict[str, Any]:
+            waiting = waiting_label(case, self.subjects[case.subject])
+            return {"state": case.state, **({"waiting": waiting} if waiting else {}), **detail}
 
         touched = [self.ledger.get_case(case_id) for case_id in list(self.touched)]
         drifted = [
             case
             for slug in self.slugs
             for case in sorted(self.ledger.cases(subject=slug), key=lambda c: c.id)
-            if case.id not in self.touched and projected_state(case) != case.state
+            if case.id not in self.touched and projected(case) != labels_of(case)
         ]
         targets = [
             case
@@ -2512,17 +2523,17 @@ class _Tick:
                         at=self.now,
                         kind="projection",
                         actor=TICK_ACTOR,
-                        detail={"state": case.state, "error": why},
+                        detail=recorded(case, error=why),
                     ),
                 )
                 self.problem(f"labelling {case.id} {case.state} failed: {why}")
                 continue
             self.lines += [f"  {line}" for line in lines]
-            if projected_state(case) != case.state:
-                projected = LedgerEntry(
+            if projected(case) != labels_of(case):
+                entry = LedgerEntry(
                     at=self.now,
                     kind="projection",
                     actor=TICK_ACTOR,
-                    detail={"state": case.state},
+                    detail=recorded(case),
                 )
-                self.ledger.append(case.id, projected)
+                self.ledger.append(case.id, entry)
