@@ -59,23 +59,32 @@ WINDOWS_LOCAL_PATH_RE = re.compile(r"\b[A-Za-z]:\\Users\\[^\s\"'<>]+")
 OWNER_REPO_LITERAL_RE = re.compile(
     r"""["']([a-zA-Z0-9][a-zA-Z0-9-]{1,38})/([a-zA-Z0-9._-]+)["']"""
 )
-#: The same shape after `--repo` (a `gh`/README invocation), in a repository URL
-#: on GitHub (`github.com/`, `www.github.com/`, `api.github.com/repos/`) or on
-#: another code host. A GitHub subdomain that holds no repositories is not a
-#: context: `docs.github.com/en/code-security/...` is a documentation page.
+#: The same shape after `--repo` (a `gh`/README invocation), or where a URL names
+#: an owner on a code host, in any letter case: a repository, a gist, a raw file,
+#: or an API path for a repository, user or organisation. A GitHub subdomain that
+#: holds no repositories is not a context: `docs.github.com/en/code-security/...`
+#: is a documentation page.
 OWNER_REPO_CONTEXT_RE = re.compile(
     r"(?:--repo[= ]"
-    r"|(?<![\w.])(?:www\.)?github\.com/"
-    r"|(?<![\w.])api\.github\.com/repos/"
+    r"|(?<![\w.])(?:www\.|gist\.)?github\.com/"
+    r"|(?<![\w.])(?:api|uploads)\.github\.com/(?:repos|users|orgs)/"
+    r"|(?<![\w.])raw\.githubusercontent\.com/"
     r"|(?<![\w.])(?:www\.)?(?:gitlab\.com|bitbucket\.org|codeberg\.org)/)"
-    r"([a-zA-Z0-9][a-zA-Z0-9-]{1,38})/([a-zA-Z0-9._-]+)"
+    r"([a-zA-Z0-9][a-zA-Z0-9-]{1,38})/([a-zA-Z0-9._-]+)",
+    re.IGNORECASE,
 )
-#: A URL, up to the whitespace, bracket or quote that ends it in Markdown or prose.
-#: The bare check below reads text with its URLs removed: a documentation link's
-#: path (a locale such as `en-us` before a product segment) is made of hyphenated
-#: words, not repository slugs, and a URL that does name a repository is the
-#: context check's to catch.
-URL_RE = re.compile(r"https?://[^\s)\]>\"'`]+")
+#: A URL, up to the whitespace, bracket, quote, table pipe or list punctuation
+#: that ends it in Markdown or prose.
+URL_RE = re.compile(r"https?://[^\s)\]<>\"'`|*{},;]+")
+#: A URL that points at code hosting, by its host or its path: a repository, a
+#: raw file, or a badge or notebook link such as `img.shields.io/github/...`.
+CODE_HOSTING_URL_RE = re.compile(
+    r"github\.com|githubusercontent\.com|gitlab\.com|bitbucket\.org|codeberg\.org"
+    r"|/gh/|/github/",
+    re.IGNORECASE,
+)
+#: Code-host subdomains that serve documentation, never repositories.
+DOCUMENTATION_HOSTS = frozenset({"docs.github.com", "support.github.com", "docs.gitlab.com"})
 #: Bare (unquoted) prose mentions — e.g. a repo named in a markdown sentence.
 #: Requiring a hyphen or digit in the owner segment is what keeps this from
 #: matching this package's own plain-lowercase-word path fragments
@@ -123,13 +132,31 @@ def _repo_text_files() -> list[Path]:
     return files
 
 
+def _without_documentation_urls(text: str) -> str:
+    """``text`` without the URLs that cannot name a repository owner.
+
+    A documentation link's path (a locale such as `en-us` before a product
+    segment) is made of hyphenated words, which the bare check would read as
+    owner/repo slugs. A URL that points at code hosting stays, unless its host
+    only serves documentation, since its path can name an owner.
+    """
+
+    def keep_or_drop(match: re.Match) -> str:
+        url = match.group(0)
+        host = url.split("/")[2].lower()
+        if host in DOCUMENTATION_HOSTS or not CODE_HOSTING_URL_RE.search(url):
+            return " "
+        return url
+
+    return URL_RE.sub(keep_or_drop, text)
+
+
 def _owner_repo_offenders(text: str) -> list[str]:
     offenders = []
-    without_urls = URL_RE.sub(" ", text)
     checks = (
         (OWNER_REPO_LITERAL_RE, text),
         (OWNER_REPO_CONTEXT_RE, text),
-        (OWNER_REPO_BARE_RE, without_urls),
+        (OWNER_REPO_BARE_RE, _without_documentation_urls(text)),
     )
     for regex, scanned in checks:
         for owner, repo in regex.findall(scanned):
@@ -198,24 +225,44 @@ def test_login_offenders_catches_a_standalone_notify_login():
 def test_owner_repo_offenders_reads_links_as_links():
     """A research document cites documentation whose URL paths are hyphenated
     words (a locale such as `en-us` before a product segment), which the bare
-    prose check would read as owner/repo slugs. URLs are left to the context check, which still catches
-    every URL that names a repository, on GitHub or another code host, and the
-    bare check still catches a repository named in prose.
+    prose check would read as owner/repo slugs. The bare check skips those
+    URLs, and still reads every URL that points at code hosting. Every URL
+    that names an owner on a code host is caught, in any letter case, and so
+    is a repository named in prose, a table cell or a list right after a
+    documentation link.
 
     Built by concatenation, so this file does not trip the guard it tests.
     """
     owner = "someone" + "-real"
+    login = "some" + "one"
     docs = (
         "[labels](https://learn.microsoft.com/en" + "-us/purview/sensitivity-labels)"
         " and https://docs.github.com/en/code" + "-security/secret-scanning"
+        " and https://docs.gitlab.com/ee/user/project" + "-settings/access"
     )
     assert _owner_repo_offenders(docs) == []
-    for url in (
-        "https://github.com/" + owner + "/notes",
-        "https://www.github.com/" + owner + "/notes",
-        "GET https://api.github.com/repos/" + owner + "/notes",
-        "https://gitlab.com/" + owner + "/notes",
+    # A login without a hyphen escapes the bare check, so only the context
+    # check can catch these.
+    for text in (
+        "https://github.com/" + login + "/notes",
+        "https://www.GitHub.com/" + login + "/notes",
+        "https://gist.github.com/" + login + "/abc123",
+        "GET https://api.github.com/repos/" + login + "/notes",
+        "GET https://api.github.com/users/" + login + "/repos",
+        "https://raw.githubusercontent.com/" + login + "/notes/main/README.md",
+        "https://gitlab.com/" + login + "/notes",
+        "https://bitbucket.org/" + login + "/notes",
+        "https://codeberg.org/" + login + "/notes",
+        "--repo " + login + "/notes",
     ):
-        assert _owner_repo_offenders(url) == [owner + "/notes"], url
-    assert _owner_repo_offenders("see " + owner + "/notes for it") == [owner + "/notes"]
+        assert _owner_repo_offenders(text), text
+    # These name no code host, so only the bare check can catch them.
+    for text in (
+        "https://img.shields.io/github/stars/" + owner + "/notes",
+        "https://docs.example.com/x " + owner + "/notes",
+        "|https://docs.example.com/x|" + owner + "/notes|",
+        "https://docs.example.com/x," + owner + "/notes",
+        "see " + owner + "/notes for it",
+    ):
+        assert owner + "/notes" in _owner_repo_offenders(text), text
     assert _owner_repo_offenders("https://github.com/example/app") == []
