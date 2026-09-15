@@ -179,9 +179,9 @@ liaise message list --state held
 liaise message show example-app-m1f3a9c2e
 ```
 
-- `--ref` must be bound by a subject: an issue of a repository a subject binds, or the repository itself with `--title` to open an issue. A reference no subject binds is refused. Bind it in a subject file first; there is no flag to choose a subject.
-- It passes the same gate as a case's messages. In `draft` reply mode, and whenever the leak scan, deslop, the mention or a hold stops it, the message is **held**: recorded, listed by `liaise status`, and the owner is told a message waits. The command exits 2. Tell the owner, and leave it held.
-- Exit 0 means it was sent. Exit 1 with `send failed` means the channel refused it; it is held too.
+- `--ref` must be a GitHub issue a subject binds, or a repository a subject binds together with `--title`, which opens an issue. A reference no subject binds, or on another channel, is refused. Bind it in a subject file first; there is no flag to choose a subject.
+- **In 0.1 every message is held** for the owner, whatever the reply mode, because you chose where it goes. Exit 2 with `is held as <id>` is the normal result. The message is recorded and listed by `liaise status`, and the owner is told a message waits. Tell the owner the id, and leave it held. The gate judges it again when the owner releases it: the leak scan (title included), deslop and the mention.
+- Exit 1 means it was refused before anything was recorded: a bad reference, or a title on an issue. Fix the command.
 - **Never release a held message yourself.** `liaise message send-draft` asks the owner at their own terminal and refuses without one, just as `case send-draft` does. Declining is `liaise message reject-draft <id> --reason ...`, also the owner's call.
 - A message opens no case and sets no label. Use `--dry-run` to see what the gate would say without recording or notifying anything.
 

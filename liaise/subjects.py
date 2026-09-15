@@ -276,9 +276,10 @@ def subject_for_ref(subjects: Mapping[str, Subject], ref: str) -> Subject:
             if polled is None:
                 continue
             polled_key = ref_key(polled)
+            github = polled_key.partition(":")[0] in CASE_INSENSITIVE_REF_CHANNELS
             if key == polled_key:
                 score = 2
-            elif key.startswith(polled_key + _ISSUE_SEPARATOR):
+            elif github and key.startswith(polled_key + _ISSUE_SEPARATOR):
                 score = 1
             else:
                 continue

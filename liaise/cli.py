@@ -104,6 +104,9 @@ TICK_RUNNING = (
 )
 #: The ``--text-file`` that reads a message's text from standard input.
 STDIN_FILE_NAME = "-"
+#: How ``--edit`` sets a message's title apart from its text: a first line, then a rule.
+TITLE_LINE_PREFIX = "Title: "
+TITLE_RULE = "---"
 #: The environment variables that name the operator's editor, the first one set winning.
 EDITOR_ENV_VARS = ("VISUAL", "EDITOR")
 #: The editor ``liaise case send-draft --edit`` opens when no variable names one.
@@ -768,6 +771,7 @@ def case_send_draft(
             subjects=load_subjects(config_root),
             case_id=case_id,
             text=text,
+            by=cases.OPERATOR_ACTOR,
             now=now,
             registry=registry,
         ),
@@ -854,6 +858,29 @@ def case_reject_draft(
 # ---- messages outside a case ----
 
 
+def _edit_title_and_text(
+    draft: Mapping[str, Any], editor: Callable[[str], str]
+) -> tuple[Optional[str], str]:
+    """The title and text the operator leaves in ``editor``; a draft with no title edits its text.
+
+    A titled draft opens as ``Title: <title>``, a ``---`` line, then its text, so a title
+    the gate diverted can be fixed as its text can. Raises ``ValueError``, sending nothing,
+    when the first two lines are not left in that shape.
+    """
+    text = draft.get("text") or ""
+    if not draft.get("title"):
+        return None, editor(text)
+    edited = editor(f"{TITLE_LINE_PREFIX}{draft['title']}\n{TITLE_RULE}\n{text}")
+    head, _, rest = edited.partition("\n")
+    rule, _, body = rest.partition("\n")
+    if not head.startswith(TITLE_LINE_PREFIX) or rule.strip() != TITLE_RULE:
+        raise ValueError(
+            f"the edit must keep {TITLE_LINE_PREFIX!r} and the title on its first line, and "
+            f"{TITLE_RULE} on its second, so nothing was sent"
+        )
+    return head[len(TITLE_LINE_PREFIX) :], body
+
+
 def _message_text(text: str, text_file: str) -> str:
     """The message's text: ``--text``, or the file ``--text-file`` names (``-``: standard input).
 
@@ -899,12 +926,13 @@ def message_send(
     ``--text`` or ``--text-file`` (``-`` reads standard input). ``--purpose`` is ``ask``,
     the default, ``reply`` or ``propose``.
 
-    The message is sent, or held when the gate diverts it, its channel refuses it, or a
-    hold keeps the subject's, the person's or the repository's messages waiting. A held
-    message is recorded with its reason, and the operator is told a message waits, never
-    what it says. The command then exits 2, or 1 for a refusal, and the operator sends the
-    message with ``liaise message send-draft``. Nothing opens a case or sets a label.
-    ``--dry-run`` judges and plans, and records and tells nothing.
+    In 0.1 the message is held for the operator: its sender chose where it goes, and only
+    the operator's release lets such a message out. A hold on the subject, the person or
+    the repository keeps it too. It is recorded with its reason, the operator is told a
+    message waits (never what it says), and the command exits 2, or 1 when its channel
+    refused it. The operator sends it with ``liaise message send-draft``, and the gate
+    judges it again then. Nothing opens a case or sets a label. ``--dry-run`` judges and
+    plans, and records and tells nothing.
     """
     if not ref:
         raise ValueError(
@@ -1011,11 +1039,11 @@ def message_send_draft(
     config_root = _root(root)
     global_config = load_global_config(config_root)
     ledger_store = _ledger_store(global_config, store, create=not dry_run)
-    text, opened = None, None
+    title, text, opened = None, None, None
     if edit:  # before the lock: an editor can stay open far longer than a tick waits
         held = messages.held_message(Ledger(ledger_store), message_id)
         opened = messages.message_draft(held)
-        text = (editor or edit_in_editor)(opened.get("text") or "")
+        title, text = _edit_title_and_text(opened, editor or edit_in_editor)
     names = _Held(
         label=f"message {message_id}",
         stays="held",
@@ -1027,7 +1055,9 @@ def message_send_draft(
             messages.send_held_message,
             subjects=load_subjects(config_root),
             message_id=message_id,
+            by=messages.OPERATOR_ACTOR,
             text=text,
+            title=title,
             now=now,
             registry=registry,
         ),

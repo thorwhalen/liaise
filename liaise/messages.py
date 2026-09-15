@@ -6,12 +6,15 @@ message send`` opens none (liaise #28). It is an :class:`~liaise.model.OutboundM
 the ledger, judged by the same gate as every message liaise sends, with no case on the
 gate's context.
 
-- :func:`send_message` takes the subject from the bindings that take the reference in
+- :func:`send_message` takes a GitHub issue, or a repository and a title to open an issue,
+  and the subject from the bindings that take it in
   (:func:`liaise.subjects.subject_for_ref`), so the caller cannot pick a laxer policy. The
-  gate then applies that subject's reply mode, leak terms, public channels and people. It
-  sends the message, or holds it for the operator and tells them, without its text, that it
-  waits. A hold on the subject, the recipient, the repository or the checkout keeps it too,
-  before the gate judges it. Every message is recorded, sent or held.
+  gate judges it with that subject's policy and no case on its context, which in 0.1 means
+  it is held for the operator: its sender chose where it goes, and only the operator's
+  release lets such a message out (see :func:`liaise.gate.reply_mode`). The operator is
+  told, without its text, when a subject's held queue stops being empty. A hold on the
+  subject, the recipient, the repository or the checkout keeps it before the gate judges
+  it. Every message is recorded.
 - :func:`send_held_message` is how the operator sends a held one, through
   :func:`liaise.release.release_draft`, as a case's draft is sent.
 - :func:`reject_message` records that the operator declined one, and why.
@@ -29,7 +32,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from typing import Any, Optional
 
-from correspond.model import ConversationRef
+from correspond.errors import ERROR_KINDS
 
 from liaise.cases import DFLT_SHOW_ENTRIES, NONE_SHOWN, TEXT_INDENT, entry_line
 from liaise.gate import DFLT_OUTBOUND_FILTERS, GateContext, Outbound, OutboundFilter
@@ -48,12 +51,13 @@ from liaise.notify import NOTICE_MESSAGE_HELD, notice_body, notice_title, notify
 from liaise.outcomes import DFLT_OPERATOR_PRIORITY, HELD_REASON_PREFIX, make_draft
 from liaise.release import (
     DRAFT_ENTRY_KIND,
+    GITHUB_CHANNEL,
     DraftSentNotRecorded,
     SendAttempt,
-    error_text,
     gate_and_send,
     github_repo,
     release_draft,
+    sendable_ref,
 )
 from liaise.subjects import Subject, subject_for_ref
 
@@ -169,40 +173,55 @@ def send_message(
 ) -> MessageSent:
     """Send ``text`` to ``recipient`` (a person id) at ``ref`` outside any case, or hold it.
 
-    ``ref`` is a conversation a subject binds: an issue (``github:example/app#12``), or a
-    repository with a ``title`` to open an issue there. Its subject is the one
+    ``ref`` is a GitHub issue a subject binds (``github:example/app#12``), or a repository
+    it binds with a ``title``, to open an issue there; it is kept as
+    :func:`~liaise.release.sendable_ref` gives it. Its subject is the one
     :func:`~liaise.subjects.subject_for_ref` names. The message is judged by the gate
     (``outbound_filters``) with no case on the context, then sent through correspond on
     ``registry``, or held:
 
-    - **Sent:** recorded as sent, with the text as it went out and its url.
-    - **Held**, because the gate diverted it, its channel refused it, or a hold on the
-      subject, the recipient, the repository or the checkout keeps effects waiting: it
-      is recorded as held with the reason, holding the text as given. The operator is told
-      through ``notify_fn`` (:func:`liaise.notify.notify` when None) that a message on the
-      subject waits, and the notification carries neither the text nor the recipient.
+    - **Held**, because the gate diverted it (in 0.1 it always does, for the operator to
+      release), its channel refused it, or a hold on the subject, the recipient, the
+      repository or the checkout keeps effects waiting. It is recorded as held, with the
+      reason and the text as given. When no other message of the subject was held yet,
+      the operator is told through ``notify_fn`` (:func:`liaise.notify.notify` when None)
+      that a message on the subject waits. The notification carries neither the text nor
+      the recipient.
+    - **Sent**, when a gate without that rule passes it: recorded as sent, with the text
+      as it went out and its url.
 
     Each record's one entry is by ``by``, at ``now``. A dry run judges and plans the same,
     and records and tells nothing.
 
-    Raises ``ValueError``, sending and recording nothing, for a purpose outside
-    :data:`MESSAGE_PURPOSES`, a blank recipient or text, a ``ref`` that is not a reference,
-    and one no subject binds. Raises :class:`~liaise.release.DraftSentNotRecorded` when
-    the message went out and the ledger failed to record it.
+    Raises ``ValueError``, sending and recording nothing, for any of these:
+
+    - a purpose outside :data:`MESSAGE_PURPOSES`, or a blank recipient or text;
+    - a ``ref`` that is not a GitHub issue or repository, or that no subject binds;
+    - a title on an issue, or a repository with no title.
+
+    Raises :class:`~liaise.release.DraftSentNotRecorded` when the message went out and
+    the ledger failed to record it.
     """
     require_one_of(purpose, MESSAGE_PURPOSES, what="message purpose")
     if not recipient.strip():
         raise ValueError("a message needs a recipient: the id of the person it is for")
     if not text.strip():
         raise ValueError("a message needs text to send")
+    ref, title = sendable_ref(ref), (title or "").strip() or None
+    opens_an_issue = github_repo(ref) is not None and "#" not in ref
+    if title and not opens_an_issue:
+        raise ValueError(
+            f"a title opens an issue, and {ref} is one already: leave the title out, or "
+            f"give its repository"
+        )
+    if opens_an_issue and not title:
+        raise ValueError(
+            f"{ref} is a repository: a message there opens an issue, which needs a title"
+        )
     subject = subject_for_ref(subjects, ref)
-    try:
-        channel = ConversationRef.parse(ref).channel
-    except Exception as error:  # correspond's InvalidRef, or anything a bad ref raises
-        raise ValueError(f"{ref!r} is not a conversation: {error_text(error)}") from error
+    channel = GITHUB_CHANNEL
     at = _utc_now(now)
     filters = tuple(outbound_filters)
-    title = title or None
     scopes = scopes_for(
         subject=subject.slug,
         person=recipient,
@@ -244,7 +263,8 @@ def send_message(
             detail.update(decision="divert", reason=reason)
         else:
             reason = f"send failed: {attempt.failure}"
-            cause = attempt.failure_kind or SEND_REFUSED_CAUSE
+            known = attempt.failure_kind in ERROR_KINDS  # never an adapter's own words
+            cause = attempt.failure_kind if known else SEND_REFUSED_CAUSE
             detail.update(decision="send", error=attempt.failure)
     tried = attempt.outbound if attempt is not None else None
     entry = LedgerEntry(
@@ -271,13 +291,17 @@ def send_message(
     )
     if not dry_run:
         try:
+            waiting = next(ledger.messages(subject=subject.slug, state=MESSAGE_HELD), None)
+        except (ValueError, TypeError, KeyError):  # an unreadable record: tell the operator
+            waiting = None
+        try:
             ledger.save_message(message)
         except Exception as error:
             if state != MESSAGE_SENT:
                 raise
             label = f"the message to {recipient} on {ref}"
             raise DraftSentNotRecorded.after(label, attempt, error, reject=None) from error
-        if state == MESSAGE_HELD:
+        if state == MESSAGE_HELD and waiting is None:  # once, when the queue stops being empty
             notice = dict(subject=subject.slug, cause=cause)
             (notify_fn or notify)(
                 notice_title(NOTICE_MESSAGE_HELD, **notice),
@@ -292,9 +316,10 @@ def send_held_message(
     subjects: Mapping[str, Subject],
     message_id: str,
     *,
+    by: str,
     text: Optional[str] = None,
+    title: Optional[str] = None,
     seen: Optional[Mapping[str, Any]] = None,
-    by: str = OPERATOR_ACTOR,
     now: Optional[datetime] = None,
     registry: Optional[Mapping[str, Any]] = None,
     send: bool = True,
@@ -303,9 +328,11 @@ def send_held_message(
 ) -> MessageRelease:
     """Send the held message ``message_id`` as ``by``, through the gate again.
 
-    It goes out through :func:`liaise.release.release_draft` with the operator's approval
-    on the context, as a case's draft does (:func:`liaise.cases.send_draft`), with ``text``
-    when the operator edited it. Sent, the message is recorded as sent. Diverted or refused,
+    It goes out through :func:`liaise.release.release_draft` with ``by``'s approval on the
+    context, as a case's draft does (:func:`liaise.cases.send_draft`), with ``text`` and
+    ``title`` when the operator edited them. ``by`` has no default: this function asks no
+    one, and ``liaise message send-draft`` passes the operator only after asking at a
+    terminal. Sent, the message is recorded as sent. Diverted or refused,
     it stays held with the text that was judged and the new reason. Either way an entry
     by ``by`` records the attempt. ``seen`` is the message as the operator saw it
     (:func:`message_draft`): one that changed since is not sent. ``send=False`` and
@@ -338,6 +365,7 @@ def send_held_message(
         by=by,
         now=_utc_now(now),
         text=text,
+        title=title,
         registry=registry,
         send=send,
         dry_run=dry_run,
@@ -365,7 +393,11 @@ def send_held_message(
     else:
         kept = outcome.kept
         after = replace(
-            message, text=kept["text"], reason=kept["reason"], notes=tuple(kept["notes"])
+            message,
+            text=kept["text"],
+            title=kept.get("title"),
+            reason=kept["reason"],
+            notes=tuple(kept["notes"]),
         )
     after = after.with_entry(outcome.entry)
     if not dry_run:

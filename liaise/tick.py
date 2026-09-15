@@ -853,12 +853,19 @@ def status_lines(
             f"  {case_id} {draft.get('outcome')} to {to}: {draft.get('reason')}"
         )
 
-    held = sorted(ledger.messages(state=MESSAGE_HELD), key=lambda m: (m.updated_at, m.id))
-    lines.append(f"messages outside a case held for the operator: {len(held)}")
-    for message in held:
-        lines.append(
-            f"  {message.id} {message.purpose} to {message.ref}: {message.reason}"
+    heading = "messages outside a case held for the operator"
+    try:
+        held = sorted(
+            ledger.messages(state=MESSAGE_HELD), key=lambda m: (m.updated_at, m.id)
         )
+    except (ValueError, TypeError, KeyError) as error:  # a record this liaise cannot read
+        lines.append(f"{heading}: unreadable ({_error_text(error)})")
+    else:
+        lines.append(f"{heading}: {len(held)}")
+        for message in held:
+            lines.append(
+                f"  {message.id} {message.purpose} to {message.ref}: {message.reason}"
+            )
 
     notes = sorted(
         (

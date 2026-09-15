@@ -113,7 +113,11 @@ def parse_scope(scope: Any) -> tuple[str, Optional[str]]:
 
 
 def canonical_scope(scope: str) -> str:
-    """``scope`` as holds are stored and matched: validated, and a checkout path resolved.
+    """``scope`` as holds are stored and matched: validated, a checkout path resolved, and a
+    repository lower-cased, since GitHub's names ignore case as its references do.
+
+    >>> canonical_scope("repo:Example/App")
+    'repo:example/app'
 
     Raises ``ValueError`` as :func:`parse_scope` does.
     """
@@ -122,6 +126,8 @@ def canonical_scope(scope: str) -> str:
         return kind
     if kind == "checkout":
         value = str(resolve_checkout(value))
+    elif kind == "repo":
+        value = value.lower()
     return f"{kind}:{value}"
 
 

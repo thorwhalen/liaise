@@ -365,7 +365,8 @@ def test_the_gate_sees_the_operators_approval_and_the_case(world):
         return Pass(outbound)
 
     release = cases.send_draft(
-        world.ledger, load_subjects(world.root), CASE, now=LATER, registry=world.registry, outbound_filters=(spy,)
+        world.ledger, load_subjects(world.root), CASE, by="operator", now=LATER, registry=world.registry,
+        outbound_filters=(spy,),
     )
 
     assert seen == [("ask", TEXT, CASE, Approval(by="operator", at=LATER))]
@@ -378,11 +379,13 @@ def test_judging_without_sending_records_a_divert_and_leaves_a_passing_draft_alo
     world.hold_drafts(_draft())
     before = copy.deepcopy(world.store)
 
-    judged = cases.send_draft(world.ledger, subjects, CASE, now=LATER, registry=world.registry, send=False)
+    judged = cases.send_draft(world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False)
 
     assert judged.attempt.sent and world.store == before and world.posted() == []
     world.hold_drafts(_draft(LEAK))
-    judged = cases.send_draft(world.ledger, subjects, CASE, now=LATER, registry=world.registry, send=False)
+    judged = cases.send_draft(world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False)
+    with pytest.raises(TypeError):
+        cases.send_draft(world.ledger, subjects, CASE, now=LATER)  # who releases it must be said
     assert judged.attempt.decision.diverted == "leak scan: local path"
     assert world.case().drafts[0]["reason"] == "leak scan: local path" and world.posted() == []
 

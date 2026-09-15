@@ -322,7 +322,7 @@ def send_draft(
     index: Optional[int] = None,
     text: Optional[str] = None,
     seen: Optional[Mapping[str, Any]] = None,
-    by: str = OPERATOR_ACTOR,
+    by: str,
     now: Optional[datetime] = None,
     registry: Optional[Mapping[str, Any]] = None,
     send: bool = True,
@@ -337,9 +337,10 @@ def send_draft(
     reply mode lets it through, and every other filter judges it as it would a message
     the tick sends, the mention included.
 
-    It asks no one. Its caller shows the operator the message and the gate's verdict
-    first, from a dry run, and passes the draft they saw as ``seen``, as
-    ``liaise case send-draft`` does.
+    It asks no one, and ``by`` has no default: the caller says who releases the draft. Its
+    caller shows the operator the message and the gate's verdict first, from a dry run, and
+    passes the draft they saw as ``seen``, as ``liaise case send-draft`` does after asking
+    at a terminal.
 
     - **Sent:** the draft leaves the case. A ``gate`` entry by ``by`` records the text as
       it went out, its url, the approval and why the draft was held. Once no draft is

@@ -5,8 +5,8 @@ each :class:`~liaise.outcomes.Send` among those is an :class:`Outbound` that the
 hands to :func:`run_gate` before anything reaches a channel. The gate runs
 :data:`DFLT_OUTBOUND_FILTERS`, in this order:
 
-1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode, unless
-   the operator released it.
+1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode, nor any
+   message outside a case, unless the operator released it.
 2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, a
    ``.env`` path, an email address, a private key, a token (wrapped across lines or not)
    or one of ``policy.leak_terms``. It never redacts.
@@ -49,6 +49,11 @@ from liaise.subjects import Subject
 
 #: The reply mode in which liaise sends nothing without the operator.
 DRAFT_REPLY_MODE = "draft"
+#: Why :func:`reply_mode` holds a message outside a case, and how its release note names it.
+OUTSIDE_A_CASE = "a message outside a case"
+CASELESS_REASON = f"{OUTSIDE_A_CASE} waits for the operator"
+#: Why :func:`reply_mode` holds a message in draft reply mode, and its release note's name.
+DRAFT_REPLY_REASON = "draft reply mode"
 #: The channel whose messages must @mention their recipient to reach them.
 MENTION_CHANNEL = "github"
 
@@ -159,21 +164,29 @@ def _acquaint_failure(error: Exception) -> str:
 
 
 def reply_mode(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
-    """Divert when the recipient's reply mode is ``draft``, unless the operator released it.
+    """Divert what waits for the operator: a message in ``draft`` reply mode, or outside a case.
 
     The mode is the person's ``policy.reply_modes`` override, else the subject's
-    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`). In
-    ``draft`` mode, a message with the operator's :class:`~liaise.model.Approval` on
-    ``ctx.approval`` passes, with a note saying who released it and when. The approval
-    settles this filter alone; the filters after it judge the message as they would any
-    other.
+    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`). A message
+    outside any case (``ctx.case`` None) waits whatever the mode. Its sender chose where it
+    goes and to whom, so a sender who picks a person in ``direct`` mode must not reach an
+    audience that way. Until the gate can tell who reads a conversation and what the sender
+    had read (liaise discussion 32, §5.3 and §6), only the operator releases it.
+
+    A message with the operator's :class:`~liaise.model.Approval` on ``ctx.approval``
+    passes, with a note saying who released it and when. The approval settles this filter
+    alone; the filters after it judge the message as they would any other.
     """
-    if ctx.subject.reply_mode_for(outbound.recipient) != DRAFT_REPLY_MODE:
+    if ctx.case is None:
+        name, reason = OUTSIDE_A_CASE, CASELESS_REASON
+    elif ctx.subject.reply_mode_for(outbound.recipient) == DRAFT_REPLY_MODE:
+        name, reason = DRAFT_REPLY_REASON, DRAFT_REPLY_REASON
+    else:
         return Pass(outbound)
     approval = ctx.approval
     if not isinstance(approval, Approval):
-        return Divert("draft reply mode")
-    note = f"draft reply mode: released by {approval.by} at {approval.at.isoformat()}"
+        return Divert(reason)
+    note = f"{name}: released by {approval.by} at {approval.at.isoformat()}"
     return Pass(outbound, notes=(note,))
 
 

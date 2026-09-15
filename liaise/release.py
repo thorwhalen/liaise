@@ -65,16 +65,37 @@ def error_text(error: BaseException) -> str:
 
 
 def github_repo(ref: Optional[str]) -> Optional[str]:
-    """``owner/repo`` of the repository a GitHub reference names, itself or one of its issues.
+    """``owner/repo``, lower-cased, of the repository a GitHub reference names: itself or one of its issues.
 
-    >>> github_repo("github:example/app#12"), github_repo("github:example/app")
+    >>> github_repo("github:Example/App#12"), github_repo("github:example/app")
     ('example/app', 'example/app')
     >>> github_repo("webinbox:example-site") is None
     True
     """
-    channel, _, native_id = (ref or "").partition(":")
-    match = REF_RE.match(native_id) if channel == GITHUB_CHANNEL else None
-    return f"{match['owner']}/{match['repo']}" if match else None
+    channel, _, native_id = (ref or "").strip().partition(":")
+    match = REF_RE.match(native_id) if channel.lower() == GITHUB_CHANNEL else None
+    return f"{match['owner']}/{match['repo']}".lower() if match else None
+
+
+def sendable_ref(ref: str) -> str:
+    """``ref`` as a GitHub issue or repository reference, stripped and lower-cased.
+
+    >>> sendable_ref(" github:Example/App#12 ")
+    'github:example/app#12'
+
+    Raises ``ValueError`` for anything else: another channel, a malformed reference, or an
+    issue number that is not a positive whole number.
+    """
+    channel, _, native_id = ref.strip().partition(":")
+    match = REF_RE.fullmatch(native_id) if channel.lower() == GITHUB_CHANNEL else None
+    number = match["number"] if match else None
+    if match is None or (number is not None and int(number) < 1):
+        raise ValueError(
+            f"{ref!r} is not a GitHub issue (github:owner/repo#N) or repository "
+            f"(github:owner/repo), the conversations a message outside a case goes to"
+        )
+    repo = f"{GITHUB_CHANNEL}:{match['owner']}/{match['repo']}".lower()
+    return f"{repo}#{int(number)}" if number is not None else repo
 
 
 @dataclass(frozen=True)
@@ -207,6 +228,7 @@ def release_draft(
     now: datetime,
     case: Optional[Case] = None,
     text: Optional[str] = None,
+    title: Optional[str] = None,
     detail: Mapping[str, Any] = MappingProxyType({}),
     registry: Optional[Mapping[str, Any]] = None,
     send: bool = True,
@@ -215,8 +237,8 @@ def release_draft(
 ) -> DraftOutcome:
     """Release ``draft`` (a :func:`liaise.outcomes.make_draft` item) as ``by``, through the gate.
 
-    The message is the draft's text, or ``text`` when the operator edited it, with the
-    draft's title. It goes to the draft's ``ref``, for its ``recipient``, carrying out its
+    The message is the draft's text and title, or ``text`` and ``title`` when the operator
+    edited them. It goes to the draft's ``ref``, for its ``recipient``, carrying out its
     ``outcome``, on the case ``case`` or outside any when that is None. It passes through
     :func:`gate_and_send` with an :class:`~liaise.model.Approval` by ``by`` at ``now`` on
     the context: draft reply mode lets it through, and every other filter judges it as it
@@ -276,13 +298,14 @@ def release_draft(
 
     approval = Approval(by=by, at=now)
     filters = tuple(outbound_filters)
+    headline = draft.get("title") if title is None else (title.strip() or None)
     outbound = Outbound(
         ref=ref,
         channel=channel,
         recipient=recipient,
         purpose=purpose,
         text=body,
-        title=draft.get("title"),
+        title=headline,
         case_id=case.id if case is not None else None,
     )
     context = GateContext(subject=subject, case=case, now=now, approval=approval)
@@ -294,7 +317,7 @@ def release_draft(
         outbound_filters=filters,
     )
     decision = attempt.decision
-    edited = text is not None and text != draft.get("text")
+    edited = body != (draft.get("text") or "") or headline != draft.get("title")
     if attempt.sent and not send and not dry_run:
         return DraftOutcome(attempt, len(filters), edited)  # a plan: nothing to record
     recorded = {
@@ -338,6 +361,6 @@ def release_draft(
         text=body,  # the gate adds the mention again, for the handle of that day
         reason=reason,
         notes=decision.notes,
-        title=draft.get("title"),
+        title=headline,
     )
     return DraftOutcome(attempt, len(filters), edited, entry=entry, kept=kept)
