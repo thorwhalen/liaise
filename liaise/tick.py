@@ -109,6 +109,7 @@ from liaise.intake import (
 from liaise.ledger import Ledger
 from liaise.model import (
     CASE_STATES,
+    MESSAGE_HELD,
     Case,
     Hold,
     IssueCheck,
@@ -135,6 +136,7 @@ from liaise.notify import (
 )
 from liaise.outcomes import (
     DFLT_OPERATOR_PRIORITY,
+    HELD_REASON_PREFIX,
     OUTCOME_SCHEMA,
     Action,
     Defer,
@@ -259,9 +261,6 @@ WorkspaceFactory = Callable[..., Optional[SharedCheckout]]
 #: triage seam (#19). The tick starts the cases group by group, each group in its order,
 #: and a case left out is not started this tick. None keeps the tick's own order.
 Triage = Callable[[Sequence[Case]], Iterable[Iterable[Case]]]
-#: How a draft kept because a hold kept its effects waiting begins its reason, before the
-#: hold's scope: ``held: effect:deploy``.
-HELD_REASON_PREFIX = "held: "
 
 
 @dataclass(frozen=True)
@@ -853,6 +852,20 @@ def status_lines(
         lines.append(
             f"  {case_id} {draft.get('outcome')} to {to}: {draft.get('reason')}"
         )
+
+    heading = "messages outside a case held for the operator"
+    try:
+        held = sorted(
+            ledger.messages(state=MESSAGE_HELD), key=lambda m: (m.updated_at, m.id)
+        )
+    except (ValueError, TypeError, KeyError) as error:  # a record this liaise cannot read
+        lines.append(f"{heading}: unreadable ({_error_text(error)})")
+    else:
+        lines.append(f"{heading}: {len(held)}")
+        for message in held:
+            lines.append(
+                f"  {message.id} {message.purpose} to {message.ref}: {message.reason}"
+            )
 
     notes = sorted(
         (

@@ -64,6 +64,9 @@ DFLT_SENDING_CHANNELS = ("github",)
 DFLT_ADDRESS_CHANNELS = ("email",)
 #: The ntfy priority of an operator notification that needs the operator to act.
 DFLT_OPERATOR_PRIORITY = "high"
+#: How the reason of a draft kept because a hold kept its effects waiting begins, before
+#: the hold's scope: ``held: effect:deploy``.
+HELD_REASON_PREFIX = "held: "
 
 #: The field each outcome kind cannot do without. :func:`parse_outcomes` enforces it
 #: and :data:`OUTCOME_SCHEMA` states it.
@@ -211,6 +214,7 @@ def make_draft(
     text: str,
     reason: str,
     notes: Iterable[str] = (),
+    title: Optional[str] = None,
 ) -> dict[str, Any]:
     """One item of a case's ``drafts``: a message held for the operator.
 
@@ -223,7 +227,8 @@ def make_draft(
       can reach the recipient;
     - ``text``: the message, as it would be sent;
     - ``reason``: why it was held (an escalation's reason, a gate divert, no channel);
-    - ``notes``: the gate's notes on it, in order.
+    - ``notes``: the gate's notes on it, in order;
+    - ``title``: the title of the issue it would open, present only when it opens one.
 
     >>> from datetime import datetime, timezone
     >>> make_draft(at=datetime(2026, 9, 11, tzinfo=timezone.utc), outcome="reply",
@@ -233,7 +238,7 @@ def make_draft(
      'ref': 'github:example/app#12', 'text': 'Fixed.', 'reason': 'draft reply mode',
      'notes': []}
     """
-    return {
+    draft = {
         "at": at.isoformat(),
         "outcome": outcome,
         "recipient": recipient,
@@ -242,6 +247,9 @@ def make_draft(
         "reason": reason,
         "notes": list(notes),
     }
+    if title is not None:
+        draft["title"] = title
+    return draft
 
 
 def parse_outcomes(structured_output: Any) -> tuple[Outcome, ...]:

@@ -242,6 +242,64 @@ def ref_key(ref: str) -> str:
     return ref.casefold()
 
 
+#: What joins an issue's number to its repository in a GitHub reference.
+_ISSUE_SEPARATOR = "#"
+
+
+def subject_for_ref(subjects: Mapping[str, Subject], ref: str) -> Subject:
+    """The subject whose bindings take in ``ref``, the conversation a message outside a case goes to.
+
+    A binding takes in the conversation it polls and, on GitHub, every issue of a repository
+    it binds, so ``github:example/app#12`` is the subject's that binds
+    ``github:example/app``. Conversations compare as :func:`ref_key` says. A binding's
+    ``?conditions`` are not consulted, since they sort what comes in, not where a message
+    may go, and a wildcard binding polls nothing, so it takes in nothing (see
+    :func:`poll_ref`). When two subjects take ``ref`` in, the one whose binding names it most
+    closely wins: an issue's own binding over its repository's.
+
+    No caller may choose another subject: the subject's policy is what the gate judges a
+    message by, so a message goes only where its subject binds.
+
+    >>> heron = Subject("heron", ("github:example/heron?labels=partner:pat",),
+    ...     Policy(people={}, roles={}))
+    >>> subject_for_ref({"heron": heron}, "github:Example/Heron#12").slug
+    'heron'
+
+    Raises ``ValueError`` naming the subjects there are when none takes ``ref`` in, and
+    naming each when several name it equally closely.
+    """
+    key = ref_key(ref)
+    closeness: dict[str, int] = {}
+    for slug, subject in subjects.items():
+        for binding in subject.bindings:
+            polled = poll_ref(binding)
+            if polled is None:
+                continue
+            polled_key = ref_key(polled)
+            github = polled_key.partition(":")[0] in CASE_INSENSITIVE_REF_CHANNELS
+            if key == polled_key:
+                score = 2
+            elif github and key.startswith(polled_key + _ISSUE_SEPARATOR):
+                score = 1
+            else:
+                continue
+            closeness[slug] = max(closeness.get(slug, 0), score)
+    if not closeness:
+        known = ", ".join(sorted(subjects)) or "(none)"
+        raise ValueError(
+            f"no subject binds {ref}, so there is no policy to judge a message to it by "
+            f"(the subjects are: {known}); bind it in a subject's file first"
+        )
+    best = max(closeness.values())
+    closest = sorted(slug for slug, score in closeness.items() if score == best)
+    if len(closest) > 1:
+        raise ValueError(
+            f"{ref} is bound equally closely by the subjects {', '.join(closest)}; bind it "
+            f"in one of them only"
+        )
+    return subjects[closest[0]]
+
+
 @dataclass(frozen=True)
 class Subject:
     """A resolved subject: ``subjects/<slug>.toml`` with every default applied."""

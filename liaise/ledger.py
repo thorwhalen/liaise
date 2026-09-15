@@ -15,6 +15,7 @@ flat string with no "/", since ``dol.Jsons`` would read one as a subdirectory::
     daily__<subject>__<YYYY-MM-DD>      that day's dispatches, as 0.0.x kept them
     budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
     issue_check__<case_id>              an IssueCheck: the tick's reads of the case's issue state
+    message__<message_id>               an OutboundMessage: one sent or held outside any case
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
 ``repo:example/app`` is stored under ``hold__repo%3Aexample%2Fapp``. The result has
@@ -38,14 +39,17 @@ from functools import cached_property
 from pathlib import Path
 from typing import Any, Optional, Union
 from urllib.parse import quote, unquote
+from uuid import uuid4
 
 from liaise.model import (
     CASE_STATES,
     INITIAL_CASE_STATE,
+    MESSAGE_STATES,
     Case,
     Hold,
     IssueCheck,
     LedgerEntry,
+    OutboundMessage,
     RunRecord,
     require_one_of,
     to_jsonable,
@@ -55,6 +59,10 @@ from liaise.model import (
 DFLT_LEDGER_SUBDIR = "ledger"
 #: How many hex digits of a delivery id's sha1 inbox and unrouted keys keep.
 DFLT_DIGEST_LENGTH = 16
+#: What joins a subject's slug to the hex of a message id: ``example-app-m1f3a9c2e``.
+MESSAGE_ID_INFIX = "-m"
+#: How many hex digits a message id's random part has.
+MESSAGE_ID_HEX_DIGITS = 8
 
 _SEP = "__"
 _CASE_COUNTER_KEY = "counter__cases"
@@ -384,6 +392,45 @@ class Ledger:
     def save_issue_check(self, case_id: str, check: IssueCheck) -> None:
         """Write ``check``, replacing what the ledger held of the case's issue state reads."""
         self.store[_key("issue_check", case_id)] = check.to_dict()
+
+    # ---- messages outside a case ----
+
+    def new_message_id(self, subject: str) -> str:
+        """A fresh ``<subject>-m<hex>`` id for a message outside a case, unused in the ledger.
+
+        The hex part is random, not counted, so two agents sending at once need no lock.
+        """
+        while True:
+            hex_part = uuid4().hex[:MESSAGE_ID_HEX_DIGITS]
+            message_id = f"{subject}{MESSAGE_ID_INFIX}{hex_part}"
+            if self._get(_key("message", message_id)) is None:
+                return message_id
+
+    def save_message(self, message: OutboundMessage) -> None:
+        """Write ``message``, replacing what the ledger held under its id."""
+        self.store[_key("message", message.id)] = message.to_dict()
+
+    def get_message(self, message_id: str) -> Optional[OutboundMessage]:
+        """The message outside a case with ``message_id``, or None."""
+        data = self._get(_key("message", message_id))
+        return None if data is None else OutboundMessage.from_dict(data)
+
+    def messages(
+        self, *, subject: Optional[str] = None, state: Optional[str] = None
+    ) -> Iterator[OutboundMessage]:
+        """Every message outside a case, or those of ``subject``, or in ``state``; in no set order.
+
+        Raises ``ValueError`` for a state outside :data:`~liaise.model.MESSAGE_STATES`.
+        """
+        if state is not None:
+            require_one_of(state, MESSAGE_STATES, what="message state")
+        for data in self._values("message"):
+            message = OutboundMessage.from_dict(data)
+            if subject not in (None, message.subject):
+                continue
+            if state not in (None, message.state):
+                continue
+            yield message
 
     # ---- cursors ----
 

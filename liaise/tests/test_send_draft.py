@@ -298,7 +298,7 @@ def _seed_run(world):
             (_draft(),),
             lambda world: world.ledger.set_hold(Hold(scope=f"subject:{SLUG}", mode="block")),
             (),
-            f"the hold on subject:{SLUG} \\(block\\) keeps this case's messages waiting",
+            f"the hold on subject:{SLUG} \\(block\\) keeps these messages waiting",
         ),
         (
             (_draft(),),
@@ -365,7 +365,8 @@ def test_the_gate_sees_the_operators_approval_and_the_case(world):
         return Pass(outbound)
 
     release = cases.send_draft(
-        world.ledger, load_subjects(world.root), CASE, now=LATER, registry=world.registry, outbound_filters=(spy,)
+        world.ledger, load_subjects(world.root), CASE, by="operator", now=LATER, registry=world.registry,
+        outbound_filters=(spy,),
     )
 
     assert seen == [("ask", TEXT, CASE, Approval(by="operator", at=LATER))]
@@ -378,11 +379,13 @@ def test_judging_without_sending_records_a_divert_and_leaves_a_passing_draft_alo
     world.hold_drafts(_draft())
     before = copy.deepcopy(world.store)
 
-    judged = cases.send_draft(world.ledger, subjects, CASE, now=LATER, registry=world.registry, send=False)
+    judged = cases.send_draft(world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False)
 
     assert judged.attempt.sent and world.store == before and world.posted() == []
     world.hold_drafts(_draft(LEAK))
-    judged = cases.send_draft(world.ledger, subjects, CASE, now=LATER, registry=world.registry, send=False)
+    judged = cases.send_draft(world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False)
+    with pytest.raises(TypeError):
+        cases.send_draft(world.ledger, subjects, CASE, now=LATER)  # who releases it must be said
     assert judged.attempt.decision.diverted == "leak scan: local path"
     assert world.case().drafts[0]["reason"] == "leak scan: local path" and world.posted() == []
 
@@ -450,7 +453,7 @@ def test_an_effect_deploy_hold_keeps_a_delivery_message_and_lets_a_question_go(w
     world.ledger.set_hold(Hold(scope="effect:deploy", mode="block"))
     world.hold_drafts(_draft("Deployed: try it now.", outcome="deliver", reason="deslop: 1 enforced finding(s)"))
 
-    with pytest.raises(cw.CommandError, match="the hold on effect:deploy \\(block\\) keeps this case's delivery waiting"):
+    with pytest.raises(cw.CommandError, match="the hold on effect:deploy \\(block\\) keeps this delivery waiting"):
         world.send()
 
     world.hold_drafts(_draft())

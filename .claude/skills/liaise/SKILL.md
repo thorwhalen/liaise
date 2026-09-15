@@ -1,6 +1,6 @@
 ---
 name: liaise
-description: Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on "add a partner to liaise", "onboard <name> to liaise", "add a subject to liaise", "check liaise status", "what is liaise waiting on", "hold liaise", "pause liaise for <subject>", "unhold", "why is this issue unrouted", "migrate my liaise config", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue", "send the liaise draft", "approve this draft", "reject a draft".
+description: Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on "add a partner to liaise", "onboard <name> to liaise", "add a subject to liaise", "check liaise status", "what is liaise waiting on", "hold liaise", "pause liaise for <subject>", "unhold", "why is this issue unrouted", "migrate my liaise config", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue", "send the liaise draft", "approve this draft", "reject a draft", "message someone through liaise", "ask the partner a question outside a case", "liaise message send".
 ---
 
 # liaise: the owner's agent skill
@@ -166,6 +166,24 @@ liaise case reject-draft example-app-2 1 --reason "answered on a call"
 - It refuses while a tick runs, while a `block` or `cancel` hold covers the case (`drain` lets it go), and while a run of the case is in flight. It also refuses a draft with no destination (`no channel to reach <person>`): send that one yourself, then reject it. And it refuses a `deliver` message a hold kept: the delivery it announces never ran.
 - `reject-draft` needs `--reason`. It sends nothing and leaves the state as it is; move the case on with `liaise case set-state`.
 - Both take `--dry-run`, which writes nothing.
+
+## Messages outside a case
+
+When a session working on a subject needs to ask or tell someone something that is not a reply in a case, send it through liaise, not with `gh` or `correspond` directly:
+
+```
+liaise message send pat --ref github:example/app#12 --text-file q20.md --dry-run
+liaise message send pat --ref github:example/app#12 --text-file q20.md
+liaise message send pat --ref github:example/app --title "Q20: the dates stop in October" --text-file q20.md
+liaise message list --state held
+liaise message show example-app-m1f3a9c2e
+```
+
+- `--ref` must be a GitHub issue a subject binds, or a repository a subject binds together with `--title`, which opens an issue. A reference no subject binds, or on another channel, is refused. Bind it in a subject file first; there is no flag to choose a subject.
+- **In 0.1 every message is held** for the owner, whatever the reply mode, because you chose where it goes. Exit 2 with `is held as <id>` is the normal result. The message is recorded and listed by `liaise status`, and the owner is told a message waits. Tell the owner the id, and leave it held. The gate judges it again when the owner releases it: the leak scan (title included), deslop and the mention.
+- Exit 1 means it was refused before anything was recorded: a bad reference, or a title on an issue. Fix the command.
+- **Never release a held message yourself.** `liaise message send-draft` asks the owner at their own terminal and refuses without one, just as `case send-draft` does. Declining is `liaise message reject-draft <id> --reason ...`, also the owner's call.
+- A message opens no case and sets no label. Use `--dry-run` to see what the gate would say without recording or notifying anything.
 
 ## Migrating from 0.0.x
 
