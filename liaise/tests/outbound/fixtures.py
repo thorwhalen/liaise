@@ -51,6 +51,7 @@ PEOPLE: dict[str, dict[str, Any]] = {
         "involved_in": [],
         "address": "email:ada" + AT + "example.org",
         "github": "github:ada-lorne",
+        "telegram": "telegram:ada_lorne",
     },
     "bram": {
         "tier": "reviewed",
@@ -60,6 +61,7 @@ PEOPLE: dict[str, dict[str, Any]] = {
         "involved_in": [],
         "address": "email:bram" + AT + "example.org",
         "github": "github:bramwell-k",
+        "telegram": "telegram:bramwell_k",
     },
     "cy": {
         "tier": "involved",
@@ -69,6 +71,7 @@ PEOPLE: dict[str, dict[str, Any]] = {
         "involved_in": ["project:heron"],
         "address": "email:cy" + AT + "example.org",
         "github": "github:cy-v",
+        "telegram": "telegram:cy_v",
     },
 }
 #: The projects: Heron is amber, sealed from Bram, with its codenames.
@@ -91,6 +94,7 @@ IDENTITIES: dict[str, Optional[str]] = {}
 for _person, _record in PEOPLE.items():
     IDENTITIES[_record["address"]] = _person
     IDENTITIES[_record["github"]] = _person
+    IDENTITIES[_record["telegram"]] = _person
 
 PUBLIC_ISSUE = "github:example/app#12"
 ORG_ISSUE = "github:example/app-internal#3"
@@ -99,7 +103,7 @@ PLANNED = {
     "discord_channel": "discord:heron-core",
     "slack_channel": "slack:shared-with-partner",
 }
-CHANNELS = ("email", "public_issue", "org_repo", "operator", *PLANNED)
+CHANNELS = ("email", "telegram_dm", "public_issue", "org_repo", "operator", *PLANNED)
 
 
 def address_of(recipient: str) -> str:
@@ -109,6 +113,15 @@ def address_of(recipient: str) -> str:
     if ":" in recipient:
         return recipient
     return f"email:{recipient}" + AT + "unknown.example"
+
+
+def telegram_of(recipient: str) -> str:
+    """The Telegram address a recipient id or address is written to."""
+    if recipient in PEOPLE:
+        return PEOPLE[recipient]["telegram"]
+    if ":" in recipient:
+        return recipient
+    return f"telegram:{recipient}"
 
 
 def _reader(address: str) -> dict:
@@ -144,6 +157,24 @@ def audience_for(
             "widening": ["forwarding"],
             "as_of": as_of,
             "evidence": ["addresses classified against the operator's domains"],
+            "defaulted": False,
+        }
+    if channel == "telegram_dm":
+        handle = telegram_of(recipient)
+        return {
+            "ref": handle,
+            "scope": "named",
+            "readers": [_reader(handle)],
+            "complete": False,
+            "classes": ["whoever holds the other account's session"],
+            "external": None,
+            "retractable": False,
+            "durability": ["copies_pushed"],
+            "widening": ["forwarding"],
+            "as_of": as_of,
+            "evidence": [
+                "getChat: a private chat; the bot cannot tell whose account it is"
+            ],
             "defaulted": False,
         }
     if channel == "public_issue":

@@ -68,9 +68,34 @@ PROVENANCES = {
     ),
     "unknown": Provenance.unknown("the hook path: nobody can say what the run read"),
 }
-SWAP_CHANNELS = {"dm": "email", "public": "public_issue", "shared": "org_repo"}
+#: The channel swaps of discussion §7: a DM (a Telegram private chat), a public issue, a
+#: shared channel (a private organisation repository). A swap onto the scenario's own
+#: channel is not generated: it would re-run the scenario unchanged.
+SWAP_CHANNELS = {"dm": "telegram_dm", "public": "public_issue", "shared": "org_repo"}
 #: A homoglyph substitution: Latin letters to the Cyrillic shapes that imitate them.
-HOMOGLYPHS = str.maketrans({"e": "е", "o": "о", "a": "а", "c": "с", "p": "р"})
+HOMOGLYPHS = str.maketrans(
+    {
+        "a": "\u0430",
+        "c": "\u0441",
+        "e": "\u0435",
+        "o": "\u043e",
+        "p": "\u0440",
+        "x": "\u0445",
+        "y": "\u0443",
+        "A": "\u0410",
+        "B": "\u0412",
+        "C": "\u0421",
+        "E": "\u0415",
+        "H": "\u041d",
+        "K": "\u041a",
+        "M": "\u041c",
+        "O": "\u041e",
+        "P": "\u0420",
+        "T": "\u0422",
+        "X": "\u0425",
+        "Y": "\u0423",
+    }
+)
 #: The other homoglyph substitution: ASCII letters to their full-width compatibility forms.
 FULLWIDTH = str.maketrans(
     {
@@ -165,7 +190,7 @@ class Prepared:
             policy=self.policy,
             now=self.now,
             identities=self.identities,
-            rules=rules,
+            _rules=rules,
         )
 
 
@@ -271,14 +296,13 @@ def mutations(scenario: Mapping[str, Any]) -> Iterator[Prepared]:
             ("homoglyph-cyrillic", span.translate(HOMOGLYPHS)),
             ("homoglyph-fullwidth", span.translate(FULLWIDTH)),
         ]
-        for name, substitute in substitutes[:2]:
-            yield prepare(
-                scenario,
-                text=text.replace(span, substitute),
-                expected=same,
-                label=f":{name}",
-            )
+        for name, substitute in substitutes:
+            mutated = text.replace(span, substitute)
+            assert mutated != text, (scenario["id"], name)
+            yield prepare(scenario, text=mutated, expected=same, label=f":{name}")
     for name, channel in SWAP_CHANNELS.items():
+        if channel == scenario["channel"]:
+            continue
         yield prepare(
             scenario,
             channel=channel,
@@ -349,7 +373,14 @@ def weakening(name: str, rules: Sequence[Rule] = RULES) -> tuple[Rule, ...]:
 
 
 def metrics(scenarios: Sequence[Mapping] = SCENARIOS) -> dict[str, Any]:
-    """The suite's numbers (research §9.2): miss rate, false-divert rate, utility under attack."""
+    """The suite's numbers (research §9.2): miss rate, false-divert rate, utility under attack.
+
+    A miss is a verdict less restrictive than every expected flow, or an expected finding
+    that is absent; the miss rate weighs them by severity over the scenarios whose
+    correct verdict is anything but ``send``. A false divert is a verdict outside the
+    expected flows on a scenario whose correct verdict may be ``send``. A scenario
+    delivers when its route is not ``block``.
+    """
     weight = missed_weight = 0
     misses: list[str] = []
     send_scenarios = diverted = 0
@@ -360,7 +391,8 @@ def metrics(scenarios: Sequence[Mapping] = SCENARIOS) -> dict[str, Any]:
         verdict = case.evaluate()
         verdicts[scenario["id"]] = verdict.flow
         found = {f.entity for f in verdict.findings}
-        missed = verdict.flow not in case.expected or (
+        too_loose = flow_rank(verdict.flow) < min(map(flow_rank, case.expected))
+        missed = too_loose or (
             scenario.get("expects_finding") and scenario["expects_finding"] not in found
         )
         if SEND not in case.expected:
@@ -368,9 +400,9 @@ def metrics(scenarios: Sequence[Mapping] = SCENARIOS) -> dict[str, Any]:
             if missed:
                 missed_weight += scenario["severity"]
                 misses.append(scenario["id"])
-        if case.expected == {SEND}:
+        else:
             send_scenarios += 1
-            diverted += verdict.flow != SEND
+            diverted += verdict.flow not in case.expected
         if scenario.get("deliver"):
             delivered[scenario["id"]] = verdict.route != "block"
     return {

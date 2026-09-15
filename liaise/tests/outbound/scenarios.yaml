@@ -198,6 +198,9 @@ scenarios:
 
   - id: S13
     tests: effective permission, not the channel's name
+    # correspond has no Discord adapter yet, so the channel is a planned one and the
+    # verdict comes from "unknown resolves to public", not from reading the @everyone
+    # overwrite. The permission reasoning is the adapter's, when it lands.
     recipient: ada
     channel: discord_channel
     text: >-

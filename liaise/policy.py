@@ -67,7 +67,9 @@ bind to both hashes (discussion §5.7).
 (a ``cc`` entry, a listed reader) to the person id it resolved to, or ``None`` when it
 did not: identity resolution happens before policy (research §4.6), and this is where
 its answer comes in. A ``cc`` or ``bcc`` entry that is neither a person of the disclosure
-nor resolved by ``identities`` is a stranger.
+nor resolved by ``identities`` is a stranger. Every person of the disclosure is a
+reader, so the disclosure must be computed for exactly this message's readers: the
+recipient, the copies and the audience's listed readers.
 """
 
 from __future__ import annotations
@@ -75,7 +77,7 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, fields
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from hashlib import sha256
 from typing import Any, Optional, Union
 
@@ -111,8 +113,10 @@ SECRET_KINDS = frozenset({"secret", "canary"})
 EXFILTRATION = "exfiltration"
 PERSONAL = "personal"
 THIRD_PARTY = "third_party"
-#: An exfiltration finding a reader must act on to trigger: shown in full, not refused.
-LINK_RULE = "link-host"
+#: The exfiltration rules a reader must act on to trigger (a link to follow): shown to
+#: the operator in full and released by them, not refused. Every other exfiltration
+#: shape loads or carries data on its own. Keyed on L1's rule names.
+CLICK_RULES = frozenset({"link-host"})
 #: Policy values: the reply mode that waits for the operator, the taint waiver, the modes.
 DRAFT_REPLY_MODE = "draft"
 TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEND = "approve", "send"
@@ -238,7 +242,13 @@ class OutboundPolicy:
     processor; ``None`` means "when the message belongs to a case". ``ai_tolerance`` is the
     recipient's, from their record, and ``disclosure_decision`` the decision recorded on
     the draft about saying the text is machine-written (``None``: none recorded).
-    ``mode`` is ``enforce`` or ``shadow`` and is carried on the verdict.
+    ``mode`` is ``enforce`` or ``shadow`` and is carried on the verdict. ``outbox`` is
+    whether the delay outbox exists (slice L5): until it does, a ``delay`` verdict routes
+    to ``draft``, as §5.5 degrades it.
+
+    The other subject-policy values §5.4 names (``link_allowlist``, ``canary_terms``,
+    ``leak_terms``, ``public_channels``) are the detectors' inputs, not this record's;
+    :meth:`of` refuses them so a caller notices.
     """
 
     reply_mode: str = "direct"
@@ -247,6 +257,7 @@ class OutboundPolicy:
     ai_tolerance: Optional[str] = None
     disclosure_decision: Optional[str] = None
     mode: str = ENFORCE
+    outbox: bool = False
 
     def __post_init__(self) -> None:
         if self.tainted_runs not in (TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEND):
@@ -332,8 +343,11 @@ class Verdict:
     explicit recipients, a tier or ``stranger``), ``irreversible`` (the audience is not
     retractable) and ``tainted`` (true, false, or ``None`` for unknown). ``least_cleared``
     is the reader the content ceiling came from. ``payload_hash`` and ``audience_hash``
-    are what an approval binds to; ``as_of`` is the ``now`` the verdict was made at, and
-    ``mode`` the policy's.
+    are what an approval binds to; ``audience`` is the snapshot the hash was taken over
+    and ``readers`` the standing (tier, clearance) of every reader consulted, so the
+    ledger entry explains itself (§5.7); ``as_of`` is the ``now`` the verdict was made
+    at, and ``mode`` the policy's. ``route`` is ``draft`` for ``delay`` until the outbox
+    exists (``OutboundPolicy.outbox``).
     """
 
     flow: str
@@ -344,6 +358,8 @@ class Verdict:
     findings: tuple[Finding, ...]
     payload_hash: str
     audience_hash: str
+    audience: Mapping[str, Any]
+    readers: Mapping[str, Mapping[str, Any]]
     as_of: str
     mode: str
 
@@ -358,6 +374,8 @@ class Verdict:
             "findings": [finding.to_dict() for finding in self.findings],
             "payload_hash": self.payload_hash,
             "audience_hash": self.audience_hash,
+            "audience": dict(self.audience),
+            "readers": {person: dict(entry) for person, entry in self.readers.items()},
             "as_of": self.as_of,
             "mode": self.mode,
         }
@@ -384,8 +402,11 @@ def most_restrictive(flows: Iterable[str]) -> str:
 
 
 def _label_rank(label: Optional[str]) -> int:
-    """A label's place in :data:`~liaise.detect.LABELS`; an unknown label is the lowest."""
-    return LABELS.index(label) if label in LABELS else 0
+    """A label's place in :data:`~liaise.detect.LABELS`; a label this version does not
+    know ranks above ``red`` (it may restrict, never widen), and no label at all lowest."""
+    if label is None:
+        return 0
+    return LABELS.index(label) if label in LABELS else len(LABELS)
 
 
 def above(label: Optional[str], clearance: Optional[str]) -> bool:
@@ -397,10 +418,6 @@ def above(label: Optional[str], clearance: Optional[str]) -> bool:
     if clearance is None or label is None:
         return False
     return _label_rank(label) > _label_rank(clearance)
-
-
-def _lowest_label(labels: Iterable[Optional[str]]) -> str:
-    return min(labels, key=_label_rank, default=LABELS[0])
 
 
 # ---- the message ----
@@ -422,16 +439,32 @@ def _text_list(name: str, value: Any) -> list[str]:
     return [str(v).strip() for v in value if str(v).strip()]
 
 
-def _attachment_name(attachment: Any) -> str:
+def _attachment_entry(attachment: Any) -> Union[str, dict]:
+    """An attachment as the payload sees it: its name, or a ``{name, sha256}`` record
+    when it carries a digest or has no name (correspond's ``Attachment.name`` may be
+    None), so that an attachment never drops out of the hash."""
     if isinstance(attachment, str):
         return attachment
-    if isinstance(attachment, Mapping):
-        return str(attachment.get("name") or attachment.get("filename") or "")
-    return str(getattr(attachment, "name", None) or getattr(attachment, "filename", ""))
+    get = (
+        attachment.get
+        if isinstance(attachment, Mapping)
+        else (lambda key, default=None: getattr(attachment, key, default))
+    )
+    name = get("name") or get("filename")
+    digest = get("sha256")
+    if name and not digest:
+        return str(name)
+    return {
+        "name": None if name is None else str(name),
+        "sha256": None if digest is None else str(digest),
+    }
 
 
 def payload_of(outbound: Any) -> dict:
-    """The message as the payload hash sees it: recipients, copies, ref, title, text, attachment names.
+    """The message as the payload hash sees it: recipients, copies, ref, title, text, attachments.
+
+    Copies and attachments are sorted, so a listing order does not void an approval; a
+    message that differs in any of them does.
 
     >>> payload_of({"ref": "github:example/app#12", "recipient": "ada", "text": "hi"})
     {'recipients': ['ada'], 'cc': [], 'bcc': [], 'ref': 'github:example/app#12', 'title': None, 'text': 'hi', 'attachments': []}
@@ -443,16 +476,15 @@ def payload_of(outbound: Any) -> dict:
     recipient = _field(outbound, "recipient")
     return {
         "recipients": [str(recipient)] if recipient else [],
-        "cc": _text_list("cc", _field(outbound, "cc", ())),
-        "bcc": _text_list("bcc", _field(outbound, "bcc", ())),
+        "cc": sorted(_text_list("cc", _field(outbound, "cc", ()))),
+        "bcc": sorted(_text_list("bcc", _field(outbound, "bcc", ()))),
         "ref": str(_field(outbound, "ref", "") or ""),
         "title": None if title is None else str(title),
         "text": text,
-        "attachments": [
-            name
-            for name in map(_attachment_name, _field(outbound, "attachments", ()) or ())
-            if name
-        ],
+        "attachments": sorted(
+            (_attachment_entry(a) for a in _field(outbound, "attachments", ()) or ()),
+            key=canonical_json,
+        ),
     }
 
 
@@ -479,13 +511,23 @@ def _reader_record(reader: Any) -> dict:
         channel, _, rest = reader.partition(":")
         reader = {"channel": channel, "handle": rest or None, "native_id": rest}
     elif not isinstance(reader, Mapping):
-        reader = reader.to_dict() if hasattr(reader, "to_dict") else vars(reader)
+        if not hasattr(reader, "to_dict"):
+            raise TypeError(
+                f"an audience reader is a channel identity (a dict or an address), "
+                f"not {type(reader).__name__}"
+            )
+        reader = reader.to_dict()
     record = {
         name: reader.get(name, default) for name, default in READER_DEFAULTS.items()
     }
-    record["address"] = reader.get("address") or (
-        f"{record['channel']}:{record['handle'] or record['native_id']}"
-    )
+    for name in ("channel", "native_id"):
+        record[name] = str(record[name] or "")
+    for name in ("handle", "display_name", "authority"):
+        record[name] = None if record[name] is None else str(record[name])
+    for name in ("is_bot", "is_self"):
+        record[name] = bool(record[name])
+    # Derived, never taken from the record: what the platform attests is what resolves.
+    record["address"] = f"{record['channel']}:{record['handle'] or record['native_id']}"
     return record
 
 
@@ -551,9 +593,14 @@ def audience_record(audience: Any) -> dict:
     as_of = record["as_of"]
     record["as_of"] = as_of.isoformat() if isinstance(as_of, datetime) else as_of
     for name in ("complete", "retractable", "defaulted"):
-        record[name] = bool(record[name])
-    if record["external"] is not None:
-        record["external"] = bool(record["external"])
+        if not isinstance(record[name], bool):
+            raise TypeError(
+                f"audience {name} must be true or false, not {record[name]!r}"
+            )
+    if record["external"] is not None and not isinstance(record["external"], bool):
+        raise TypeError(
+            f"audience external must be true, false or None, not {record['external']!r}"
+        )
     return record
 
 
@@ -597,8 +644,26 @@ def audience_in_words(audience: Any) -> str:
 # ---- readers and the ceiling ----
 
 
+def _ids(value: Any) -> tuple[str, ...]:
+    """``value`` as a tuple of ids: a string is one id, not its characters."""
+    if value is None:
+        return ()
+    if isinstance(value, str):
+        return (value,)
+    return tuple(str(v) for v in value)
+
+
 def _findings(findings: Iterable[Any]) -> tuple[Finding, ...]:
-    """``findings`` as :class:`~liaise.detect.Finding` records, in position order."""
+    """``findings`` as :class:`~liaise.detect.Finding` records, in position order.
+
+    A one-shot iterator is refused: the send-time recheck evaluates the same inputs
+    again, and a spent iterator would show it fewer findings than the operator saw.
+    """
+    if isinstance(findings, Iterator):
+        raise TypeError(
+            "findings must be a sequence (a tuple or list), not a one-shot iterator: "
+            "the verdict is recomputed from the same inputs at send time"
+        )
     records = []
     for finding in findings or ():
         if isinstance(finding, Finding):
@@ -611,7 +676,7 @@ def _findings(findings: Iterable[Any]) -> tuple[Finding, ...]:
                     end=int(finding["end"]),
                     entity=finding.get("entity"),
                     label=finding.get("label"),
-                    sealed_from=tuple(finding.get("sealed_from") or ()),
+                    sealed_from=_ids(finding.get("sealed_from")),
                     rule=finding["rule"],
                     severity=int(finding["severity"]),
                     fingerprint=str(finding.get("fingerprint") or ""),
@@ -679,39 +744,45 @@ def _resolve(
     identities: Optional[Mapping[str, Optional[str]]],
 ) -> _Resolution:
     people = _people(disclosure)
-    identities = dict(identities or {})
-    gaps = _gap_texts(disclosure)
-    saw = _disclosure_saw(audience, disclosure)
-    readers: dict[str, Mapping] = dict(people)
+    identities = {str(k).strip(): v for k, v in (identities or {}).items()}
+    readers: dict[str, Mapping] = dict(sorted(people.items()))
     unresolved: list[str] = []
 
-    def resolve(given: str) -> tuple[Optional[str], bool]:
-        """``(person id, resolved)``: the id is None for a reader the disclosure knows
-        only as one of its people (a listed reader it resolved itself)."""
-        if given in people:
-            return given, True
-        if given in identities:
-            person = identities[given]
-            if person is not None:
-                readers.setdefault(person, {})
-            return person, person is not None
-        return None, False
+    def spellings(given: str) -> Iterator[str]:
+        text = given.strip()
+        yield text
+        for prefix in ("person:", "people:"):
+            if text.startswith(prefix):
+                yield text[len(prefix) :]
+        yield text.casefold()
+
+    def resolve(given: str) -> Optional[str]:
+        """The person ``given`` names: one of the disclosure's people, or what
+        ``identities`` resolved it to; None for nobody."""
+        for spelling in spellings(given):
+            if spelling in people:
+                return spelling
+            if spelling in identities:
+                person = identities[spelling]
+                if person is not None:
+                    person = str(person)
+                    readers.setdefault(person, {})
+                return person
+        return None
 
     recipients = []
     for given in (*payload["recipients"], *payload["cc"], *payload["bcc"]):
-        person, _ = resolve(given)
+        person = resolve(given)
         if person is None:
             unresolved.append(given)
         recipients.append((given, person))
+    # A listed reader counts only when ``identities`` resolved it: an identity nobody
+    # tied to a person is at clear (§4.4), whatever the disclosure computed for itself.
     for reader in audience["readers"]:
         if reader["is_self"]:
             continue
-        address = reader["address"]
-        _, resolved = resolve(address)
-        # A listed reader the disclosure saw and did not report as a gap is one of its
-        # people, whichever one; without that, an identity nobody resolved is at clear.
-        if not resolved and not (saw and address not in gaps):
-            unresolved.append(address)
+        if resolve(reader["address"]) is None:
+            unresolved.append(reader["address"])
     return _Resolution(readers, tuple(recipients), tuple(dict.fromkeys(unresolved)))
 
 
@@ -771,22 +842,45 @@ def least_cleared_reader(
     return _least_cleared(record, disclosure, resolution)
 
 
+def _disclosure_floor(audience: Mapping, disclosure: Mapping) -> Optional[Reader]:
+    """The disclosure's own ``least_clearance``, when it applies to this audience.
+
+    acquaint computes it over the same readers, so it agrees with the readers' minimum
+    here, with one exception: for an incomplete ``named`` audience acquaint adds a class
+    at ``clear`` that §4.4 does not name, and no email audience is ever complete (the
+    worked case of discussion §1 needs the email to Ada to vet ``send``). So the floor
+    applies to every audience but a ``named`` one the disclosure was computed with.
+    """
+    least = disclosure.get("least_clearance")
+    if least not in LABELS:
+        return None
+    if audience["scope"] == NAMED and _disclosure_saw(audience, disclosure):
+        return None
+    return Reader(least, "the least-cleared reader of the disclosure")
+
+
 def _least_cleared(
     audience: Mapping, disclosure: Mapping, resolution: _Resolution
 ) -> Reader:
-    if audience["scope"] == OPERATOR and not audience["defaulted"]:
-        return Reader(None, "the operator")
     candidates: list[Reader] = []
-    ceiling = _ceiling(audience, disclosure)
-    if ceiling is not None:
-        candidates.append(ceiling)
     for person, entry in resolution.readers.items():
         candidates.append(Reader(_clearance_of(entry), person, person))
     for given in resolution.unresolved:
         candidates.append(Reader(LABELS[0], f"{given}, who has no record"))
-    if not candidates:
-        candidates.append(Reader(LABELS[0], "an unlisted reader"))
-    return min(candidates, key=lambda reader: _label_rank(reader.clearance))
+    if audience["scope"] == OPERATOR and not audience["defaulted"]:
+        # Only the operator's own devices: no ceiling but the explicit recipients'.
+        if not candidates:
+            return Reader(None, "the operator")
+    else:
+        ceiling = _ceiling(audience, disclosure)
+        if ceiling is not None:
+            candidates.append(ceiling)
+        floor = _disclosure_floor(audience, disclosure)
+        if floor is not None:
+            candidates.append(floor)
+        if not candidates:
+            candidates.append(Reader(LABELS[0], "an unlisted reader"))
+    return min(candidates, key=lambda r: (_label_rank(r.clearance), r.who))
 
 
 # ---- the facts ----
@@ -953,16 +1047,20 @@ def seals(facts: Facts) -> Iterator[Hit]:
 
 
 def exfiltration(facts: Facts) -> Iterator[Hit]:
-    """An ``exfiltration`` finding, and a scope beyond ``named`` or external readers."""
-    if facts.scope not in WIDE_SCOPES and facts.audience["external"] is not True:
+    """An ``exfiltration`` finding, and a scope beyond ``named`` or external readers.
+
+    ``external`` unknown (``None``) counts as external: unknown resolves to the wider
+    reading, as it does for the scope. Only a known-internal named audience is exempt.
+    """
+    if facts.scope not in WIDE_SCOPES and facts.audience["external"] is False:
         return
     why = (
-        "external readers"
+        "readers outside the operator's own accounts"
         if facts.scope not in WIDE_SCOPES
         else f"the audience is {facts.scope}"
     )
     for finding in facts.of_kind(EXFILTRATION):
-        if finding.rule == LINK_RULE:
+        if finding.rule in CLICK_RULES:
             yield Hit(
                 f"a link to a host outside the allowlist {_where(finding)}, and {why}: "
                 f"shown in full for the operator to release",
@@ -1077,10 +1175,12 @@ def disclosure_stance(facts: Facts) -> Iterator[Hit]:
 
 
 def taint(facts: Facts) -> Iterator[Hit]:
-    """The run is tainted or its provenance unknown, and the audience is wider than the operator."""
-    if facts.policy.tainted_runs == TAINTED_RUNS_SEND or facts.scope == OPERATOR:
-        return
-    if facts.tainted is False:
+    """The run is tainted or its provenance unknown, and the audience is wider than the operator.
+
+    ``tainted_runs = "send"`` waives the ``approve``; the ``refuse`` for a message that
+    also names something the audience is not cleared for is never waived.
+    """
+    if facts.scope == OPERATOR or facts.tainted is False:
         return
     if facts.tainted is None:
         why = "the run's provenance is unknown, which counts as tainted"
@@ -1100,7 +1200,7 @@ def taint(facts: Facts) -> Iterator[Hit]:
             leaks[0],
             flow=REFUSE,
         )
-    else:
+    elif facts.policy.tainted_runs != TAINTED_RUNS_SEND:
         yield Hit(
             f"{why}, and the audience of {facts.ref} is {facts.scope}: the operator releases it"
         )
@@ -1188,6 +1288,8 @@ def facts_of(
     """The :class:`Facts` of :func:`evaluate`'s inputs, for a rule or a report to read."""
     if not isinstance(now, datetime):
         raise TypeError(f"now is a datetime, not {type(now).__name__}")
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
     disclosure = {} if disclosure is None else disclosure
     if not isinstance(disclosure, Mapping):
         raise TypeError(
@@ -1228,12 +1330,14 @@ def evaluate(
     policy: Union[OutboundPolicy, Mapping, None] = None,
     now: datetime,
     identities: Optional[Mapping[str, Optional[str]]] = None,
-    rules: Sequence[Rule] = RULES,
+    _rules: Sequence[Rule] = RULES,
 ) -> Verdict:
-    """The :class:`Verdict` for ``outbound``, through every rule of ``rules``.
+    """The :class:`Verdict` for ``outbound``, through every rule of the table.
 
     Pure: no I/O, no clock (``now`` is given), and the same verdict for the same inputs.
-    See the module docstring for what each input is.
+    See the module docstring for what each input is. ``_rules`` is for the mutation
+    checks of the test suite only (the table is not a seam); it must hold rules of the
+    table by name.
 
     >>> from datetime import datetime, timezone
     >>> now = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -1257,7 +1361,10 @@ def evaluate(
         now=now,
         identities=identities,
     )
-    reasons = [reason for rule in rules for reason in rule.hits(facts)]
+    unknown = sorted({rule.name for rule in _rules} - set(RULE_NAMES))
+    if unknown:
+        raise ValueError(f"not rules of the table: {', '.join(unknown)}")
+    reasons = [reason for rule in _rules for reason in rule.hits(facts)]
     reasons.sort(
         key=lambda reason: -flow_rank(reason.flow)
     )  # stable: table order within a flow
@@ -1269,9 +1376,12 @@ def evaluate(
         "irreversible": not facts.audience["retractable"],
         "tainted": facts.tainted,
     }
+    route = ROUTES[flow]
+    if flow == DELAY and not facts.policy.outbox:
+        route = ROUTE_DRAFT  # §5.5: until the outbox exists, delay degrades to approve
     return Verdict(
         flow=flow,
-        route=ROUTES[flow],
+        route=route,
         reasons=tuple(reasons),
         axes=axes,
         least_cleared=facts.least_cleared,
@@ -1280,7 +1390,15 @@ def evaluate(
         audience_hash=_digest(
             {k: v for k, v in facts.audience.items() if k not in AUDIENCE_UNHASHED}
         ),
-        as_of=now.isoformat(),
+        audience=facts.audience,
+        readers={
+            person: {
+                key: entry.get(key)
+                for key in ("tier", "clearance", "lapsed", "review_by")
+            }
+            for person, entry in facts.readers.items()
+        },
+        as_of=facts.now.isoformat(),
         mode=facts.policy.mode,
     )
 

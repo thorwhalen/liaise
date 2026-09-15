@@ -439,10 +439,14 @@ def test_a_defaulted_audience_is_public_whatever_it_says():
 # ---- the least-cleared reader ----
 
 
-def test_the_operator_has_no_ceiling():
-    assert least_cleared_reader(OPERATOR, {"people": {"ada": ADA}}) == Reader(
-        None, "the operator"
+def test_the_operator_has_no_ceiling_but_its_explicit_recipients():
+    assert least_cleared_reader(OPERATOR, {}) == Reader(None, "the operator")
+    to_ada = least_cleared_reader(
+        OPERATOR, {"people": {"ada": ADA}}, recipients=["ada"]
     )
+    assert to_ada == Reader("amber", "ada", "ada")
+    to_nobody = least_cleared_reader(OPERATOR, {}, recipients=["nobody"])
+    assert to_nobody.clearance == "clear"
 
 
 def test_public_and_defaulted_audiences_are_clear():
@@ -493,7 +497,10 @@ def test_an_unresolved_identity_or_recipient_is_clear():
     assert resolved_but_unknown == Reader("clear", "cy", "cy")
 
 
-def test_a_listed_reader_the_disclosure_saw_counts_as_resolved():
+def test_a_listed_reader_counts_only_when_identities_resolved_it():
+    """The disclosure may have resolved a listed reader itself, but it cannot say which
+    of its people the address is, and a gap is not written for every unreadable reader,
+    so an address nobody tied to a person is at clear."""
     saw = {
         "people": {"ada": ADA},
         "audience": {
@@ -504,17 +511,59 @@ def test_a_listed_reader_the_disclosure_saw_counts_as_resolved():
         },
         "gaps": {},
     }
-    assert least_cleared_reader(EMAIL_TO_ADA, saw, recipients=["ada"]) == Reader(
-        "amber", "ada", "ada"
-    )
-    gap = {**saw, "gaps": {"unrecorded": [ADA_ADDRESS]}}
     assert (
-        least_cleared_reader(EMAIL_TO_ADA, gap, recipients=["ada"]).clearance == "clear"
+        least_cleared_reader(EMAIL_TO_ADA, saw, recipients=["ada"]).clearance == "clear"
     )
-    other = {**saw, "audience": {**saw["audience"], "ref": "email:other"}}
+    resolved = least_cleared_reader(
+        EMAIL_TO_ADA, saw, identities=IDENTITIES, recipients=["ada"]
+    )
+    assert resolved == Reader("amber", "ada", "ada")
+    assert least_cleared_reader(
+        EMAIL_TO_ADA,
+        {**saw, "least_clearance": "clear"},
+        identities=IDENTITIES,
+        recipients=["ada"],
+    ) == Reader("amber", "ada", "ada")
+
+
+def test_the_disclosures_least_clearance_is_a_floor_except_for_a_named_audience_it_saw():
+    """acquaint puts a clear class on every incomplete audience; §4.4 gives named
+    audiences none, and no email audience is ever complete."""
+    disclosure = {"people": {"ada": ADA}, "least_clearance": "clear"}
     assert (
-        least_cleared_reader(EMAIL_TO_ADA, other, recipients=["ada"]).clearance
+        least_cleared_reader(
+            EMAIL_TO_ADA, disclosure, identities=IDENTITIES, recipients=["ada"]
+        ).clearance
         == "clear"
+    )
+    seen = {
+        **disclosure,
+        "audience": {"ref": ADA_ADDRESS, "scope": "named", "complete": False},
+    }
+    assert (
+        least_cleared_reader(
+            EMAIL_TO_ADA, seen, identities=IDENTITIES, recipients=["ada"]
+        ).clearance
+        == "amber"
+    )
+    org_seen = {
+        **disclosure,
+        "audience": {"ref": ORG_REPO["ref"], "scope": "org", "complete": False},
+    }
+    assert (
+        least_cleared_reader(
+            {**ORG_REPO, "complete": True}, org_seen, recipients=["ada"]
+        ).clearance
+        == "clear"
+    )
+    assert (
+        least_cleared_reader(
+            EMAIL_TO_ADA,
+            {**seen, "least_clearance": "Amber"},
+            identities=IDENTITIES,
+            recipients=["ada"],
+        ).clearance
+        == "amber"
     )
 
 
@@ -535,11 +584,19 @@ def test_an_incomplete_org_audience_takes_the_recorded_clearance_else_clear():
         },
     }
     reader = least_cleared_reader(ORG_REPO, recorded, recipients=["ada"])
-    assert reader.clearance == "amber" and "org:example" in reader.who
+    assert reader.clearance == "amber"  # Ada and the organisation's members tie
+    members = least_cleared_reader(ORG_REPO, {**recorded, "people": {}})
+    assert members.clearance == "amber" and "org:example" in members.who
     complete = least_cleared_reader(
         {**ORG_REPO, "complete": True}, disclosure, recipients=["ada"]
     )
     assert complete == Reader("amber", "ada", "ada")
+    listed = least_cleared_reader(
+        {**ORG_REPO, "complete": True, "readers": ["github:x"]},
+        disclosure,
+        recipients=["ada"],
+    )
+    assert listed.clearance == "clear" and listed.who == "github:x, who has no record"
 
 
 # ---- the verdict record ----
@@ -700,19 +757,17 @@ def test_the_taint_waiver_and_the_taint_escalation():
         and "never released as written" in leaked.reasons[0].text
     )
     assert "read an issue by an unknown author" in leaked.reasons[0].text
-    assert (
-        _evaluate(
-            provenance=tainted,
-            findings=[_finding()],
-            audience=PUBLIC_ISSUE,
-            policy={"tainted_runs": "send"},
-        ).flow
-        == "revise"
+    waived = _evaluate(
+        provenance=tainted,
+        findings=[_finding()],
+        audience=PUBLIC_ISSUE,
+        policy={"tainted_runs": "send"},
     )
+    assert waived.flow == "refuse" and waived.rules[0] == "taint"  # never waived
     assert _evaluate(provenance=None, audience=OPERATOR).flow == "send"
 
 
-def test_exfiltration_on_a_named_audience_needs_external_readers():
+def test_exfiltration_on_a_named_audience_needs_readers_not_known_to_be_internal():
     image = _finding(
         "exfiltration", entity=None, label=None, rule="image-host", severity=4
     )
@@ -725,6 +780,10 @@ def test_exfiltration_on_a_named_audience_needs_external_readers():
     )
     assert (
         _evaluate(findings=[image], audience={**EMAIL_TO_ADA, "external": None}).flow
+        == "refuse"
+    )  # unknown resolves to the wider reading
+    assert (
+        _evaluate(findings=[image], audience={**EMAIL_TO_ADA, "external": False}).flow
         == "send"
     )
     assert (
@@ -857,3 +916,165 @@ def test_a_fresh_interpreter_can_import_the_policy_without_acquaint():
         [sys.executable, "-c", code], capture_output=True, text=True, check=True
     )
     assert result.stdout.strip() == "False"
+
+
+# ---- what the adversarial review found ----
+
+
+def test_an_unknown_label_ranks_above_red():
+    assert above("Amber", "clear") and above("mystery", "red")
+    assert not above(None, "clear")
+    verdict = _evaluate(findings=[_finding(label="Amber")], audience=PUBLIC_ISSUE)
+    assert verdict.rules[0] == "no write-down"
+
+
+def test_a_nameless_attachment_still_changes_the_payload_hash():
+    unnamed = {**MESSAGE, "attachments": ({"name": None, "sha256": "ab" * 32},)}
+    assert payload_hash(unnamed) != payload_hash({**MESSAGE, "attachments": ()})
+    assert payload_of(unnamed)["attachments"] == [{"name": None, "sha256": "ab" * 32}]
+    digest = {**MESSAGE, "attachments": ({"name": "notes.pdf", "sha256": "ab" * 32},)}
+    assert payload_hash(digest) != MESSAGE_HASH  # the bytes changed under the name
+    reordered = {**MESSAGE, "cc": ["b", "a"], "attachments": ("y.pdf", "x.pdf")}
+    assert payload_hash(reordered) == payload_hash(
+        {**MESSAGE, "cc": ["a", "b"], "attachments": ("x.pdf", "y.pdf")}
+    )
+
+
+def test_audience_booleans_must_be_literal():
+    for field in ("complete", "retractable", "defaulted"):
+        with pytest.raises(TypeError, match=field):
+            audience_record({**ORG_REPO, field: "false"})
+    with pytest.raises(TypeError, match="external"):
+        audience_record({**ORG_REPO, "external": "no"})
+
+
+def test_a_readers_address_is_derived_never_trusted():
+    mallory = {
+        "channel": "github",
+        "native_id": "9",
+        "handle": "mallory",
+        "address": "github:ada-lorne",
+    }
+    record = audience_record({**ORG_REPO, "readers": [mallory]})
+    assert record["readers"][0]["address"] == "github:mallory"
+    assert (
+        audience_hash({**ORG_REPO, "readers": [mallory]})
+        == Audience.from_dict({**ORG_REPO, "readers": [mallory]}).hash
+    )
+    flags = {
+        "channel": "github",
+        "native_id": "1",
+        "handle": "x",
+        "is_self": 0,
+        "is_bot": 1,
+    }
+    assert (
+        audience_hash({**ORG_REPO, "readers": [flags]})
+        == Audience.from_dict({**ORG_REPO, "readers": [flags]}).hash
+    )
+    reader = least_cleared_reader(
+        {**ORG_REPO, "complete": True, "readers": [mallory]},
+        {"people": {"ada": ADA}},
+        identities={"github:ada-lorne": "ada"},
+        recipients=["ada"],
+    )
+    assert (
+        reader.clearance == "clear"
+        and reader.who == "github:mallory, who has no record"
+    )
+    with pytest.raises(TypeError, match="channel identity"):
+        audience_record({**ORG_REPO, "readers": [7]})
+
+
+def test_sealed_from_given_as_a_string_still_seals():
+    finding = {**_finding().to_dict(), "sealed_from": "bram"}
+    verdict = _evaluate(
+        findings=[finding], disclosure={"people": {"ada": ADA, "bram": BRAM}}
+    )
+    assert verdict.flow == "refuse" and verdict.reasons[0].rule == "seals"
+
+
+def test_a_one_shot_iterator_of_findings_is_refused():
+    with pytest.raises(TypeError, match="one-shot iterator"):
+        _evaluate(findings=iter([_finding()]))
+    assert _evaluate(findings=(_finding(),), audience=PUBLIC_ISSUE).flow == "revise"
+
+
+def test_recipient_spellings_resolve_to_the_same_person():
+    disclosure = {"people": {"ada": ADA, "bram": BRAM}}
+    for spelling in ("bram", " bram ", "Bram", "person:bram", BRAM_ADDRESS):
+        verdict = _evaluate({**MESSAGE, "recipient": spelling}, disclosure=disclosure)
+        assert verdict.axes["relationship"] == "reviewed", spelling
+        assert "stranger" not in verdict.rules, spelling
+
+
+def test_the_rules_keyword_is_private_and_bound_to_the_table():
+    with pytest.raises(TypeError):
+        evaluate(
+            MESSAGE,
+            audience=EMAIL_TO_ADA,
+            disclosure={},
+            findings=(),
+            provenance=False,
+            now=NOW,
+            rules=(),
+        )
+    with pytest.raises(ValueError, match="not rules of the table"):
+        evaluate(
+            MESSAGE,
+            audience=EMAIL_TO_ADA,
+            disclosure={},
+            findings=(),
+            provenance=False,
+            now=NOW,
+            _rules=(Rule("x", lambda f: (), "send"),),
+        )
+
+
+def test_delay_routes_to_draft_until_the_outbox_exists():
+    verdict = _evaluate(audience=PUBLIC_ISSUE)
+    assert verdict.flow == "delay" and verdict.route == "draft"
+    with_outbox = _evaluate(audience=PUBLIC_ISSUE, policy={"outbox": True})
+    assert with_outbox.flow == "delay" and with_outbox.route == "send"
+
+
+def test_the_verdict_records_the_audience_snapshot_and_the_readers_consulted():
+    record = _evaluate(
+        audience=PUBLIC_ISSUE, disclosure={"people": {"ada": ADA, "bram": BRAM}}
+    ).to_dict()
+    assert record["audience"] == audience_record(PUBLIC_ISSUE)
+    assert record["readers"] == {
+        "ada": {
+            "tier": "open",
+            "clearance": "amber",
+            "lapsed": False,
+            "review_by": "2026-11-01",
+        },
+        "bram": {
+            "tier": "reviewed",
+            "clearance": "clear",
+            "lapsed": None,
+            "review_by": None,
+        },
+    }
+    json.dumps(record)
+
+
+def test_a_naive_now_is_read_as_utc():
+    verdict = evaluate(
+        MESSAGE,
+        audience=EMAIL_TO_ADA,
+        disclosure={"people": {"ada": ADA}},
+        findings=(),
+        provenance=False,
+        now=datetime(2026, 9, 15, 12),
+        identities=IDENTITIES,
+    )
+    assert verdict.as_of == NOW.isoformat()
+
+
+def test_verdicts_do_not_depend_on_the_disclosures_key_order():
+    cy = _finding("third_party", entity="person:cy", label="red", severity=3)
+    one = _evaluate(findings=[cy], disclosure={"people": {"ada": ADA, "bram": BRAM}})
+    other = _evaluate(findings=[cy], disclosure={"people": {"bram": BRAM, "ada": ADA}})
+    assert one == other and one.to_dict() == other.to_dict()

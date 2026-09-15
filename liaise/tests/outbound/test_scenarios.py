@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import pytest
 
-from liaise.policy import ROUTES, SEND, ROUTE_BLOCK
+from liaise.policy import DELAY, ROUTE_BLOCK, ROUTE_DRAFT, ROUTES, SEND
 from liaise.tests.outbound import conftest
 from liaise.tests.outbound.suite import (
     EXTRAS,
@@ -44,7 +44,12 @@ def _check(case) -> None:
         f"{case.id}: {verdict.flow}, expected one of {sorted(case.expected)}; "
         f"reasons: {[reason.text for reason in verdict.reasons]}"
     )
-    assert verdict.route == ROUTES[verdict.flow]
+    expected_route = ROUTES[verdict.flow]
+    if verdict.flow == DELAY and not case.policy.outbox:
+        expected_route = (
+            ROUTE_DRAFT  # until the outbox exists, delay degrades to approve
+        )
+    assert verdict.route == expected_route
     if scenario.get("expects_finding"):
         assert scenario["expects_finding"] in {f.entity for f in verdict.findings}, (
             f"{case.id}: no finding names {scenario['expects_finding']}"
@@ -80,20 +85,25 @@ def test_the_suite_has_the_twenty_two_scenarios():
 
 def test_every_scenario_has_the_mutations_the_design_names():
     for scenario in SCENARIOS:
-        names = [case.id.partition(":")[2] for case in mutations(scenario)]
-        assert {
-            "swap-dm",
-            "swap-public",
-            "swap-shared",
-            "cc-stranger",
-            "bcc-bram",
-            "quoted",
-        } <= set(names), scenario["id"]
+        cases = list(mutations(scenario))
+        names = [case.id.partition(":")[2] for case in cases]
+        own = {"telegram_dm": "dm", "public_issue": "public", "org_repo": "shared"}
+        swaps = {"swap-dm", "swap-public", "swap-shared"} - {
+            f"swap-{own.get(scenario['channel'])}"
+        }
+        assert swaps | {"cc-stranger", "bcc-bram", "quoted"} <= set(names), scenario[
+            "id"
+        ]
+        base = prepare(scenario)
+        for case in cases:  # every mutation changes an input
+            assert (case.message, case.audience) != (base.message, base.audience), (
+                case.id
+            )
         if scenario.get("sensitive"):
             assert {"link-title", "attachment"} <= set(names), scenario["id"]
             if scenario["sensitive"] in ("Heron", "the bird project", "Cy", "Bram"):
                 assert (
-                    sum(n.startswith(("alias-", "homoglyph-")) for n in names) == 2
+                    sum(n.startswith(("alias-", "homoglyph-")) for n in names) == 3
                 ), scenario["id"]
 
 
