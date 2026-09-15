@@ -126,7 +126,9 @@ def audience_for(
 ) -> dict:
     """A correspond ``Audience`` record for ``channel``, as its adapter would compute it."""
     if channel == "email":
-        readers = [_reader(address_of(recipient))] + [_reader(address_of(c)) for c in cc]
+        readers = [_reader(address_of(recipient))] + [
+            _reader(address_of(c)) for c in cc
+        ]
         classes = ["copies delivered to each address"]
         if bcc:
             classes.append("a blind copy to an address the other readers do not see")
@@ -153,7 +155,12 @@ def audience_for(
             "classes": ["watchers and participants receive the body by email"],
             "external": True,
             "retractable": False,
-            "durability": ["indexed", "archived_by_others", "copies_pushed", "edit_history_visible"],
+            "durability": [
+                "indexed",
+                "archived_by_others",
+                "copies_pushed",
+                "edit_history_visible",
+            ],
             "widening": ["forks", "visibility_flip"],
             "as_of": as_of,
             "evidence": ["gh api repos/example/app: visibility public"],
@@ -174,7 +181,9 @@ def audience_for(
             "durability": ["copies_pushed", "edit_history_visible"],
             "widening": ["joiners_read_history", "forks", "visibility_flip"],
             "as_of": as_of,
-            "evidence": ["gh api repos/example/app-internal: visibility private, owner an organisation"],
+            "evidence": [
+                "gh api repos/example/app-internal: visibility private, owner an organisation"
+            ],
             "defaulted": False,
         }
     if channel == "operator":
@@ -201,10 +210,24 @@ def audience_for(
             "classes": [],
             "external": None,
             "retractable": False,
-            "durability": ["indexed", "archived_by_others", "copies_pushed", "edit_history_visible"],
-            "widening": ["visibility_flip", "joiners_read_history", "forwarding", "forks", "list_expansion"],
+            "durability": [
+                "indexed",
+                "archived_by_others",
+                "copies_pushed",
+                "edit_history_visible",
+            ],
+            "widening": [
+                "visibility_flip",
+                "joiners_read_history",
+                "forwarding",
+                "forks",
+                "list_expansion",
+            ],
             "as_of": as_of,
-            "evidence": [f"{channel.partition('_')[0]}: a channel not built", "unknown resolves to public"],
+            "evidence": [
+                f"{channel.partition('_')[0]}: a channel not built",
+                "unknown resolves to public",
+            ],
             "defaulted": True,
         }
     raise ValueError(f"no fixture audience for channel {channel!r}; one of {CHANNELS}")
@@ -273,7 +296,15 @@ def disclosure_for(
     people: dict[str, dict] = {}
     gap_lists: dict[str, list[str]] = {
         name: []
-        for name in ("unrecorded", "ambiguous", "not_a_person", "no_tier", "organisation", "unreadable", "unresolved_seals")
+        for name in (
+            "unrecorded",
+            "ambiguous",
+            "not_a_person",
+            "no_tier",
+            "organisation",
+            "unreadable",
+            "unresolved_seals",
+        )
     }
     for name, values in (gaps or {}).items():
         gap_lists[name] = list(values)
@@ -289,10 +320,16 @@ def disclosure_for(
         if person is None:
             gap_lists["unrecorded"].append(text)
             continue
-        people[person] = _person_entry(person, PEOPLE[person], overrides.get(person, {}))
+        people[person] = _person_entry(
+            person, PEOPLE[person], overrides.get(person, {})
+        )
     ceiling = _scope_ceiling(audience)
     strangers = ["clear"] * len(gap_lists["unrecorded"])
-    clearances = [p["clearance"] for p in people.values()] + strangers + ([ceiling] if ceiling else [])
+    clearances = (
+        [p["clearance"] for p in people.values()]
+        + strangers
+        + ([ceiling] if ceiling else [])
+    )
     least = min(clearances, key=_label_rank) if clearances else "red"
 
     entities: dict[str, dict] = {}
@@ -310,11 +347,17 @@ def disclosure_for(
             if person in sealed_from:
                 sealed.append(person)
                 not_cleared.append(person)
-            elif ref == f"person:{person}" or ref in entry["involved_in"] or may_see(entry["clearance"], label):
+            elif (
+                ref == f"person:{person}"
+                or ref in entry["involved_in"]
+                or may_see(entry["clearance"], label)
+            ):
                 cleared.append(person)
             else:
                 not_cleared.append(person)
-        above_unlisted = any(not may_see(c, label) for c in strangers + ([ceiling] if ceiling else []))
+        above_unlisted = any(
+            not may_see(c, label) for c in strangers + ([ceiling] if ceiling else [])
+        )
         seals += [{"entity": ref, "from": person} for person in sealed]
         entities[ref] = {
             "label": label,

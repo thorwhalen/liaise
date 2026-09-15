@@ -11,7 +11,15 @@ from __future__ import annotations
 import pytest
 
 from liaise.policy import RULE_NAMES, RULES, SEND, flow_rank
-from liaise.tests.outbound.suite import BY_ID, EXTRAS, SCENARIOS, all_cases, prepare, weakening, without
+from liaise.tests.outbound.suite import (
+    BY_ID,
+    EXTRAS,
+    SCENARIOS,
+    all_cases,
+    prepare,
+    weakening,
+    without,
+)
 
 FLOWED_RULES = [name for name in RULE_NAMES if name != "unknown audience"]
 #: The scenario each row's removal must loosen, so the check names what it relies on.
@@ -47,7 +55,9 @@ def _loosened(name: str, cases) -> list[tuple[str, str, str]]:
 def test_removing_the_rule_loosens_a_scenario(name):
     cases = [prepare(s) for s in (*SCENARIOS, *EXTRAS)]
     loosened = _loosened(name, cases)
-    assert loosened, f"no scenario gets a less restrictive verdict without the rule {name!r}"
+    assert loosened, (
+        f"no scenario gets a less restrictive verdict without the rule {name!r}"
+    )
     witnesses = {case_id for case_id, _, _ in loosened}
     assert set(WITNESSES[name]) <= witnesses, (name, sorted(witnesses))
 
@@ -61,7 +71,9 @@ def test_weakening_the_rule_loosens_a_scenario(name):
         mutated = case.evaluate(rules=weakening(name)).flow
         if flow_rank(mutated) < flow_rank(full):
             loosened.append((case.id, full, mutated))
-    assert loosened, f"no scenario gets a less restrictive verdict with the rule {name!r} weakened"
+    assert loosened, (
+        f"no scenario gets a less restrictive verdict with the rule {name!r} weakened"
+    )
 
 
 @pytest.mark.parametrize("name", FLOWED_RULES)
@@ -105,4 +117,7 @@ def test_the_exfiltration_row_treats_a_plain_link_as_approve():
     s21, s22 = prepare(BY_ID["S21"]), prepare(BY_ID["S22"])
     assert s21.evaluate().flow == "refuse"
     assert s22.evaluate().flow == "approve"
-    assert s22.evaluate(rules=without("exfiltration")).rules == ("taint", "irreversibility")
+    assert s22.evaluate(rules=without("exfiltration")).rules == (
+        "taint",
+        "irreversibility",
+    )

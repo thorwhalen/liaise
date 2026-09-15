@@ -215,7 +215,9 @@ class Provenance:
         if isinstance(value, Mapping):
             tainted = value.get("tainted")
             if tainted is not None and not isinstance(tainted, bool):
-                raise TypeError(f"provenance.tainted is true, false or null, not {tainted!r}")
+                raise TypeError(
+                    f"provenance.tainted is true, false or null, not {tainted!r}"
+                )
             return cls(tainted, tuple(str(e) for e in value.get("evidence") or ()))
         raise TypeError(
             f"provenance is a Provenance, its dict, a bool or None, not {type(value).__name__}"
@@ -478,7 +480,9 @@ def _reader_record(reader: Any) -> dict:
         reader = {"channel": channel, "handle": rest or None, "native_id": rest}
     elif not isinstance(reader, Mapping):
         reader = reader.to_dict() if hasattr(reader, "to_dict") else vars(reader)
-    record = {name: reader.get(name, default) for name, default in READER_DEFAULTS.items()}
+    record = {
+        name: reader.get(name, default) for name, default in READER_DEFAULTS.items()
+    }
     record["address"] = reader.get("address") or (
         f"{record['channel']}:{record['handle'] or record['native_id']}"
     )
@@ -509,14 +513,24 @@ def audience_record(audience: Any) -> dict:
         audience = audience.to_dict()
     scope = audience.get("scope")
     scope = getattr(scope, "value", scope)
-    record = {name: audience.get(name, default) for name, default in AUDIENCE_DEFAULTS.items()}
+    record = {
+        name: audience.get(name, default) for name, default in AUDIENCE_DEFAULTS.items()
+    }
     if scope not in SCOPES or record["defaulted"] is True:
         evidence = [str(e) for e in record["evidence"] or ()]
         if scope not in SCOPES:
             evidence.append(
-                "no audience was given" if scope is None else f"audience scope {scope!r} is unknown"
+                "no audience was given"
+                if scope is None
+                else f"audience scope {scope!r} is unknown"
             )
-            record.update(readers=(), classes=(), external=None, durability=DURABILITY, widening=WIDENING)
+            record.update(
+                readers=(),
+                classes=(),
+                external=None,
+                durability=DURABILITY,
+                widening=WIDENING,
+            )
         if UNKNOWN_AUDIENCE_EVIDENCE not in evidence:
             evidence.append(UNKNOWN_AUDIENCE_EVIDENCE)
         record.update(scope=PUBLIC, complete=False, defaulted=True, evidence=evidence)
@@ -524,6 +538,10 @@ def audience_record(audience: Any) -> dict:
             record["retractable"] = False
     else:
         record["scope"] = scope
+    if isinstance(record["readers"], (str, bytes, Mapping)):
+        raise TypeError(
+            "audience readers are a list of channel identities, not one value"
+        )
     readers = [_reader_record(reader) for reader in record["readers"] or ()]
     unique = {canonical_json(reader): reader for reader in readers}
     record["readers"] = [unique[key] for key in sorted(unique)]
@@ -610,14 +628,17 @@ def _people(disclosure: Mapping) -> dict[str, Mapping]:
     people = disclosure.get("people") or {}
     if not isinstance(people, Mapping):
         raise TypeError("disclosure.people is a mapping of person id to their standing")
-    return {str(person): (entry if isinstance(entry, Mapping) else {}) for person, entry in people.items()}
+    return {
+        str(person): (entry if isinstance(entry, Mapping) else {})
+        for person, entry in people.items()
+    }
 
 
 def _gap_texts(disclosure: Mapping) -> frozenset[str]:
     """Every reader the disclosure could not resolve, as it was named to it."""
     gaps = disclosure.get("gaps") or {}
     texts: set[str] = set()
-    for values in (gaps.values() if isinstance(gaps, Mapping) else ()):
+    for values in gaps.values() if isinstance(gaps, Mapping) else ():
         for value in values or ():
             texts.add(str(value))
             texts.add(str(value).partition(" (")[0])
@@ -627,7 +648,11 @@ def _gap_texts(disclosure: Mapping) -> frozenset[str]:
 def _disclosure_saw(audience: Mapping, disclosure: Mapping) -> bool:
     """Whether the disclosure was computed for this audience, so its readers are resolved."""
     about = disclosure.get("audience")
-    return isinstance(about, Mapping) and bool(audience["ref"]) and about.get("ref") == audience["ref"]
+    return (
+        isinstance(about, Mapping)
+        and bool(audience["ref"])
+        and about.get("ref") == audience["ref"]
+    )
 
 
 def _clearance_of(entry: Mapping) -> str:
@@ -695,16 +720,25 @@ def _ceiling(audience: Mapping, disclosure: Mapping) -> Optional[Reader]:
     scope = audience["scope"]
     ref = audience["ref"] or "the destination"
     if audience["defaulted"]:
-        return Reader(LABELS[0], f"anyone (the audience of {ref} could not be determined)")
+        return Reader(
+            LABELS[0], f"anyone (the audience of {ref} could not be determined)"
+        )
     if scope == PUBLIC:
         return Reader(LABELS[0], f"anyone ({audience_in_words(audience)})")
     if scope in (ORG, GROUP) and not audience["complete"]:
-        about = disclosure.get("audience") if _disclosure_saw(audience, disclosure) else None
+        about = (
+            disclosure.get("audience")
+            if _disclosure_saw(audience, disclosure)
+            else None
+        )
         organisation = (about or {}).get("organisation")
         ceiling = (about or {}).get("ceiling")
         noun = "organisation" if scope == ORG else "group"
         if ceiling in LABELS and organisation:
-            return Reader(ceiling, f"the unlisted members of {organisation} (cleared to {ceiling})")
+            return Reader(
+                ceiling,
+                f"the unlisted members of {organisation} (cleared to {ceiling})",
+            )
         return Reader(LABELS[0], f"the unlisted members of the {noun} behind {ref}")
     return None
 
@@ -737,7 +771,9 @@ def least_cleared_reader(
     return _least_cleared(record, disclosure, resolution)
 
 
-def _least_cleared(audience: Mapping, disclosure: Mapping, resolution: _Resolution) -> Reader:
+def _least_cleared(
+    audience: Mapping, disclosure: Mapping, resolution: _Resolution
+) -> Reader:
     if audience["scope"] == OPERATOR and not audience["defaulted"]:
         return Reader(None, "the operator")
     candidates: list[Reader] = []
@@ -896,7 +932,11 @@ def _resumable_flow(facts: Facts) -> str:
 def secrets(facts: Facts) -> Iterator[Hit]:
     """Any ``secret`` or ``canary`` finding."""
     for finding in facts.of_kind(*SECRET_KINDS):
-        what = "a canary term planted in private context" if finding.kind == "canary" else _describe(finding)
+        what = (
+            "a canary term planted in private context"
+            if finding.kind == "canary"
+            else _describe(finding)
+        )
         yield Hit(f"{what}: a secret is never sent, whatever the audience", finding)
 
 
@@ -916,7 +956,11 @@ def exfiltration(facts: Facts) -> Iterator[Hit]:
     """An ``exfiltration`` finding, and a scope beyond ``named`` or external readers."""
     if facts.scope not in WIDE_SCOPES and facts.audience["external"] is not True:
         return
-    why = "external readers" if facts.scope not in WIDE_SCOPES else f"the audience is {facts.scope}"
+    why = (
+        "external readers"
+        if facts.scope not in WIDE_SCOPES
+        else f"the audience is {facts.scope}"
+    )
     for finding in facts.of_kind(EXFILTRATION):
         if finding.rule == LINK_RULE:
             yield Hit(
@@ -956,7 +1000,8 @@ def no_write_down(facts: Facts) -> Iterator[Hit]:
 def co_ownership(facts: Facts) -> Iterator[Hit]:
     """A ``third_party`` finding whose subject's label is above a reader's clearance."""
     readers: list[Reader] = [
-        Reader(_clearance_of(entry), person, person) for person, entry in facts.readers.items()
+        Reader(_clearance_of(entry), person, person)
+        for person, entry in facts.readers.items()
     ]
     least = facts.least_cleared
     if least.person is None and least.clearance is not None:
@@ -988,7 +1033,10 @@ def tier(facts: Facts) -> Iterator[Hit]:
             continue
         entry = facts.entry(person)
         if entry.get("tier") == REVIEWED:
-            yield Hit(f"{person} is reviewed: every message to them is released by the operator", reader=person)
+            yield Hit(
+                f"{person} is reviewed: every message to them is released by the operator",
+                reader=person,
+            )
         if facts.lapsed(entry):
             recorded = entry.get("recorded_tier") or entry.get("tier")
             yield Hit(
@@ -999,14 +1047,20 @@ def tier(facts: Facts) -> Iterator[Hit]:
         review = entry.get("review")
         if review:
             items = "; ".join(str(item) for item in review)
-            yield Hit(f"{person}'s record awaits the operator's review: {items}", reader=person)
+            yield Hit(
+                f"{person}'s record awaits the operator's review: {items}",
+                reader=person,
+            )
 
 
 def stranger(facts: Facts) -> Iterator[Hit]:
     """An explicit recipient with no acquaint record."""
     for given, person in facts.recipients:
         if person is None:
-            yield Hit(f"{given} has no acquaint record: a stranger is written to by the operator", reader=given)
+            yield Hit(
+                f"{given} has no acquaint record: a stranger is written to by the operator",
+                reader=given,
+            )
 
 
 def disclosure_stance(facts: Facts) -> Iterator[Hit]:
@@ -1031,7 +1085,10 @@ def taint(facts: Facts) -> Iterator[Hit]:
     if facts.tainted is None:
         why = "the run's provenance is unknown, which counts as tainted"
     else:
-        evidence = "; ".join(facts.provenance.evidence) or "an inbound message the subject does not trust"
+        evidence = (
+            "; ".join(facts.provenance.evidence)
+            or "an inbound message the subject does not trust"
+        )
         why = f"the run read untrusted input ({evidence})"
     leaks = facts.leaks
     if leaks:
@@ -1044,14 +1101,19 @@ def taint(facts: Facts) -> Iterator[Hit]:
             flow=REFUSE,
         )
     else:
-        yield Hit(f"{why}, and the audience of {facts.ref} is {facts.scope}: the operator releases it")
+        yield Hit(
+            f"{why}, and the audience of {facts.ref} is {facts.scope}: the operator releases it"
+        )
 
 
 def reply_mode(facts: Facts) -> Iterator[Hit]:
     """``draft`` reply mode for this recipient or subject."""
     if facts.policy.reply_mode == DRAFT_REPLY_MODE:
         recipient = facts.recipients[0][0] if facts.recipients else "the recipient"
-        yield Hit(f"draft reply mode for {recipient}: the operator releases every message", reader=recipient)
+        yield Hit(
+            f"draft reply mode for {recipient}: the operator releases every message",
+            reader=recipient,
+        )
 
 
 def irreversibility(facts: Facts) -> Iterator[Hit]:
@@ -1067,7 +1129,9 @@ def unknown_audience(facts: Facts) -> Iterator[Hit]:
     """``defaulted`` is true: nothing by itself; the ceiling is ``clear``."""
     if facts.audience["defaulted"]:
         evidence = "; ".join(facts.audience["evidence"]) or UNKNOWN_AUDIENCE_EVIDENCE
-        yield Hit(f"the audience of {facts.ref} could not be determined ({evidence}): assumed public, ceiling clear")
+        yield Hit(
+            f"the audience of {facts.ref} could not be determined ({evidence}): assumed public, ceiling clear"
+        )
 
 
 #: The policy table (discussion §5.4), in its order. Not a seam: the rows and their flows
@@ -1134,7 +1198,9 @@ def facts_of(
     policy = OutboundPolicy.of(policy)
     resolution = _resolve(payload, record, disclosure, identities)
     case_id = _field(outbound, "case_id")
-    resumable = policy.resumable if policy.resumable is not None else case_id is not None
+    resumable = (
+        policy.resumable if policy.resumable is not None else case_id is not None
+    )
     return Facts(
         payload=payload,
         audience=record,
@@ -1192,7 +1258,9 @@ def evaluate(
         identities=identities,
     )
     reasons = [reason for rule in rules for reason in rule.hits(facts)]
-    reasons.sort(key=lambda reason: -flow_rank(reason.flow))  # stable: table order within a flow
+    reasons.sort(
+        key=lambda reason: -flow_rank(reason.flow)
+    )  # stable: table order within a flow
     flow = most_restrictive(reason.flow for reason in reasons)
     axes = {
         "audience": facts.scope,
@@ -1209,7 +1277,9 @@ def evaluate(
         least_cleared=facts.least_cleared,
         findings=facts.findings,
         payload_hash=_digest(facts.payload),
-        audience_hash=_digest({k: v for k, v in facts.audience.items() if k not in AUDIENCE_UNHASHED}),
+        audience_hash=_digest(
+            {k: v for k, v in facts.audience.items() if k not in AUDIENCE_UNHASHED}
+        ),
         as_of=now.isoformat(),
         mode=facts.policy.mode,
     )

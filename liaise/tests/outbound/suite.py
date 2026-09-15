@@ -55,10 +55,17 @@ from liaise.tests.outbound.fixtures import (
 
 SCENARIOS_FILE = Path(__file__).with_name("scenarios.yaml")
 DEFAULT_NOW = TODAY + "T12:00:00Z"
-PLACEHOLDERS = {"{at}": AT, "{email}": OPERATOR_ADDRESS, "{token}": TOKEN, "{canary}": CANARY}
+PLACEHOLDERS = {
+    "{at}": AT,
+    "{email}": OPERATOR_ADDRESS,
+    "{token}": TOKEN,
+    "{canary}": CANARY,
+}
 PROVENANCES = {
     "clean": Provenance.clean("every message read came from a trusted role"),
-    "tainted": Provenance.tainted_by("read an issue by an unknown author (grade none, role none)"),
+    "tainted": Provenance.tainted_by(
+        "read an issue by an unknown author (grade none, role none)"
+    ),
     "unknown": Provenance.unknown("the hook path: nobody can say what the run read"),
 }
 SWAP_CHANNELS = {"dm": "email", "public": "public_issue", "shared": "org_repo"}
@@ -66,7 +73,10 @@ SWAP_CHANNELS = {"dm": "email", "public": "public_issue", "shared": "org_repo"}
 HOMOGLYPHS = str.maketrans({"e": "е", "o": "о", "a": "а", "c": "с", "p": "р"})
 #: The other homoglyph substitution: ASCII letters to their full-width compatibility forms.
 FULLWIDTH = str.maketrans(
-    {c: chr(ord(c) - 0x20 + 0xFF00) for c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"}
+    {
+        c: chr(ord(c) - 0x20 + 0xFF00)
+        for c in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    }
 )
 STRANGER_CC = "email:pm" + AT + "partner.example"
 BRAM_BCC = "email:bram" + AT + "example.org"
@@ -205,7 +215,12 @@ def prepare(
     identities = {
         **IDENTITIES,
         **{given: IDENTITIES.get(given) for given in (*cc, *bcc)},
-        **{r["channel"] + ":" + r["handle"]: IDENTITIES.get(r["channel"] + ":" + r["handle"]) for r in audience["readers"]},
+        **{
+            r["channel"] + ":" + r["handle"]: IDENTITIES.get(
+                r["channel"] + ":" + r["handle"]
+            )
+            for r in audience["readers"]
+        },
     }
     return Prepared(
         id=f"{scenario['id']}{label}",
@@ -257,19 +272,45 @@ def mutations(scenario: Mapping[str, Any]) -> Iterator[Prepared]:
             ("homoglyph-fullwidth", span.translate(FULLWIDTH)),
         ]
         for name, substitute in substitutes[:2]:
-            yield prepare(scenario, text=text.replace(span, substitute), expected=same, label=f":{name}")
+            yield prepare(
+                scenario,
+                text=text.replace(span, substitute),
+                expected=same,
+                label=f":{name}",
+            )
     for name, channel in SWAP_CHANNELS.items():
-        yield prepare(scenario, channel=channel, expected=scenario["swaps"][name], label=f":swap-{name}")
+        yield prepare(
+            scenario,
+            channel=channel,
+            expected=scenario["swaps"][name],
+            label=f":swap-{name}",
+        )
     floor = max((APPROVE, _min_expected(scenario)), key=flow_rank)
-    yield prepare(scenario, cc=[*(scenario.get("cc") or ()), STRANGER_CC], expected=at_least(floor), label=":cc-stranger")
+    yield prepare(
+        scenario,
+        cc=[*(scenario.get("cc") or ()), STRANGER_CC],
+        expected=at_least(floor),
+        label=":cc-stranger",
+    )
     bcc_expected = {REFUSE} if _sealed_from_bram(scenario) else at_least(floor)
-    yield prepare(scenario, bcc=[*(scenario.get("bcc") or ()), BRAM_BCC], expected=bcc_expected, label=":bcc-bram")
+    yield prepare(
+        scenario,
+        bcc=[*(scenario.get("bcc") or ()), BRAM_BCC],
+        expected=bcc_expected,
+        label=":bcc-bram",
+    )
     yield prepare(scenario, text=_quoted(text), expected=same, label=":quoted")
     if span:
         titled = text.replace(span, f'[the notes](https://example.org/notes "{span}")')
         yield prepare(scenario, text=titled, expected=same, label=":link-title")
         moved = text.replace(span, "the attached")
-        yield prepare(scenario, text=moved, attachments=[f"{span} notes.pdf"], expected=same, label=":attachment")
+        yield prepare(
+            scenario,
+            text=moved,
+            attachments=[f"{span} notes.pdf"],
+            expected=same,
+            label=":attachment",
+        )
 
 
 def all_cases(scenarios: Sequence[Mapping] = SCENARIOS) -> list[Prepared]:
@@ -290,7 +331,11 @@ def weakened(rule: Rule) -> Rule:
             index = flow_rank(flow)
             yield replace(hit, flow=FLOWS[max(index - 1, 0)])
 
-    return Rule(rule.name, predicate, rule.flow if rule.flow == SEND else FLOWS[flow_rank(rule.flow) - 1])
+    return Rule(
+        rule.name,
+        predicate,
+        rule.flow if rule.flow == SEND else FLOWS[flow_rank(rule.flow) - 1],
+    )
 
 
 def without(name: str, rules: Sequence[Rule] = RULES) -> tuple[Rule, ...]:

@@ -61,7 +61,12 @@ PUBLIC_ISSUE = {
     "readers": [{"channel": "github", "native_id": "1", "handle": "octocat"}],
     "classes": ["watchers and participants receive the body by email"],
     "external": True,
-    "durability": ["indexed", "archived_by_others", "copies_pushed", "edit_history_visible"],
+    "durability": [
+        "indexed",
+        "archived_by_others",
+        "copies_pushed",
+        "edit_history_visible",
+    ],
     "widening": ["forks", "visibility_flip"],
     "as_of": "2026-09-15T12:00:00Z",
     "evidence": ["gh api repos/example/app: visibility public"],
@@ -78,7 +83,12 @@ EMAIL_TO_ADA = {
     "widening": ["forwarding"],
 }
 ORG_REPO = {"ref": "github:example/app-internal#3", "scope": "org", "complete": False}
-OPERATOR = {"ref": "macos:notify", "scope": "operator", "complete": True, "retractable": True}
+OPERATOR = {
+    "ref": "macos:notify",
+    "scope": "operator",
+    "complete": True,
+    "retractable": True,
+}
 ADA = {"tier": "open", "clearance": "amber", "review_by": "2026-11-01", "lapsed": False}
 BRAM = {"tier": "reviewed", "clearance": "clear"}
 IDENTITIES = {ADA_ADDRESS: "ada", BRAM_ADDRESS: "bram"}
@@ -97,7 +107,17 @@ MESSAGE = {
 MESSAGE_HASH = "798092320181161a24fc79cd82cb2ce1633dd61ff6991874354833e748c76648"
 
 
-def _finding(kind="vocabulary", *, entity="project:heron", label="amber", rule="term", start=4, end=9, sealed_from=(), severity=3):
+def _finding(
+    kind="vocabulary",
+    *,
+    entity="project:heron",
+    label="amber",
+    rule="term",
+    start=4,
+    end=9,
+    sealed_from=(),
+    severity=3,
+):
     return Finding(
         kind=kind,
         start=start,
@@ -111,7 +131,15 @@ def _finding(kind="vocabulary", *, entity="project:heron", label="amber", rule="
     )
 
 
-def _evaluate(message=MESSAGE, *, audience=EMAIL_TO_ADA, disclosure=None, findings=(), provenance=False, **options):
+def _evaluate(
+    message=MESSAGE,
+    *,
+    audience=EMAIL_TO_ADA,
+    disclosure=None,
+    findings=(),
+    provenance=False,
+    **options,
+):
     disclosure = {"people": {"ada": ADA}} if disclosure is None else disclosure
     options.setdefault("identities", IDENTITIES)
     return evaluate(
@@ -130,7 +158,14 @@ def _evaluate(message=MESSAGE, *, audience=EMAIL_TO_ADA, disclosure=None, findin
 
 def test_flows_order_by_restriction_and_map_to_three_routes():
     assert FLOWS == ("send", "delay", "revise", "approve", "approve_twice", "refuse")
-    assert [ROUTES[f] for f in FLOWS] == ["send", "send", "draft", "draft", "draft", "block"]
+    assert [ROUTES[f] for f in FLOWS] == [
+        "send",
+        "send",
+        "draft",
+        "draft",
+        "draft",
+        "block",
+    ]
     assert most_restrictive(["delay", "refuse", "send"]) == "refuse"
     assert most_restrictive([]) == "send"
     assert flow_rank("approve_twice") == 4
@@ -146,13 +181,36 @@ def test_approve_twice_is_reserved_and_never_produced():
 
 def test_the_table_has_the_fourteen_rows_in_the_designs_order():
     assert [rule.name for rule in RULES] == [
-        "secrets", "seals", "exfiltration", "personal, public", "no write-down", "co-ownership",
-        "personal, private", "tier", "stranger", "disclosure stance", "taint", "reply mode",
-        "irreversibility", "unknown audience",
+        "secrets",
+        "seals",
+        "exfiltration",
+        "personal, public",
+        "no write-down",
+        "co-ownership",
+        "personal, private",
+        "tier",
+        "stranger",
+        "disclosure stance",
+        "taint",
+        "reply mode",
+        "irreversibility",
+        "unknown audience",
     ]
     assert [rule.flow for rule in RULES] == [
-        "refuse", "refuse", "refuse", "refuse", "revise", "revise", "approve", "approve",
-        "approve", "approve", "approve", "approve", "delay", "send",
+        "refuse",
+        "refuse",
+        "refuse",
+        "refuse",
+        "revise",
+        "revise",
+        "approve",
+        "approve",
+        "approve",
+        "approve",
+        "approve",
+        "approve",
+        "delay",
+        "send",
     ]
 
 
@@ -173,7 +231,9 @@ def test_the_module_imports_nothing_from_correspond_or_acquaint():
             imported += [alias.name for alias in node.names]
         elif isinstance(node, ast.ImportFrom):
             imported.append(node.module or "")
-    assert not [name for name in imported if name.split(".")[0] in ("correspond", "acquaint")], imported
+    assert not [
+        name for name in imported if name.split(".")[0] in ("correspond", "acquaint")
+    ], imported
     for name, value in vars(policy).items():
         module = getattr(value, "__module__", "") or ""
         assert not module.startswith(("correspond", "acquaint")), name
@@ -208,7 +268,10 @@ def test_the_same_inputs_give_the_same_verdict():
         now=NOW + timedelta(days=1),
         identities=IDENTITIES,
     )
-    assert later.to_dict() == {**first.to_dict(), "as_of": (NOW + timedelta(days=1)).isoformat()}
+    assert later.to_dict() == {
+        **first.to_dict(),
+        "as_of": (NOW + timedelta(days=1)).isoformat(),
+    }
 
 
 # ---- hashes ----
@@ -235,24 +298,41 @@ def test_payload_hash_is_pinned_and_covers_what_an_approval_must_bind_to():
         {"attachments": ("other.pdf",)},
     ):
         assert payload_hash({**MESSAGE, **change}) != MESSAGE_HASH, change
-    assert payload_hash({**MESSAGE, "channel": "email", "case_id": None, "purpose": "ask"}) == MESSAGE_HASH
+    assert (
+        payload_hash({**MESSAGE, "channel": "email", "case_id": None, "purpose": "ask"})
+        == MESSAGE_HASH
+    )
 
 
 def test_payload_hash_reads_the_gates_outbound_record():
     outbound = Outbound(
-        ref="github:example/app#12", channel="github", recipient="ada", purpose="reply",
-        text="The export fix is in.", case_id="app-1",
+        ref="github:example/app#12",
+        channel="github",
+        recipient="ada",
+        purpose="reply",
+        text="The export fix is in.",
+        case_id="app-1",
     )
     assert payload_of(outbound)["attachments"] == []
     assert payload_hash(outbound) == payload_hash({**MESSAGE, "attachments": ()})
-    assert payload_of({"ref": "x", "recipient": "ada", "text": "t", "attachments": [{"name": "a.pdf"}, {"filename": "b.pdf"}]})["attachments"] == ["a.pdf", "b.pdf"]
+    assert payload_of(
+        {
+            "ref": "x",
+            "recipient": "ada",
+            "text": "t",
+            "attachments": [{"name": "a.pdf"}, {"filename": "b.pdf"}],
+        }
+    )["attachments"] == ["a.pdf", "b.pdf"]
 
 
 def test_payload_hash_uses_canonical_json_with_ascii_escaping():
     text = "Héron — en route"
     expected = policy._digest(payload_of({**MESSAGE, "text": text}))
     assert payload_hash({**MESSAGE, "text": text}) == expected
-    assert policy.canonical_json({"b": 1, "a": text}) == '{"a":"H\\u00e9ron \\u2014 en route","b":1}'
+    assert (
+        policy.canonical_json({"b": 1, "a": text})
+        == '{"a":"H\\u00e9ron \\u2014 en route","b":1}'
+    )
 
 
 def test_audience_hash_matches_correspond_for_the_pinned_record():
@@ -277,9 +357,29 @@ def test_audience_hash_ignores_as_of_evidence_and_listing_order():
 
 def test_audience_hash_matches_correspond_for_every_scope_and_for_unknown():
     for record in (
-        Audience(ref=ADA_ADDRESS, scope="named", readers=[], complete=False, external=True, as_of="2026-09-15T12:00:00Z"),
-        Audience(ref="github:example/app-internal#3", scope="org", complete=False, classes=["b", "a"], as_of="2026-09-15T12:00:00Z"),
-        Audience(ref="macos:notify", scope="operator", complete=True, retractable=True, external=False, as_of="2026-09-15T12:00:00Z"),
+        Audience(
+            ref=ADA_ADDRESS,
+            scope="named",
+            readers=[],
+            complete=False,
+            external=True,
+            as_of="2026-09-15T12:00:00Z",
+        ),
+        Audience(
+            ref="github:example/app-internal#3",
+            scope="org",
+            complete=False,
+            classes=["b", "a"],
+            as_of="2026-09-15T12:00:00Z",
+        ),
+        Audience(
+            ref="macos:notify",
+            scope="operator",
+            complete=True,
+            retractable=True,
+            external=False,
+            as_of="2026-09-15T12:00:00Z",
+        ),
         Audience.unknown("discord:planned", "a channel not built"),
     ):
         assert audience_hash(record.to_dict()) == record.hash, record.scope
@@ -288,9 +388,28 @@ def test_audience_hash_matches_correspond_for_every_scope_and_for_unknown():
 
 
 def test_audience_record_normalises_readers_as_correspond_does():
-    record = audience_record({**EMAIL_TO_ADA, "readers": [ADA_ADDRESS, {"channel": "email", "native_id": "x", "handle": "x"}]})
-    assert [r["address"] for r in record["readers"]] == sorted(r["address"] for r in record["readers"])
-    assert set(record["readers"][0]) == {"channel", "native_id", "handle", "display_name", "is_bot", "is_self", "authority", "address"}
+    record = audience_record(
+        {
+            **EMAIL_TO_ADA,
+            "readers": [
+                ADA_ADDRESS,
+                {"channel": "email", "native_id": "x", "handle": "x"},
+            ],
+        }
+    )
+    assert [r["address"] for r in record["readers"]] == sorted(
+        r["address"] for r in record["readers"]
+    )
+    assert set(record["readers"][0]) == {
+        "channel",
+        "native_id",
+        "handle",
+        "display_name",
+        "is_bot",
+        "is_self",
+        "authority",
+        "address",
+    }
     with pytest.raises(TypeError):
         audience_record(42)
     with pytest.raises(TypeError):
@@ -298,70 +417,128 @@ def test_audience_record_normalises_readers_as_correspond_does():
 
 
 def test_a_defaulted_audience_is_public_whatever_it_says():
-    record = audience_record({"ref": "x", "scope": "named", "defaulted": True, "retractable": True})
-    assert record["scope"] == "public" and not record["complete"] and not record["retractable"]
+    record = audience_record(
+        {"ref": "x", "scope": "named", "defaulted": True, "retractable": True}
+    )
+    assert (
+        record["scope"] == "public"
+        and not record["complete"]
+        and not record["retractable"]
+    )
     assert "unknown resolves to public" in record["evidence"]
     assert audience_in_words(record).startswith("world-readable (assumed")
     assert audience_in_words(PUBLIC_ISSUE) == (
         "world-readable; emailed to watchers and participants; archived by others; "
         "edits keep a visible history; not retractable"
     )
-    assert audience_in_words(PUBLIC_ISSUE) == Audience.from_dict(PUBLIC_ISSUE).in_words()
+    assert (
+        audience_in_words(PUBLIC_ISSUE) == Audience.from_dict(PUBLIC_ISSUE).in_words()
+    )
 
 
 # ---- the least-cleared reader ----
 
 
 def test_the_operator_has_no_ceiling():
-    assert least_cleared_reader(OPERATOR, {"people": {"ada": ADA}}) == Reader(None, "the operator")
+    assert least_cleared_reader(OPERATOR, {"people": {"ada": ADA}}) == Reader(
+        None, "the operator"
+    )
 
 
 def test_public_and_defaulted_audiences_are_clear():
-    assert least_cleared_reader(PUBLIC_ISSUE, {"people": {"ada": ADA}}).clearance == "clear"
+    assert (
+        least_cleared_reader(PUBLIC_ISSUE, {"people": {"ada": ADA}}).clearance
+        == "clear"
+    )
     reader = least_cleared_reader({"ref": "discord:x"}, {"people": {"ada": ADA}})
     assert reader.clearance == "clear" and "could not be determined" in reader.who
 
 
 def test_a_named_audience_is_the_minimum_over_its_resolved_readers():
     disclosure = {"people": {"ada": ADA, "bram": BRAM}}
-    reader = least_cleared_reader(EMAIL_TO_ADA, {"people": {"ada": ADA}}, identities=IDENTITIES, recipients=["ada"])
+    reader = least_cleared_reader(
+        EMAIL_TO_ADA,
+        {"people": {"ada": ADA}},
+        identities=IDENTITIES,
+        recipients=["ada"],
+    )
     assert reader == Reader("amber", "ada", "ada")
-    both = least_cleared_reader(EMAIL_TO_ADA, disclosure, identities=IDENTITIES, recipients=["ada"])
+    both = least_cleared_reader(
+        EMAIL_TO_ADA, disclosure, identities=IDENTITIES, recipients=["ada"]
+    )
     assert both == Reader("clear", "bram", "bram")
 
 
 def test_an_unresolved_identity_or_recipient_is_clear():
-    unresolved = least_cleared_reader(EMAIL_TO_ADA, {"people": {"ada": ADA}}, recipients=["ada"])
-    assert unresolved.clearance == "clear" and unresolved.who == f"{ADA_ADDRESS}, who has no record"
+    unresolved = least_cleared_reader(
+        EMAIL_TO_ADA, {"people": {"ada": ADA}}, recipients=["ada"]
+    )
+    assert (
+        unresolved.clearance == "clear"
+        and unresolved.who == f"{ADA_ADDRESS}, who has no record"
+    )
     stranger = least_cleared_reader(
-        {**EMAIL_TO_ADA, "readers": []}, {"people": {"ada": ADA}}, identities=IDENTITIES, recipients=["ada", "nobody"]
+        {**EMAIL_TO_ADA, "readers": []},
+        {"people": {"ada": ADA}},
+        identities=IDENTITIES,
+        recipients=["ada", "nobody"],
     )
     assert stranger == Reader("clear", "nobody, who has no record")
     resolved_but_unknown = least_cleared_reader(
-        {**EMAIL_TO_ADA, "readers": []}, {"people": {"ada": ADA}}, identities={"x": "cy"}, recipients=["ada", "x"]
+        {**EMAIL_TO_ADA, "readers": []},
+        {"people": {"ada": ADA}},
+        identities={"x": "cy"},
+        recipients=["ada", "x"],
     )
     assert resolved_but_unknown == Reader("clear", "cy", "cy")
 
 
 def test_a_listed_reader_the_disclosure_saw_counts_as_resolved():
-    saw = {"people": {"ada": ADA}, "audience": {"ref": ADA_ADDRESS, "scope": "named", "complete": False, "ceiling": "clear"}, "gaps": {}}
-    assert least_cleared_reader(EMAIL_TO_ADA, saw, recipients=["ada"]) == Reader("amber", "ada", "ada")
+    saw = {
+        "people": {"ada": ADA},
+        "audience": {
+            "ref": ADA_ADDRESS,
+            "scope": "named",
+            "complete": False,
+            "ceiling": "clear",
+        },
+        "gaps": {},
+    }
+    assert least_cleared_reader(EMAIL_TO_ADA, saw, recipients=["ada"]) == Reader(
+        "amber", "ada", "ada"
+    )
     gap = {**saw, "gaps": {"unrecorded": [ADA_ADDRESS]}}
-    assert least_cleared_reader(EMAIL_TO_ADA, gap, recipients=["ada"]).clearance == "clear"
+    assert (
+        least_cleared_reader(EMAIL_TO_ADA, gap, recipients=["ada"]).clearance == "clear"
+    )
     other = {**saw, "audience": {**saw["audience"], "ref": "email:other"}}
-    assert least_cleared_reader(EMAIL_TO_ADA, other, recipients=["ada"]).clearance == "clear"
+    assert (
+        least_cleared_reader(EMAIL_TO_ADA, other, recipients=["ada"]).clearance
+        == "clear"
+    )
 
 
 def test_an_incomplete_org_audience_takes_the_recorded_clearance_else_clear():
     disclosure = {"people": {"ada": ADA}}
-    assert least_cleared_reader(ORG_REPO, disclosure, recipients=["ada"]).clearance == "clear"
+    assert (
+        least_cleared_reader(ORG_REPO, disclosure, recipients=["ada"]).clearance
+        == "clear"
+    )
     recorded = {
         **disclosure,
-        "audience": {"ref": ORG_REPO["ref"], "scope": "org", "complete": False, "organisation": "org:example", "ceiling": "amber"},
+        "audience": {
+            "ref": ORG_REPO["ref"],
+            "scope": "org",
+            "complete": False,
+            "organisation": "org:example",
+            "ceiling": "amber",
+        },
     }
     reader = least_cleared_reader(ORG_REPO, recorded, recipients=["ada"])
     assert reader.clearance == "amber" and "org:example" in reader.who
-    complete = least_cleared_reader({**ORG_REPO, "complete": True}, disclosure, recipients=["ada"])
+    complete = least_cleared_reader(
+        {**ORG_REPO, "complete": True}, disclosure, recipients=["ada"]
+    )
     assert complete == Reader("amber", "ada", "ada")
 
 
@@ -381,7 +558,11 @@ def test_the_verdict_carries_the_axes_the_reasons_and_the_hashes():
         "tainted": True,
     }
     assert record["flow"] == "refuse" and record["route"] == "block"
-    assert [r["rule"] for r in record["reasons"]] == ["taint", "no write-down", "irreversibility"]
+    assert [r["rule"] for r in record["reasons"]] == [
+        "taint",
+        "no write-down",
+        "irreversibility",
+    ]
     assert [r["flow"] for r in record["reasons"]] == ["refuse", "revise", "delay"]
     assert record["reasons"][0]["finding"] == _finding().to_dict()
     assert record["least_cleared"]["clearance"] == "clear"
@@ -393,8 +574,18 @@ def test_the_verdict_carries_the_axes_the_reasons_and_the_hashes():
 
 
 def test_reasons_never_hold_a_secret():
-    secret = _finding("secret", entity=None, label=None, rule="github-pat", start=10, end=50, severity=5)
-    verdict = _evaluate({**MESSAGE, "text": "The token " + TOKEN + " is here."}, findings=[secret])
+    secret = _finding(
+        "secret",
+        entity=None,
+        label=None,
+        rule="github-pat",
+        start=10,
+        end=50,
+        severity=5,
+    )
+    verdict = _evaluate(
+        {**MESSAGE, "text": "The token " + TOKEN + " is here."}, findings=[secret]
+    )
     text = json.dumps(verdict.to_dict())
     assert TOKEN not in text and TOKEN[4:] not in text
     assert verdict.flow == "refuse"
@@ -413,7 +604,11 @@ def test_the_relationship_axis_is_the_most_restrictive_recipient():
 def test_axes_when_nothing_is_found_and_provenance_is_unknown():
     verdict = _evaluate(audience=OPERATOR, provenance=None)
     assert verdict.axes == {
-        "audience": "operator", "sensitivity": 0, "relationship": "open", "irreversible": False, "tainted": None,
+        "audience": "operator",
+        "sensitivity": 0,
+        "relationship": "open",
+        "irreversible": False,
+        "tainted": None,
     }
     assert verdict.flow == "send"
 
@@ -424,33 +619,75 @@ def test_axes_when_nothing_is_found_and_provenance_is_unknown():
 def test_revise_needs_a_case_to_resume_to():
     finding = _finding()
     assert _evaluate(findings=[finding], audience=PUBLIC_ISSUE).flow == "revise"
-    assert _evaluate({**MESSAGE, "case_id": None}, findings=[finding], audience=PUBLIC_ISSUE).flow == "approve"
-    assert _evaluate(findings=[finding], audience=PUBLIC_ISSUE, policy={"resumable": False}).flow == "approve"
-    assert _evaluate({**MESSAGE, "case_id": None}, findings=[finding], audience=PUBLIC_ISSUE, policy={"resumable": True}).flow == "revise"
+    assert (
+        _evaluate(
+            {**MESSAGE, "case_id": None}, findings=[finding], audience=PUBLIC_ISSUE
+        ).flow
+        == "approve"
+    )
+    assert (
+        _evaluate(
+            findings=[finding], audience=PUBLIC_ISSUE, policy={"resumable": False}
+        ).flow
+        == "approve"
+    )
+    assert (
+        _evaluate(
+            {**MESSAGE, "case_id": None},
+            findings=[finding],
+            audience=PUBLIC_ISSUE,
+            policy={"resumable": True},
+        ).flow
+        == "revise"
+    )
 
 
 def test_a_seal_recorded_in_the_disclosure_counts_without_the_finding_saying_so():
-    disclosure = {"people": {"ada": ADA, "bram": BRAM}, "seals": [{"entity": "project:heron", "from": "bram"}]}
-    verdict = _evaluate({**MESSAGE, "bcc": [BRAM_ADDRESS]}, findings=[_finding()], disclosure=disclosure)
-    assert verdict.flow == "refuse" and verdict.reasons[0].rule == "seals" and verdict.reasons[0].reader == "bram"
+    disclosure = {
+        "people": {"ada": ADA, "bram": BRAM},
+        "seals": [{"entity": "project:heron", "from": "bram"}],
+    }
+    verdict = _evaluate(
+        {**MESSAGE, "bcc": [BRAM_ADDRESS]}, findings=[_finding()], disclosure=disclosure
+    )
+    assert (
+        verdict.flow == "refuse"
+        and verdict.reasons[0].rule == "seals"
+        and verdict.reasons[0].reader == "bram"
+    )
     unread = _evaluate(findings=[_finding()], disclosure=disclosure)
-    assert unread.rules == ("seals", "no write-down")  # in the disclosure's people, Bram is a reader
-    without_bram = _evaluate(findings=[_finding()], disclosure={**disclosure, "people": {"ada": ADA}})
+    assert unread.rules == (
+        "seals",
+        "no write-down",
+    )  # in the disclosure's people, Bram is a reader
+    without_bram = _evaluate(
+        findings=[_finding()], disclosure={**disclosure, "people": {"ada": ADA}}
+    )
     assert without_bram.flow == "send"  # Ada is cleared for amber; nobody sealed reads
 
 
 def test_a_lapsed_tier_is_read_from_the_clock_as_well_as_the_record():
     finding = _finding()
     later = evaluate(
-        MESSAGE, audience=EMAIL_TO_ADA, disclosure={"people": {"ada": ADA}}, findings=[], provenance=False,
-        now=datetime(2026, 11, 5, tzinfo=timezone.utc), identities=IDENTITIES,
+        MESSAGE,
+        audience=EMAIL_TO_ADA,
+        disclosure={"people": {"ada": ADA}},
+        findings=[],
+        provenance=False,
+        now=datetime(2026, 11, 5, tzinfo=timezone.utc),
+        identities=IDENTITIES,
     )
     assert later.rules == ("tier",) and "past its review date" in later.reasons[0].text
     assert _evaluate(findings=[finding]).flow == "send"
     unreadable = _evaluate(disclosure={"people": {"ada": {**ADA, "review_by": "soon"}}})
     assert unreadable.rules == ("tier",)
-    reviewed = _evaluate(disclosure={"people": {"ada": {**ADA, "review": ["affiliation ended"]}}})
-    assert reviewed.rules == ("tier",) and "awaits the operator's review" in reviewed.reasons[0].text
+    reviewed = _evaluate(
+        disclosure={"people": {"ada": {**ADA, "review": ["affiliation ended"]}}}
+    )
+    assert (
+        reviewed.rules == ("tier",)
+        and "awaits the operator's review" in reviewed.reasons[0].text
+    )
 
 
 def test_the_taint_waiver_and_the_taint_escalation():
@@ -458,23 +695,52 @@ def test_the_taint_waiver_and_the_taint_escalation():
     assert _evaluate(provenance=tainted).flow == "approve"
     assert _evaluate(provenance=tainted, policy={"tainted_runs": "send"}).flow == "send"
     leaked = _evaluate(provenance=tainted, findings=[_finding()], audience=PUBLIC_ISSUE)
-    assert leaked.flow == "refuse" and "never released as written" in leaked.reasons[0].text
+    assert (
+        leaked.flow == "refuse"
+        and "never released as written" in leaked.reasons[0].text
+    )
     assert "read an issue by an unknown author" in leaked.reasons[0].text
-    assert _evaluate(provenance=tainted, findings=[_finding()], audience=PUBLIC_ISSUE, policy={"tainted_runs": "send"}).flow == "revise"
+    assert (
+        _evaluate(
+            provenance=tainted,
+            findings=[_finding()],
+            audience=PUBLIC_ISSUE,
+            policy={"tainted_runs": "send"},
+        ).flow
+        == "revise"
+    )
     assert _evaluate(provenance=None, audience=OPERATOR).flow == "send"
 
 
 def test_exfiltration_on_a_named_audience_needs_external_readers():
-    image = _finding("exfiltration", entity=None, label=None, rule="image-host", severity=4)
-    link = _finding("exfiltration", entity=None, label=None, rule="link-host", severity=4)
-    assert _evaluate(findings=[image], audience={**EMAIL_TO_ADA, "external": True}).flow == "refuse"
-    assert _evaluate(findings=[image], audience={**EMAIL_TO_ADA, "external": None}).flow == "send"
-    assert _evaluate(findings=[link], audience={**EMAIL_TO_ADA, "external": True}).flow == "approve"
-    assert _evaluate(findings=[link], audience=PUBLIC_ISSUE).rules == ("exfiltration", "irreversibility")
+    image = _finding(
+        "exfiltration", entity=None, label=None, rule="image-host", severity=4
+    )
+    link = _finding(
+        "exfiltration", entity=None, label=None, rule="link-host", severity=4
+    )
+    assert (
+        _evaluate(findings=[image], audience={**EMAIL_TO_ADA, "external": True}).flow
+        == "refuse"
+    )
+    assert (
+        _evaluate(findings=[image], audience={**EMAIL_TO_ADA, "external": None}).flow
+        == "send"
+    )
+    assert (
+        _evaluate(findings=[link], audience={**EMAIL_TO_ADA, "external": True}).flow
+        == "approve"
+    )
+    assert _evaluate(findings=[link], audience=PUBLIC_ISSUE).rules == (
+        "exfiltration",
+        "irreversibility",
+    )
 
 
 def test_personal_findings_split_by_scope():
-    personal = _finding("personal", entity=None, label=None, rule="email-address", severity=2)
+    personal = _finding(
+        "personal", entity=None, label=None, rule="email-address", severity=2
+    )
     assert _evaluate(findings=[personal]).flow == "approve"
     assert _evaluate(findings=[personal], audience=PUBLIC_ISSUE).flow == "refuse"
     assert _evaluate(findings=[personal], audience=OPERATOR).flow == "send"
@@ -483,7 +749,11 @@ def test_personal_findings_split_by_scope():
 def test_co_ownership_names_the_reader_who_is_not_cleared():
     cy = _finding("third_party", entity="person:cy", label="red", severity=3)
     verdict = _evaluate(findings=[cy])
-    assert verdict.flow == "revise" and verdict.reasons[0].rule == "co-ownership" and verdict.reasons[0].reader == "ada"
+    assert (
+        verdict.flow == "revise"
+        and verdict.reasons[0].rule == "co-ownership"
+        and verdict.reasons[0].reader == "ada"
+    )
     assert "ada is cleared to amber" in verdict.reasons[0].text
     public = _evaluate(findings=[cy], audience=PUBLIC_ISSUE)
     assert public.rules == ("co-ownership", "irreversibility")
@@ -492,7 +762,12 @@ def test_co_ownership_names_the_reader_who_is_not_cleared():
 def test_reply_mode_and_disclosure_stance():
     assert _evaluate(policy=OutboundPolicy(reply_mode="draft")).rules == ("reply mode",)
     assert _evaluate(policy={"ai_tolerance": "averse"}).rules == ("disclosure stance",)
-    assert _evaluate(policy={"ai_tolerance": "averse", "disclosure_decision": "disclosed"}).flow == "send"
+    assert (
+        _evaluate(
+            policy={"ai_tolerance": "averse", "disclosure_decision": "disclosed"}
+        ).flow
+        == "send"
+    )
     assert _evaluate(policy={"ai_tolerance": "neutral"}).flow == "send"
 
 
@@ -501,7 +776,9 @@ def test_reply_mode_and_disclosure_stance():
 
 def test_findings_may_come_as_dicts():
     as_dict = _finding().to_dict()
-    assert _evaluate(findings=[as_dict], audience=PUBLIC_ISSUE) == _evaluate(findings=[_finding()], audience=PUBLIC_ISSUE)
+    assert _evaluate(findings=[as_dict], audience=PUBLIC_ISSUE) == _evaluate(
+        findings=[_finding()], audience=PUBLIC_ISSUE
+    )
     with pytest.raises(TypeError, match="Finding"):
         _evaluate(findings=["not a finding"])
 
@@ -530,7 +807,14 @@ def test_provenance_and_policy_accept_their_dicts():
 
 def test_bad_inputs_are_refused_with_a_reason():
     with pytest.raises(TypeError, match="datetime"):
-        evaluate(MESSAGE, audience=EMAIL_TO_ADA, disclosure={}, findings=(), provenance=False, now="today")
+        evaluate(
+            MESSAGE,
+            audience=EMAIL_TO_ADA,
+            disclosure={},
+            findings=(),
+            provenance=False,
+            now="today",
+        )
     with pytest.raises(TypeError, match="text must be a str"):
         _evaluate({**MESSAGE, "text": None})
     with pytest.raises(TypeError, match="collection of strings"):
@@ -541,12 +825,21 @@ def test_bad_inputs_are_refused_with_a_reason():
 
 
 def test_the_shadow_mode_is_carried_not_applied():
-    verdict = _evaluate(findings=[_finding()], audience=PUBLIC_ISSUE, policy={"mode": "shadow"})
+    verdict = _evaluate(
+        findings=[_finding()], audience=PUBLIC_ISSUE, policy={"mode": "shadow"}
+    )
     assert verdict.mode == "shadow" and verdict.flow == "revise"
 
 
 def test_facts_of_exposes_what_the_rules_read():
-    facts = facts_of(MESSAGE, audience=PUBLIC_ISSUE, disclosure={"people": {"ada": ADA}}, findings=[_finding()], provenance=False, now=NOW)
+    facts = facts_of(
+        MESSAGE,
+        audience=PUBLIC_ISSUE,
+        disclosure={"people": {"ada": ADA}},
+        findings=[_finding()],
+        provenance=False,
+        now=NOW,
+    )
     assert isinstance(facts, Facts)
     assert facts.scope == "public" and facts.resumable and facts.case_id == "app-1"
     assert facts.recipients == (("ada", "ada"),)
@@ -560,5 +853,7 @@ def test_a_fresh_interpreter_can_import_the_policy_without_acquaint():
         "import liaise.policy as p\n"
         "print('acquaint' in sys.modules and sys.modules['acquaint'] is not None)"
     )
-    result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, check=True)
+    result = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    )
     assert result.stdout.strip() == "False"

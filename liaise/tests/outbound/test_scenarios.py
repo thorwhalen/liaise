@@ -14,15 +14,26 @@ import pytest
 
 from liaise.policy import ROUTES, SEND, ROUTE_BLOCK
 from liaise.tests.outbound import conftest
-from liaise.tests.outbound.suite import EXTRAS, SCENARIOS, all_cases, metrics, mutations, prepare
+from liaise.tests.outbound.suite import (
+    EXTRAS,
+    SCENARIOS,
+    all_cases,
+    metrics,
+    mutations,
+    prepare,
+)
 
 KNOWN_MISS_SEVERITY = 4
 
 
 def _mark(case, scenario):
     if scenario.get("known_miss"):
-        reason = f"known miss (severity {scenario['severity']}): {scenario['known_miss']}"
-        return pytest.param(case, id=case.id, marks=pytest.mark.xfail(reason=reason, strict=True))
+        reason = (
+            f"known miss (severity {scenario['severity']}): {scenario['known_miss']}"
+        )
+        return pytest.param(
+            case, id=case.id, marks=pytest.mark.xfail(reason=reason, strict=True)
+        )
     return pytest.param(case, id=case.id)
 
 
@@ -70,11 +81,20 @@ def test_the_suite_has_the_twenty_two_scenarios():
 def test_every_scenario_has_the_mutations_the_design_names():
     for scenario in SCENARIOS:
         names = [case.id.partition(":")[2] for case in mutations(scenario)]
-        assert {"swap-dm", "swap-public", "swap-shared", "cc-stranger", "bcc-bram", "quoted"} <= set(names), scenario["id"]
+        assert {
+            "swap-dm",
+            "swap-public",
+            "swap-shared",
+            "cc-stranger",
+            "bcc-bram",
+            "quoted",
+        } <= set(names), scenario["id"]
         if scenario.get("sensitive"):
             assert {"link-title", "attachment"} <= set(names), scenario["id"]
             if scenario["sensitive"] in ("Heron", "the bird project", "Cy", "Bram"):
-                assert sum(n.startswith(("alias-", "homoglyph-")) for n in names) == 2, scenario["id"]
+                assert (
+                    sum(n.startswith(("alias-", "homoglyph-")) for n in names) == 2
+                ), scenario["id"]
 
 
 def test_send_fails_wherever_it_is_not_expected():
