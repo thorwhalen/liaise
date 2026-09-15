@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="API reference" href="../api.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.0" />
+  <meta name="docsearch:version" content="0.1.1" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -334,6 +334,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.projection.html">liaise.projection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.prompt.html">liaise.prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.readiness.html">liaise.readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.release.html">liaise.release</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.schedule.html">liaise.schedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
@@ -1779,7 +1780,7 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <td><p>Identity and access: who a message is from, and whether they may do what it asks.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="liaise.cases.html#module-liaise.cases" title="liaise.cases"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cases</span></code></a></p></td>
-<td><p>Cases as the operator sees and moves them: <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code> and <code class="docutils literal notranslate"><span class="pre">set-state</span></code>.</p></td>
+<td><p>Cases as the operator sees and moves them: <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code>, <code class="docutils literal notranslate"><span class="pre">set-state</span></code>, <code class="docutils literal notranslate"><span class="pre">send-draft</span></code> and <code class="docutils literal notranslate"><span class="pre">reject-draft</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="liaise.cli.html#module-liaise.cli" title="liaise.cli"><code class="xref py py-obj docutils literal notranslate"><span class="pre">cli</span></code></a></p></td>
 <td><p>The <code class="docutils literal notranslate"><span class="pre">liaise</span></code> command line (liaise 0.1).</p></td>
@@ -1826,19 +1827,22 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <tr class="row-odd"><td><p><a class="reference internal" href="liaise.readiness.html#module-liaise.readiness" title="liaise.readiness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readiness</span></code></a></p></td>
 <td><p>Readiness: whether a case is ready to dispatch, read off its own ledger entries.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.schedule.html#module-liaise.schedule" title="liaise.schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.release.html#module-liaise.release" title="liaise.release"><code class="xref py py-obj docutils literal notranslate"><span class="pre">release</span></code></a></p></td>
+<td><p>Releasing a message: through the gate, then through correspond, as one step.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.schedule.html#module-liaise.schedule" title="liaise.schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule</span></code></a></p></td>
 <td><p>Scheduling <code class="code docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">run</span> <span class="pre">--once</span></code> (A.7): a launchd agent on macOS, a systemd user timer on Linux.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.subjects.html#module-liaise.subjects" title="liaise.subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subjects</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.subjects.html#module-liaise.subjects" title="liaise.subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subjects</span></code></a></p></td>
 <td><p>Subjects: the bodies of work liaise runs, each loaded from <code class="docutils literal notranslate"><span class="pre">subjects/&lt;slug&gt;.toml</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.testing.html#module-liaise.testing" title="liaise.testing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">testing</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.testing.html#module-liaise.testing" title="liaise.testing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">testing</span></code></a></p></td>
 <td><p>Fakes shipped with liaise: for its tests, and for the one-command smoke test.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.tick.html#module-liaise.tick" title="liaise.tick"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tick</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.tick.html#module-liaise.tick" title="liaise.tick"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tick</span></code></a></p></td>
 <td><p>The tick: one pass of liaise 0.1's loop (design §3.1).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.workspace.html#module-liaise.workspace" title="liaise.workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">workspace</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.workspace.html#module-liaise.workspace" title="liaise.workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">workspace</span></code></a></p></td>
 <td><p>The checkout a subject's runs share: one run at a time, and never beside a live session.</p></td>
 </tr>
 </tbody>

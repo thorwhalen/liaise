@@ -78,6 +78,7 @@
    projection
    prompt
    readiness
+   release
    schedule
    subjects
    testing

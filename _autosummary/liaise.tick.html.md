@@ -83,6 +83,7 @@ tell a running tick from a finished or an interrupted one. [`status_lines()`](#l
 | [`DEPLOY_OUTPUT_TAIL_CHARS`](#liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS) | How many of a failed deploy's last output characters its `run` entry keeps.                                                                                                    |
 | [`WorkspaceFactory`](#liaise.tick.WorkspaceFactory)         | the workspace seam (see [`liaise.workspace.workspace_for()`](liaise.workspace.html.md#liaise.workspace.workspace_for)).                                     |
 | [`Triage`](#liaise.tick.Triage)                   | the triage seam (#19).                                                                                                                                                         |
+| [`HELD_REASON_PREFIX`](#liaise.tick.HELD_REASON_PREFIX)       | How a draft kept because a hold kept its effects waiting begins its reason, before the hold's scope: `held: effect:deploy`.                                                    |
 | [`RUN_LOCK_FILE`](#liaise.tick.RUN_LOCK_FILE)            | The run lock's file under `state_dir`.                                                                                                                                         |
 | [`RUN_STARTED_KEY`](#liaise.tick.RUN_STARTED_KEY)          | Where the store keeps a tick's start and end.                                                                                                                                  |
 | [`LEGACY_LAST_RUN_KEY`](#liaise.tick.LEGACY_LAST_RUN_KEY)      | a pass's start, written once the pass had finished.                                                                                                                            |
@@ -174,6 +175,11 @@ A message that did not go out: the gate diverted it, or a hold kept it.
 The states a case may be started from. `working`, `needs-owner` and `deployed`
 wait on something other than the partner’s clock. `budget` is one, since the cap is
 per day (0.0.x H-4).
+
+### liaise.tick.HELD_REASON_PREFIX *= 'held: '*
+
+How a draft kept because a hold kept its effects waiting begins its reason, before the
+hold’s scope: `held: effect:deploy`.
 
 ### liaise.tick.ISSUE_DELIVERY_PER *= 'issue'*
 

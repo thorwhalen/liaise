@@ -1001,26 +1001,27 @@ Raises `ValueError` for a scope outside the accepted forms.
 
 ### Modules
 
-| [`access`](liaise.access.html.md#module-liaise.access)         | Identity and access: who a message is from, and whether they may do what it asks.              |
-|--------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| [`cases`](liaise.cases.html.md#module-liaise.cases)           | Cases as the operator sees and moves them: `liaise case list`, `show` and `set-state`.         |
-| [`cli`](liaise.cli.html.md#module-liaise.cli)               | The `liaise` command line (liaise 0.1).                                                        |
-| [`config`](liaise.config.html.md#module-liaise.config)         | The global config, and the 0.0.x partner files `liaise migrate-config` reads.                  |
-| [`detect`](liaise.detect.html.md#module-liaise.detect)         | Detectors for outbound messages: what a message holds, reported without the value.             |
-| [`errors`](liaise.errors.html.md#module-liaise.errors)         | Processor error taxonomy (design §3.6): classify how a run ended, and what the tick does.      |
-| [`gate`](liaise.gate.html.md#module-liaise.gate)             | The outbound gate: the checks a message passes before liaise sends it.                         |
-| [`github`](liaise.github.html.md#module-liaise.github)         | The GitHub seam: one protocol, two implementations.                                            |
-| [`holds`](liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                     |
-| [`ledger`](liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.              |
-| [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                  |
-| [`model`](liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                    |
-| [`outcomes`](liaise.outcomes.html.md#module-liaise.outcomes)     | Outcomes: what a processor run reports, checked, then planned into actions.                    |
-| [`processor`](liaise.processor.html.md#module-liaise.processor)   | Processors (design §3.6): what runs a case's work, detached, and how that run ended.           |
-| [`projection`](liaise.projection.html.md#module-liaise.projection) | Label projection: a case's state, shown on each of its GitHub issues as one label.             |
-| [`prompt`](liaise.prompt.html.md#module-liaise.prompt)         | The prompt composer: the whole prompt a processor run on one case starts from.                 |
-| [`readiness`](liaise.readiness.html.md#module-liaise.readiness)   | Readiness: whether a case is ready to dispatch, read off its own ledger entries.               |
-| [`schedule`](liaise.schedule.html.md#module-liaise.schedule)     | Scheduling `liaise run --once` (A.7): a launchd agent on macOS, a systemd user timer on Linux. |
-| [`subjects`](liaise.subjects.html.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.             |
-| [`testing`](liaise.testing.html.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                  |
-| [`tick`](liaise.tick.html.md#module-liaise.tick)             | The tick: one pass of liaise 0.1's loop (design §3.1).                                         |
-| [`workspace`](liaise.workspace.html.md#module-liaise.workspace)   | The checkout a subject's runs share: one run at a time, and never beside a live session.       |
+| [`access`](liaise.access.html.md#module-liaise.access)         | Identity and access: who a message is from, and whether they may do what it asks.                                    |
+|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
+| [`cases`](liaise.cases.html.md#module-liaise.cases)           | Cases as the operator sees and moves them: `liaise case list`, `show`, `set-state`, `send-draft` and `reject-draft`. |
+| [`cli`](liaise.cli.html.md#module-liaise.cli)               | The `liaise` command line (liaise 0.1).                                                                              |
+| [`config`](liaise.config.html.md#module-liaise.config)         | The global config, and the 0.0.x partner files `liaise migrate-config` reads.                                        |
+| [`detect`](liaise.detect.html.md#module-liaise.detect)         | Detectors for outbound messages: what a message holds, reported without the value.                                   |
+| [`errors`](liaise.errors.html.md#module-liaise.errors)         | Processor error taxonomy (design §3.6): classify how a run ended, and what the tick does.                            |
+| [`gate`](liaise.gate.html.md#module-liaise.gate)             | The outbound gate: the checks a message passes before liaise sends it.                                               |
+| [`github`](liaise.github.html.md#module-liaise.github)         | The GitHub seam: one protocol, two implementations.                                                                  |
+| [`holds`](liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
+| [`ledger`](liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
+| [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
+| [`model`](liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |
+| [`outcomes`](liaise.outcomes.html.md#module-liaise.outcomes)     | Outcomes: what a processor run reports, checked, then planned into actions.                                          |
+| [`processor`](liaise.processor.html.md#module-liaise.processor)   | Processors (design §3.6): what runs a case's work, detached, and how that run ended.                                 |
+| [`projection`](liaise.projection.html.md#module-liaise.projection) | Label projection: a case's state, shown on each of its GitHub issues as one label.                                   |
+| [`prompt`](liaise.prompt.html.md#module-liaise.prompt)         | The prompt composer: the whole prompt a processor run on one case starts from.                                       |
+| [`readiness`](liaise.readiness.html.md#module-liaise.readiness)   | Readiness: whether a case is ready to dispatch, read off its own ledger entries.                                     |
+| [`release`](liaise.release.html.md#module-liaise.release)       | Releasing a message: through the gate, then through correspond, as one step.                                         |
+| [`schedule`](liaise.schedule.html.md#module-liaise.schedule)     | Scheduling `liaise run --once` (A.7): a launchd agent on macOS, a systemd user timer on Linux.                       |
+| [`subjects`](liaise.subjects.html.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.                                   |
+| [`testing`](liaise.testing.html.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                                        |
+| [`tick`](liaise.tick.html.md#module-liaise.tick)             | The tick: one pass of liaise 0.1's loop (design §3.1).                                                               |
+| [`workspace`](liaise.workspace.html.md#module-liaise.workspace)   | The checkout a subject's runs share: one run at a time, and never beside a live session.                             |

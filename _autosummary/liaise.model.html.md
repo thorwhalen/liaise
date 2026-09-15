@@ -33,15 +33,27 @@ are pure and take the time they record as an argument.
 
 ### Classes
 
-| [`Case`](#liaise.model.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                          |
-|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
-| [`Health`](#liaise.model.Health)(ok[, defer_until, error])                  | Whether a processor can take work now, and if not, until when or why.                                            |
-| [`Hold`](#liaise.model.Hold)(scope, mode[, reason, set_by, set_at])       | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                       |
-| [`IssueCheck`](#liaise.model.IssueCheck)([read_at, failures])                   | The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.                |
-| [`LedgerEntry`](#liaise.model.LedgerEntry)(at, kind[, actor, grade, ...])        | One thing that happened on a case: appended, never changed.                                                      |
-| [`Outcome`](#liaise.model.Outcome)(kind[, text, questions, reason])          | One outcome a processor run reports: `kind` from [`OUTCOME_KINDS`](#liaise.model.OUTCOME_KINDS). |
-| [`RunRecord`](#liaise.model.RunRecord)(run_id, case_id, subject, mode, ...)    | A processor run started on a case: how it was started, and where it is now.                                      |
-| [`RunResult`](#liaise.model.RunResult)(run_id[, outcomes, usage, ...])         | What a finished run returned: its outcomes, what it cost, and how it ended.                                      |
+| [`Approval`](#liaise.model.Approval)(by, at)                                | The operator's release of a held message: who released it, and when.                                             |
+|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
+| [`Case`](#liaise.model.Case)(id, subject, conversations, reporter, ...) | One piece of work on a subject, from its first message to its delivery.                                          |
+| [`Health`](#liaise.model.Health)(ok[, defer_until, error])                | Whether a processor can take work now, and if not, until when or why.                                            |
+| [`Hold`](#liaise.model.Hold)(scope, mode[, reason, set_by, set_at])     | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                       |
+| [`IssueCheck`](#liaise.model.IssueCheck)([read_at, failures])                 | The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.                |
+| [`LedgerEntry`](#liaise.model.LedgerEntry)(at, kind[, actor, grade, ...])      | One thing that happened on a case: appended, never changed.                                                      |
+| [`Outcome`](#liaise.model.Outcome)(kind[, text, questions, reason])        | One outcome a processor run reports: `kind` from [`OUTCOME_KINDS`](#liaise.model.OUTCOME_KINDS). |
+| [`RunRecord`](#liaise.model.RunRecord)(run_id, case_id, subject, mode, ...)  | A processor run started on a case: how it was started, and where it is now.                                      |
+| [`RunResult`](#liaise.model.RunResult)(run_id[, outcomes, usage, ...])       | What a finished run returned: its outcomes, what it cost, and how it ended.                                      |
+
+### *class* liaise.model.Approval(by, at)
+
+Bases: `_Record`
+
+The operator’s release of a held message: who released it, and when.
+
+The gate reads it from `liaise.gate.GateContext.approval`. It settles
+[`liaise.gate.reply_mode()`](liaise.gate.html.md#liaise.gate.reply_mode), which is what `draft` reply mode waits for, and
+nothing else: every other filter still judges the message, so a leak in a released
+draft is diverted all the same. It is recorded with the send.
 
 ### liaise.model.CASE_STATES *= ('intake', 'paused', 'working', 'needs-partner', 'needs-owner', 'deployed', 'budget')*
 

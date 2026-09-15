@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.testing" href="liaise.testing.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.0" />
+  <meta name="docsearch:version" content="0.1.1" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -334,6 +334,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.projection.html">liaise.projection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.prompt.html">liaise.prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.readiness.html">liaise.readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.release.html">liaise.release</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.schedule.html">liaise.schedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
@@ -541,13 +542,16 @@ tell a running tick from a finished or an interrupted one. <a class="reference i
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.Triage" title="liaise.tick.Triage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triage</span></code></a></p></td>
 <td><p>the triage seam (#19).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RUN_LOCK_FILE" title="liaise.tick.RUN_LOCK_FILE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_LOCK_FILE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.HELD_REASON_PREFIX" title="liaise.tick.HELD_REASON_PREFIX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HELD_REASON_PREFIX</span></code></a></p></td>
+<td><p>How a draft kept because a hold kept its effects waiting begins its reason, before the hold's scope: <code class="docutils literal notranslate"><span class="pre">held:</span> <span class="pre">effect:deploy</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RUN_LOCK_FILE" title="liaise.tick.RUN_LOCK_FILE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_LOCK_FILE</span></code></a></p></td>
 <td><p>The run lock's file under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RUN_STARTED_KEY" title="liaise.tick.RUN_STARTED_KEY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_STARTED_KEY</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RUN_STARTED_KEY" title="liaise.tick.RUN_STARTED_KEY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUN_STARTED_KEY</span></code></a></p></td>
 <td><p>Where the store keeps a tick's start and end.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.LEGACY_LAST_RUN_KEY" title="liaise.tick.LEGACY_LAST_RUN_KEY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LEGACY_LAST_RUN_KEY</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.LEGACY_LAST_RUN_KEY" title="liaise.tick.LEGACY_LAST_RUN_KEY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LEGACY_LAST_RUN_KEY</span></code></a></p></td>
 <td><p>a pass's start, written once the pass had finished.</p></td>
 </tr>
 </tbody>
@@ -694,6 +698,13 @@ otherwise ready is not read every tick.</p>
 <dd><p>The states a case may be started from. <code class="docutils literal notranslate"><span class="pre">working</span></code>, <code class="docutils literal notranslate"><span class="pre">needs-owner</span></code> and <code class="docutils literal notranslate"><span class="pre">deployed</span></code>
 wait on something other than the partner’s clock. <code class="docutils literal notranslate"><span class="pre">budget</span></code> is one, since the cap is
 per day (0.0.x H-4).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.HELD_REASON_PREFIX">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">HELD_REASON_PREFIX</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'held:</span> <span class="pre">'</span></span><a class="headerlink" href="#liaise.tick.HELD_REASON_PREFIX" title="Link to this definition">#</a></dt>
+<dd><p>How a draft kept because a hold kept its effects waiting begins its reason, before the
+hold’s scope: <code class="docutils literal notranslate"><span class="pre">held:</span> <span class="pre">effect:deploy</span></code>.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -1061,6 +1072,7 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DFLT_STATUS_RECENT"><code class="docutils literal notranslate"><span class="pre">DFLT_STATUS_RECENT</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.Diversion"><code class="docutils literal notranslate"><span class="pre">Diversion</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.ELIGIBLE_STATES"><code class="docutils literal notranslate"><span class="pre">ELIGIBLE_STATES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.HELD_REASON_PREFIX"><code class="docutils literal notranslate"><span class="pre">HELD_REASON_PREFIX</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.ISSUE_DELIVERY_PER"><code class="docutils literal notranslate"><span class="pre">ISSUE_DELIVERY_PER</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.LEGACY_LAST_RUN_KEY"><code class="docutils literal notranslate"><span class="pre">LEGACY_LAST_RUN_KEY</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.LOST_RUN_DEADLINE"><code class="docutils literal notranslate"><span class="pre">LOST_RUN_DEADLINE</span></code></a></li>

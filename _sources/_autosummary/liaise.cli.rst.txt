@@ -12,14 +12,24 @@ liaise.cli
       STOPPED
       NONE_SHOWN
       TICK_RUNNING
+      EDITOR_ENV_VARS
+      DFLT_EDITOR
+      DRAFT_FILE_NAME
+      CONFIRM_PROMPT
+      DIVERTED_EXIT_CODE
+      NO_TERMINAL
    
    .. rubric:: Functions
 
    .. autosummary::
    
       case_list
+      case_reject_draft
+      case_send_draft
       case_set_state
       case_show
+      confirm_at_terminal
+      edit_in_editor
       hold
       migrate_config
       run

@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.migrate" href="liaise.migrate.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.0" />
+  <meta name="docsearch:version" content="0.1.1" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -334,6 +334,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.projection.html">liaise.projection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.prompt.html">liaise.prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.readiness.html">liaise.readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.release.html">liaise.release</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.schedule.html">liaise.schedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
@@ -456,33 +457,49 @@ are pure and take the time they record as an argument.</p>
 <p class="rubric">Classes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.Case" title="liaise.model.Case"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Case</span></code></a>(id, subject, conversations, reporter, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.Approval" title="liaise.model.Approval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Approval</span></code></a>(by, at)</p></td>
+<td><p>The operator's release of a held message: who released it, and when.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.Case" title="liaise.model.Case"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Case</span></code></a>(id, subject, conversations, reporter, ...)</p></td>
 <td><p>One piece of work on a subject, from its first message to its delivery.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.Health" title="liaise.model.Health"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Health</span></code></a>(ok[, defer_until, error])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.Health" title="liaise.model.Health"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Health</span></code></a>(ok[, defer_until, error])</p></td>
 <td><p>Whether a processor can take work now, and if not, until when or why.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.Hold" title="liaise.model.Hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hold</span></code></a>(scope, mode[, reason, set_by, set_at])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.Hold" title="liaise.model.Hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hold</span></code></a>(scope, mode[, reason, set_by, set_at])</p></td>
 <td><p>A stop on work in <code class="docutils literal notranslate"><span class="pre">scope</span></code> (<code class="docutils literal notranslate"><span class="pre">global</span></code>, <code class="docutils literal notranslate"><span class="pre">subject:&lt;slug&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">repo:&lt;o/r&gt;</span></code>, ...).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.IssueCheck" title="liaise.model.IssueCheck"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IssueCheck</span></code></a>([read_at, failures])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.IssueCheck" title="liaise.model.IssueCheck"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IssueCheck</span></code></a>([read_at, failures])</p></td>
 <td><p>The tick's reads of a case's GitHub issue state: when one last succeeded, and the failures since.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.LedgerEntry" title="liaise.model.LedgerEntry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LedgerEntry</span></code></a>(at, kind[, actor, grade, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.LedgerEntry" title="liaise.model.LedgerEntry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LedgerEntry</span></code></a>(at, kind[, actor, grade, ...])</p></td>
 <td><p>One thing that happened on a case: appended, never changed.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.Outcome" title="liaise.model.Outcome"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Outcome</span></code></a>(kind[, text, questions, reason])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.Outcome" title="liaise.model.Outcome"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Outcome</span></code></a>(kind[, text, questions, reason])</p></td>
 <td><p>One outcome a processor run reports: <code class="docutils literal notranslate"><span class="pre">kind</span></code> from <a class="reference internal" href="#liaise.model.OUTCOME_KINDS" title="liaise.model.OUTCOME_KINDS"><code class="xref py py-data docutils literal notranslate"><span class="pre">OUTCOME_KINDS</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunRecord</span></code></a>(run_id, case_id, subject, mode, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunRecord</span></code></a>(run_id, case_id, subject, mode, ...)</p></td>
 <td><p>A processor run started on a case: how it was started, and where it is now.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.RunResult" title="liaise.model.RunResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunResult</span></code></a>(run_id[, outcomes, usage, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.RunResult" title="liaise.model.RunResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunResult</span></code></a>(run_id[, outcomes, usage, ...])</p></td>
 <td><p>What a finished run returned: its outcomes, what it cost, and how it ended.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.model.Approval">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.model.</span></span><span class="sig-name descname"><span class="pre">Approval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">at</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Approval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.model.Approval" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Record</span></code></p>
+<p>The operator’s release of a held message: who released it, and when.</p>
+<p>The gate reads it from <code class="xref py py-attr docutils literal notranslate"><span class="pre">liaise.gate.GateContext.approval</span></code>. It settles
+<a class="reference internal" href="liaise.gate.html#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.gate.reply_mode()</span></code></a>, which is what <code class="docutils literal notranslate"><span class="pre">draft</span></code> reply mode waits for, and
+nothing else: every other filter still judges the message, so a leak in a released
+draft is diverted all the same. It is recorded with the send.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.model.CASE_STATES">
 <span class="sig-prename descclassname"><span class="pre">liaise.model.</span></span><span class="sig-name descname"><span class="pre">CASE_STATES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('intake',</span> <span class="pre">'paused',</span> <span class="pre">'working',</span> <span class="pre">'needs-partner',</span> <span class="pre">'needs-owner',</span> <span class="pre">'deployed',</span> <span class="pre">'budget')</span></span><a class="headerlink" href="#liaise.model.CASE_STATES" title="Link to this definition">#</a></dt>
@@ -719,6 +736,7 @@ so storing the result can never alias the object it came from.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Approval"><code class="docutils literal notranslate"><span class="pre">Approval</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.CASE_STATES"><code class="docutils literal notranslate"><span class="pre">CASE_STATES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Case"><code class="docutils literal notranslate"><span class="pre">Case</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Case.with_entry"><code class="docutils literal notranslate"><span class="pre">Case.with_entry()</span></code></a></li>

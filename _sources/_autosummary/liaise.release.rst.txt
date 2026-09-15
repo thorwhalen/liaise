@@ -1,0 +1,25 @@
+liaise.release
+==============
+
+.. automodule:: liaise.release
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_REFUSAL
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      error_text
+      gate_and_send
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      SendAttempt
+   

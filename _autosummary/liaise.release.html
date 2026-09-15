@@ -8,9 +8,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<link rel="alternate" type="text/markdown" href="liaise.schedule.html.md">
+<link rel="alternate" type="text/markdown" href="liaise.release.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
-    <title>liaise.schedule &#8212; liaise</title>
+    <title>liaise.release &#8212; liaise</title>
   
   
   
@@ -47,12 +47,12 @@
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
     <script src="../_static/copybutton.js?v=fd10adb8"></script>
-    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/liaise.schedule';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_autosummary/liaise.release';</script>
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="liaise.subjects" href="liaise.subjects.html" />
-    <link rel="prev" title="liaise.release" href="liaise.release.html" />
+    <link rel="next" title="liaise.schedule" href="liaise.schedule.html" />
+    <link rel="prev" title="liaise.readiness" href="liaise.readiness.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.1.1" />
@@ -334,8 +334,8 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.projection.html">liaise.projection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.prompt.html">liaise.prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.readiness.html">liaise.readiness</a></li>
-<li class="toctree-l2"><a class="reference internal" href="liaise.release.html">liaise.release</a></li>
-<li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.schedule</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.release</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.schedule.html">liaise.schedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
@@ -388,7 +388,7 @@
     
     <li class="breadcrumb-item"><a href="liaise.html" class="nav-link">liaise</a></li>
     
-    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">liaise.schedule</span></li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">liaise.release</span></li>
   </ul>
 </nav>
 </div>
@@ -405,23 +405,22 @@
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section id="module-liaise.schedule">
-<span id="liaise-schedule"></span><h1>liaise.schedule<a class="headerlink" href="#module-liaise.schedule" title="Link to this heading">#</a></h1>
-<p>Scheduling <code class="code docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">run</span> <span class="pre">--once</span></code> (A.7): a launchd agent on macOS, a systemd
-user timer on Linux.</p>
-<p>launchd and systemd both hand a job a nearly-empty environment, so the
-installed job needs an environment <strong>snapshot</strong> taken from the installing
-shell — <code class="code docutils literal notranslate"><span class="pre">PATH</span></code> (so it can find <code class="code docutils literal notranslate"><span class="pre">gh</span></code> and the dispatch command, e.g. <code class="code docutils literal notranslate"><span class="pre">claude</span></code>),
-plus the ntfy topic variable and anything else a partner’s dispatch command
-needs. Re-run install after moving any of those.</p>
+  <section id="module-liaise.release">
+<span id="liaise-release"></span><h1>liaise.release<a class="headerlink" href="#module-liaise.release" title="Link to this heading">#</a></h1>
+<p>Releasing a message: through the gate, then through correspond, as one step.</p>
+<p>Every message liaise sends goes through <a class="reference internal" href="#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-func docutils literal notranslate"><span class="pre">gate_and_send()</span></code></a>. That covers what the tick
+sends for a run’s outcomes, the tick’s own notices, and a draft the operator releases
+with <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code>. It runs <a class="reference internal" href="liaise.gate.html#liaise.gate.run_gate" title="liaise.gate.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.gate.run_gate()</span></code></a>, and only a message
+the gate passed reaches <code class="docutils literal notranslate"><span class="pre">correspond.send</span></code>, as the filters left it. It records nothing:
+what a <a class="reference internal" href="#liaise.release.SendAttempt" title="liaise.release.SendAttempt"><code class="xref py py-class docutils literal notranslate"><span class="pre">SendAttempt</span></code></a> means for a case, a draft or a notification is for its caller
+to keep.</p>
+<p>One path for every sender is what makes the gate a gate. A filter added to it applies to
+all of them at once, and none of them has a way to send around it.</p>
 <p class="rubric">Module Attributes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.schedule.LAUNCHD_DETACH_SETTING" title="liaise.schedule.LAUNCHD_DETACH_SETTING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LAUNCHD_DETACH_SETTING</span></code></a></p></td>
-<td><p>What a job file carries so the detached runs a tick starts outlive that tick.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.schedule.OUTDATED_SCHEDULE_NOTE" title="liaise.schedule.OUTDATED_SCHEDULE_NOTE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OUTDATED_SCHEDULE_NOTE</span></code></a></p></td>
-<td><p>How <a class="reference internal" href="#liaise.schedule.schedule_status" title="liaise.schedule.schedule_status"><code class="xref py py-func docutils literal notranslate"><span class="pre">schedule_status()</span></code></a> says the installed job is such a job.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.DFLT_REFUSAL" title="liaise.release.DFLT_REFUSAL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_REFUSAL</span></code></a></p></td>
+<td><p>Why a send failed when the channel said no without saying why.</p></td>
 </tr>
 </tbody>
 </table>
@@ -429,90 +428,84 @@ needs. Re-run install after moving any of those.</p>
 <p class="rubric">Functions</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.schedule.install_schedule" title="liaise.schedule.install_schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">install_schedule</span></code></a>(*[, root, ...])</p></td>
-<td><p>Install (or replace) the scheduled job.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.error_text" title="liaise.release.error_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_text</span></code></a>(error)</p></td>
+<td><p>How liaise names an exception it recovered from: its class, then its message.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.schedule.job_environment" title="liaise.schedule.job_environment"><code class="xref py py-obj docutils literal notranslate"><span class="pre">job_environment</span></code></a>(*[, extra_env_vars, ...])</p></td>
-<td><p>The environment to pin into the installed job.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gate_and_send</span></code></a>(outbound, ctx, *[, registry, ...])</p></td>
+<td><p>Put <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through the gate and, only when it passes, send it through correspond.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.schedule.schedule_status" title="liaise.schedule.schedule_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_status</span></code></a>(*[, system, launchd_dir, ...])</p></td>
-<td><p>Whether the scheduled job is installed, where, and whether it is outdated.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.schedule.uninstall_schedule" title="liaise.schedule.uninstall_schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">uninstall_schedule</span></code></a>(*[, system, launchd_dir, ...])</p></td>
-<td><p>Remove the scheduled job.</p></td>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.SendAttempt" title="liaise.release.SendAttempt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SendAttempt</span></code></a>(decision[, result, failure, ...])</p></td>
+<td><p>What <a class="reference internal" href="#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-func docutils literal notranslate"><span class="pre">gate_and_send()</span></code></a> did with one message.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
 <dl class="py data">
-<dt class="sig sig-object py" id="liaise.schedule.LAUNCHD_DETACH_SETTING">
-<span class="sig-prename descclassname"><span class="pre">liaise.schedule.</span></span><span class="sig-name descname"><span class="pre">LAUNCHD_DETACH_SETTING</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('&lt;key&gt;AbandonProcessGroup&lt;/key&gt;\\s*&lt;true/&gt;')</span></span><a class="headerlink" href="#liaise.schedule.LAUNCHD_DETACH_SETTING" title="Link to this definition">#</a></dt>
-<dd><p>What a job file carries so the detached runs a tick starts outlive that tick. A job
-installed by 0.0.x has neither, and must be installed again.</p>
+<dt class="sig sig-object py" id="liaise.release.DFLT_REFUSAL">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">DFLT_REFUSAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'the</span> <span class="pre">channel</span> <span class="pre">refused</span> <span class="pre">it'</span></span><a class="headerlink" href="#liaise.release.DFLT_REFUSAL" title="Link to this definition">#</a></dt>
+<dd><p>Why a send failed when the channel said no without saying why.</p>
 </dd></dl>
 
-<dl class="py data">
-<dt class="sig sig-object py" id="liaise.schedule.OUTDATED_SCHEDULE_NOTE">
-<span class="sig-prename descclassname"><span class="pre">liaise.schedule.</span></span><span class="sig-name descname"><span class="pre">OUTDATED_SCHEDULE_NOTE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'outdated:</span> <span class="pre">re-run</span> <span class="pre">liaise</span> <span class="pre">schedule</span> <span class="pre">install'</span></span><a class="headerlink" href="#liaise.schedule.OUTDATED_SCHEDULE_NOTE" title="Link to this definition">#</a></dt>
-<dd><p>How <a class="reference internal" href="#liaise.schedule.schedule_status" title="liaise.schedule.schedule_status"><code class="xref py py-func docutils literal notranslate"><span class="pre">schedule_status()</span></code></a> says the installed job is such a job.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.release.SendAttempt">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">SendAttempt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#SendAttempt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.SendAttempt" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What <a class="reference internal" href="#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-func docutils literal notranslate"><span class="pre">gate_and_send()</span></code></a> did with one message.</p>
+<p><code class="docutils literal notranslate"><span class="pre">decision</span></code> is the gate’s. Once the gate has passed the message, <code class="docutils literal notranslate"><span class="pre">result</span></code> is
+correspond’s <code class="docutils literal notranslate"><span class="pre">SendResult</span></code>, or None when sending raised. <code class="docutils literal notranslate"><span class="pre">failure</span></code> says why the
+channel did not take the message, and is None once it did. <code class="docutils literal notranslate"><span class="pre">failure_kind</span></code> names that
+failure: correspond’s <code class="docutils literal notranslate"><span class="pre">error_kind</span></code>, or the class of what was raised. A message the
+gate diverted has none of the three.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.release.SendAttempt.outbound">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outbound</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><span class="pre">Outbound</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.outbound" title="Link to this definition">#</a></dt>
+<dd><p>The message as the gate’s filters left it, or None when the gate diverted it.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.release.SendAttempt.sent">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sent</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.sent" title="Link to this definition">#</a></dt>
+<dd><p>Whether the channel took the message; in a dry run, whether it would have.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="liaise.schedule.install_schedule">
-<span class="sig-prename descclassname"><span class="pre">liaise.schedule.</span></span><span class="sig-name descname"><span class="pre">install_schedule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval_minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchd_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchd_log_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systemd_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'com.liaise.run'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'liaise-run'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntfy_topic_env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LIAISE_NTFY_TOPIC'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_env_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/schedule.html#install_schedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.schedule.install_schedule" title="Link to this definition">#</a></dt>
-<dd><p>Install (or replace) the scheduled job. Returns the path(s) written.</p>
-<p><code class="code docutils literal notranslate"><span class="pre">system</span></code> overrides <code class="code docutils literal notranslate"><span class="pre">platform.system()</span></code> (a seam for tests); <code class="code docutils literal notranslate"><span class="pre">launchd_dir</span></code>
-/ <code class="code docutils literal notranslate"><span class="pre">launchd_log_dir</span></code> / <code class="code docutils literal notranslate"><span class="pre">systemd_dir</span></code> override the real locations under
-<code class="code docutils literal notranslate"><span class="pre">$HOME</span></code> (also for tests); <code class="code docutils literal notranslate"><span class="pre">load=False</span></code> writes the files without calling
-<code class="code docutils literal notranslate"><span class="pre">launchctl</span></code>/<code class="code docutils literal notranslate"><span class="pre">systemctl</span></code> — the actual scheduler state is left untouched.
-<code class="code docutils literal notranslate"><span class="pre">ntfy_topic_env</span></code> should be this installation’s actual configured
-<code class="code docutils literal notranslate"><span class="pre">notify.ntfy_topic_env</span></code> (M-4) — a custom variable name that never reaches
-here means every scheduled-run notification silently disappears.</p>
+<dt class="sig sig-object py" id="liaise.release.error_text">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">error_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#error_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.error_text" title="Link to this definition">#</a></dt>
+<dd><p>How liaise names an exception it recovered from: its class, then its message.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">error_text</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">"no such channel"</span><span class="p">))</span>
+<span class="go">'ValueError: no such channel'</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="liaise.schedule.job_environment">
-<span class="sig-prename descclassname"><span class="pre">liaise.schedule.</span></span><span class="sig-name descname"><span class="pre">job_environment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_env_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ntfy_topic_env</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'LIAISE_NTFY_TOPIC'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/schedule.html#job_environment"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.schedule.job_environment" title="Link to this definition">#</a></dt>
-<dd><p>The environment to pin into the installed job.</p>
-<p><code class="code docutils literal notranslate"><span class="pre">PATH</span></code> carries every directory a dispatch command is likely to need <code class="code docutils literal notranslate"><span class="pre">gh</span></code>
-or <code class="code docutils literal notranslate"><span class="pre">claude</span></code> from, plus the standard system locations. <code class="code docutils literal notranslate"><span class="pre">HOME</span></code> is included
-because both schedulers otherwise omit it. The ntfy topic variable and any
-<code class="code docutils literal notranslate"><span class="pre">extra_env_vars</span></code> are copied over from <em>this</em> shell if set — silently
-omitted otherwise, since a job that can’t notify still runs.</p>
+<dt class="sig sig-object py" id="liaise.release.gate_and_send">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">gate_and_send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">reply_mode&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">leak_scan&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#gate_and_send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.gate_and_send" title="Link to this definition">#</a></dt>
+<dd><p>Put <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through the gate and, only when it passes, send it through correspond.</p>
+<p>The gate is <a class="reference internal" href="liaise.gate.html#liaise.gate.run_gate" title="liaise.gate.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.gate.run_gate()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">outbound_filters</span></code>, and a message it
+diverts is not sent. A passed message goes to <code class="docutils literal notranslate"><span class="pre">correspond.send</span></code> as the filters left
+it, on <code class="docutils literal notranslate"><span class="pre">registry</span></code> (correspond’s own when None). <code class="docutils literal notranslate"><span class="pre">dry_run</span></code> asks correspond for its
+plan and sends nothing. A channel that refuses the message, or raises, becomes a
+<code class="docutils literal notranslate"><span class="pre">failure</span></code> on the attempt rather than an exception, so the caller still has the message
+to keep.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="liaise.schedule.schedule_status">
-<span class="sig-prename descclassname"><span class="pre">liaise.schedule.</span></span><span class="sig-name descname"><span class="pre">schedule_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchd_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systemd_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'com.liaise.run'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'liaise-run'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/schedule.html#schedule_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.schedule.schedule_status" title="Link to this definition">#</a></dt>
-<dd><p>Whether the scheduled job is installed, where, and whether it is outdated.</p>
-<p><code class="docutils literal notranslate"><span class="pre">installed</span> <span class="pre">(outdated:</span> <span class="pre">re-run</span> <span class="pre">liaise</span> <span class="pre">schedule</span> <span class="pre">install)</span></code> for a job that would kill the
-detached runs its tick starts: a plist without <code class="docutils literal notranslate"><span class="pre">AbandonProcessGroup</span></code>, or a service
-unit without <code class="docutils literal notranslate"><span class="pre">KillMode=process</span></code>, as a job installed by 0.0.x is. The files are only
-read; the scheduler itself is never asked.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="liaise.schedule.uninstall_schedule">
-<span class="sig-prename descclassname"><span class="pre">liaise.schedule.</span></span><span class="sig-name descname"><span class="pre">uninstall_schedule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">system</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launchd_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">systemd_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'com.liaise.run'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'liaise-run'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">load</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/schedule.html#uninstall_schedule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.schedule.uninstall_schedule" title="Link to this definition">#</a></dt>
-<dd><p>Remove the scheduled job. Idempotent — a no-op if nothing was installed.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.release.SendAttempt" title="liaise.release.SendAttempt"><code class="xref py py-class docutils literal notranslate"><span class="pre">SendAttempt</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -530,20 +523,20 @@ read; the scheduler itself is never asked.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="liaise.release.html"
+       href="liaise.readiness.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">liaise.release</p>
+        <p class="prev-next-title">liaise.readiness</p>
       </div>
     </a>
     <a class="right-next"
-       href="liaise.subjects.html"
+       href="liaise.schedule.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">liaise.subjects</p>
+        <p class="prev-next-title">liaise.schedule</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -566,19 +559,21 @@ read; the scheduler itself is never asked.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.schedule.LAUNCHD_DETACH_SETTING"><code class="docutils literal notranslate"><span class="pre">LAUNCHD_DETACH_SETTING</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.schedule.OUTDATED_SCHEDULE_NOTE"><code class="docutils literal notranslate"><span class="pre">OUTDATED_SCHEDULE_NOTE</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.schedule.install_schedule"><code class="docutils literal notranslate"><span class="pre">install_schedule()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.schedule.job_environment"><code class="docutils literal notranslate"><span class="pre">job_environment()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.schedule.schedule_status"><code class="docutils literal notranslate"><span class="pre">schedule_status()</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.schedule.uninstall_schedule"><code class="docutils literal notranslate"><span class="pre">uninstall_schedule()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DFLT_REFUSAL"><code class="docutils literal notranslate"><span class="pre">DFLT_REFUSAL</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt"><code class="docutils literal notranslate"><span class="pre">SendAttempt</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt.outbound"><code class="docutils literal notranslate"><span class="pre">SendAttempt.outbound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt.sent"><code class="docutils literal notranslate"><span class="pre">SendAttempt.sent</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.error_text"><code class="docutils literal notranslate"><span class="pre">error_text()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.gate_and_send"><code class="docutils literal notranslate"><span class="pre">gate_and_send()</span></code></a></li>
 </ul>
   </nav></div>
 
   <div class="sidebar-secondary-item">
 
   <div class="tocsection sourcelink">
-    <a href="../_sources/_autosummary/liaise.schedule.rst.txt">
+    <a href="../_sources/_autosummary/liaise.release.rst.txt">
       <i class="fa-solid fa-file-lines"></i> Show Source
     </a>
   </div>

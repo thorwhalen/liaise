@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=01f34227"></script>
+    <script src="../_static/documentation_options.js?v=a58bc63e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.access" href="liaise.access.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.0" />
+  <meta name="docsearch:version" content="0.1.1" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -334,6 +334,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.projection.html">liaise.projection</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.prompt.html">liaise.prompt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.readiness.html">liaise.readiness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.release.html">liaise.release</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.schedule.html">liaise.schedule</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
@@ -406,7 +407,7 @@
                   
   <section id="module-liaise.cases">
 <span id="liaise-cases"></span><h1>liaise.cases<a class="headerlink" href="#module-liaise.cases" title="Link to this heading">#</a></h1>
-<p>Cases as the operator sees and moves them: <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code> and <code class="docutils literal notranslate"><span class="pre">set-state</span></code>.</p>
+<p>Cases as the operator sees and moves them: <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">list</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code>, <code class="docutils literal notranslate"><span class="pre">set-state</span></code>, <code class="docutils literal notranslate"><span class="pre">send-draft</span></code> and <code class="docutils literal notranslate"><span class="pre">reject-draft</span></code>.</p>
 <p>The tick moves a case through its states on its own (see <a class="reference internal" href="liaise.tick.html#module-liaise.tick" title="liaise.tick"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.tick</span></code></a>), except where
 a state waits on the operator: nothing the tick does moves a <code class="docutils literal notranslate"><span class="pre">needs-owner</span></code> case on, and a
 <code class="docutils literal notranslate"><span class="pre">deployed</span></code> case never starts again. <a class="reference internal" href="#liaise.cases.set_case_state" title="liaise.cases.set_case_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_case_state()</span></code></a> is how the operator moves one,
@@ -418,6 +419,13 @@ relabelling an issue by hand changes nothing, and the tick overwrites it. After
 (see <code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.notify.notice_body()</span></code>); it names the case and points at <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span>
 <span class="pre">show</span></code>. <a class="reference internal" href="#liaise.cases.case_show_lines" title="liaise.cases.case_show_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">case_show_lines()</span></code></a> is where the operator reads, on their own machine, the
 drafts with their text, the escalation’s reason and a failed deploy’s output.</p>
+<p><strong>Drafts.</strong> A message liaise did not send stays on its case as a draft. It may have been
+held by <code class="docutils literal notranslate"><span class="pre">draft</span></code> reply mode, diverted by another filter of the gate, kept by a hold,
+refused by its channel, or it is an escalation’s text. <a class="reference internal" href="#liaise.cases.send_draft" title="liaise.cases.send_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">send_draft()</span></code></a> is how the
+operator sends one. It runs the gate again on the final text, with the operator’s
+<a class="reference internal" href="liaise.model.html#liaise.model.Approval" title="liaise.model.Approval"><code class="xref py py-class docutils literal notranslate"><span class="pre">Approval</span></code></a> on the context, so draft reply mode lets it through while
+every other filter still judges it, an edited text included. <a class="reference internal" href="#liaise.cases.reject_draft" title="liaise.cases.reject_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">reject_draft()</span></code></a> records
+that the operator declined one, and why.</p>
 <p class="rubric">Module Attributes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
@@ -445,6 +453,18 @@ drafts with their text, the escalation’s reason and a failed deploy’s output
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cases.TEXT_INDENT" title="liaise.cases.TEXT_INDENT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TEXT_INDENT</span></code></a></p></td>
 <td><p>How <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> indents a draft's text and a deploy's output.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cases.NEEDS_OWNER" title="liaise.cases.NEEDS_OWNER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NEEDS_OWNER</span></code></a></p></td>
+<td><p>The state a held message leaves its case waiting on the operator in.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cases.STATE_AFTER_SENT_DRAFT" title="liaise.cases.STATE_AFTER_SENT_DRAFT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STATE_AFTER_SENT_DRAFT</span></code></a></p></td>
+<td><p>Where a case in <a class="reference internal" href="#liaise.cases.NEEDS_OWNER" title="liaise.cases.NEEDS_OWNER"><code class="xref py py-data docutils literal notranslate"><span class="pre">NEEDS_OWNER</span></code></a> goes once the operator sends its last draft, by the outcome that draft carries out: a question, a reply or a proposal now waits on the reporter, as it does when a run sends one.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cases.DELIVER_PURPOSE" title="liaise.cases.DELIVER_PURPOSE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DELIVER_PURPOSE</span></code></a></p></td>
+<td><p>The outcome whose message announces a delivery.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cases.DRAFT_ENTRY_KIND" title="liaise.cases.DRAFT_ENTRY_KIND"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DRAFT_ENTRY_KIND</span></code></a></p></td>
+<td><p>a gate decision, as the tick's are.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -457,12 +477,51 @@ drafts with their text, the escalation’s reason and a failed deploy’s output
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cases.case_show_lines" title="liaise.cases.case_show_lines"><code class="xref py py-obj docutils literal notranslate"><span class="pre">case_show_lines</span></code></a>(store, case_id, *[, entries])</p></td>
 <td><p>What <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> prints: the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code>, with all a notification leaves out.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cases.find_draft" title="liaise.cases.find_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_draft</span></code></a>(ledger, case_id, *[, index])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(index,</span> <span class="pre">draft)</span></code> of the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code>, as <a class="reference internal" href="#liaise.cases.pick_draft" title="liaise.cases.pick_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">pick_draft()</span></code></a> picks it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cases.pick_draft" title="liaise.cases.pick_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pick_draft</span></code></a>(case[, index])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(index,</span> <span class="pre">draft)</span></code>: <code class="docutils literal notranslate"><span class="pre">case</span></code>'s draft at <code class="docutils literal notranslate"><span class="pre">index</span></code>, or its only draft when <code class="docutils literal notranslate"><span class="pre">index</span></code> is None.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cases.reject_draft" title="liaise.cases.reject_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reject_draft</span></code></a>(ledger, case_id, *, reason[, ...])</p></td>
+<td><p>Decline the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code>'s draft at <code class="docutils literal notranslate"><span class="pre">index</span></code> as <code class="docutils literal notranslate"><span class="pre">by</span></code>, recording <code class="docutils literal notranslate"><span class="pre">reason</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cases.send_draft" title="liaise.cases.send_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">send_draft</span></code></a>(ledger, subjects, case_id, *[, ...])</p></td>
+<td><p>Send the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code>'s draft at <code class="docutils literal notranslate"><span class="pre">index</span></code> as <code class="docutils literal notranslate"><span class="pre">by</span></code>, through the gate again.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cases.set_case_state" title="liaise.cases.set_case_state"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_case_state</span></code></a>(ledger, case_id, state, *[, ...])</p></td>
 <td><p>Move the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code> to <code class="docutils literal notranslate"><span class="pre">state</span></code> as the operator; return the case as it is now.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<p class="rubric">Classes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cases.DraftRejection" title="liaise.cases.DraftRejection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DraftRejection</span></code></a>(index, draft, case)</p></td>
+<td><p>What <a class="reference internal" href="#liaise.cases.reject_draft" title="liaise.cases.reject_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">reject_draft()</span></code></a> did: the draft it took off the case, and the case after it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cases.DraftRelease" title="liaise.cases.DraftRelease"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DraftRelease</span></code></a>(index, draft, attempt, filters, ...)</p></td>
+<td><p>What <a class="reference internal" href="#liaise.cases.send_draft" title="liaise.cases.send_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">send_draft()</span></code></a> did with one of a case's drafts.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Exceptions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cases.DraftSentNotRecorded" title="liaise.cases.DraftSentNotRecorded"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DraftSentNotRecorded</span></code></a></p></td>
+<td><p>A released draft went out, and the ledger then failed to record that it did.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.cases.DELIVER_PURPOSE">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">DELIVER_PURPOSE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'deliver'</span></span><a class="headerlink" href="#liaise.cases.DELIVER_PURPOSE" title="Link to this definition">#</a></dt>
+<dd><p>The outcome whose message announces a delivery.</p>
+</dd></dl>
+
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.cases.DFLT_OPERATOR_REASON">
 <span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">DFLT_OPERATOR_REASON</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'set</span> <span class="pre">by</span> <span class="pre">the</span> <span class="pre">operator'</span></span><a class="headerlink" href="#liaise.cases.DFLT_OPERATOR_REASON" title="Link to this definition">#</a></dt>
@@ -476,9 +535,56 @@ drafts with their text, the escalation’s reason and a failed deploy’s output
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.cases.DRAFT_ENTRY_KIND">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">DRAFT_ENTRY_KIND</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'gate'</span></span><a class="headerlink" href="#liaise.cases.DRAFT_ENTRY_KIND" title="Link to this definition">#</a></dt>
+<dd><p>a gate decision, as the tick’s are.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The entry kind a sent or rejected draft is recorded as</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.cases.DraftRejection">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">DraftRejection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draft</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cases.html#DraftRejection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cases.DraftRejection" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What <a class="reference internal" href="#liaise.cases.reject_draft" title="liaise.cases.reject_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">reject_draft()</span></code></a> did: the draft it took off the case, and the case after it.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.cases.DraftRelease">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">DraftRelease</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draft</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attempt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">moved</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cases.html#DraftRelease"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cases.DraftRelease" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What <a class="reference internal" href="#liaise.cases.send_draft" title="liaise.cases.send_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">send_draft()</span></code></a> did with one of a case’s drafts.</p>
+<p><code class="docutils literal notranslate"><span class="pre">index</span></code> and <code class="docutils literal notranslate"><span class="pre">draft</span></code> are the draft as the case held it. <code class="docutils literal notranslate"><span class="pre">attempt</span></code> is the gate’s
+decision and the send (see <a class="reference internal" href="liaise.release.html#liaise.release.SendAttempt" title="liaise.release.SendAttempt"><code class="xref py py-class docutils literal notranslate"><span class="pre">SendAttempt</span></code></a>), and <code class="docutils literal notranslate"><span class="pre">filters</span></code> is
+how many filters the gate ran it through. <code class="docutils literal notranslate"><span class="pre">edited</span></code> says whether the operator’s text
+replaced the draft’s. <code class="docutils literal notranslate"><span class="pre">case</span></code> is the case as the release left it, or would leave it in
+a dry run, and <code class="docutils literal notranslate"><span class="pre">moved</span></code> is its <code class="docutils literal notranslate"><span class="pre">(from,</span> <span class="pre">to)</span></code> states when the send moved it on.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="liaise.cases.DraftSentNotRecorded">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">DraftSentNotRecorded</span></span><a class="reference internal" href="../_modules/liaise/cases.html#DraftSentNotRecorded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cases.DraftSentNotRecorded" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#RuntimeError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></a></p>
+<p>A released draft went out, and the ledger then failed to record that it did.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.cases.ESCALATION_KINDS">
 <span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">ESCALATION_KINDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('escalate',</span> <span class="pre">'decline')</span></span><a class="headerlink" href="#liaise.cases.ESCALATION_KINDS" title="Link to this definition">#</a></dt>
 <dd><p>The outcome kinds whose reason <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> gives as the last escalation’s.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.cases.NEEDS_OWNER">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">NEEDS_OWNER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'needs-owner'</span></span><a class="headerlink" href="#liaise.cases.NEEDS_OWNER" title="Link to this definition">#</a></dt>
+<dd><p>The state a held message leaves its case waiting on the operator in.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -497,6 +603,17 @@ drafts with their text, the escalation’s reason and a failed deploy’s output
 <dt class="sig sig-object py" id="liaise.cases.SHOW_TEXT_CHARS">
 <span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">SHOW_TEXT_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">200</span></span><a class="headerlink" href="#liaise.cases.SHOW_TEXT_CHARS" title="Link to this definition">#</a></dt>
 <dd><p>How many characters of an entry’s text <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> puts on the entry’s line.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.cases.STATE_AFTER_SENT_DRAFT">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">STATE_AFTER_SENT_DRAFT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">mappingproxy({'ask':</span> <span class="pre">'needs-partner',</span> <span class="pre">'reply':</span> <span class="pre">'needs-partner',</span> <span class="pre">'propose':</span> <span class="pre">'needs-partner'})</span></span><a class="headerlink" href="#liaise.cases.STATE_AFTER_SENT_DRAFT" title="Link to this definition">#</a></dt>
+<dd><p>Where a case in <a class="reference internal" href="#liaise.cases.NEEDS_OWNER" title="liaise.cases.NEEDS_OWNER"><code class="xref py py-data docutils literal notranslate"><span class="pre">NEEDS_OWNER</span></code></a> goes once the operator sends its last draft, by the
+outcome that draft carries out: a question, a reply or a proposal now waits on the
+reporter, as it does when a run sends one. Anything else leaves the state for the
+operator to set. An escalation’s text may be a refusal, which a reply from the partner
+must not restart work on. A <code class="docutils literal notranslate"><span class="pre">deliver</span></code> message does not make its delivery happen, and
+the tick’s own notices (a nudge, the daily cap) move nothing.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -542,6 +659,92 @@ a line each with its detail and the start of its text. Reads only. Raises
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cases.find_draft">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">find_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ledger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cases.html#find_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cases.find_draft" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(index,</span> <span class="pre">draft)</span></code> of the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code>, as <a class="reference internal" href="#liaise.cases.pick_draft" title="liaise.cases.pick_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">pick_draft()</span></code></a> picks it.</p>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for a case the ledger does not hold, and as <a class="reference internal" href="#liaise.cases.pick_draft" title="liaise.cases.pick_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">pick_draft()</span></code></a> does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cases.pick_draft">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">pick_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cases.html#pick_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cases.pick_draft" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(index,</span> <span class="pre">draft)</span></code>: <code class="docutils literal notranslate"><span class="pre">case</span></code>’s draft at <code class="docutils literal notranslate"><span class="pre">index</span></code>, or its only draft when <code class="docutils literal notranslate"><span class="pre">index</span></code> is None.</p>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>, saying which drafts there are, for a case with none, for an index
+it holds no draft at, and for no index on a case holding several.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cases.reject_draft">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">reject_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ledger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'operator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cases.html#reject_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cases.reject_draft" title="Link to this definition">#</a></dt>
+<dd><p>Decline the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code>’s draft at <code class="docutils literal notranslate"><span class="pre">index</span></code> as <code class="docutils literal notranslate"><span class="pre">by</span></code>, recording <code class="docutils literal notranslate"><span class="pre">reason</span></code>.</p>
+<p>The draft leaves the case, and a <code class="docutils literal notranslate"><span class="pre">gate</span></code> entry by <code class="docutils literal notranslate"><span class="pre">by</span></code>, stamped <code class="docutils literal notranslate"><span class="pre">now</span></code>, keeps its
+text, where it would have gone, why it was held and <code class="docutils literal notranslate"><span class="pre">reason</span></code>. Nothing is sent, and the
+case’s state stays as it is: move it on with <a class="reference internal" href="#liaise.cases.set_case_state" title="liaise.cases.set_case_state"><code class="xref py py-func docutils literal notranslate"><span class="pre">set_case_state()</span></code></a>. A dry run writes
+nothing.</p>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>, writing nothing, for a blank <code class="docutils literal notranslate"><span class="pre">reason</span></code>, a case the ledger does
+not hold, and a draft <a class="reference internal" href="#liaise.cases.pick_draft" title="liaise.cases.pick_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">pick_draft()</span></code></a> cannot pick.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.cases.DraftRejection" title="liaise.cases.DraftRejection"><code class="xref py py-class docutils literal notranslate"><span class="pre">DraftRejection</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cases.send_draft">
+<span class="sig-prename descclassname"><span class="pre">liaise.cases.</span></span><span class="sig-name descname"><span class="pre">send_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ledger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'operator'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">send</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">reply_mode&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">leak_scan&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cases.html#send_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cases.send_draft" title="Link to this definition">#</a></dt>
+<dd><p>Send the case <code class="docutils literal notranslate"><span class="pre">case_id</span></code>’s draft at <code class="docutils literal notranslate"><span class="pre">index</span></code> as <code class="docutils literal notranslate"><span class="pre">by</span></code>, through the gate again.</p>
+<p>The message is the draft’s text, or <code class="docutils literal notranslate"><span class="pre">text</span></code> when the operator edited it. It goes to
+the draft’s <code class="docutils literal notranslate"><span class="pre">ref</span></code>, for its <code class="docutils literal notranslate"><span class="pre">recipient</span></code>, carrying out its <code class="docutils literal notranslate"><span class="pre">outcome</span></code>. It passes
+through <a class="reference internal" href="liaise.release.html#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.release.gate_and_send()</span></code></a>, with an <a class="reference internal" href="liaise.model.html#liaise.model.Approval" title="liaise.model.Approval"><code class="xref py py-class docutils literal notranslate"><span class="pre">Approval</span></code></a>
+by <code class="docutils literal notranslate"><span class="pre">by</span></code> at <code class="docutils literal notranslate"><span class="pre">now</span></code> (the current UTC time when None) on the gate’s context. Draft
+reply mode lets it through, and every other filter judges it as it would a message
+the tick sends, the mention included.</p>
+<p>It asks no one. Its caller shows the operator the message and the gate’s verdict
+first, from a dry run, and passes the draft they saw as <code class="docutils literal notranslate"><span class="pre">seen</span></code>, as
+<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code> does.</p>
+<ul class="simple">
+<li><p><strong>Sent:</strong> the draft leaves the case. A <code class="docutils literal notranslate"><span class="pre">gate</span></code> entry by <code class="docutils literal notranslate"><span class="pre">by</span></code> records the text as
+it went out, its url, the approval and why the draft was held. Once no draft is
+left, a case in <code class="docutils literal notranslate"><span class="pre">needs-owner</span></code> moves as <a class="reference internal" href="#liaise.cases.STATE_AFTER_SENT_DRAFT" title="liaise.cases.STATE_AFTER_SENT_DRAFT"><code class="xref py py-data docutils literal notranslate"><span class="pre">STATE_AFTER_SENT_DRAFT</span></code></a> says.</p></li>
+<li><p><strong>Diverted, or refused by its channel:</strong> nothing is sent. The draft stays at its
+index, now holding the text the operator gave (without the mention the gate adds)
+and the new reason, and a <code class="docutils literal notranslate"><span class="pre">gate</span></code> entry records the attempt.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">seen</span></code> is the draft as the operator read it: a draft that has changed since is not
+sent. <code class="docutils literal notranslate"><span class="pre">send=False</span></code> asks the channel for its plan and sends nothing. A divert or a
+refusal is then recorded as above, and a message the gate would pass changes nothing.
+A dry run judges and plans as a send would, and writes nothing.</p>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>, sending and writing nothing, for any of these:</p>
+<ul class="simple">
+<li><p>a case the ledger does not hold, one with a run in flight, or one whose subject is
+not in <code class="docutils literal notranslate"><span class="pre">subjects</span></code>;</p></li>
+<li><p>a draft <a class="reference internal" href="#liaise.cases.pick_draft" title="liaise.cases.pick_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">pick_draft()</span></code></a> cannot pick, or one that changed since <code class="docutils literal notranslate"><span class="pre">seen</span></code>;</p></li>
+<li><p>a draft with no destination, or no text to send;</p></li>
+<li><p>a <code class="docutils literal notranslate"><span class="pre">deliver</span></code> message a hold kept, whose delivery never ran;</p></li>
+<li><p>a hold that keeps the case’s messages, or for a <code class="docutils literal notranslate"><span class="pre">deliver</span></code> message its delivery,
+waiting.</p></li>
+</ul>
+<p>Raises <a class="reference internal" href="#liaise.cases.DraftSentNotRecorded" title="liaise.cases.DraftSentNotRecorded"><code class="xref py py-class docutils literal notranslate"><span class="pre">DraftSentNotRecorded</span></code></a> when the message went out and the ledger then
+failed to record it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.cases.DraftRelease" title="liaise.cases.DraftRelease"><code class="xref py py-class docutils literal notranslate"><span class="pre">DraftRelease</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -614,16 +817,27 @@ collects that run.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.DELIVER_PURPOSE"><code class="docutils literal notranslate"><span class="pre">DELIVER_PURPOSE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.DFLT_OPERATOR_REASON"><code class="docutils literal notranslate"><span class="pre">DFLT_OPERATOR_REASON</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.DFLT_SHOW_ENTRIES"><code class="docutils literal notranslate"><span class="pre">DFLT_SHOW_ENTRIES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.DRAFT_ENTRY_KIND"><code class="docutils literal notranslate"><span class="pre">DRAFT_ENTRY_KIND</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.DraftRejection"><code class="docutils literal notranslate"><span class="pre">DraftRejection</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.DraftRelease"><code class="docutils literal notranslate"><span class="pre">DraftRelease</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.DraftSentNotRecorded"><code class="docutils literal notranslate"><span class="pre">DraftSentNotRecorded</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.ESCALATION_KINDS"><code class="docutils literal notranslate"><span class="pre">ESCALATION_KINDS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.NEEDS_OWNER"><code class="docutils literal notranslate"><span class="pre">NEEDS_OWNER</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.NONE_SHOWN"><code class="docutils literal notranslate"><span class="pre">NONE_SHOWN</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.OPERATOR_ACTOR"><code class="docutils literal notranslate"><span class="pre">OPERATOR_ACTOR</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.SHOW_TEXT_CHARS"><code class="docutils literal notranslate"><span class="pre">SHOW_TEXT_CHARS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.STATE_AFTER_SENT_DRAFT"><code class="docutils literal notranslate"><span class="pre">STATE_AFTER_SENT_DRAFT</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.TEXT_INDENT"><code class="docutils literal notranslate"><span class="pre">TEXT_INDENT</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.TICK_ONLY_STATES"><code class="docutils literal notranslate"><span class="pre">TICK_ONLY_STATES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.case_lines"><code class="docutils literal notranslate"><span class="pre">case_lines()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.case_show_lines"><code class="docutils literal notranslate"><span class="pre">case_show_lines()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.find_draft"><code class="docutils literal notranslate"><span class="pre">find_draft()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.pick_draft"><code class="docutils literal notranslate"><span class="pre">pick_draft()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.reject_draft"><code class="docutils literal notranslate"><span class="pre">reject_draft()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.send_draft"><code class="docutils literal notranslate"><span class="pre">send_draft()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cases.set_case_state"><code class="docutils literal notranslate"><span class="pre">set_case_state()</span></code></a></li>
 </ul>
   </nav></div>

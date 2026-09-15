@@ -9,7 +9,7 @@
 - [API reference](api.html.md): | [`liaise`](_autosummary/liaise.html.md#module-liaise)   | liaise: the loop between a non-technical...
 - [liaise](_autosummary/liaise.html.md): liaise: the loop between a non-technical partner and a coding agent, over conversations.
 - [liaise.access](_autosummary/liaise.access.html.md): Identity and access: who a message is from, and whether they may do what it asks.
-- [liaise.cases](_autosummary/liaise.cases.html.md): Cases as the operator sees and moves them: `liaise case list`, `show` and `set-state`.
+- [liaise.cases](_autosummary/liaise.cases.html.md): Cases as the operator sees and moves them: `liaise case list`, `show`, `set-state`, `send-draft` and...
 - [liaise.cli](_autosummary/liaise.cli.html.md): The `liaise` command line (liaise 0.1).
 - [liaise.config](_autosummary/liaise.config.html.md): The global config, and the 0.0.x partner files `liaise migrate-config` reads.
 - [liaise.detect](_autosummary/liaise.detect.html.md): Detectors for outbound messages: what a message holds, reported without the value.
@@ -25,13 +25,14 @@
 - [liaise.projection](_autosummary/liaise.projection.html.md): Label projection: a case’s state, shown on each of its GitHub issues as one label.
 - [liaise.prompt](_autosummary/liaise.prompt.html.md): The prompt composer: the whole prompt a processor run on one case starts from.
 - [liaise.readiness](_autosummary/liaise.readiness.html.md): Readiness: whether a case is ready to dispatch, read off its own ledger entries.
+- [liaise.release](_autosummary/liaise.release.html.md): Releasing a message: through the gate, then through correspond, as one step.
 - [liaise.schedule](_autosummary/liaise.schedule.html.md): Scheduling `liaise run --once` (A.7): a launchd agent on macOS, a systemd
 - [liaise.subjects](_autosummary/liaise.subjects.html.md): Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.
 - [liaise.testing](_autosummary/liaise.testing.html.md): Fakes shipped with liaise: for its tests, and for the one-command smoke test.
 - [liaise.tick](_autosummary/liaise.tick.html.md): The tick: one pass of liaise 0.1’s loop (design §3.1).
 - [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 - [For AI agents](ai-agents.html.md): `liaise` ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 13:50 UTC** from commit <a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on **2026-09-15 14:30 UTC** from commit <a href="https://github.com/tho...
 
 ---
 

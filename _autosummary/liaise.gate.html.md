@@ -7,7 +7,8 @@ each [`Send`](liaise.outcomes.html.md#liaise.outcomes.Send) among those is an [`
 hands to [`run_gate()`](#liaise.gate.run_gate) before anything reaches a channel. The gate runs
 [`DFLT_OUTBOUND_FILTERS`](#liaise.gate.DFLT_OUTBOUND_FILTERS), in this order:
 
-1. [`reply_mode()`](#liaise.gate.reply_mode): nothing goes directly to a person in `draft` reply mode.
+1. [`reply_mode()`](#liaise.gate.reply_mode): nothing goes directly to a person in `draft` reply mode, unless
+   the operator released it.
 2. [`leak_scan()`](#liaise.gate.leak_scan): on a public channel, nothing holding an absolute local path, a
    `.env` path, an email address, a private key, a token (wrapped across lines or not)
    or one of `policy.leak_terms`. It never redacts.
@@ -23,9 +24,11 @@ instead. Notes accumulate across the filters that ran. acquaint is optional
 (`liaise[people]`): without it, or for a person it does not know, filters 3 and 4
 add a note and let the message through.
 
-The gate only decides. The tick sends `GateDecision.send`, or stores the diverted
-message on the case as a draft (see [`liaise.outcomes.make_draft()`](liaise.outcomes.html.md#liaise.outcomes.make_draft)) and notifies
-the operator.
+The gate only decides. [`liaise.release.gate_and_send()`](liaise.release.html.md#liaise.release.gate_and_send) sends
+`GateDecision.send`, and its callers keep a diverted message as a draft (see
+[`liaise.outcomes.make_draft()`](liaise.outcomes.html.md#liaise.outcomes.make_draft)). The tick then notifies the operator. When the
+operator releases a draft (`liaise case send-draft`), the same gate runs again on the
+final text, with their [`Approval`](liaise.model.html.md#liaise.model.Approval) on `GateContext.approval`.
 
 ### Module Attributes
 
@@ -37,19 +40,19 @@ the operator.
 
 ### Functions
 
-| [`deslop`](#liaise.gate.deslop)(outbound, ctx)                           | Divert a message acquaint's style lint finds machine-sounding for its recipient.   |
-|--------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [`leak_scan`](#liaise.gate.leak_scan)(outbound, ctx)                        | On a public channel, divert a message holding what must not be made public.        |
-| [`notify_recipient`](#liaise.gate.notify_recipient)(outbound, ctx)                 | On GitHub, make the message start with an `@mention` of its recipient.             |
-| [`reply_mode`](#liaise.gate.reply_mode)(outbound, ctx)                       | Divert when the recipient's reply mode is `draft`.                                 |
-| [`run_gate`](#liaise.gate.run_gate)(outbound, ctx, \*[, outbound_filters]) | Run `outbound` through `outbound_filters` in order, stopping at the first divert.  |
-| [`writing_card`](#liaise.gate.writing_card)(outbound, ctx)                     | Note the recipient's acquaint writing card, for the ledger and the next run.       |
+| [`deslop`](#liaise.gate.deslop)(outbound, ctx)                           | Divert a message acquaint's style lint finds machine-sounding for its recipient.    |
+|--------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`leak_scan`](#liaise.gate.leak_scan)(outbound, ctx)                        | On a public channel, divert a message holding what must not be made public.         |
+| [`notify_recipient`](#liaise.gate.notify_recipient)(outbound, ctx)                 | On GitHub, make the message start with an `@mention` of its recipient.              |
+| [`reply_mode`](#liaise.gate.reply_mode)(outbound, ctx)                       | Divert when the recipient's reply mode is `draft`, unless the operator released it. |
+| [`run_gate`](#liaise.gate.run_gate)(outbound, ctx, \*[, outbound_filters]) | Run `outbound` through `outbound_filters` in order, stopping at the first divert.   |
+| [`writing_card`](#liaise.gate.writing_card)(outbound, ctx)                     | Note the recipient's acquaint writing card, for the ledger and the next run.        |
 
 ### Classes
 
 | [`Divert`](#liaise.gate.Divert)(reason[, notes])                         | A filter's verdict to send nothing and hand the message to the operator.                                              |
 |--------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`GateContext`](#liaise.gate.GateContext)(subject, case, now)                 | What the filters may consult: the subject and its policy, the case, the time.                                         |
+| [`GateContext`](#liaise.gate.GateContext)(subject, case, now[, approval])     | What the filters may consult: the subject and its policy, the case, the time.                                         |
 | [`GateDecision`](#liaise.gate.GateDecision)(send, diverted[, notes, ...])      | What [`run_gate()`](#liaise.gate.run_gate) decided: `send` a message, or why it was `diverted`. |
 | [`Outbound`](#liaise.gate.Outbound)(case_id, ref, channel, recipient, ...) | A message liaise would send: `text` for `recipient` (a person id) at `ref`.                                           |
 | [`Pass`](#liaise.gate.Pass)(outbound[, notes])                         | A filter's verdict to go on, with `outbound` as the filter left it.                                                   |
@@ -69,11 +72,14 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A filter’s verdict to send nothing and hand the message to the operator.
 
-### *class* liaise.gate.GateContext(subject, case, now)
+### *class* liaise.gate.GateContext(subject, case, now, approval=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 What the filters may consult: the subject and its policy, the case, the time.
+
+`approval` is the operator’s release of this message (`liaise case send-draft`).
+It is None for every message the tick sends on its own.
 
 ### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None)
 
@@ -161,10 +167,14 @@ diverted. Other channels pass unchanged.
 
 ### liaise.gate.reply_mode(outbound, ctx)
 
-Divert when the recipient’s reply mode is `draft`.
+Divert when the recipient’s reply mode is `draft`, unless the operator released it.
 
 The mode is the person’s `policy.reply_modes` override, else the subject’s
-`default_reply_mode` (see [`reply_mode_for()`](liaise.subjects.html.md#liaise.subjects.Subject.reply_mode_for)).
+`default_reply_mode` (see [`reply_mode_for()`](liaise.subjects.html.md#liaise.subjects.Subject.reply_mode_for)). In
+`draft` mode, a message with the operator’s [`Approval`](liaise.model.html.md#liaise.model.Approval) on
+`ctx.approval` passes, with a note saying who released it and when. The approval
+settles this filter alone; the filters after it judge the message as they would any
+other.
 
 * **Return type:**
   `Union`[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]

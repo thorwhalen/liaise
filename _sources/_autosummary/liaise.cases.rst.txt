@@ -16,6 +16,10 @@ liaise.cases
       SHOW_TEXT_CHARS
       ESCALATION_KINDS
       TEXT_INDENT
+      NEEDS_OWNER
+      STATE_AFTER_SENT_DRAFT
+      DELIVER_PURPOSE
+      DRAFT_ENTRY_KIND
    
    .. rubric:: Functions
 
@@ -23,5 +27,22 @@ liaise.cases
    
       case_lines
       case_show_lines
+      find_draft
+      pick_draft
+      reject_draft
+      send_draft
       set_case_state
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DraftRejection
+      DraftRelease
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      DraftSentNotRecorded
    
