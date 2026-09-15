@@ -76,10 +76,12 @@ OWNER_REPO_CONTEXT_RE = re.compile(
 #: A URL, up to the whitespace, bracket, quote, table pipe or list punctuation
 #: that ends it in Markdown or prose.
 URL_RE = re.compile(r"https?://[^\s)\]<>\"'`|*{},;]+")
-#: A URL that points at code hosting, by its host or its path: a repository, a
-#: raw file, or a badge or notebook link such as `img.shields.io/github/...`.
+#: A URL that points at code hosting or a package or model registry, by its host
+#: or its path: a repository, a raw file, an image or package namespace, or a
+#: badge or notebook link such as `img.shields.io/github/...`.
 CODE_HOSTING_URL_RE = re.compile(
     r"github\.com|githubusercontent\.com|gitlab\.com|bitbucket\.org|codeberg\.org"
+    r"|huggingface\.co|hub\.docker\.com|npmjs\.com|sr\.ht|travis-ci\.|deepwiki\.com"
     r"|/gh/|/github/",
     re.IGNORECASE,
 )
@@ -239,6 +241,7 @@ def test_owner_repo_offenders_reads_links_as_links():
         "[labels](https://learn.microsoft.com/en" + "-us/purview/sensitivity-labels)"
         " and https://docs.github.com/en/code" + "-security/secret-scanning"
         " and https://docs.gitlab.com/ee/user/project" + "-settings/access"
+        " and https://support.github.com/en/code" + "-security/secret-scanning"
     )
     assert _owner_repo_offenders(docs) == []
     # A login without a hyphen escapes the bare check, so only the context
@@ -249,6 +252,8 @@ def test_owner_repo_offenders_reads_links_as_links():
         "https://gist.github.com/" + login + "/abc123",
         "GET https://api.github.com/repos/" + login + "/notes",
         "GET https://api.github.com/users/" + login + "/repos",
+        "GET https://api.github.com/orgs/" + login + "/repos",
+        "POST https://uploads.github.com/repos/" + login + "/notes/releases",
         "https://raw.githubusercontent.com/" + login + "/notes/main/README.md",
         "https://gitlab.com/" + login + "/notes",
         "https://bitbucket.org/" + login + "/notes",
@@ -256,12 +261,27 @@ def test_owner_repo_offenders_reads_links_as_links():
         "--repo " + login + "/notes",
     ):
         assert _owner_repo_offenders(text), text
-    # These name no code host, so only the bare check can catch them.
+    # No context names these owners, so only the bare check can catch them: it
+    # must keep reading URLs that point at code hosting or a registry, and a
+    # documentation URL must not swallow the text after it.
     for text in (
-        "https://img.shields.io/github/stars/" + owner + "/notes",
+        "https://img.shields.io/GitHub/stars/" + owner + "/notes",
+        "https://codecov.io/gh/" + owner + "/notes",
+        "https://user-images.githubusercontent.com/1/" + owner + "/notes",
+        "https://huggingface.co/" + owner + "/notes",
+        "https://hub.docker.com/r/" + owner + "/notes",
+        "https://www.npmjs.com/package/@" + owner + "/notes",
+        "https://git.sr.ht/~" + owner + "/notes",
+        "https://travis-ci.org/" + owner + "/notes",
+        "https://deepwiki.com/" + owner + "/notes",
         "https://docs.example.com/x " + owner + "/notes",
         "|https://docs.example.com/x|" + owner + "/notes|",
         "https://docs.example.com/x," + owner + "/notes",
+        "https://docs.example.com/x;" + owner + "/notes",
+        "https://docs.example.com/x*" + owner + "/notes",
+        "https://docs.example.com/x{" + owner + "/notes}",
+        "https://docs.example.com/x}" + owner + "/notes",
+        "https://docs.example.com/x<" + owner + "/notes",
         "see " + owner + "/notes for it",
     ):
         assert owner + "/notes" in _owner_repo_offenders(text), text
