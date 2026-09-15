@@ -5,7 +5,8 @@ each :class:`~liaise.outcomes.Send` among those is an :class:`Outbound` that the
 hands to :func:`run_gate` before anything reaches a channel. The gate runs
 :data:`DFLT_OUTBOUND_FILTERS`, in this order:
 
-1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode.
+1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode, unless
+   the operator released it.
 2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, a
    ``.env`` path, an email address, a private key, a token (wrapped across lines or not)
    or one of ``policy.leak_terms``. It never redacts.
@@ -21,9 +22,11 @@ instead. Notes accumulate across the filters that ran. acquaint is optional
 (``liaise[people]``): without it, or for a person it does not know, filters 3 and 4
 add a note and let the message through.
 
-The gate only decides. The tick sends :attr:`GateDecision.send`, or stores the diverted
-message on the case as a draft (see :func:`liaise.outcomes.make_draft`) and notifies
-the operator.
+The gate only decides. :func:`liaise.release.gate_and_send` sends
+:attr:`GateDecision.send`, and its callers keep a diverted message as a draft (see
+:func:`liaise.outcomes.make_draft`). The tick then notifies the operator. When the
+operator releases a draft (``liaise case send-draft``), the same gate runs again on the
+final text, with their :class:`~liaise.model.Approval` on :attr:`GateContext.approval`.
 """
 
 from __future__ import annotations
@@ -41,7 +44,7 @@ from liaise.detect import (
     PRIVATE_KEY_PATTERN,
     TOKEN_SHAPES,
 )
-from liaise.model import Case
+from liaise.model import Approval, Case
 from liaise.subjects import Subject
 
 #: The reply mode in which liaise sends nothing without the operator.
@@ -91,11 +94,16 @@ class Outbound:
 
 @dataclass(frozen=True)
 class GateContext:
-    """What the filters may consult: the subject and its policy, the case, the time."""
+    """What the filters may consult: the subject and its policy, the case, the time.
+
+    ``approval`` is the operator's release of this message (``liaise case send-draft``).
+    It is None for every message the tick sends on its own.
+    """
 
     subject: Subject
     case: Case
     now: datetime
+    approval: Optional[Approval] = None
 
 
 @dataclass(frozen=True)
@@ -144,14 +152,22 @@ def _acquaint_failure(error: Exception) -> str:
 
 
 def reply_mode(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
-    """Divert when the recipient's reply mode is ``draft``.
+    """Divert when the recipient's reply mode is ``draft``, unless the operator released it.
 
     The mode is the person's ``policy.reply_modes`` override, else the subject's
-    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`).
+    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`). In
+    ``draft`` mode, a message with the operator's :class:`~liaise.model.Approval` on
+    ``ctx.approval`` passes, with a note saying who released it and when. The approval
+    settles this filter alone; the filters after it judge the message as they would any
+    other.
     """
-    if ctx.subject.reply_mode_for(outbound.recipient) == DRAFT_REPLY_MODE:
+    if ctx.subject.reply_mode_for(outbound.recipient) != DRAFT_REPLY_MODE:
+        return Pass(outbound)
+    approval = ctx.approval
+    if not isinstance(approval, Approval):
         return Divert("draft reply mode")
-    return Pass(outbound)
+    note = f"draft reply mode: released by {approval.by} at {approval.at.isoformat()}"
+    return Pass(outbound, notes=(note,))
 
 
 def leak_scan(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:

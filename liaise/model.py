@@ -255,6 +255,20 @@ class Outcome(_Record):
 
 
 @dataclass(frozen=True)
+class Approval(_Record):
+    """The operator's release of a held message: who released it, and when.
+
+    The gate reads it from :attr:`liaise.gate.GateContext.approval`. It settles
+    :func:`liaise.gate.reply_mode`, which is what ``draft`` reply mode waits for, and
+    nothing else: every other filter still judges the message, so a leak in a released
+    draft is diverted all the same. It is recorded with the send.
+    """
+
+    by: str
+    at: datetime
+
+
+@dataclass(frozen=True)
 class Hold(_Record):
     """A stop on work in ``scope`` (``global``, ``subject:<slug>``, ``repo:<o/r>``, ...)."""
 

@@ -90,7 +90,6 @@ from liaise.gate import (
     GateContext,
     Outbound,
     OutboundFilter,
-    run_gate,
 )
 from liaise.github import GhCli, GitHub
 from liaise.holds import (
@@ -152,6 +151,8 @@ from liaise.processor import FINISHED, FRESH, RESUME, RUNNING, ClaudeHeadless, J
 from liaise.projection import github_issue, project_labels
 from liaise.prompt import compose_case_prompt
 from liaise.readiness import compute_readiness, last_partner_activity
+from liaise.release import error_text as _error_text
+from liaise.release import gate_and_send
 from liaise.subjects import DELIVERY_KINDS, DELIVERY_PERS, Subject
 from liaise.workspace import (
     DFLT_LOCKS_SUBDIR,
@@ -258,6 +259,9 @@ WorkspaceFactory = Callable[..., Optional[SharedCheckout]]
 #: triage seam (#19). The tick starts the cases group by group, each group in its order,
 #: and a case left out is not started this tick. None keeps the tick's own order.
 Triage = Callable[[Sequence[Case]], Iterable[Iterable[Case]]]
+#: How a draft kept because a hold kept its effects waiting begins its reason, before the
+#: hold's scope: ``held: effect:deploy``.
+HELD_REASON_PREFIX = "held: "
 
 
 @dataclass(frozen=True)
@@ -333,10 +337,6 @@ def _fmt_age(seconds: float) -> str:
         return f"{seconds // _SECONDS_PER_MINUTE}m"
     hours, rest = divmod(seconds, _SECONDS_PER_HOUR)
     return f"{hours}h{rest // _SECONDS_PER_MINUTE:02d}m"
-
-
-def _error_text(error: BaseException) -> str:
-    return f"{type(error).__name__}: {error}"
 
 
 def _run_starts(case: Case) -> list[LedgerEntry]:
@@ -1565,7 +1565,7 @@ class _Tick:
             self._deliver(subject, immediate)  # a deploy per issue: a batch of one, now
 
     def _hold_send(self, send: Send, hold: Hold) -> None:
-        reason = f"held: {hold.scope}"
+        reason = f"{HELD_REASON_PREFIX}{hold.scope}"
         draft = make_draft(
             at=self.now,
             outcome=send.purpose,
@@ -1589,11 +1589,14 @@ class _Tick:
     def _send(self, subject: Subject, send: Send) -> bool:
         """Put ``send`` through the gate, then send it or keep it as a draft; True once sent."""
         case = self._case(send.case_id)
-        decision = run_gate(
+        attempt = gate_and_send(
             send,
             GateContext(subject=subject, case=case, now=self.now),
+            registry=self.registry,
+            dry_run=self.dry_run,
             outbound_filters=self.outbound_filters,
         )
+        decision = attempt.decision
         head = f"  gate {send.purpose} to {send.ref}"
         detail = {
             "purpose": send.purpose,
@@ -1629,21 +1632,7 @@ class _Tick:
             )
             return False
         outbound = decision.send
-        try:
-            result = correspond.send(
-                outbound.ref,
-                outbound.text,
-                dry_run=self.dry_run,
-                registry=self.registry,
-            )
-            failure = None if result.ok else (result.error or "the channel refused it")
-            failure_kind = None if result.ok else result.error_kind
-        except Exception as error:  # an unknown channel, an adapter that raised
-            result, failure, failure_kind = (
-                None,
-                _error_text(error),
-                type(error).__name__,
-            )
+        failure = attempt.failure
         if failure is not None:
             reason = f"send failed: {failure}"
             self._entry(
@@ -1669,14 +1658,14 @@ class _Tick:
                 NOTICE_SEND_FAILED,
                 subject=subject.slug,
                 case_ids=(case.id,),
-                cause=failure_kind or SEND_REFUSED_CAUSE,
+                cause=attempt.failure_kind or SEND_REFUSED_CAUSE,
             )
             return False
         self._entry(
             case.id,
             "gate",
             text=outbound.text,
-            detail={**detail, "decision": "send", "url": result.url},
+            detail={**detail, "decision": "send", "url": attempt.result.url},
         )
         self.sent.append(outbound)
         verb = "would send" if self.dry_run else "sent"

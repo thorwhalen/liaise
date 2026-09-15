@@ -21,7 +21,7 @@ A partner's brief tunes the words. It does not make an issue thread private. A r
 - **Keep `default_reply_mode = "draft"`** on any subject whose repository is public, and for any person with whom care is needed. Give `direct` only to people and channels where a mistake would be cheap.
 - **List every project name, alias and codename** that must not reach a partner in `policy.leak_terms`.
 - **List every channel whose audience is wider than the partner** in `policy.public_channels`, not only `github`. A private repository in an organisation is readable by every member by default (§3.3).
-- **Read drafts with `liaise case show`** before sending them by hand. Name the audience to yourself before you post.
+- **Read drafts with `liaise case show`** before sending them with `liaise case send-draft`, which runs the gate again on the final text. Name the audience to yourself first: the leak scan still decides by channel name.
 - **Treat a case opened by an unrecorded sender as untrusted:** keep its replies as drafts.
 
 ## Proposed in the report, not built yet
