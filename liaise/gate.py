@@ -491,10 +491,16 @@ def filter_name(outbound_filter: Any) -> str:
     """
     candidate = outbound_filter
     for _ in range(MAX_WRAPPED_FILTERS):  # a seam configured twice is a partial of one
-        name = getattr(candidate, "__name__", None)
-        if isinstance(name, str) and name:
+        try:
+            name = getattr(candidate, "__name__", None)
+            named = isinstance(name, str) and bool(name)
+            wrapped = None if named else getattr(candidate, "func", None)
+        except (
+            Exception
+        ):  # an attribute that raises names nothing, and says nothing here
+            break
+        if named:
             return name
-        wrapped = getattr(candidate, "func", None)
         if wrapped is None:
             break
         candidate = wrapped

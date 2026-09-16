@@ -314,6 +314,28 @@ def test_a_filter_configured_at_a_seam_is_named_by_the_check_it_runs():
     assert filter_name(object()) == "object"
 
 
+def test_a_filter_whose_own_attributes_raise_is_named_by_its_type_and_says_nothing_more():
+    """Naming a filter may not raise out of the gate, nor carry what an attribute raised: the
+    name reaches the operator's notification."""
+    bound_to = "/Us" + "ers/someone/liaise/outbound-rules.toml"
+
+    class Awkward:
+        @property
+        def func(self):
+            raise RuntimeError(f"{bound_to} is unreadable")
+
+        def __call__(self, outbound, ctx):
+            return Divert("refused by the rules")
+
+    awkward = Awkward()
+    assert filter_name(awkward) == "Awkward"
+
+    decision = run_gate(_outbound(), _context(), outbound_filters=(awkward,))
+
+    assert (decision.diverted_by, decision.diverted) == ("Awkward", "refused by the rules")
+    assert bound_to not in repr(decision.record()) + repr(decision.notes)
+
+
 def test_the_tick_context_carries_no_approval_audience_or_provenance_unless_given():
     context = GateContext(subject=_subject(), now=NOW)
     assert (context.approval, context.audience, context.provenance) == (None, None, None)
