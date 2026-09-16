@@ -30,12 +30,14 @@ from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from types import MappingProxyType
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
+from liaise.detect import link_urls, visible
 from liaise.gate import DFLT_OUTBOUND_FILTERS, OutboundFilter
 from liaise.holds import DFLT_SET_BY
 from liaise.ledger import Ledger
-from liaise.model import CASE_STATES, Case, LedgerEntry, require_one_of
+from liaise.model import CASE_STATES, Approval, Case, LedgerEntry, require_one_of
+from liaise.policy import audience_in_words
 from liaise.processor import RUNNING
 from liaise.release import (
     DRAFT_ENTRY_KIND,
@@ -85,11 +87,99 @@ def _stamp(moment: datetime) -> str:
     return moment.isoformat(timespec="seconds")
 
 
+#: The keys of a ``gate`` entry's audit record that ``liaise case show`` sums up rather than
+#: prints: the verdict, the audience snapshot and the fingerprints stay in the ledger.
+_AUDIT_KEYS = frozenset(
+    {
+        "concerns",
+        "settled",
+        "verdict",
+        "consulted",
+        "payload_hash",
+        "audience_hash",
+        "approval_bound",
+    }
+)
+#: How a held message's audience reads when no verdict names it.
+AUDIENCE_UNKNOWN = "not judged"
+
+
+def _shown_detail(detail: Mapping[str, Any]) -> dict[str, Any]:
+    """``detail`` as an entry's line shows it: an audit record summed up by its rules and approval."""
+    shown = {key: value for key, value in detail.items() if key not in _AUDIT_KEYS}
+    approval = shown.get("approval")
+    if isinstance(approval, Mapping):
+        past = ", ".join(approval.get("rules_overridden") or ())
+        shown["approval"] = f"by {approval.get('by')}" + (
+            f" past {past}" if past else ""
+        )
+    rules = [
+        str(concern.get("rule") or concern.get("filter"))
+        for concern in detail.get("concerns") or ()
+        if isinstance(concern, Mapping)
+    ]
+    if rules:
+        shown["rules"] = ", ".join(dict.fromkeys(rules))
+    if detail.get("approval_bound") is False:
+        shown["approval"] = f"{shown.get('approval')} (void)"
+    return shown
+
+
+def gate_summary(detail: Mapping[str, Any]) -> Optional[dict[str, Any]]:
+    """What a ``gate`` entry's ``detail`` says of its decision, as a held draft keeps it.
+
+    None for an entry that records no verdict (one written before liaise ADR 0002, a
+    rejection, a nudge).
+    """
+    if "flow" not in detail:
+        return None
+    verdict = detail.get("verdict")
+    try:
+        audience = audience_in_words(verdict["audience"]) if verdict else None
+    except (
+        KeyError,
+        TypeError,
+        ValueError,
+    ):  # a record nobody can read names no audience
+        audience = None
+    concerns = detail.get("concerns") or ()
+    return {
+        "flow": detail["flow"],
+        "audience": audience,
+        "reasons": [c.get("text") for c in concerns if isinstance(c, Mapping)],
+    }
+
+
+def held_lines(
+    text: Optional[str],
+    *,
+    gate: Optional[Mapping[str, Any]] = None,
+    indent: str = TEXT_INDENT,
+) -> list[str]:
+    """A held message as the operator reads it before releasing it (discussion §5.7).
+
+    What the gate decided and the audience in words, when ``gate`` (a draft's, or
+    :func:`gate_summary`'s) says; the text, each invisible or control character written as
+    ``<U+XXXX>``; and every link and image destination in full, since a link's title can
+    say one place and its destination another.
+    """
+    lines = []
+    if gate:
+        audience = gate.get("audience") or AUDIENCE_UNKNOWN
+        lines.append(f"{indent}[gate: {gate.get('flow')}; audience: {audience}]")
+    lines += [f"{indent}{line}" for line in visible(text or NONE_SHOWN).splitlines()]
+    urls = link_urls(text or "")
+    if urls:
+        lines.append(f"{indent}[links, in full:]")
+        lines += [f"{indent}  {visible(url)}" for url in urls]
+    return lines
+
+
 def entry_line(entry: LedgerEntry) -> str:
     """One entry on one line: when, what, by whom, its detail, and the start of its text."""
     detail = ", ".join(
         f"{key}={value}"
-        for key, value in entry.detail.items()
+        for key, value in _shown_detail(entry.detail).items()
         if value not in (None, "", [], {})
     )
     line = f"{_stamp(entry.at)} {entry.kind}" + (
@@ -97,7 +187,7 @@ def entry_line(entry: LedgerEntry) -> str:
     )
     if detail:
         line += f": {detail}"
-    text = " ".join((entry.text or "").split())
+    text = " ".join(visible(entry.text or "").split())
     if len(text) > SHOW_TEXT_CHARS:
         text = text[: SHOW_TEXT_CHARS - 1] + "…"
     return f"{line} | {text}" if text else line
@@ -135,9 +225,11 @@ def case_show_lines(
 
     Its state and conversations; the reason of its last ``escalate`` or ``decline``; its
     last failed deploy, with the tail of the command's output; each draft waiting for the
-    operator, with its whole text; and its ``entries`` latest ledger entries, oldest first,
-    a line each with its detail and the start of its text. Reads only. Raises
-    ``ValueError`` for a case the ledger ``store`` does not hold.
+    operator, with the gate's flow, the audience in words, its whole text with invisible
+    characters made visible and every link in full (:func:`held_lines`); and its
+    ``entries`` latest ledger entries, oldest first, a line each with its detail and the
+    start of its text. Reads only. Raises ``ValueError`` for a case the ledger ``store``
+    does not hold.
     """
     case = Ledger(store).get_case(case_id)
     if case is None:
@@ -180,7 +272,7 @@ def case_show_lines(
             f"  [{index}] {draft.get('at')} {draft.get('outcome')} to {to}: "
             f"{draft.get('reason')}"
         )
-        lines += indented(draft.get("text"))
+        lines += held_lines(draft.get("text"), gate=draft.get("gate"))
     shown = case.entries[-entries:] if entries > 0 else ()
     lines.append(f"latest entries: {len(shown)} of {len(case.entries)}")
     lines += [f"  {entry_line(entry)}" for entry in shown]
@@ -254,6 +346,8 @@ class DraftRelease:
     how many filters the gate ran it through. ``edited`` says whether the operator's text
     replaced the draft's. ``case`` is the case as the release left it, or would leave it in
     a dry run, and ``moved`` is its ``(from, to)`` states when the send moved it on.
+    ``approval`` is the approval the gate was given: the one to pass back to send exactly
+    what was judged.
     """
 
     index: int
@@ -263,6 +357,7 @@ class DraftRelease:
     edited: bool
     case: Case
     moved: Optional[tuple[str, str]] = None
+    approval: Optional[Approval] = None
 
 
 @dataclass(frozen=True)
@@ -328,19 +423,26 @@ def send_draft(
     send: bool = True,
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
+    approval: Optional[Approval] = None,
+    approve_shown: bool = False,
+    justification: str = "",
+    fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
 ) -> DraftRelease:
     """Send the case ``case_id``'s draft at ``index`` as ``by``, through the gate again.
 
     The message is the draft's text, or ``text`` when the operator edited it. It goes out
     through :func:`liaise.release.release_draft`, with an :class:`~liaise.model.Approval`
-    by ``by`` at ``now`` (the current UTC time when None) on the gate's context. Draft
-    reply mode lets it through, and every other filter judges it as it would a message
-    the tick sends, the mention included.
+    by ``by`` at ``now`` (the current UTC time when None) on the gate's context, bound to
+    the message and the audience its channel reports at send time. The approval settles
+    what it names and binds to, draft reply mode among them, and every other concern of the
+    gate holds, a ``refuse`` always.
 
     It asks no one, and ``by`` has no default: the caller says who releases the draft. Its
-    caller shows the operator the message and the gate's verdict first, from a dry run, and
-    passes the draft they saw as ``seen``, as ``liaise case send-draft`` does after asking
-    at a terminal.
+    caller shows the operator the message and the gate's verdict first, from a dry run with
+    ``approve_shown``, and passes the draft they saw as ``seen`` and that dry run's
+    ``approval``, as ``liaise case send-draft`` does after asking at a terminal. With
+    neither, nothing is settled and a draft the gate holds back stays held. A text, an
+    audience or a verdict that changed since the approval voids it, and nothing is sent.
 
     - **Sent:** the draft leaves the case. A ``gate`` entry by ``by`` records the text as
       it went out, its url, the approval and why the draft was held. Once no draft is
@@ -403,6 +505,10 @@ def send_draft(
         send=send,
         dry_run=dry_run,
         outbound_filters=outbound_filters,
+        approval=approval,
+        approve_shown=approve_shown,
+        justification=justification,
+        fingerprint_key=fingerprint_key,
     )
     release = functools.partial(
         DraftRelease,
@@ -411,6 +517,7 @@ def send_draft(
         attempt=outcome.attempt,
         filters=outcome.filters,
         edited=outcome.edited,
+        approval=outcome.approval,
     )
     if outcome.entry is None:
         return release(case=case)  # only a plan: nothing went out, so nothing changes

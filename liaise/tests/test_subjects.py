@@ -173,6 +173,38 @@ def test_full_subject_file_reads_every_value(tmp_path):
     )
 
 
+def test_the_outbound_policy_values_default_and_are_read(tmp_path):
+    policy = _load(tmp_path, FULL_TOML).policy
+    assert (policy.tainted_runs, policy.link_allowlist, policy.canary_terms, policy.mode) == ("approve", (), (), "enforce")
+
+    gated = FULL_TOML.replace(
+        'public_channels = ["github", "webinbox"]',
+        'public_channels = ["github", "webinbox"]\n'
+        'tainted_runs = "send"\n'
+        'link_allowlist = ["example.org"]\n'
+        'canary_terms = ["zq-canary-7731"]\n'
+        'mode = "shadow"',
+    )
+    policy = _load(tmp_path, gated).policy
+
+    assert (policy.tainted_runs, policy.mode) == ("send", "shadow")
+    assert (policy.link_allowlist, policy.canary_terms) == (("example.org",), ("zq-canary-7731",))
+
+
+@pytest.mark.parametrize(
+    "line, message",
+    [
+        ('tainted_runs = "always"', "policy.tainted_runs has 'always'"),
+        ('mode = "off"', "policy.mode has 'off'"),
+        ('link_allowlist = "example.org"', "policy.link_allowlist must be a list of strings"),
+        ('canary_terms = "zq"', "policy.canary_terms must be a list of strings"),
+    ],
+)
+def test_an_outbound_policy_value_outside_its_vocabulary_is_a_config_error(tmp_path, line, message):
+    _, error = _config_error(tmp_path, FULL_TOML.replace('leak_terms = ["example-internal"]', line))
+    assert message in error
+
+
 def test_partial_tables_keep_the_other_defaults(tmp_path):
     text = MINIMAL_TOML + (
         '\n[policy.permissions]\ntester = ["report"]\n'

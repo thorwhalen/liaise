@@ -236,7 +236,9 @@ class Finding:
 
     ``start`` and ``end`` are offsets into the message as written. ``entity``, ``label``
     and ``sealed_from`` are set for terms from the disclosure. ``rule`` names the pattern
-    or check that matched; ``fingerprint`` is the keyed HMAC of the value.
+    or check that matched; ``fingerprint`` is the keyed HMAC of the value. ``part`` names
+    the part of the message the offsets are into when it is not the text (``title``,
+    ``attachment name``); :func:`detect` scans one part and leaves it None.
     """
 
     kind: str
@@ -248,9 +250,10 @@ class Finding:
     rule: str
     severity: int
     fingerprint: str
+    part: Optional[str] = None
 
     def to_dict(self) -> dict:
-        """The finding as a JSON-ready dict."""
+        """The finding as a JSON-ready dict; ``part`` only when it names one."""
         return {
             "kind": self.kind,
             "start": self.start,
@@ -261,6 +264,7 @@ class Finding:
             "rule": self.rule,
             "severity": self.severity,
             "fingerprint": self.fingerprint,
+            **({"part": self.part} if self.part else {}),
         }
 
 
@@ -308,6 +312,28 @@ _INVISIBLE_CLASS = "".join(
 )
 _INVISIBLE_CHAR = re.compile(f"[{_INVISIBLE_CLASS}]")
 _INVISIBLE_RUN = re.compile(f"[{_INVISIBLE_CLASS}]+")
+#: What :func:`visible` spells out: every invisible character, and every control
+#: character but the tab and the line breaks (a terminal obeys an escape sequence, so a
+#: message holding one could redraw what the operator reads).
+_SHOWN_AS_CODE = re.compile(
+    f"[{_INVISIBLE_CLASS}\\x00-\\x08\\x0b\\x0c\\x0e-\\x1f\\x7f-\\x9f]"
+)
+
+
+def visible(text: str) -> str:
+    """``text`` with each invisible or control character written as ``<U+XXXX>``.
+
+    What the operator reads before releasing a message: a zero-width space, a direction
+    override or a terminal escape shows as what it is, where it is.
+
+    >>> visible("He" + chr(0x200B) + "ron")
+    'He<U+200B>ron'
+    >>> visible("two\\nlines\\tand a tab")
+    'two\\nlines\\tand a tab'
+    """
+    return _SHOWN_AS_CODE.sub(lambda match: f"<U+{ord(match.group()):04X}>", text)
+
+
 #: Combining marks, dropped by normalisation. Spacing marks (``Mc``) carry a syllable's
 #: sound in many scripts and are kept.
 _MARK_CATEGORIES = frozenset({"Mn", "Me"})
@@ -831,6 +857,7 @@ def fingerprint_key(
     *,
     key_file: str = DFLT_KEY_FILE,
     key_bytes: int = DFLT_KEY_BYTES,
+    create: bool = True,
 ) -> bytes:
     """The fingerprint key in ``<state_dir>/<key_file>``, created on first use.
 
@@ -839,12 +866,17 @@ def fingerprint_key(
     atomically, so processes racing to create it all read the same key. A directory
     created here is owner-only. An existing file shorter than ``key_bytes`` raises
     :class:`FingerprintKeyError`.
+
+    With ``create`` false (a dry run, which writes nothing), a missing key is not created:
+    the answer is a key used once, so its fingerprints correlate with nothing recorded.
     """
     directory = (
         Path(state_dir).expanduser()
         if state_dir is not None
         else _configured_state_dir()
     )
+    if not create and not (directory / key_file).exists():
+        return secrets.token_bytes(key_bytes)
     directory.mkdir(parents=True, exist_ok=True, mode=STATE_DIR_MODE)
     path = directory / key_file
     if not path.exists():
@@ -852,6 +884,39 @@ def fingerprint_key(
         if created is not None:
             return created
     return _read_key(path, key_bytes)
+
+
+def key_source(
+    state_dir: Union[str, os.PathLike, None] = None,
+    *,
+    key_file: str = DFLT_KEY_FILE,
+    key_bytes: int = DFLT_KEY_BYTES,
+    create: bool = True,
+) -> Callable[[], bytes]:
+    """A callable that answers one key, however often it is asked: :func:`fingerprint_key`, once.
+
+    One command may judge a message more than once — releasing a draft judges it, shows the
+    operator, and judges it again with their approval — and those judgements have to
+    fingerprint alike, or what the second one flags is not what the first one showed. With
+    ``create`` false a missing key is a key used once, so asking twice would otherwise
+    answer twice.
+
+    >>> source = key_source(create=False)
+    >>> source() == source()
+    True
+    """
+    answered: list[bytes] = []
+
+    def source() -> bytes:
+        if not answered:
+            answered.append(
+                fingerprint_key(
+                    state_dir, key_file=key_file, key_bytes=key_bytes, create=create
+                )
+            )
+        return answered[0]
+
+    return source
 
 
 # ---- the scan ----
@@ -1608,6 +1673,33 @@ def scan_links(scan: Scan) -> Iterator[Finding]:
             rule="image-host" if image else "link-host",
             severity=SEVERITY_EXFILTRATION,
         )
+
+
+def link_urls(text: str) -> tuple[str, ...]:
+    """Every link and image destination in ``text``, in full, in order, each once.
+
+    Read as :func:`scan_links` reads them (Markdown, HTML attributes, autolinks, plain
+    URLs, then any ``//host`` outside those), whatever their host: what the operator reads
+    before releasing a message, since a link's title can say one place and its
+    destination another.
+
+    >>> link_urls("See [the docs](https://example.org/a) and https://example.com/b.")
+    ('https://example.org/a', 'https://example.com/b')
+    """
+    found: dict[int, int] = {}
+    parsed = chain_iterables(
+        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
+    )
+    for start, end, _, _ in parsed:
+        found[start] = max(end, found.get(start, end))
+    spans = sorted(found.items())
+    starts = [start for start, _ in spans]
+    for start, end, _, _ in _loose_urls(text):
+        index = bisect_right(starts, start) - 1
+        if index >= 0 and starts[index] <= start < spans[index][1]:
+            continue  # inside a URL already found
+        found[start] = max(end, found.get(start, end))
+    return tuple(dict.fromkeys(text[start:end] for start, end in sorted(found.items())))
 
 
 # ---- exfiltration: encoded runs ----

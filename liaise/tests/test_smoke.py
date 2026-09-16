@@ -6,8 +6,8 @@ subject bound to a fake GitHub repository and a fake web inbox. The plan it prin
 
 1. intake taking in a relay-filed issue and a signed web-inbox report, each a new case;
 2. a run that finished before this tick, collected, with its outcomes through the
-   outbound gate: a reply holding a local path is diverted by the leak scan, and a
-   question passes with the partner's mention added;
+   outbound gate: a reply holding a local path is refused by the outbound policy, and a
+   question to the partner's private repository passes with their mention added;
 3. the first ready case planned for dispatch, past holds, authorization, budget,
    preflight and the workspace check.
 
@@ -27,7 +27,9 @@ from __future__ import annotations
 import copy
 import functools
 import inspect
+import json
 import sys
+import types
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -38,13 +40,14 @@ from correspond.channels.webinbox import WebInbox
 
 from liaise import cli
 from liaise import tick as tick_module
-from liaise.gate import DFLT_OUTBOUND_FILTERS
+from liaise.gate import DELAY_HELD, DFLT_OUTBOUND_FILTERS
 from liaise.github import FakeGitHub, Issue
 from liaise.ledger import Ledger
 from liaise.model import LedgerEntry, Outcome, RunRecord, RunResult
 from liaise.processor import ClaudeHeadless, EchoProcessor
 from liaise.testing import FakeGitHubChannel, add_webinbox_report, demo_registry
 from liaise.tests._fake_claude import argv_log, fake_claude
+from liaise.tests.outbound.fixtures import disclosure_for
 from liaise.tick import run_once
 
 NOW = datetime(2026, 9, 11, 12, 0, tzinfo=timezone.utc)
@@ -128,21 +131,21 @@ def _issue(number: int, *labels: str) -> Issue:
     return Issue(REPO, number, "Search", "example-bot", "", created, created, "open", labels=labels)
 
 
-def _seed_a_finished_run(store: dict) -> None:
-    """A case on issue 2, working on a run the tick has not collected yet.
+def _seed_a_finished_run(store: dict, *, person: str = "pat") -> None:
+    """A case on issue 2, reported by ``person``, working on a run the tick has not collected yet.
 
     The ledger says the run is ``running`` until a tick collects it, whatever the processor
     says; the EchoProcessor says it has finished.
     """
     ledger = Ledger(store)
     opened, started = NOW - timedelta(hours=4), NOW - timedelta(minutes=20)
-    case = ledger.new_case(SLUG, SEEDED_ISSUE, reporter="pat", at=opened)
+    case = ledger.new_case(SLUG, SEEDED_ISSUE, reporter=person, at=opened)
     ledger.append(
         case.id,
         LedgerEntry(
             at=opened,
             kind="message",
-            actor="pat",
+            actor=person,
             grade="platform",
             permission="report",
             text="Search results skip accented names.",
@@ -241,11 +244,14 @@ def test_run_once_dry_run_plans_intake_the_gate_and_a_dispatch_and_changes_nothi
 
     # 2. the finished run, collected, and its outcomes through the gate
     collected = lines.index(f"  run {SEEDED_RUN} ({SEEDED_CASE}): collected, no error")
-    diverted = lines.index(f"  gate reply to {SEEDED_ISSUE}: diverted (leak scan: local path), kept as a draft")
-    assert lines[diverted + 1].startswith("    note: leak scan: local path at character ")
+    diverted = _starting_with(
+        lines, f"  gate reply to {SEEDED_ISSUE}: diverted (refuse: an exfiltration shape (local-path) at characters "
+    )
+    assert lines[diverted].endswith("), kept as a draft")
+    assert lines[diverted + 1].startswith("    note: audience: named readers")
     assert f"  would notify the operator: liaise: a draft for {SEEDED_CASE} waits for you" in lines
     passed = _starting_with(lines, f"  gate ask to {SEEDED_ISSUE}: would send: @pat One question first. 1. Should names")
-    assert "    note: added the mention @pat" in lines[passed + 1 : passed + 4]
+    assert "    note: added the mention @pat" in lines[passed + 1 : passed + 5]
     assert f"  case {SEEDED_CASE}: working -> needs-partner (ask)" in lines
 
     # 3. the planned dispatch, past every check; a dry run never runs preflight
@@ -302,3 +308,84 @@ def test_a_dry_run_over_the_real_processor_runs_no_process(smoke, tmp_path):
     assert f"  would dispatch {SLUG}-2 as run {SLUG}-2-r1-{RUN_SUFFIX} (fresh)" in lines
     assert not argv_log(path).exists()
     assert _files(tmp_path) == files_before
+
+
+# ---- the worked case of liaise discussion 32, §1 (acceptance of #36) ----
+
+#: The S2 draft of the scenario suite, and the same note without the sentence about Heron.
+S2_TEXT = (
+    "Quick note: the export fix is in. Separately, I have started exploring Heron at a high level; "
+    "more when it settles."
+)
+EXPORT_TEXT = "Quick note: the export fix is in."
+HERON_SUBJECT_TOML = """
+bindings = ["github:example/app"]
+workspace = {{ path = "{workspace}" }}
+
+[policy]
+default_reply_mode = "direct"
+people = {{ "github:ada-lorne" = "ada" }}
+roles = {{ ada = "partner" }}
+"""
+
+
+@pytest.fixture
+def heron(tmp_path, monkeypatch) -> Smoke:
+    """The harness over a public example/app, reported by Ada, whose finished run wrote both drafts.
+
+    acquaint is a fake whose disclosure is the scenario suite's: Heron is amber, and nobody who
+    can read a public repository is cleared for it.
+    """
+    acquaint = types.ModuleType("acquaint")
+
+    def disclosure(people, *, projects=None, audience=None, today=None):
+        return disclosure_for(list(people), audience=json.loads(audience) if audience else None, today=today)
+
+    acquaint.disclosure = disclosure
+    monkeypatch.setitem(sys.modules, "acquaint", acquaint)
+    root = tmp_path / "config"
+    (root / "subjects").mkdir(parents=True)
+    workspace = tmp_path / "code" / SLUG
+    workspace.mkdir(parents=True)
+    sessions = tmp_path / "sessions"
+    sessions.mkdir()
+    (root / "config.toml").write_text(CONFIG_TOML.format(state_dir=(tmp_path / "state").as_posix()))
+    (root / "subjects" / f"{SLUG}.toml").write_text(HERON_SUBJECT_TOML.format(workspace=workspace.as_posix()))
+    store: dict = {}
+    _seed_a_finished_run(store, person="ada")
+    drafts = (Outcome(kind="reply", text=S2_TEXT), Outcome(kind="reply", text=EXPORT_TEXT))
+    return Smoke(
+        root=root,
+        sessions=sessions,
+        github=FakeGitHubChannel(clock=lambda: NOW, visibility="public"),
+        webinbox=WebInbox(store={}, blobs={}),
+        labeler=FakeGitHub([_issue(2, "liaise:working")]),
+        processor=EchoProcessor(default=RunResult(run_id="", outcomes=drafts, summary="Two notes.")),
+        store=store,
+    )
+
+
+def test_on_a_public_repository_the_heron_draft_is_revise_and_the_export_draft_waits_for_the_outbox(heron, tmp_path):
+    store_before, files_before = copy.deepcopy(heron.store), _files(tmp_path)
+
+    lines = heron.run().splitlines()
+
+    revise = lines[_starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: diverted (revise: 'project:heron' is amber")]
+    assert f"the least-cleared reader of {SEEDED_ISSUE} is anyone (world-readable" in revise
+    delay = lines[
+        _starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: diverted (delay: a send to {SEEDED_ISSUE} cannot be withdrawn")
+    ]
+    assert delay.endswith(f"{DELAY_HELD}), kept as a draft")
+    notices = [line for line in lines if line.startswith("  would notify the operator:")]
+    assert notices and not any("heron" in line.lower() or "export" in line for line in notices)
+    assert heron.github.sent == [] and heron.store == store_before and _files(tmp_path) == files_before
+
+
+def test_on_a_private_repository_the_export_draft_would_be_sent_and_the_heron_draft_still_revised(heron):
+    heron.github.set_visibility(REPO, "private")
+
+    lines = heron.run().splitlines()
+
+    _starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: diverted (revise: 'project:heron' is amber")
+    _starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: would send: @ada-lorne {EXPORT_TEXT}")
+    assert heron.github.sent == []

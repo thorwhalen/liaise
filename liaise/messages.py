@@ -30,11 +30,18 @@ import functools
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from dataclasses import dataclass, replace
 from datetime import datetime, timezone
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 from correspond.errors import ERROR_KINDS
 
-from liaise.cases import DFLT_SHOW_ENTRIES, NONE_SHOWN, TEXT_INDENT, entry_line
+from liaise.cases import (
+    DFLT_SHOW_ENTRIES,
+    NONE_SHOWN,
+    entry_line,
+    gate_summary,
+    held_lines,
+)
+from liaise.detect import visible
 from liaise.gate import DFLT_OUTBOUND_FILTERS, GateContext, Outbound, OutboundFilter
 from liaise.holds import DFLT_SET_BY, blocking_hold, scopes_for
 from liaise.ledger import Ledger
@@ -42,6 +49,7 @@ from liaise.model import (
     MESSAGE_HELD,
     MESSAGE_REJECTED,
     MESSAGE_SENT,
+    Approval,
     Hold,
     LedgerEntry,
     OutboundMessage,
@@ -49,7 +57,9 @@ from liaise.model import (
 )
 from liaise.notify import NOTICE_MESSAGE_HELD, notice_body, notice_title, notify
 from liaise.outcomes import DFLT_OPERATOR_PRIORITY, HELD_REASON_PREFIX, make_draft
+from liaise.policy import Provenance
 from liaise.release import (
+    CASELESS_PROVENANCE,
     DRAFT_ENTRY_KIND,
     GITHUB_CHANNEL,
     DraftSentNotRecorded,
@@ -100,6 +110,7 @@ class MessageRelease:
     ``draft`` is the held message as the operator saw it, ``attempt`` the gate's decision
     and the send, ``filters`` how many filters ran, ``edited`` whether the operator's text
     replaced the message's, and ``message`` the record as the release left it.
+    ``approval`` is the approval the gate was given.
     """
 
     draft: Mapping[str, Any]
@@ -107,6 +118,7 @@ class MessageRelease:
     filters: int
     edited: bool
     message: OutboundMessage
+    approval: Optional[Approval] = None
 
 
 def _no_message(message_id: str) -> str:
@@ -172,6 +184,7 @@ def send_message(
     notify_fn: Optional[Callable[..., Any]] = None,
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
+    fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
 ) -> MessageSent:
     """Send ``text`` to ``recipient`` (a person id) at ``ref`` outside any case, or hold it.
 
@@ -192,8 +205,10 @@ def send_message(
     - **Sent**, when a gate without that rule passes it: recorded as sent, with the text
       as it went out and its url.
 
-    Each record's one entry is by ``by``, at ``now``. A dry run judges and plans the same,
-    and records and tells nothing.
+    Each record's one entry is by ``by``, at ``now``, with the gate's audit record. The gate
+    judges it with its provenance unknown (nobody can say what its sender read), and
+    ``fingerprint_key`` is as :class:`~liaise.gate.GateContext` has it. A dry run judges
+    and plans the same, and records and tells nothing.
 
     Raises ``ValueError``, sending and recording nothing, for any of these:
 
@@ -247,15 +262,22 @@ def send_message(
             text=text,
             title=title,
         )
+        context = GateContext(
+            subject=subject,
+            now=at,
+            provenance=Provenance.unknown(CASELESS_PROVENANCE),
+            fingerprint_key=fingerprint_key,
+        )
         attempt = gate_and_send(
             outbound,
-            GateContext(subject=subject, now=at),
+            context,
             registry=registry,
             dry_run=dry_run,
             outbound_filters=filters,
         )
         decision, notes = attempt.decision, attempt.decision.notes
         detail["notes"] = list(notes)
+        detail.update(decision.record())
         if attempt.sent:
             state, reason, cause = MESSAGE_SENT, None, None
             recorded_text, title = attempt.outbound.text, attempt.outbound.title
@@ -339,6 +361,10 @@ def send_held_message(
     send: bool = True,
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
+    approval: Optional[Approval] = None,
+    approve_shown: bool = False,
+    justification: str = "",
+    fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
 ) -> MessageRelease:
     """Send the held message ``message_id`` as ``by``, through the gate again.
 
@@ -349,8 +375,11 @@ def send_held_message(
     terminal. Sent, the message is recorded as sent. Diverted or refused,
     it stays held with the text that was judged and the new reason. Either way an entry
     by ``by`` records the attempt. ``seen`` is the message as the operator saw it
-    (:func:`message_draft`): one that changed since is not sent. ``send=False`` and
-    ``dry_run`` are as :func:`~liaise.release.release_draft` has them.
+    (:func:`message_draft`): one that changed since is not sent. ``send=False``,
+    ``dry_run``, ``approval`` (the dry run's, bound to what the operator was shown),
+    ``approve_shown``, ``justification`` and ``fingerprint_key`` are as
+    :func:`~liaise.release.release_draft` has them: with neither an approval nor
+    ``approve_shown``, nothing is settled and a held message stays held.
 
     Raises ``ValueError``, sending and writing nothing, for a message the ledger does not
     hold, one that is not held, one whose subject is not in ``subjects``, one that changed
@@ -384,6 +413,10 @@ def send_held_message(
         send=send,
         dry_run=dry_run,
         outbound_filters=outbound_filters,
+        approval=approval,
+        approve_shown=approve_shown,
+        justification=justification,
+        fingerprint_key=fingerprint_key,
     )
     release = functools.partial(
         MessageRelease,
@@ -391,6 +424,7 @@ def send_held_message(
         attempt=outcome.attempt,
         filters=outcome.filters,
         edited=outcome.edited,
+        approval=outcome.approval,
     )
     if outcome.entry is None:
         return release(message=message)  # only a plan: nothing went out
@@ -496,10 +530,23 @@ def message_show_lines(
     """What ``liaise message show`` prints: the message ``message_id``, with its text.
 
     Its subject, state, recipient, reference, purpose and title; why it is held, with the
-    gate's notes; its whole text; and its ``entries`` latest entries. Reads only. Raises
-    ``ValueError`` for a message the ledger ``store`` does not hold.
+    gate's notes; the gate's last flow and the audience in words, its whole text with
+    invisible characters made visible, and every link in full
+    (:func:`liaise.cases.held_lines`); and its ``entries`` latest entries. Reads only.
+    Raises ``ValueError`` for a message the ledger ``store`` does not hold.
     """
     message = find_message(Ledger(store), message_id)
+    judged = next(
+        filter(
+            None,
+            (
+                gate_summary(entry.detail)
+                for entry in reversed(message.entries)
+                if entry.kind == DRAFT_ENTRY_KIND
+            ),
+        ),
+        None,
+    )
     lines = [
         f"message: {message.id}",
         f"  subject: {message.subject}",
@@ -507,13 +554,13 @@ def message_show_lines(
         f"  recipient: {message.recipient}",
         f"  ref: {message.ref}",
         f"  purpose: {message.purpose}",
-        f"  title: {message.title or NONE_SHOWN}",
+        f"  title: {visible(message.title) if message.title else NONE_SHOWN}",
         f"  created: {message.created_at.isoformat(timespec='seconds')}",
         f"  updated: {message.updated_at.isoformat(timespec='seconds')}",
         f"held for: {message.reason or NONE_SHOWN}",
         *(f"  note: {note}" for note in message.notes),
         "text:",
-        *(f"{TEXT_INDENT}{line}" for line in (message.text or NONE_SHOWN).splitlines()),
+        *held_lines(message.text, gate=judged),
     ]
     shown = message.entries[-entries:] if entries > 0 else ()
     lines.append(f"latest entries: {len(shown)} of {len(message.entries)}")

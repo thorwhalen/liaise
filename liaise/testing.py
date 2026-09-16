@@ -32,11 +32,25 @@ from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 from typing import Any, Optional, Union
 
-from correspond.channels.github import MAX_BODY_CHARS, MAX_TITLE_CHARS, REF_RE
+from correspond.channels.github import (
+    APPS_AND_WEBHOOKS,
+    BASE_PERMISSION_DEFAULT,
+    MAX_BODY_CHARS,
+    MAX_TITLE_CHARS,
+    PRIVATE_DURABILITY,
+    PRIVATE_WIDENING,
+    PUBLIC_DURABILITY,
+    PUBLIC_WIDENING,
+    REF_RE,
+    SECURITY_MANAGERS,
+    UNLISTED_COLLABORATORS,
+    WATCHERS,
+)
 from correspond.channels.webinbox import Site, WebInbox, sign_identity, verify_identity
 from correspond.errors import ChannelError, InvalidRef, NotSupported
 from correspond.model import (
     Account,
+    Audience,
     Authenticity,
     Capabilities,
     ChannelIdentity,
@@ -46,6 +60,7 @@ from correspond.model import (
     Grade,
     HistoryDepth,
     Message,
+    Scope,
     SendResult,
     Support,
     format_time,
@@ -72,6 +87,24 @@ _CURSOR_PREFIX = "seq-"
 _EVIDENCE = {"attested_by": "liaise.testing, in memory"}
 #: How many hex digits of a digest end a seeded report's id, as the collector's random ones do.
 _REPORT_SUFFIX_DIGITS = 8
+#: What a fake repository's visibility may be: GitHub's three, and ``hidden`` for one the
+#: account cannot see. A fake repository is private and owned by a user unless told.
+VISIBILITIES = ("public", "private", "internal", "hidden")
+USER_OWNER, ORGANIZATION_OWNER = "User", "Organization"
+DFLT_VISIBILITY = "private"
+DFLT_OWNER_TYPE = USER_OWNER
+
+
+def _checked_visibility(visibility: str, owner_type: str) -> tuple[str, str]:
+    if visibility not in VISIBILITIES:
+        raise ValueError(
+            f"visibility {visibility!r} is not one of: {', '.join(VISIBILITIES)}"
+        )
+    if owner_type not in (USER_OWNER, ORGANIZATION_OWNER):
+        raise ValueError(
+            f"owner_type {owner_type!r} is {USER_OWNER!r} or {ORGANIZATION_OWNER!r}"
+        )
+    return visibility, owner_type
 
 
 def _utc_now() -> datetime:
@@ -103,6 +136,12 @@ class FakeGitHubChannel:
     ``lookback`` makes a first poll (one without a cursor) skip what last changed more
     than that long before ``clock()``, as correspond's GitHub adapter looks back only
     ``LISTEN_LOOKBACK``. With None, the default, a first poll yields everything.
+
+    :meth:`audience` answers who reads a repository as correspond's GitHub adapter does,
+    from its visibility: ``visibility`` for every repository, unless :meth:`set_visibility`
+    gave one its own. The default is a private repository its owner (a user) owns, whose
+    audience is ``named`` and so neither public nor organisation-wide; a test of the gate on a
+    public repository says so.
     """
 
     def __init__(
@@ -111,10 +150,14 @@ class FakeGitHubChannel:
         name: str = DFLT_GITHUB_CHANNEL,
         lookback: Optional[timedelta] = None,
         clock: Callable[[], datetime] = _utc_now,
+        visibility: str = DFLT_VISIBILITY,
+        owner_type: str = DFLT_OWNER_TYPE,
     ):
         self.name = name
         self.lookback = lookback
         self.clock = clock
+        self._visibility: dict[str, tuple[str, str]] = {}
+        self._default_visibility = _checked_visibility(visibility, owner_type)
         self.sent: list[tuple[ConversationRef, Draft]] = []
         self.send_error: Optional[ChannelError] = None
         self._posts: list[_Post] = []
@@ -131,6 +174,7 @@ class FakeGitHubChannel:
             send=Support.FULL,
             initiate=Support.FULL,
             reply=Support.PARTIAL,
+            audience=Support.FULL,
             history_depth=HistoryDepth.FULL,
             listen_modes=("poll",),
             grades=(Grade.PLATFORM,),
@@ -163,6 +207,66 @@ class FakeGitHubChannel:
             channel=self.name,
             id=f"{repository.id}#{int(match['number'])}",
             parent=repository,
+        )
+
+    # ---- who reads a repository ----
+
+    def set_visibility(
+        self, repo: str, visibility: str, *, owner_type: Optional[str] = None
+    ) -> None:
+        """Make ``repo`` (``owner/repo``) ``public``, ``private``, ``internal`` or ``hidden``.
+
+        ``hidden`` answers as GitHub does for a repository the account cannot see, and the
+        audience defaults to public. ``owner_type`` is ``User`` or ``Organization``; it
+        keeps the repository's own, or the channel's default.
+        """
+        key = repo.lower()
+        current = self._visibility.get(key, self._default_visibility)[1]
+        self._visibility[key] = _checked_visibility(visibility, owner_type or current)
+
+    def audience(
+        self, ref: ConversationRef, *, draft: Optional[Draft] = None
+    ) -> Audience:
+        """Who can read ``ref``'s repository, as correspond's GitHub adapter answers from its visibility.
+
+        A draft changes nothing: a mention decides who is notified, not who can read.
+        """
+        repo = ref.id.partition("#")[0]
+        visibility, owner_type = self._visibility.get(repo, self._default_visibility)
+        owner = repo.partition("/")[0]
+        evidence = (
+            f"in memory: visibility {visibility}, owned by {owner} ({owner_type})",
+        )
+        if visibility == "hidden":
+            return Audience.unknown(
+                ref.encoded, *evidence, "the account cannot see the repository"
+            )
+        if visibility == "public":
+            return Audience(
+                ref=ref.encoded,
+                scope=Scope.PUBLIC,
+                classes=(WATCHERS,),
+                external=True,
+                durability=PUBLIC_DURABILITY,
+                widening=PUBLIC_WIDENING,
+                evidence=evidence,
+            )
+        by_user = visibility == "private" and owner_type == USER_OWNER
+        classes = [WATCHERS, APPS_AND_WEBHOOKS, UNLISTED_COLLABORATORS]
+        if not by_user:
+            classes += [SECURITY_MANAGERS, BASE_PERMISSION_DEFAULT]
+        if visibility == "internal":
+            classes.append(
+                f"every member of every organisation in the enterprise that owns {owner} (internal visibility)"
+            )
+        return Audience(
+            ref=ref.encoded,
+            scope=Scope.NAMED if by_user else Scope.ORG,
+            readers=(self._identity(owner, is_self=False),) if by_user else (),
+            classes=tuple(classes),
+            durability=PRIVATE_DURABILITY,
+            widening=PRIVATE_WIDENING,
+            evidence=evidence,
         )
 
     # ---- seeding ----
