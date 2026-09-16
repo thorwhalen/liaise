@@ -1,81 +1,99 @@
-"""The outbound gate: the checks a message passes before liaise sends it.
+"""The outbound gate: the checks every message passes before liaise sends it, and the verdict they reach.
 
-A processor run reports outcomes, :mod:`liaise.outcomes` plans them into actions, and
-each :class:`~liaise.outcomes.Send` among those is an :class:`Outbound` that the tick
-hands to :func:`run_gate` before anything reaches a channel. The gate runs
-:data:`DFLT_OUTBOUND_FILTERS`, in this order:
+A processor run reports outcomes, :mod:`liaise.outcomes` plans them into actions, and each
+:class:`~liaise.outcomes.Send` among those is an :class:`Outbound` that the tick hands to
+:func:`run_gate` before anything reaches a channel. A message outside a case, and a draft
+the operator releases, pass the same gate. It runs :data:`DFLT_OUTBOUND_FILTERS`, in this
+order:
 
-1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode, nor any
-   message outside a case, unless the operator released it.
-2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, a
-   ``.env`` path, an email address, a private key, a token (wrapped across lines or not)
-   or one of ``policy.leak_terms``. It never redacts.
+1. :func:`outside_a_case`: a message outside any case waits for the operator: its sender
+   chose where it goes and to whom (liaise #28).
+2. :func:`outbound_policy`: the policy of liaise discussion 32. Who can read the
+   destination (the audience on the context), what each reader may be told (the
+   disclosure), what the message holds (the detectors, over its text, title and attachment
+   names) and what the run that wrote it read (the provenance on the context), through the
+   rule table of :mod:`liaise.policy`. Draft reply mode is a row of that table. It
+   replaces 0.1's leak scan.
 3. :func:`writing_card`: a note with the recipient's acquaint writing card.
 4. :func:`deslop`: nothing acquaint's style lint finds machine-sounding.
 5. :func:`notify_recipient`: on GitHub, the message starts with ``@<login>``, since
    GitHub notifies only the people a comment mentions.
 
-A filter is ``(outbound, ctx) -> Pass | Divert``. A :class:`Pass` hands the message,
-possibly rewritten, to the next filter; only :func:`notify_recipient` rewrites. The
-first :class:`Divert` ends the gate: the message is not sent, and goes to the operator
-instead. Notes accumulate across the filters that ran. acquaint is optional
-(``liaise[people]``): without it, or for a person it does not know, filters 3 and 4
-add a note and let the message through.
+**Every filter runs** (liaise ADR 0002, which amends ADR 0001's "the first divert ends the
+gate"). A filter is ``(outbound, ctx) -> Pass | Divert``. A :class:`Divert` says how far
+the message must be held back: its ``flow``, one of :data:`liaise.policy.FLOWS`
+(``approve`` when it does not say). Each divert is one or more :class:`Concern` records,
+the policy's one per rule that fired. The decision's flow is the most restrictive concern
+still standing, and its reasons are all of them, most restrictive first. A message goes out
+only when that flow is ``send``: ``delay`` waits for the operator until the delay outbox
+exists (liaise #38). A filter that raises, or answers anything but a ``Pass`` or a
+``Divert``, contributes an ``approve`` concern with the error as its reason. The order stays
+fixed and is not a seam: the mention, the one rewrite, comes last, so every filter judges
+the text as it was written, and the rewrite reaches a send only when nothing held it back.
 
-The gate only decides. :func:`liaise.release.gate_and_send` sends
-:attr:`GateDecision.send`, and its callers keep a diverted message as a draft (see
-:func:`liaise.outcomes.make_draft`). The tick then notifies the operator. When the
-operator releases a draft (``liaise case send-draft``), the same gate runs again on the
-final text, with their :class:`~liaise.model.Approval` on :attr:`GateContext.approval`.
+**Approvals** (discussion §5.7). The operator's :class:`~liaise.model.Approval` on
+:attr:`GateContext.approval` is bound to the hashes of the message and the audience it was
+given for. While both still match (:func:`liaise.policy.payload_hash` of the message the
+filters judged, :func:`liaise.policy.audience_hash` of the audience on the context), it
+settles each concern whose rule it names and whose flow is at most ``approve``. A
+``refuse`` is never settled, nor is a concern with no rule (deslop, a missing handle, a
+filter that failed). An approval whose hashes differ settles nothing, and is itself a
+concern that names what changed. :func:`approval_for` makes the approval for a decision the
+operator was shown.
+
+The gate only decides. :func:`liaise.release.gate_and_send` computes the audience, runs the
+gate, and sends :attr:`GateDecision.send`; its callers keep a diverted message as a draft
+(see :func:`liaise.outcomes.make_draft`) and record :meth:`GateDecision.record`. acquaint is
+optional (``liaise[people]``): without it the disclosure has every reader at
+``need-to-know`` and the subject's ``leak_terms`` as its vocabulary, and filters 3 and 4
+add a note and let the message through.
 """
 
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable
-from dataclasses import dataclass, replace
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field, replace
 from datetime import datetime
-from typing import Callable, Optional, Union
+from typing import Any, Callable, Optional, Union
 
-from liaise.detect import (
-    EMAIL_PATTERN,
-    ENV_FILE_PATTERN,
-    LOCAL_PATH_PATTERNS,
-    PRIVATE_KEY_PATTERN,
-    TOKEN_SHAPES,
-)
+from liaise.access import Resolver, resolve_person
+from liaise.detect import DFLT_DETECTORS, Detector, Finding
 from liaise.model import Approval, Case
+from liaise.outbound import (
+    DisclosureSource,
+    Judgement,
+    acquaint_disclosure,
+    audience_snapshot,
+    judge,
+    verdict_id,
+)
+from liaise.policy import (
+    APPROVE,
+    DELAY,
+    FLOWS,
+    SEND,
+    Provenance,
+    Verdict,
+    audience_hash,
+    audience_in_words,
+    flow_rank,
+    most_restrictive,
+    payload_hash,
+)
 from liaise.subjects import Subject
 
-#: The reply mode in which liaise sends nothing without the operator.
-DRAFT_REPLY_MODE = "draft"
-#: Why :func:`reply_mode` holds a message outside a case, and how its release note names it.
+#: The rule :func:`outside_a_case` holds a message for, which an approval names to release it.
 OUTSIDE_A_CASE = "a message outside a case"
 CASELESS_REASON = f"{OUTSIDE_A_CASE} waits for the operator"
-#: Why :func:`reply_mode` holds a message in draft reply mode, and its release note's name.
-DRAFT_REPLY_REASON = "draft reply mode"
 #: The channel whose messages must @mention their recipient to reach them.
 MENTION_CHANNEL = "github"
-
-#: What :func:`leak_scan` diverts on, as (kind, pattern): the 0.1 patterns, which
-#: :mod:`liaise.detect` owns. Local paths are home directories on macOS, Linux and Windows,
-#: a Windows home through a WSL mount, and macOS's temporary directories. An env file is a
-#: path ending in ``.env``. No pattern has an unbounded quantifier ahead of a character it
-#: requires, so the scan stays linear in the message's length.
-_LEAK_PATTERNS = (
-    *(("local path", pattern) for pattern in LOCAL_PATH_PATTERNS),
-    ("env file", ENV_FILE_PATTERN),
-    ("email", re.compile(EMAIL_PATTERN)),
-    ("private key", re.compile(PRIVATE_KEY_PATTERN)),
-    *(("token", re.compile(rf"\b{shape}")) for shape in TOKEN_SHAPES),
+#: What a decision held back as ``delay`` says, until the outbox (liaise #38) exists.
+DELAY_HELD = (
+    "a delay is held for the operator until the delay outbox exists (liaise #38)"
 )
-#: The token shapes as :func:`leak_scan` looks for them in the text with its line breaks
-#: removed, so a token wrapped across lines is still found. Their word boundary is checked
-#: against the message itself, since removing a line break can glue a word to a token.
-_UNWRAPPED_TOKEN_PATTERNS = tuple(re.compile(shape) for shape in TOKEN_SHAPES)
-#: The characters that break a line, and one that continues a word.
-_LINE_BREAKS = frozenset("\r\n")
-_WORD_CHAR = re.compile(r"\w")
+#: The name the gate files its own concerns under: a void approval, a message it cannot hash.
+GATE_CONCERN = "gate"
 #: A GitHub login: letters, digits and hyphens, at most 39 characters.
 _GITHUB_LOGIN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}")
 
@@ -88,8 +106,11 @@ class Outbound:
     or ``github:example/app`` to open an issue there), and ``channel`` is that ref's
     channel. ``purpose`` is the outcome kind it carries out (``ask``, ``reply``,
     ``propose``, ``deliver``). ``title`` is the title of the issue it opens, when it opens
-    one; the leak scan judges it with the text. ``case_id`` is the case the message belongs
-    to, or None for a message an agent sends outside any case (``liaise message send``).
+    one. ``case_id`` is the case the message belongs to, or None for a message an agent
+    sends outside any case (``liaise message send``). ``cc`` and ``bcc`` are further
+    recipients (addresses), on channels that have them; ``attachments`` are the names of
+    attached files, and ``project`` the project the message is about, when one is named.
+    The policy judges every one of these, and the payload hash covers all but ``project``.
     """
 
     ref: str
@@ -99,59 +120,199 @@ class Outbound:
     text: str
     title: Optional[str] = None
     case_id: Optional[str] = None
+    cc: tuple[str, ...] = ()
+    bcc: tuple[str, ...] = ()
+    attachments: tuple[str, ...] = ()
+    project: Optional[str] = None
 
 
 @dataclass(frozen=True, kw_only=True)
 class GateContext:
-    """What the filters may consult: the subject and its policy, the case, the time.
+    """What the filters may consult about one message.
 
-    ``case`` is the case the message belongs to, or None for a message outside any case.
-    The subject is the subject either way, so its policy, leak terms, public channels and
-    people all apply; no filter of the 0.1 gate reads the case. ``approval`` is the
-    operator's release of this message (``liaise case send-draft``, ``liaise message
-    send-draft``), and is None for every message sent without one.
+    ``subject`` is the subject whose policy applies, ``now`` the time of the decision, and
+    ``case`` the case the message belongs to (None outside any). ``audience`` is
+    correspond's record of who can read the destination, computed right before the gate
+    runs (None: unknown, so public). ``provenance`` is what the run that wrote the message
+    read (None: unknown, so tainted). ``mode`` overrides the subject's ``policy.mode``.
+    ``approval`` is the operator's release of this message, None for every message sent
+    without one. ``fingerprint_key`` is the key findings are fingerprinted with (None: the
+    one in the configured state directory).
     """
 
     subject: Subject
     now: datetime
     case: Optional[Case] = None
     approval: Optional[Approval] = None
+    audience: Optional[Any] = None
+    provenance: Optional[Provenance] = None
+    mode: Optional[str] = None
+    fingerprint_key: Union[bytes, Callable[[], bytes], None] = None
 
 
 @dataclass(frozen=True)
 class Pass:
-    """A filter's verdict to go on, with ``outbound`` as the filter left it."""
+    """A filter's verdict to go on, with ``outbound`` as the filter left it.
+
+    ``judgement`` is the policy's, when the filter is the policy.
+    """
 
     outbound: Outbound
     notes: tuple[str, ...] = ()
+    judgement: Optional[Judgement] = None
 
 
 @dataclass(frozen=True)
 class Divert:
-    """A filter's verdict to send nothing and hand the message to the operator."""
+    """A filter's verdict to hold the message back: ``reason``, and how far (``flow``).
+
+    ``flow`` is one of :data:`liaise.policy.FLOWS` other than ``send``; a divert that does
+    not say is ``approve``, a flagged draft for the operator. ``findings`` are what it
+    found. ``rule`` names what an approval may settle it by; a divert without one is
+    settled only by changing the message. ``judgement`` is the policy's, whose rules become
+    the concerns.
+    """
 
     reason: str
     notes: tuple[str, ...] = ()
+    flow: str = APPROVE
+    findings: tuple[Finding, ...] = ()
+    rule: Optional[str] = None
+    judgement: Optional[Judgement] = None
 
 
 #: ``(outbound, ctx) -> Pass | Divert``: one check of the gate.
 OutboundFilter = Callable[[Outbound, GateContext], Union[Pass, Divert]]
 
 
+@dataclass(frozen=True, kw_only=True)
+class Concern:
+    """One reason the gate holds a message back: the filter, the rule, how far, and why.
+
+    ``text`` is what the operator reads, and never holds a matched value. ``rule`` is None
+    for a concern no approval settles.
+    """
+
+    filter: str
+    flow: str
+    text: str
+    rule: Optional[str] = None
+    findings: tuple[Finding, ...] = ()
+
+    @property
+    def settleable(self) -> bool:
+        """Whether an approval naming its rule settles it: a rule, and a flow at most ``approve``."""
+        return self.rule is not None and flow_rank(self.flow) <= flow_rank(APPROVE)
+
+    def to_dict(self) -> dict:
+        """JSON-ready."""
+        return {
+            "filter": self.filter,
+            "flow": self.flow,
+            "rule": self.rule,
+            "text": self.text,
+            "findings": [finding.to_dict() for finding in self.findings],
+        }
+
+
 @dataclass(frozen=True)
 class GateDecision:
-    """What :func:`run_gate` decided: ``send`` a message, or why it was ``diverted``.
+    """What :func:`run_gate` decided: ``send`` a message, or why it is ``diverted``.
 
-    Exactly one of ``send`` (the message as the filters left it) and ``diverted`` (the
-    reason) is set. ``notes`` holds the notes of every filter that ran, in order.
-    ``diverted_by`` names the filter that diverted, as an operator notification may say it:
-    the reason can quote what a filter raised.
+    Exactly one of ``send`` (the message as the filters left it) and ``diverted`` (every
+    standing concern's text, most restrictive first) is set. ``flow`` is the decision's,
+    ``concerns`` what still holds the message back and ``settled`` what the approval
+    released it past. ``notes`` holds every filter's notes, in order. ``diverted_by`` names
+    the filter of the most restrictive concern, as an operator notification may say it: the
+    reason can quote what a filter raised. ``verdict`` and ``consulted`` are the policy's
+    verdict and what it consulted. ``approval`` is the one on the context, and
+    ``payload_hash`` and ``audience_hash`` what it had to match.
     """
 
     send: Optional[Outbound]
     diverted: Optional[str]
     notes: tuple[str, ...] = ()
     diverted_by: Optional[str] = None
+    flow: str = SEND
+    concerns: tuple[Concern, ...] = ()
+    settled: tuple[Concern, ...] = ()
+    verdict: Optional[Verdict] = None
+    consulted: Mapping[str, Any] = field(default_factory=dict)
+    approval: Optional[Approval] = None
+    payload_hash: Optional[str] = None
+    audience_hash: Optional[str] = None
+
+    @property
+    def bound(self) -> bool:
+        """Whether the decision had an approval that binds to this message and audience."""
+        return (
+            self.approval is not None
+            and self.payload_hash is not None
+            and self.audience_hash is not None
+            and self.approval.binds(self.payload_hash, self.audience_hash)
+        )
+
+    @property
+    def overridable(self) -> tuple[str, ...]:
+        """The rules of the standing concerns an approval could settle, each once."""
+        return tuple(
+            dict.fromkeys(c.rule for c in self.concerns if c.settleable and c.rule)
+        )
+
+    @property
+    def audience_words(self) -> Optional[str]:
+        """The audience the policy judged, in words; None when the policy did not run."""
+        if self.verdict is None:
+            return None
+        return audience_in_words(self.verdict.audience)
+
+    def summary(self) -> dict:
+        """What a held draft keeps of the decision: the flow, the audience in words, the reasons."""
+        return {
+            "flow": self.flow,
+            "audience": self.audience_words,
+            "reasons": [concern.text for concern in self.concerns],
+        }
+
+    def record(self) -> dict:
+        """What a ledger ``gate`` entry records of the decision (discussion §5.7).
+
+        The flow and every concern with its findings (kinds, positions and fingerprints,
+        never the value), what the approval settled, the policy's verdict (its audience
+        snapshot, the readers' tiers and clearances, the mode), the labels, seals and
+        provenance consulted, and the approval with whether it bound.
+        """
+        return {
+            "flow": self.flow,
+            "concerns": [concern.to_dict() for concern in self.concerns],
+            "settled": [concern.to_dict() for concern in self.settled],
+            "verdict": None if self.verdict is None else self.verdict.to_dict(),
+            "consulted": dict(self.consulted),
+            "approval": None if self.approval is None else self.approval.to_dict(),
+            "approval_bound": None if self.approval is None else self.bound,
+            "payload_hash": self.payload_hash,
+            "audience_hash": self.audience_hash,
+        }
+
+
+def approval_for(
+    decision: GateDecision, *, by: str, at: datetime, justification: str = ""
+) -> Approval:
+    """The approval of ``by``, at ``at``, of the message and audience ``decision`` judged.
+
+    It overrides every concern of the decision an approval can settle, so the operator must
+    have been shown ``decision``: its hashes bind the approval to exactly that message and
+    audience.
+    """
+    return Approval(
+        by=by,
+        at=at,
+        payload_hash=decision.payload_hash,
+        audience_hash=decision.audience_hash,
+        verdict_id=None if decision.verdict is None else verdict_id(decision.verdict),
+        justification=justification.strip(),
+        rules_overridden=decision.overridable,
+    )
 
 
 def _acquaint_failure(error: Exception) -> str:
@@ -163,98 +324,56 @@ def _acquaint_failure(error: Exception) -> str:
 # ---- the filters, in their default order ----
 
 
-def reply_mode(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
-    """Divert what waits for the operator: a message in ``draft`` reply mode, or outside a case.
+def outside_a_case(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
+    """Hold a message outside any case (``ctx.case`` None) for the operator, whatever its reply mode.
 
-    The mode is the person's ``policy.reply_modes`` override, else the subject's
-    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`). A message
-    outside any case (``ctx.case`` None) waits whatever the mode. Its sender chose where it
-    goes and to whom, so a sender who picks a person in ``direct`` mode must not reach an
-    audience that way. Until the gate can tell who reads a conversation and what the sender
-    had read (liaise discussion 32, §5.3 and §6), only the operator releases it.
-
-    A message with the operator's :class:`~liaise.model.Approval` on ``ctx.approval``
-    passes, with a note saying who released it and when. The approval settles this filter
-    alone; the filters after it judge the message as they would any other.
+    Its sender chose where it goes and to whom, so a sender who picks a person in
+    ``direct`` mode must not reach an audience that way (discussion §6.2). An approval
+    naming :data:`OUTSIDE_A_CASE`, bound to the message, releases it.
     """
-    if ctx.case is None:
-        name, reason = OUTSIDE_A_CASE, CASELESS_REASON
-    elif ctx.subject.reply_mode_for(outbound.recipient) == DRAFT_REPLY_MODE:
-        name, reason = DRAFT_REPLY_REASON, DRAFT_REPLY_REASON
-    else:
+    if ctx.case is not None:
         return Pass(outbound)
-    approval = ctx.approval
-    if not isinstance(approval, Approval):
-        return Divert(reason)
-    note = f"{name}: released by {approval.by} at {approval.at.isoformat()}"
-    return Pass(outbound, notes=(note,))
+    return Divert(CASELESS_REASON, rule=OUTSIDE_A_CASE)
 
 
-def leak_scan(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert]:
-    """On a public channel, divert a message holding what must not be made public.
+def outbound_policy(
+    outbound: Outbound,
+    ctx: GateContext,
+    *,
+    disclosure: DisclosureSource = acquaint_disclosure,
+    detectors: Iterable[Detector] = DFLT_DETECTORS,
+    resolver: Resolver = resolve_person,
+) -> Union[Pass, Divert]:
+    """Hold back what the outbound policy (discussion §5.4) does not let go now.
 
-    That is an absolute local path (a home directory on macOS, Linux or Windows, written
-    with single or JSON-doubled backslashes, a Windows home through a WSL mount, or a
-    macOS temporary directory), a path ending in ``.env``, an email address, a private
-    key's ``-----BEGIN ... PRIVATE KEY-----`` or ``-----BEGIN PGP PRIVATE KEY BLOCK-----``
-    line, a token shape (``ghp_``,
-    ``github_pat_``, ``sk-``, ``AKIA``, ``hf_``, ``xoxb-``), or one of
-    ``policy.leak_terms`` as a whole word in any case. Tokens are also looked for with the
-    text's line breaks removed, so a token wrapped across lines is found. The reason
-    names each kind found and the notes say where, never what. It never redacts: a leak
-    is for the operator to fix. A title is scanned the same way, and its notes say "of the
-    title". A channel outside ``policy.public_channels`` passes unscanned.
+    The audience is the context's (unknown, so public, when it has none), the disclosure
+    comes through ``disclosure`` (acquaint's, or every reader at ``need-to-know`` without
+    it), and the provenance is the context's (unknown, so tainted, when it has none). See
+    :func:`liaise.outbound.judge`. A ``send`` verdict passes, noting the audience; any
+    other diverts at its flow, one concern per rule that fired. It never redacts: what it
+    found is for the operator to fix, and its reasons say where, never what.
     """
-
-    def without_line_breaks(text: str) -> tuple[str, list[int]]:
-        """``text`` without its line breaks, and where each character left was in ``text``."""
-        kept = [index for index, char in enumerate(text) if char not in _LINE_BREAKS]
-        return "".join(text[index] for index in kept), kept
-
-    def hits_in(text: str) -> list[tuple[str, int]]:
-        """Each ``(kind, start)`` of what must not be made public in ``text``, once each."""
-        unwrapped, positions = without_line_breaks(text)
-        found = [
-            (kind, match.start())
-            for kind, pattern in _LEAK_PATTERNS
-            for match in pattern.finditer(text)
-        ]
-        unwrapped_starts = (
-            positions[match.start()]
-            for pattern in _UNWRAPPED_TOKEN_PATTERNS
-            for match in pattern.finditer(unwrapped)
-        )
-        found += [
-            ("token", start)
-            for start in unwrapped_starts
-            if start == 0 or not _WORD_CHAR.fullmatch(text[start - 1])
-        ]
-        found += [
-            ("leak term", match.start())
-            for term in policy.leak_terms
-            if term
-            for match in re.finditer(
-                rf"(?<!\w){re.escape(term)}(?!\w)", text, flags=re.IGNORECASE
-            )
-        ]
-        return list(dict.fromkeys(found))  # a token on one line is found by both scans
-
-    policy = ctx.subject.policy
-    if outbound.channel not in policy.public_channels:
-        return Pass(outbound)
-    places = [("", hits_in(outbound.text))]
-    if outbound.title:
-        places.append((" of the title", hits_in(outbound.title)))
-    kinds = dict.fromkeys(kind for _, hits in places for kind, _ in hits)
-    if not kinds:
-        return Pass(outbound)
+    judgement = judge(
+        outbound,
+        subject=ctx.subject,
+        now=ctx.now,
+        audience=ctx.audience,
+        provenance=ctx.provenance,
+        mode=ctx.mode,
+        key=ctx.fingerprint_key,
+        disclosure=disclosure,
+        detectors=detectors,
+        resolver=resolver,
+    )
+    verdict = judgement.verdict
+    if verdict.flow == SEND:
+        return Pass(outbound, notes=judgement.notes, judgement=judgement)
     return Divert(
-        f"leak scan: {', '.join(kinds)}",
-        notes=tuple(
-            f"leak scan: {kind} at character {start}{where}"
-            for where, hits in places
-            for kind, start in sorted(hits, key=lambda hit: hit[1])
-        ),
+        verdict.reasons[0].text,
+        notes=judgement.notes,
+        flow=verdict.flow,
+        findings=verdict.findings,
+        judgement=judgement,
     )
 
 
@@ -329,14 +448,82 @@ def notify_recipient(outbound: Outbound, ctx: GateContext) -> Union[Pass, Divert
 
 
 #: The gate's filters, in the order they run. The order is part of the design, not a
-#: setting: a draft is diverted before anything else looks at it.
+#: setting: the mention, the one rewrite, comes after every filter that judges the text.
 DFLT_OUTBOUND_FILTERS: tuple[OutboundFilter, ...] = (
-    reply_mode,
-    leak_scan,
+    outside_a_case,
+    outbound_policy,
     writing_card,
     deslop,
     notify_recipient,
 )
+
+
+# ---- the gate ----
+
+
+def filter_name(outbound_filter: Any) -> str:
+    """How the gate names a filter: its name, or its type when it has none (a partial).
+
+    Never its repr, which can hold what a filter was bound to, such as a local path; the
+    name reaches the operator's notification.
+    """
+    return getattr(outbound_filter, "__name__", type(outbound_filter).__name__)
+
+
+def _concerns_of(name: str, divert: Divert) -> list[Concern]:
+    """The concerns ``divert``, from the filter ``name``, holds the message back for."""
+    flow, reason = divert.flow, divert.reason
+    if flow not in FLOWS or flow == SEND:
+        reason = f"{reason} ({name} diverted with the flow {flow!r}, read as {APPROVE})"
+        flow = APPROVE
+    own = Concern(
+        filter=name,
+        flow=flow,
+        text=reason,
+        rule=divert.rule,
+        findings=tuple(divert.findings),
+    )
+    verdict = divert.judgement.verdict if divert.judgement is not None else None
+    if verdict is None:
+        return [own]
+    concerns = [
+        Concern(
+            filter=name,
+            flow=r.flow,
+            text=r.text,
+            rule=r.rule,
+            findings=() if r.finding is None else (r.finding,),
+        )
+        for r in verdict.reasons
+        if r.flow != SEND
+    ]
+    strongest = most_restrictive(c.flow for c in concerns)
+    if not concerns or flow_rank(flow) > flow_rank(strongest):
+        concerns.append(
+            replace(own, rule=None)
+        )  # the divert asks for more than its rules
+    return concerns
+
+
+def _void(approval: Approval, hashes: tuple[Optional[str], Optional[str]]) -> Concern:
+    """The concern an approval that does not bind to this message raises."""
+    if approval.payload_hash is None or approval.audience_hash is None:
+        what = "it is bound to no message"
+    else:
+        pairs = (
+            ("the message", approval.payload_hash, hashes[0]),
+            ("its audience", approval.audience_hash, hashes[1]),
+        )
+        changed = [label for label, given, now in pairs if given != now]
+        what = f"{' and '.join(changed)} changed since it was given"
+    return Concern(
+        filter=GATE_CONCERN,
+        flow=APPROVE,
+        text=(
+            f"the approval by {approval.by} at {approval.at.isoformat()} is void: "
+            f"{what}; the operator must judge the message again"
+        ),
+    )
 
 
 def run_gate(
@@ -345,31 +532,93 @@ def run_gate(
     *,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
 ) -> GateDecision:
-    """Run ``outbound`` through ``outbound_filters`` in order, stopping at the first divert.
+    """Run ``outbound`` through every one of ``outbound_filters``, in order, and decide.
 
-    Each :class:`Pass` hands its message, possibly rewritten, to the next filter. The
-    first :class:`Divert` ends the gate with nothing to send. Notes accumulate across
-    the filters that ran. The gate fails closed: a filter that raises, or returns
-    anything but a ``Pass`` or a ``Divert``, diverts the message with a reason naming it.
+    Each :class:`Pass` hands its message, possibly rewritten, to the next filter; each
+    :class:`Divert` adds its concerns. An approval on the context settles what it binds to
+    and names (see the module docstring). The decision's flow is the most restrictive
+    concern left, and only ``send`` sends. The gate fails closed: a filter that raises, or
+    returns anything but a ``Pass`` (of an :class:`Outbound`) or a ``Divert``, adds an
+    ``approve`` concern naming it.
     """
-    notes: list[str] = []
-    for outbound_filter in outbound_filters:
-        # By its type when it has no name: a repr can hold what a filter was bound to, such
-        # as a local path, and the name reaches the operator's notification.
-        name = getattr(outbound_filter, "__name__", type(outbound_filter).__name__)
-        try:
-            verdict = outbound_filter(outbound, ctx)
-        except Exception as error:
-            verdict = Divert(f"{name} failed: {type(error).__name__}: {error}")
-        if isinstance(verdict, Pass):
-            notes.extend(verdict.notes)
-            outbound = verdict.outbound
-            continue
-        if not isinstance(verdict, Divert):
-            kind = type(verdict).__name__
-            verdict = Divert(f"{name} returned {kind}, not Pass or Divert")
-        notes.extend(verdict.notes)
-        return GateDecision(
-            send=None, diverted=verdict.reason, notes=tuple(notes), diverted_by=name
+    try:
+        judged_audience = audience_snapshot(ctx.audience, outbound.ref)
+        hashes: tuple[Optional[str], Optional[str]] = (
+            payload_hash(outbound),
+            audience_hash(judged_audience),
         )
-    return GateDecision(send=outbound, diverted=None, notes=tuple(notes))
+        problem = None
+    except Exception as error:  # a message or an audience nobody can hash binds nothing
+        hashes, problem = (None, None), f"{type(error).__name__}: {error}"
+    approval = ctx.approval if isinstance(ctx.approval, Approval) else None
+    notes: list[str] = []
+    concerns: list[Concern] = []
+    if problem is not None:
+        concerns.append(
+            Concern(
+                filter=GATE_CONCERN,
+                flow=APPROVE,
+                text=f"the message could not be hashed ({problem})",
+            )
+        )
+    judgement: Optional[Judgement] = None
+    for outbound_filter in outbound_filters:
+        name = filter_name(outbound_filter)
+        try:
+            result = outbound_filter(outbound, ctx)
+        except Exception as error:
+            result = Divert(f"{name} failed: {type(error).__name__}: {error}")
+        if not isinstance(result, (Pass, Divert)) or (
+            isinstance(result, Pass) and not isinstance(result.outbound, Outbound)
+        ):
+            given = type(result.outbound if isinstance(result, Pass) else result)
+            result = Divert(f"{name} returned {given.__name__}, not a Pass or a Divert")
+        notes.extend(result.notes)
+        if result.judgement is not None:
+            judgement = result.judgement
+        if isinstance(result, Pass):
+            outbound = result.outbound
+        else:
+            concerns.extend(_concerns_of(name, result))
+    bound = approval is not None and None not in hashes and approval.binds(*hashes)
+    if approval is not None and not bound:
+        concerns.insert(
+            0, _void(approval, hashes)
+        )  # first among its equals: it explains the rest
+    settled, standing = [], []
+    for concern in concerns:
+        releases = bound and concern.settleable
+        (
+            settled
+            if releases and concern.rule in approval.rules_overridden
+            else standing
+        ).append(concern)
+    standing.sort(key=lambda concern: -flow_rank(concern.flow))  # stable: filter order
+    if settled:
+        rules = ", ".join(dict.fromkeys(concern.rule for concern in settled))
+        why = f" ({approval.justification})" if approval.justification else ""
+        at = approval.at.isoformat()
+        notes.append(f"released by {approval.by} at {at}, past: {rules}{why}")
+    flow = most_restrictive(concern.flow for concern in standing)
+    common = dict(
+        notes=tuple(notes),
+        flow=flow,
+        concerns=tuple(standing),
+        settled=tuple(settled),
+        verdict=None if judgement is None else judgement.verdict,
+        consulted={} if judgement is None else dict(judgement.consulted),
+        approval=approval,
+        payload_hash=hashes[0],
+        audience_hash=hashes[1],
+    )
+    if flow == SEND:
+        return GateDecision(send=outbound, diverted=None, **common)
+    texts = [concern.text for concern in standing]
+    if flow == DELAY:
+        texts.append(DELAY_HELD)
+    return GateDecision(
+        send=None,
+        diverted="; ".join(texts),
+        diverted_by=standing[0].filter,
+        **common,
+    )

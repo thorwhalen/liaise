@@ -16,7 +16,7 @@ authors = [
 ]
 license = "MIT"
 dependencies = [
-    "correspond>=0.0.2",
+    "correspond>=0.0.5",
     "cw",
     "dol",
 ]
@@ -41,7 +41,7 @@ docs = [
     "sphinx-rtd-theme>=1.0",
 ]
 people = [
-    "acquaint>=0.0.4",
+    "acquaint>=0.0.7",
 ]
 
 [tool.ruff]

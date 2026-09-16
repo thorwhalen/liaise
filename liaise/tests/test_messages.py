@@ -22,10 +22,12 @@ import pytest
 from correspond.errors import ChannelError
 
 from liaise import cli, messages
-from liaise.gate import CASELESS_REASON, GateContext, Outbound, run_gate
+from liaise.gate import CASELESS_REASON, OUTSIDE_A_CASE, GateContext, Outbound, approval_for, run_gate
 from liaise.holds import hold
 from liaise.ledger import MESSAGE_ID_HEX_DIGITS, Ledger
-from liaise.model import Approval, Hold
+from liaise.model import Hold
+from liaise.policy import Provenance
+from liaise.release import audience_of
 from liaise.subjects import Policy, Subject, load_subjects, subject_for_ref
 from liaise.testing import FakeGitHubChannel, demo_registry
 
@@ -129,14 +131,16 @@ def test_a_message_outside_a_case_is_held_recorded_and_the_operator_told_without
     (message,) = world.messages()
     assert MESSAGE_ID.fullmatch(message.id)
     assert str(raised.value).startswith(
-        f"the message to pat on {ISSUE} is held as {message.id}: diverted by reply_mode: {CASELESS_REASON}. "
+        f"the message to pat on {ISSUE} is held as {message.id}: diverted by outside_a_case (approve): {CASELESS_REASON}; "
     )
-    assert (message.state, message.reason, message.text, message.purpose) == ("held", CASELESS_REASON, TEXT, "ask")
+    assert (message.state, message.text, message.purpose) == ("held", TEXT, "ask")
+    assert message.reason.startswith(f"{CASELESS_REASON}; the run's provenance is unknown")
     (entry,) = message.entries
-    assert (entry.kind, entry.actor, entry.detail["decision"]) == ("gate", "agent", "divert")
+    assert (entry.kind, entry.actor, entry.detail["decision"], entry.detail["flow"]) == ("gate", "agent", "divert", "approve")
+    assert entry.detail["consulted"]["provenance"]["tainted"] is None
     ((title, body, _),) = world.notices
     assert title == f"liaise: a message on {SLUG} waits for you"
-    assert "cause: reply_mode" in body and "see liaise status" in body
+    assert "cause: outside_a_case" in body and "see liaise status" in body
     assert TEXT not in title + body and "pat" not in title + body
     assert world.posted() == []
     assert list(Ledger(world.store).cases()) == []  # a message is not a case
@@ -159,43 +163,56 @@ def test_the_operator_sends_a_held_message_after_reading_it(world):
     output = world.release(message_id)
 
     assert output.startswith(f"sent message {message_id} to pat on {ISSUE} (gate: passed, 5 filters): https://")
-    assert f"  note: a message outside a case: released by operator at {LATER.isoformat()}" in output.splitlines()
+    released = f"  note: released by operator at {LATER.isoformat()}, past: {OUTSIDE_A_CASE}, taint, reply mode"
+    assert released in output.splitlines()
     assert world.posted() == [(ISSUE, None, f"@pat {TEXT}")]
     (preview,) = world.previews
-    assert preview.splitlines()[:2] == [f"message {message_id}: ask to pat on {ISSUE}", "gate: passed (5 filters)"]
+    lines = preview.splitlines()
+    assert lines[0] == f"message {message_id}: ask to pat on {ISSUE}"
+    assert lines[1].startswith("audience: named readers")
+    assert lines[2] == "gate: sends once you release it past 3 concern(s):"
+    assert lines[3] == f"  [approve] {OUTSIDE_A_CASE}: {CASELESS_REASON}"
     message = world.message(message_id)
     held, sent = message.entries
     assert (message.state, held.actor, sent.actor) == ("sent", "agent", "operator")
-    assert sent.detail["approval"] == {"by": "operator", "at": LATER.isoformat()}
+    approval = sent.detail["approval"]
+    assert (approval["by"], approval["at"]) == ("operator", LATER.isoformat())
+    assert (approval["rules_overridden"], sent.detail["approval_bound"]) == ([OUTSIDE_A_CASE, "taint", "reply mode"], True)
 
 
 @pytest.mark.parametrize(
-    "recipient, text, filter_name, reason",
+    "recipient, text, filter_name, flow, reason",
     [
-        ("pat", LEAK, "leak_scan", "leak scan: local path"),
-        ("pat", "It is on the Example-Internal board.", "leak_scan", "leak scan: leak term"),
-        ("bram", TEXT, "notify_recipient", "no handle to notify bram"),
+        ("pat", LEAK, "outbound_policy", "refuse", "an exfiltration shape (local-path) at characters 17–"),
+        ("bram", TEXT, "notify_recipient", "approve", "no handle to notify bram"),
     ],
-    ids=["a local path", "a leak term", "no handle to mention"],
+    ids=["a local path", "no handle to mention"],
 )
-def test_a_released_message_meets_the_same_filters_as_a_cases(world, recipient, text, filter_name, reason):
+def test_a_released_message_meets_the_same_filters_as_a_cases(world, recipient, text, filter_name, flow, reason):
     message_id = world.held(recipient, text=text)
 
-    with pytest.raises(cw.CommandError, match=f"diverted by {filter_name}: {re.escape(reason)}") as raised:
+    with pytest.raises(cw.CommandError, match=f"diverted by {filter_name} \\({flow}\\): {re.escape(reason)}") as raised:
         world.release(message_id)
 
     assert raised.value.code == cli.DIVERTED_EXIT_CODE and world.previews == [] and world.posted() == []
     assert f"It stays held with that reason; edit it with liaise message send-draft {message_id} --edit" in str(raised.value)
     message = world.message(message_id)
-    assert (message.state, message.reason) == ("held", reason)
+    assert message.state == "held" and message.reason.startswith(reason)
 
 
-def test_a_title_opens_an_issue_the_leak_scan_reads_it_and_an_edit_can_fix_it(world):
+def test_a_title_the_policy_flags_is_refused_outside_a_case_and_an_edit_can_fix_it(world):
+    """A sender nobody can vouch for, naming something the audience is not cleared for, is an
+    injection that got private content out: refused as written, whatever the operator answers."""
     leaky = world.held(ref=f"github:{REPO}", title="On the Example-Internal board")
 
-    with pytest.raises(cw.CommandError, match="diverted by leak_scan: leak scan: leak term") as raised:
+    with pytest.raises(cw.CommandError, match="diverted by outbound_policy \\(refuse\\)") as raised:
         world.release(leaky)
-    assert "  note: leak scan: leak term at character 7 of the title" in str(raised.value).splitlines()
+
+    refusal = str(raised.value)
+    assert "the message names 'policy.leak_terms', which that audience is not cleared for" in refusal
+    # the operator's release settled every rule it could, and the refusal stands whatever it named
+    assert "past: a message outside a case, no write-down, reply mode" in refusal
+    assert world.previews == [] and world.posted() == []
 
     opened = []
 
@@ -269,7 +286,7 @@ def test_a_repository_hold_keeps_a_message_that_opens_an_issue(world):
 
 
 def test_a_dry_run_judges_and_records_and_tells_nothing(world):
-    with pytest.raises(cw.CommandError, match=f"the message to pat on {ISSUE} would be held: diverted by reply_mode"):
+    with pytest.raises(cw.CommandError, match=f"the message to pat on {ISSUE} would be held: diverted by outside_a_case"):
         world.send(dry_run=True)
     assert world.store == {} and world.notices == [] and world.posted() == []
 
@@ -339,16 +356,22 @@ def test_the_closest_binding_names_the_subject_and_a_tie_is_refused():
 def test_the_gate_holds_a_message_with_no_case_until_the_operator_releases_it():
     subject = Subject(SLUG, ("github:example/app",), Policy(people={"github:pat": "pat"}, roles={"pat": "partner"}, default_reply_mode="direct"))
     outbound = Outbound(ref=ISSUE, channel="github", recipient="pat", purpose="ask", text=TEXT)
-    context = GateContext(subject=subject, now=NOW)
+    audience = audience_of(outbound, registry=demo_registry(github=FakeGitHubChannel()))
+    context = GateContext(
+        subject=subject, now=NOW, audience=audience, provenance=Provenance.unknown("outside a case"), fingerprint_key=b"k" * 32
+    )
 
     assert context.case is None and outbound.case_id is None
-    assert run_gate(outbound, context).diverted == CASELESS_REASON  # direct mode does not let it out
-    released = replace(context, approval=Approval(by="operator", at=NOW))
+    held = run_gate(outbound, context)
+    assert held.diverted.startswith(CASELESS_REASON)  # direct mode does not let it out
+    assert held.overridable == (OUTSIDE_A_CASE, "taint")
+    released = replace(context, approval=approval_for(held, by="operator", at=NOW))
     assert run_gate(outbound, released).send.text == f"@pat {TEXT}"
     title_leak = replace(outbound, ref=f"github:{REPO}", title=LEAK)
-    decision = run_gate(title_leak, released)
-    assert decision.diverted == "leak scan: local path"
-    assert decision.notes[-1] == "leak scan: local path at character 17 of the title"
+    decision = run_gate(title_leak, released)  # the approval was for the other message
+    assert (decision.send, decision.flow) == (None, "refuse")
+    assert "is void: the message changed since it was given" in decision.diverted
+    assert "an exfiltration shape (local-path) at characters 17–42 of the title" in decision.diverted
 
 
 def test_outbound_and_the_gate_context_take_keywords_only():
@@ -417,7 +440,7 @@ def test_rejecting_a_held_message_records_why_and_takes_it_off_the_status(world)
     message_id = world.held()
     status = cli.status(root=str(world.root), store=world.store, now=LATER).splitlines()
     assert "messages outside a case held for the operator: 1" in status
-    assert f"  {message_id} ask to {ISSUE}: {CASELESS_REASON}" in status
+    assert any(line.startswith(f"  {message_id} ask to {ISSUE}: {CASELESS_REASON}") for line in status)
 
     output = world.reject(message_id, reason="  asked on a call instead  ")
 
@@ -451,7 +474,8 @@ def test_message_list_and_show_read_the_ledger(world):
     assert cli.message_list(state="held", root=str(world.root), store=world.store) == f"{held_id}\theld\task to pat on {ISSUE}"
     shown = cli.message_show(held_id, root=str(world.root), store=world.store).splitlines()
     assert shown[:3] == [f"message: {held_id}", f"  subject: {SLUG}", "  state: held"]
-    assert f"held for: {CASELESS_REASON}" in shown and "    A second question." in shown
+    assert any(line.startswith(f"held for: {CASELESS_REASON}") for line in shown) and "    A second question." in shown
+    assert any(line.startswith("    [gate: approve; audience: named readers") for line in shown)
     with pytest.raises(cw.CommandError, match="message state 'lost' is not one of"):
         cli.message_list(state="lost", root=str(world.root), store=world.store)
 

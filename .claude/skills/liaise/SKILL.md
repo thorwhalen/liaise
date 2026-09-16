@@ -70,10 +70,10 @@ digest notes: 1
 - **Runs in flight.** The heartbeat is the last time the run wrote to its stream. The tick stops a run past its `timeout_minutes` (60 by default) and hands the case to the owner as `timed_out`. It signals a run's process only once it has verified, by the process's start time, that it is the one `liaise` started; one it cannot verify is never signalled, and the run is given up 10 minutes after the stop. A run whose pid names another process by now (after a reboot) is collected at once, usually as `crashed`.
 - **Cases by state**, per subject, with today's dispatches against the daily cap. `needs-owner` is the owner's to-do list.
 - **Unrouted.** Messages that matched a binding but could not be routed, with the reason; see "Why an issue isn't moving".
-- **Drafts waiting for the operator.** Messages `liaise` kept instead of sending: draft reply mode, a gate divert (a leak, deslop, no handle to mention), an escalation, held effects, a failed send. Nothing sends them on its own: the owner sends one with `liaise case send-draft` or declines it with `liaise case reject-draft` (see "Sending or rejecting a draft"). `liaise case show <case>` prints each draft's full text.
+- **Drafts waiting for the operator.** Messages `liaise` kept instead of sending: what the outbound policy held back (a secret, a term this audience may not hear, a link to an unknown host, draft reply mode, a run that read untrusted input, a send that cannot be withdrawn), deslop, no handle to mention, an escalation, held effects, a failed send. Nothing sends them on its own: the owner sends one with `liaise case send-draft` or declines it with `liaise case reject-draft` (see "Sending or rejecting a draft"). `liaise case show <case>` prints each draft's full text.
 - **Digest notes.** `note` outcomes: what the agent noticed for the owner, never shown to the partner.
 
-Before sending a draft, or choosing a person's reply mode, check who can actually read the thread, not only who it is for. The 0.1 gate's leak scan runs only on channels named in `policy.public_channels` and knows no project name unless it is in `policy.leak_terms`. [references/outbound-safety.md](references/outbound-safety.md) has what that leaves uncovered, and what an owner can set today.
+Before sending a draft, or choosing a person's reply mode, check who can actually read the thread, not only who it is for. The gate now asks the channel who reads a conversation and holds a message back accordingly, and it tells the owner in words. [references/outbound-safety.md](references/outbound-safety.md) has what it covers, what it still does not, and what an owner can set today.
 
 ## A notification from liaise
 
@@ -161,7 +161,7 @@ liaise case reject-draft example-app-2 1 --reason "answered on a call"
 ```
 
 - `case show` numbers the drafts `[0]`, `[1]`, and so on. The index can be left out when the case holds only one.
-- `send-draft` runs the gate again on the draft, with the owner's approval recorded. Draft reply mode lets it through; the leak scan, deslop and the mention still judge it. It is not a way around the gate: a draft held for a leak is diverted again until its text changes.
+- `send-draft` runs the gate again on the draft, every filter of it, against who can read the destination right then. The owner's answer is an approval bound to that text and that audience (`--justification TEXT` records why): it releases the draft past what they were shown, never past a refusal, and a text or a readership that changed since voids it. It is not a way around the gate: a draft holding a secret is refused again until its text changes.
 - **It asks the owner.** It prints where the message goes, the gate's verdict and the exact text, and sends only when the owner types `y` at their own terminal. Never run it on the owner's behalf, and never pipe it an answer: without a terminal it refuses, and that is the point. `--dry-run` shows the same without asking.
 - `--edit` opens the text in `$VISUAL` or `$EDITOR`, and the gate judges what was saved. An edit that is diverted stays on the case, so the next `--edit` starts from it. A GUI editor needs its wait flag (`code --wait`); without it, the confirmation says the edit changed nothing.
 - Sent: the draft leaves the case, and the send is recorded as the owner's, with the time. Once no draft is left, a case in `needs-owner` moves to `needs-partner` when the draft was an `ask`, `reply` or `propose`. An escalation's text, a `deliver` message or the tick's own nudge leaves the state alone.
@@ -183,7 +183,7 @@ liaise message show example-app-m1f3a9c2e
 ```
 
 - `--ref` must be a GitHub issue a subject binds, or a repository a subject binds together with `--title`, which opens an issue. A reference no subject binds, or on another channel, is refused. Bind it in a subject file first; there is no flag to choose a subject.
-- **In 0.1 every message is held** for the owner, whatever the reply mode, because you chose where it goes. Exit 2 with `is held as <id>` is the normal result. The message is recorded and listed by `liaise status`, and the owner is told a message waits. Tell the owner the id, and leave it held. The gate judges it again when the owner releases it: the leak scan (title included), deslop and the mention.
+- **In 0.1 every message is held** for the owner, whatever the reply mode, because you chose where it goes. Exit 2 with `is held as <id>` is the normal result. The message is recorded and listed by `liaise status`, and the owner is told a message waits. Tell the owner the id, and leave it held. The gate judges it again when the owner releases it, title included.
 - Exit 1 means it was refused before anything was recorded: a bad reference, or a title on an issue. Fix the command.
 - **Never release a held message yourself.** `liaise message send-draft` asks the owner at their own terminal and refuses without one, just as `case send-draft` does. Declining is `liaise message reject-draft <id> --reason ...`, also the owner's call.
 - A message opens no case and sets no label. Use `--dry-run` to see what the gate would say without recording or notifying anything.

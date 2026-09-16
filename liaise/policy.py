@@ -680,6 +680,7 @@ def _findings(findings: Iterable[Any]) -> tuple[Finding, ...]:
                     rule=finding["rule"],
                     severity=int(finding["severity"]),
                     fingerprint=str(finding.get("fingerprint") or ""),
+                    part=finding.get("part"),
                 )
             )
         else:
@@ -963,7 +964,8 @@ class Facts:
 
 
 def _where(finding: Finding) -> str:
-    return f"at characters {finding.start}–{finding.end}"
+    place = f"at characters {finding.start}–{finding.end}"
+    return f"{place} of the {finding.part}" if finding.part else place
 
 
 def _describe(finding: Finding) -> str:

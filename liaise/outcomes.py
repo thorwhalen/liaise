@@ -215,6 +215,7 @@ def make_draft(
     reason: str,
     notes: Iterable[str] = (),
     title: Optional[str] = None,
+    gate: Optional[Mapping[str, Any]] = None,
 ) -> dict[str, Any]:
     """One item of a case's ``drafts``: a message held for the operator.
 
@@ -228,7 +229,9 @@ def make_draft(
     - ``text``: the message, as it would be sent;
     - ``reason``: why it was held (an escalation's reason, a gate divert, no channel);
     - ``notes``: the gate's notes on it, in order;
-    - ``title``: the title of the issue it would open, present only when it opens one.
+    - ``title``: the title of the issue it would open, present only when it opens one;
+    - ``gate``: what the gate decided, present only when the gate held it: its flow, the
+      audience in words and the reasons (:meth:`liaise.gate.GateDecision.summary`).
 
     >>> from datetime import datetime, timezone
     >>> make_draft(at=datetime(2026, 9, 11, tzinfo=timezone.utc), outcome="reply",
@@ -249,6 +252,8 @@ def make_draft(
     }
     if title is not None:
         draft["title"] = title
+    if gate is not None:
+        draft["gate"] = dict(gate)
     return draft
 
 

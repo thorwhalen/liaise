@@ -39,6 +39,8 @@ CASE = f"{SLUG}-1"
 TEXT = "Two of the three date fields stop in October. Is that expected?"
 #: Built by concatenation, so the no-personal-data guard does not read it as a real path.
 LEAK = "The export is at " + "/Us" + "ers/someone/export.csv"
+#: Why the policy holds a message to pat back in draft reply mode.
+DRAFT_REASON = "draft reply mode for pat: the operator releases every message"
 
 SUBJECT_TOML = """
 bindings = ["github:example/app?labels=partner:pat"]
@@ -129,7 +131,7 @@ def test_a_draft_held_by_draft_reply_mode_is_sent_with_the_mention_and_recorded_
     assert world.posted() == [f"@pat {TEXT}"]
     lines = output.splitlines()
     assert lines[0].startswith(f"sent draft [0] of {CASE} on {ISSUE} (gate: passed, 5 filters): https://")
-    assert f"  note: draft reply mode: released by operator at {LATER.isoformat()}" in lines
+    assert f"  note: released by operator at {LATER.isoformat()}, past: reply mode" in lines
     assert "  note: added the mention @pat" in lines
     assert lines[-1] == f"moved {CASE} from needs-owner to needs-partner; its labels follow on the next tick"
     case = world.case()
@@ -137,7 +139,9 @@ def test_a_draft_held_by_draft_reply_mode_is_sent_with_the_mention_and_recorded_
     sent, moved = case.entries[-2:]
     assert (sent.kind, sent.actor, sent.at, sent.text) == ("gate", "operator", LATER, f"@pat {TEXT}")
     assert sent.detail["decision"] == "send" and sent.detail["url"].startswith("https://")
-    assert sent.detail["approval"] == {"by": "operator", "at": LATER.isoformat()}
+    approval = sent.detail["approval"]
+    assert (approval["by"], approval["at"], approval["rules_overridden"]) == ("operator", LATER.isoformat(), ["reply mode"])
+    assert sent.detail["approval_bound"] is True
     assert (sent.detail["draft"], sent.detail["held_for"], sent.detail["edited"]) == (0, "draft reply mode", False)
     assert (moved.kind, moved.actor, moved.detail["to"]) == ("transition", "operator", "needs-partner")
 
@@ -148,14 +152,17 @@ def test_a_released_draft_holding_a_leak_is_diverted_and_stays_on_the_case(world
     with pytest.raises(cw.CommandError) as raised:
         world.send()
 
-    assert str(raised.value).startswith(
-        f"draft [0] of {CASE} was not sent: diverted by leak_scan: leak scan: local path. It stays on the case"
+    refusal = str(raised.value)
+    assert refusal.startswith(
+        f"draft [0] of {CASE} was not sent: diverted by outbound_policy (refuse): an exfiltration shape (local-path)"
     )
+    assert ". It stays on the case with that reason" in refusal
     assert raised.value.code == cli.DIVERTED_EXIT_CODE
     assert world.previews == [] and world.posted() == []  # nothing to confirm: it cannot go
     case = world.case()
     (draft,) = case.drafts
-    assert (draft["text"], draft["reason"], case.state) == (LEAK, "leak scan: local path", "needs-owner")
+    assert (draft["text"], draft["gate"]["flow"], case.state) == (LEAK, "refuse", "needs-owner")
+    assert draft["reason"].startswith("an exfiltration shape (local-path)")
     attempt = case.entries[-1]
     assert (attempt.kind, attempt.actor, attempt.detail["decision"]) == ("gate", "operator", "divert")
 
@@ -164,7 +171,7 @@ def test_a_release_for_a_person_with_no_handle_to_mention_is_diverted(world):
     world.write_subject('"webinbox:pat" = "pat"')
     world.hold_drafts(_draft())
 
-    with pytest.raises(cw.CommandError, match="diverted by notify_recipient: no handle to notify pat"):
+    with pytest.raises(cw.CommandError, match="diverted by notify_recipient \\(approve\\): no handle to notify pat"):
         world.send()
     assert world.posted() == []
 
@@ -188,7 +195,7 @@ def test_the_gate_judges_the_edited_text_and_sends_it(world):
 def test_an_edit_that_adds_a_leak_is_diverted_and_kept_for_the_next_edit(world):
     world.hold_drafts(_draft())
 
-    with pytest.raises(cw.CommandError, match="diverted by leak_scan"):
+    with pytest.raises(cw.CommandError, match="diverted by outbound_policy \\(refuse\\)"):
         world.send(edit=True, editor=lambda text: f"{text}\n{LEAK}")
 
     assert world.posted() == []
@@ -222,7 +229,7 @@ def test_a_dry_run_judges_and_plans_and_changes_nothing(world):
     assert output.splitlines()[-1].startswith(f"would move {CASE} from needs-owner to needs-partner")
     world.hold_drafts(_draft(LEAK))
     leaking = copy.deepcopy(world.store)
-    with pytest.raises(cw.CommandError, match=f"draft \\[0\\] of {CASE} would not be sent: diverted by leak_scan"):
+    with pytest.raises(cw.CommandError, match=f"draft \\[0\\] of {CASE} would not be sent: diverted by outbound_policy"):
         world.send(dry_run=True)
     assert world.store == leaking and before != leaking
     assert world.posted() == []
@@ -369,7 +376,11 @@ def test_the_gate_sees_the_operators_approval_and_the_case(world):
         outbound_filters=(spy,),
     )
 
-    assert seen == [("ask", TEXT, CASE, Approval(by="operator", at=LATER))]
+    assert [entry[:3] for entry in seen] == [("ask", TEXT, CASE)] * 2  # judged, then sent with the approval
+    shown, sent_with = seen[0][3], seen[1][3]
+    assert shown is None and isinstance(sent_with, Approval)
+    assert (sent_with.by, sent_with.at, sent_with.rules_overridden) == ("operator", LATER, ())
+    assert sent_with.payload_hash and sent_with.audience_hash and release.approval == sent_with
     assert release.attempt.sent and release.filters == 1
     assert world.posted() == [TEXT]  # no mention: this gate has only the spy
 
@@ -386,8 +397,8 @@ def test_judging_without_sending_records_a_divert_and_leaves_a_passing_draft_alo
     judged = cases.send_draft(world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False)
     with pytest.raises(TypeError):
         cases.send_draft(world.ledger, subjects, CASE, now=LATER)  # who releases it must be said
-    assert judged.attempt.decision.diverted == "leak scan: local path"
-    assert world.case().drafts[0]["reason"] == "leak scan: local path" and world.posted() == []
+    assert judged.attempt.decision.diverted.startswith("an exfiltration shape (local-path)")
+    assert world.case().drafts[0]["reason"].startswith("an exfiltration shape (local-path)") and world.posted() == []
 
 
 # ---- the operator confirms (review of #29) ----
@@ -414,9 +425,76 @@ def test_the_operator_reads_where_it_goes_the_verdict_and_the_exact_text_and_may
     assert world.store == before and world.posted() == []
     (preview,) = world.previews
     lines = preview.splitlines()
-    assert lines[:2] == [f"draft [0] of {CASE}: ask to pat on {ISSUE}", "gate: passed (5 filters)"]
+    assert lines[0] == f"draft [0] of {CASE}: ask to pat on {ISSUE}"
+    assert lines[1].startswith("audience: named readers")
+    assert lines[2:4] == ["gate: sends once you release it past 1 concern(s):", f"  [approve] reply mode: {DRAFT_REASON}"]
     assert f"then {CASE} moves from needs-owner to needs-partner" in lines
-    assert lines[-3:] == ["--- the message, as it would be sent ---", f"@pat {TEXT}", "---"]
+    assert lines[-3:] == ["--- the message, as it would be sent (invisible characters as <U+XXXX>) ---", f"@pat {TEXT}", "---"]
+
+
+# ---- approvals bound to what the operator saw (#36) ----
+
+
+def test_a_draft_whose_repository_went_public_after_the_approval_is_not_sent_and_the_new_verdict_shown(world):
+    """Acceptance (#36): the operator approves a message to a private repository, which goes
+    public before it is sent; the approval's audience hash no longer matches, so nothing goes."""
+    world.hold_drafts(_draft())
+
+    def made_public_meanwhile(world):
+        world.github.set_visibility(REPO, "public")
+        return True
+
+    with pytest.raises(cw.CommandError) as raised:
+        world.send(answer=made_public_meanwhile)
+
+    refusal = str(raised.value)
+    assert raised.value.code == cli.DIVERTED_EXIT_CODE and world.posted() == []
+    assert refusal.startswith(
+        f"draft [0] of {CASE} was not sent: diverted by gate (approve): the approval by operator at "
+        f"{LATER.isoformat()} is void: its audience changed since it was given"
+    )
+    assert f"a send to {ISSUE} cannot be withdrawn (world-readable" in refusal  # the verdict the audience now gets
+    assert "audience: named readers" in world.previews[0]  # what the operator had approved
+    (kept,) = world.case().drafts
+    assert (kept["gate"]["flow"], kept["gate"]["audience"].split(";")[0]) == ("approve", "world-readable")
+    attempt = world.case().entries[-1]
+    assert (attempt.actor, attempt.detail["decision"], attempt.detail["approval_bound"]) == ("operator", "divert", False)
+    assert attempt.detail["verdict"]["audience"]["scope"] == "public"
+
+
+def test_a_released_draft_records_the_approval_its_justification_and_the_rules_it_overrode(world):
+    """Acceptance (#36)."""
+    subject = SUBJECT_TOML.format(people='"github:pat" = "pat"') + 'leak_terms = ["example-internal"]\n'
+    (world.root / "subjects" / f"{SLUG}.toml").write_text(subject)
+    world.hold_drafts(_draft("The dates are on the example-internal board now."))
+
+    world.send(justification="  the board went public last week  ")
+
+    (preview,) = world.previews
+    assert "gate: sends once you release it past 2 concern(s):" in preview.splitlines()
+    sent = world.case().entries[-2]
+    approval = sent.detail["approval"]
+    assert (approval["by"], approval["justification"]) == ("operator", "the board went public last week")
+    assert sorted(approval["rules_overridden"]) == ["no write-down", "reply mode"]
+    assert (approval["payload_hash"], approval["audience_hash"]) == (sent.detail["payload_hash"], sent.detail["audience_hash"])
+    assert approval["verdict_id"] and sent.detail["approval_bound"] is True
+    assert sorted(concern["rule"] for concern in sent.detail["settled"]) == ["no write-down", "reply mode"]
+    assert world.posted() == ["@pat The dates are on the example-internal board now."]
+
+
+def test_case_show_renders_invisible_characters_every_url_in_full_and_the_audience_in_words(world):
+    """Acceptance (#36): what the operator reads before releasing a draft."""
+    hidden = "Dates are fixed" + "​" + "." + "\x1b[2J" + " See [the changelog](https://example.org/notes)"
+    world.hold_drafts(_draft(hidden))
+    with pytest.raises(cw.CommandError, match="diverted by outbound_policy \\(refuse\\)"):
+        world.send()
+
+    shown = cli.case_show(CASE, root=str(world.root), store=world.store).splitlines()
+
+    assert "    Dates are fixed<U+200B>.<U+001B>[2J See [the changelog](https://example.org/notes)" in shown
+    assert "    [links, in full:]" in shown and "      https://example.org/notes" in shown
+    assert any(line.startswith("    [gate: refuse; audience: named readers") for line in shown)
+    assert not any("​" in line or "\x1b" in line for line in shown)
 
 
 def test_an_edit_that_changed_nothing_says_so_before_anything_goes(world):

@@ -10,13 +10,21 @@ nothing.
 
 from liaise.access import authorize, resolve_person
 from liaise.config import ConfigError, GlobalConfig, load_global_config
-from liaise.gate import DFLT_OUTBOUND_FILTERS, run_gate
+from liaise.gate import (
+    DFLT_OUTBOUND_FILTERS,
+    GateContext,
+    GateDecision,
+    Outbound,
+    outbound_policy,
+    run_gate,
+)
 from liaise.github import FakeGitHub, GhCli, GitHub, GitHubError
 from liaise.holds import hold, unhold
 from liaise.intake import IntakeReport, intake
 from liaise.ledger import Ledger, default_ledger_store
 from liaise.migrate import migrate_config
 from liaise.model import (
+    Approval,
     Case,
     Health,
     Hold,
@@ -27,17 +35,21 @@ from liaise.model import (
 )
 from liaise.notify import notify
 from liaise.outcomes import OUTCOME_SCHEMA, parse_outcomes, plan_outcomes
+from liaise.policy import Provenance, Verdict, evaluate
 from liaise.processor import ClaudeHeadless, EchoProcessor, Job, Processor
 from liaise.subjects import Subject, load_subjects
 from liaise.tick import TickReport, run_once, status_lines
 
 __all__ = [
+    "Approval",
     "Case",
     "ClaudeHeadless",
     "ConfigError",
     "DFLT_OUTBOUND_FILTERS",
     "EchoProcessor",
     "FakeGitHub",
+    "GateContext",
+    "GateDecision",
     "GhCli",
     "GitHub",
     "GitHubError",
@@ -49,20 +61,25 @@ __all__ = [
     "Ledger",
     "LedgerEntry",
     "OUTCOME_SCHEMA",
+    "Outbound",
     "Outcome",
     "Processor",
+    "Provenance",
     "RunRecord",
     "RunResult",
     "Subject",
     "TickReport",
+    "Verdict",
     "authorize",
     "default_ledger_store",
+    "evaluate",
     "hold",
     "intake",
     "load_global_config",
     "load_subjects",
     "migrate_config",
     "notify",
+    "outbound_policy",
     "parse_outcomes",
     "plan_outcomes",
     "resolve_person",

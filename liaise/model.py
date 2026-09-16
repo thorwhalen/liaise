@@ -259,16 +259,46 @@ class Outcome(_Record):
 
 @dataclass(frozen=True)
 class Approval(_Record):
-    """The operator's release of a held message: who released it, and when.
+    """The operator's release of a held message, bound to the message and audience they saw.
 
-    The gate reads it from :attr:`liaise.gate.GateContext.approval`. It settles
-    :func:`liaise.gate.reply_mode`, which is what ``draft`` reply mode waits for, and
-    nothing else: every other filter still judges the message, so a leak in a released
-    draft is diverted all the same. It is recorded with the send.
+    ``by`` released it at ``at``. ``payload_hash`` and ``audience_hash`` are the hashes of
+    the verdict shown to them (:func:`liaise.policy.payload_hash`,
+    :func:`liaise.policy.audience_hash`), and ``verdict_id`` names that verdict.
+    ``rules_overridden`` are the rules they released it past, and ``justification`` says
+    why, in their words.
+
+    The gate reads it from :attr:`liaise.gate.GateContext.approval` and runs every filter
+    again (liaise ADR 0002). The approval settles only a concern whose rule it names, whose
+    flow is at most ``approve``, and only while both hashes still match the message and the
+    audience computed at send time: a changed text, title, recipient or readership voids it,
+    and a ``refuse`` is never settled. An approval without hashes binds to nothing. It is
+    recorded with the send.
     """
 
     by: str
     at: datetime
+    payload_hash: Optional[str] = None
+    audience_hash: Optional[str] = None
+    verdict_id: Optional[str] = None
+    justification: str = ""
+    rules_overridden: tuple[str, ...] = ()
+
+    def binds(self, payload_hash: str, audience_hash: str) -> bool:
+        """Whether this approval was given for the message and audience these hashes name.
+
+        >>> from datetime import datetime, timezone
+        >>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
+        >>> Approval(by="operator", at=at, payload_hash="p", audience_hash="a").binds("p", "a")
+        True
+        >>> Approval(by="operator", at=at).binds("p", "a")  # bound to nothing
+        False
+        """
+        return (
+            self.payload_hash is not None
+            and self.audience_hash is not None
+            and self.payload_hash == payload_hash
+            and self.audience_hash == audience_hash
+        )
 
 
 @dataclass(frozen=True)

@@ -184,6 +184,13 @@ def test_each_kind_needs_its_field(kind, field):
 # ---- normalize and make_draft ----
 
 
+def test_a_draft_keeps_what_the_gate_decided_only_when_the_gate_held_it():
+    gate = {"flow": "revise", "audience": "world-readable", "reasons": ["'project:heron' is amber"]}
+    fields = dict(at=NOW, outcome="reply", recipient="pat", ref=REF, text="Fixed.", reason="held for the operator")
+    assert make_draft(**fields, gate=gate)["gate"] == gate
+    assert "gate" not in make_draft(**fields)
+
+
 def test_normalize_makes_a_decline_an_escalate():
     reply = Outcome(kind="reply", text="Fixed.")
     declined = Outcome(kind="decline", text="Not this one.", reason="out of scope")

@@ -58,6 +58,11 @@ from liaise.config import (
     Markers,
 )
 from liaise.model import CASE_STATES, PERMISSIONS, require_one_of
+from liaise.policy import ENFORCE, MODES, TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEND
+
+#: What ``policy.tainted_runs`` may say: ``approve`` (a run that read untrusted input needs
+#: the operator for any audience wider than them) or ``send`` (the subject waives that).
+TAINTED_RUNS = (TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEND)
 
 #: Subject files live in this directory under the config root.
 DFLT_SUBJECTS_SUBDIR = "subjects"
@@ -166,6 +171,14 @@ class Policy:
     :mod:`liaise.access`. ``waiting_labels`` (person to label) is the mirror of
     ``claim_labels``: a label liaise writes on a case's issues while the case waits on that
     person, where a claim label is one it reads (see :mod:`liaise.projection`).
+
+    The outbound gate's policy (liaise ADR 0002) reads four more: ``tainted_runs``
+    (``approve``, or ``send`` to waive the taint rule), ``link_allowlist`` (hosts a link
+    may point at besides the channel's own), ``canary_terms`` (terms planted in private
+    context, never to be sent) and ``mode`` (``enforce``, or ``shadow``, recorded on every
+    verdict and enforced alike until shadow mode lands). ``leak_terms`` are scanned for as
+    a label no reader is cleared for; ``public_channels`` is still read, and decides
+    nothing: the audience correspond computes does. Both go after one release.
     """
 
     people: Mapping[str, str]
@@ -192,6 +205,10 @@ class Policy:
     briefs: Mapping[str, str] = field(default_factory=dict)
     #: Person id to the label a case's issues carry while the case waits on them.
     waiting_labels: Mapping[str, str] = field(default_factory=dict)
+    tainted_runs: str = TAINTED_RUNS_APPROVE
+    link_allowlist: tuple[str, ...] = ()
+    canary_terms: tuple[str, ...] = ()
+    mode: str = ENFORCE
 
 
 #: Each person's waiting label when a subject sets ``policy.waiting_labels = true``.
@@ -745,6 +762,19 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
         deployed_nudge_days=deployed_nudge_days,
         briefs=briefs,
         waiting_labels=waiting_labels,
+        tainted_runs=_choice(
+            raw.get("tainted_runs", TAINTED_RUNS_APPROVE),
+            TAINTED_RUNS,
+            path=path,
+            dotted="policy.tainted_runs",
+        ),
+        link_allowlist=_strings(
+            raw, "link_allowlist", path=path, dotted="policy.link_allowlist"
+        ),
+        canary_terms=_strings(
+            raw, "canary_terms", path=path, dotted="policy.canary_terms"
+        ),
+        mode=_choice(raw.get("mode", ENFORCE), MODES, path=path, dotted="policy.mode"),
     )
 
 

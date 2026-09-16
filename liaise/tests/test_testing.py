@@ -216,6 +216,52 @@ def test_send_error_makes_every_real_send_fail(github):
     assert github.sent == []
 
 
+# ---- who reads a repository ----
+
+
+def _audience(github, ref=ISSUE_REF):
+    return correspond.audience(ref, registry=demo_registry(github=github))
+
+
+def test_a_fake_repository_is_private_and_owned_by_a_user_until_it_is_told_otherwise(github):
+    audience = _audience(github)
+    assert (audience.scope.value, audience.complete, audience.defaulted) == ("named", False, False)
+    assert [reader.address for reader in audience.readers] == ["github:example"]
+    assert not audience.retractable and "apps and webhooks" in " ".join(audience.classes)
+
+
+def test_a_public_repository_is_world_readable_and_indexed(github):
+    github.set_visibility(REPO, "public")
+    audience = _audience(github)
+    assert (audience.scope.value, audience.external, audience.defaulted) == ("public", True, False)
+    assert "indexed" in audience.durability and audience.in_words().startswith("world-readable")
+
+
+@pytest.mark.parametrize("visibility", ["private", "internal"])
+def test_a_repository_an_organisation_owns_reaches_its_members(github, visibility):
+    github.set_visibility(REPO, visibility, owner_type="Organization")
+    audience = _audience(github)
+    assert (audience.scope.value, audience.readers) == ("org", ())
+    assert any("base permission" in reader_class for reader_class in audience.classes)
+
+
+def test_a_repository_the_account_cannot_see_defaults_to_public(github):
+    github.set_visibility(REPO, "hidden")
+    audience = _audience(github)
+    assert (audience.scope.value, audience.defaulted, audience.complete) == ("public", True, False)
+    assert any("cannot see the repository" in line for line in audience.evidence)
+
+
+def test_each_repository_keeps_its_own_visibility_and_an_unknown_one_is_refused(github):
+    github.set_visibility("example/other", "public")
+    assert _audience(github).scope.value == "named"
+    assert _audience(github, "github:example/other").scope.value == "public"
+    with pytest.raises(ValueError, match="visibility 'secret' is not one of"):
+        github.set_visibility(REPO, "secret")
+    with pytest.raises(ValueError, match="owner_type 'Robot'"):
+        github.set_visibility(REPO, "public", owner_type="Robot")
+
+
 # ---- the web inbox ----
 
 

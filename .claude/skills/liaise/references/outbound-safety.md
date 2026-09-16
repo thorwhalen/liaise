@@ -1,6 +1,6 @@
 # Outbound safety for the owner of liaise
 
-A summary of the research report *Outbound message safety*, kept in this repository at [misc/docs/research/outbound_message_safety.md](../../../../misc/docs/research/outbound_message_safety.md). Section numbers below refer to it.
+A summary of the research report *Outbound message safety*, kept in this repository at [misc/docs/research/outbound_message_safety.md](../../../../misc/docs/research/outbound_message_safety.md), and of what liaise now does about it ([ADR 0002](../../../../docs/adr/0002-outbound-policy.md), and the project's discussion 32). Section numbers below refer to the report.
 
 ## The rule
 
@@ -8,31 +8,29 @@ A summary of the research report *Outbound message safety*, kept in this reposit
 
 A partner's brief tunes the words. It does not make an issue thread private. A reply that suits the partner can still disclose too much to everyone else who can read the repository.
 
-## What the 0.1 gate covers, and what it does not (§2.1)
+## What the gate does now
 
-- **`leak_scan` decides by channel name.** It runs only on channels named in `policy.public_channels` (by default, `github`). It does not know whether a repository is public, and it does not scan email or any channel left off the list.
-- **It finds shapes, not projects.** It diverts on home and temporary paths, `.env` paths, email addresses, private keys, six token shapes and the terms in `policy.leak_terms`. It knows no project name unless one is listed there.
-- **`reply_mode` runs first,** so a message kept as a draft reaches the owner without leak-scan notes.
-- **A secret is caught only on a channel listed as public.**
-- **Nothing tracks what the run read.** A run that read a stranger's issue has read untrusted content, seen the checkout, and can write to a public thread: all three legs of the lethal trifecta (§8.1).
+Every message liaise sends — a run's outcome, a draft the owner releases, a message an agent sends outside a case — passes every filter, and the most restrictive answer decides.
 
-## What an owner can do today
+- **It asks who can read the destination**, through correspond, right before sending and never from a cache. A repository it cannot read resolves to public. The channel's name decides nothing: `policy.public_channels` is still read and no longer consulted.
+- **It asks what each reader may be told**, through acquaint: their tier, the clearance that follows, what is sealed from them, and the terms of anything they are not cleared for. Without acquaint, every reader counts as `need-to-know` and `policy.leak_terms` are the terms to look for.
+- **It looks at what the message holds** — the text, the title and each attachment name: secrets and canaries, terms this audience may not hear, links and images to hosts outside `policy.link_allowlist`, encoded runs, invisible characters, private addresses, local paths, email addresses, and other people's names.
+- **It looks at what the run had read.** A case whose messages include one from someone the subject does not trust to request work taints the run: what it wrote waits for the owner, and is refused outright when it also names something the audience may not hear. `tainted_runs = "send"` waives the first, never the second.
+- **It answers in one of five ways:** send, hold for a cancellable window (`delay`), send back to be revised, ask the owner, or refuse as written. A refusal is never released: the text has to change.
 
-- **Keep `default_reply_mode = "draft"`** on any subject whose repository is public, and for any person with whom care is needed. Give `direct` only to people and channels where a mistake would be cheap.
-- **List every project name, alias and codename** that must not reach a partner in `policy.leak_terms`.
-- **List every channel whose audience is wider than the partner** in `policy.public_channels`, not only `github`. A private repository in an organisation is readable by every member by default (§3.3).
-- **Read drafts with `liaise case show`** before sending them with `liaise case send-draft`, which runs the gate again on the final text. Name the audience to yourself first: the leak scan still decides by channel name.
-- **Treat a case opened by an unrecorded sender as untrusted:** keep its replies as drafts.
+## What an owner can do
 
-## Proposed in the report, not built yet
+- **Record the people you write to in acquaint**, with a tier and a review date. A recipient with no record is a stranger, and every message to them waits for you.
+- **Give every project, organisation and person that must not reach an audience a label and its vocabulary** in acquaint; `policy.leak_terms` still works, and counts as a label nobody is cleared for.
+- **Set `policy.link_allowlist`** to the hosts your messages may link to, and `policy.canary_terms` to words planted where only a private context has them.
+- **Keep `default_reply_mode = "draft"`** for anyone where a mistake would be expensive. On a public repository nothing sends by itself today anyway: an irreversible send waits for you until the delay outbox is built.
+- **Read drafts with `liaise case show`.** It gives the gate's answer, the audience in words, the whole text with invisible characters spelled out, and every link in full. `liaise case send-draft` shows the same and sends only on a typed `y`, recording your approval with `--justification`.
 
-- **One `outbound_policy` filter** replaces the channel-name list with an audience computed by correspond. Unknown resolves to public (§10.2, §10.4).
-- **Detectors run on every message, drafts included:**
-  - secrets, always;
-  - project vocabulary taken from acquaint;
-  - exfiltration shapes (links and images to unknown hosts, encoded strings);
-  - other people's names and personal details.
-- **A declared policy table returns a verdict** (`send`, `delay`, `revise`, `approve`, `approve_twice` or `refuse`). The most restrictive rule wins; a tainted run needs approval; a sealed topic or a secret is refused.
-- **An approval binds to the payload's hash and the audience snapshot**, and is re-checked at send time (§7.2).
-- **A `liaise vet` command** checks a draft outside any case, so `acquaint-write` and hand-directed sends get the same evaluation.
-- **Rules run in shadow mode first**, against a scenario suite of invented people (§9).
+## Not built yet
+
+- **`liaise vet`, the `before_send` seam and the Claude Code hook** (issue #37): a draft written outside liaise, or a `gh` command in a coding session, does not meet this gate.
+- **The delay outbox** (issue #38): `delay` is a draft for you until it exists.
+- **Shadow mode and the gate report** (issue #39): `mode = "shadow"` is accepted and recorded, and enforces meanwhile.
+- **A private word inside a link's path** (issue #46) still reaches a wide audience at `approve`: a plain link is shown to you in full rather than refused.
+- **Returning a `revise` to the processor**: it is a flagged draft for you today.
+- **A semantic pass**: nothing catches a paraphrase that names no term (scenario S7, a known miss).

@@ -83,6 +83,7 @@ from correspond.errors import ChannelError
 
 from liaise.access import Resolver, resolve_person
 from liaise.config import ConfigError, GlobalConfig
+from liaise.detect import fingerprint_key
 from liaise.errors import ERROR_ACTIONS, classify_delivery_failure
 from liaise.errors import defer_until as defer_for_error
 from liaise.gate import (
@@ -107,6 +108,8 @@ from liaise.intake import (
     intake,
 )
 from liaise.ledger import Ledger
+from liaise.outbound import case_provenance
+from liaise.policy import Provenance
 from liaise.model import (
     CASE_STATES,
     MESSAGE_HELD,
@@ -261,6 +264,11 @@ WorkspaceFactory = Callable[..., Optional[SharedCheckout]]
 #: triage seam (#19). The tick starts the cases group by group, each group in its order,
 #: and a case left out is not started this tick. None keeps the tick's own order.
 Triage = Callable[[Sequence[Case]], Iterable[Iterable[Case]]]
+
+
+#: The provenance of a message the tick writes itself (the daily-cap message, a nudge): a
+#: fixed text no run wrote, so nothing a run read is in it.
+OWN_MESSAGE_PROVENANCE = "the tick's own message, a fixed text no run wrote"
 
 
 @dataclass(frozen=True)
@@ -555,6 +563,9 @@ def run_once(
         now=now,
         dry_run=dry_run,
         outbound_filters=tuple(outbound_filters),
+        fingerprint_key=functools.partial(
+            fingerprint_key, state_dir, create=not dry_run
+        ),
         triage=triage,
         lost_run_deadline=lost_run_deadline,
         closed_recheck_interval=closed_recheck_interval,
@@ -942,6 +953,7 @@ class _Tick:
         triage: Optional[Triage],
         lost_run_deadline: timedelta,
         closed_recheck_interval: timedelta,
+        fingerprint_key: Optional[Callable[[], bytes]] = None,
     ):
         self.subjects = subjects
         self.ledger = ledger
@@ -960,6 +972,7 @@ class _Tick:
         self.triage = triage
         self.lost_run_deadline = lost_run_deadline
         self.closed_recheck_interval = closed_recheck_interval
+        self.fingerprint_key = fingerprint_key
         #: Per case, whether its GitHub issue was read closed this tick (None: unreadable).
         self.issue_closed: dict[str, Optional[bool]] = {}
         self.lines: list[str] = []
@@ -1643,12 +1656,27 @@ class _Tick:
         text = f"{send.text}\n\n{TRY_IT_MESSAGE}" if send.text else TRY_IT_MESSAGE
         return replace(send, text=text)
 
-    def _send(self, subject: Subject, send: Send) -> bool:
-        """Put ``send`` through the gate, then send it or keep it as a draft; True once sent."""
+    def _send(
+        self, subject: Subject, send: Send, *, provenance: Optional[Provenance] = None
+    ) -> bool:
+        """Put ``send`` through the gate, then send it or keep it as a draft; True once sent.
+
+        ``provenance`` is what wrote the message: None for a run's, which is judged from the
+        case's messages (:func:`liaise.outbound.case_provenance`).
+        """
         case = self._case(send.case_id)
+        context = GateContext(
+            subject=subject,
+            case=case,
+            now=self.now,
+            provenance=(
+                provenance if provenance is not None else case_provenance(case, subject)
+            ),
+            fingerprint_key=self.fingerprint_key,
+        )
         attempt = gate_and_send(
             send,
-            GateContext(subject=subject, case=case, now=self.now),
+            context,
             registry=self.registry,
             dry_run=self.dry_run,
             outbound_filters=self.outbound_filters,
@@ -1659,6 +1687,7 @@ class _Tick:
             "purpose": send.purpose,
             "ref": send.ref,
             "notes": list(decision.notes),
+            **decision.record(),
         }
         notes = [f"    note: {note}" for note in decision.notes]
         if decision.send is None:
@@ -1670,6 +1699,7 @@ class _Tick:
                 text=send.text,
                 reason=decision.diverted,
                 notes=decision.notes,
+                gate=decision.summary(),
             )
             self._add_draft(case.id, draft)
             self._entry(
@@ -1679,7 +1709,9 @@ class _Tick:
                 detail={**detail, "decision": "divert", "reason": decision.diverted},
             )
             self.diverted.append(Diversion(send, decision.diverted))
-            self.say(f"{head}: diverted ({decision.diverted}), kept as a draft")
+            self.say(
+                f"{head}: diverted ({decision.flow}: {decision.diverted}), kept as a draft"
+            )
             self.lines += notes
             self._notice(
                 NOTICE_DIVERTED,
@@ -1722,8 +1754,22 @@ class _Tick:
             case.id,
             "gate",
             text=outbound.text,
-            detail={**detail, "decision": "send", "url": attempt.result.url},
+            detail={
+                **detail,
+                "decision": "send",
+                "url": attempt.result.url,
+                **(
+                    {"disclosure_failure": attempt.disclosure_failure}
+                    if attempt.disclosure_failure
+                    else {}
+                ),
+            },
         )
+        if attempt.disclosure_failure:
+            self.problem(
+                f"{case.id}: the {outbound.purpose} to {outbound.ref} went out, and "
+                f"recording what it disclosed failed: {attempt.disclosure_failure}"
+            )
         self.sent.append(outbound)
         verb = "would send" if self.dry_run else "sent"
         self.say(f"{head}: {verb}: {_preview(outbound.text)}")
@@ -1742,7 +1788,8 @@ class _Tick:
                 send = replace(action, purpose=purpose)
                 hold = self._effect_hold(subject, case)
                 if hold is None:
-                    self._send(subject, send)
+                    own = Provenance.clean(OWN_MESSAGE_PROVENANCE)
+                    self._send(subject, send, provenance=own)
                     continue
                 self._hold_send(send, hold)
                 self._notice(

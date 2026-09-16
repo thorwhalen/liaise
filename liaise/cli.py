@@ -65,6 +65,7 @@ from liaise.config import (
     GlobalConfig,
     load_global_config,
 )
+from liaise.detect import fingerprint_key, link_urls, visible
 from liaise.github import GhCli, GitHub, GitHubError
 from liaise.ledger import DFLT_LEDGER_SUBDIR, Ledger, default_ledger_store
 from liaise.model import HOLD_MODES, require_one_of
@@ -642,7 +643,7 @@ def _not_sent(held: _Held, release: Any, *, dry_run: bool) -> cw.CommandError:
     decision = attempt.decision
     diverted = decision.send is None
     why = (
-        f"diverted by {decision.diverted_by}: {decision.diverted}"
+        f"diverted by {decision.diverted_by} ({decision.flow}): {decision.diverted}"
         if diverted
         else f"send failed: {attempt.failure}"
     )
@@ -659,20 +660,47 @@ def _not_sent(held: _Held, release: Any, *, dry_run: bool) -> cw.CommandError:
     )
 
 
+def _key_for(global_config: GlobalConfig, *, dry_run: bool) -> Callable[[], bytes]:
+    """The fingerprint key in ``global_config``'s state directory; a dry run creates none."""
+    return functools.partial(
+        fingerprint_key, global_config.state_dir, create=not dry_run
+    )
+
+
 def _preview(held: _Held, release: Any, *, edit: bool, then: Sequence[str]) -> str:
-    """What the operator reads before confirming: where it goes, the verdict, the exact text."""
+    """What the operator reads before confirming (discussion §5.7).
+
+    Where it goes and who can read it there; what the gate holds it back for, which the
+    operator's answer releases it past; the exact text, invisible characters made visible;
+    and every link in full.
+    """
     outbound = release.attempt.outbound
+    decision = release.attempt.decision
     lines = [
         f"{held.label}: {outbound.purpose} to {outbound.recipient} on {outbound.ref}",
-        f"gate: passed ({release.filters} filters)",
-        *(f"  note: {note}" for note in release.attempt.decision.notes),
+        f"audience: {decision.audience_words or cases.AUDIENCE_UNKNOWN}",
     ]
+    if decision.settled:
+        lines.append(
+            f"gate: sends once you release it past {len(decision.settled)} concern(s):"
+        )
+        lines += [f"  [{c.flow}] {c.rule}: {c.text}" for c in decision.settled]
+    else:
+        lines.append(f"gate: passed ({release.filters} filters)")
+    lines += [f"  note: {note}" for note in decision.notes]
     if edit and not release.edited:
         lines.append("your edit changed nothing: this is the draft as it was")
     lines += then
     if outbound.title:
-        lines.append(f"title: {outbound.title}")
-    lines += ["--- the message, as it would be sent ---", outbound.text, "---"]
+        lines.append(f"title: {visible(outbound.title)}")
+    lines += [
+        "--- the message, as it would be sent (invisible characters as <U+XXXX>) ---",
+        visible(outbound.text),
+        "---",
+    ]
+    urls = link_urls(outbound.text)
+    if urls:
+        lines += ["links, in full:", *(f"  {visible(url)}" for url in urls)]
     return "\n".join(lines)
 
 
@@ -733,6 +761,7 @@ def case_send_draft(
     case_id: str,
     *index: int,
     edit: bool = False,
+    justification: str = "",
     dry_run: bool = False,
     root: Optional[str] = None,
     registry: Optional[Mapping[str, Any]] = None,
@@ -743,14 +772,17 @@ def case_send_draft(
 ) -> str:
     """Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.
 
-    ``liaise case show`` numbers the drafts. The gate judges the text again, with your
-    approval recorded: draft reply mode lets it through, and the leak scan, deslop and the
-    mention judge it as they judge any message. ``--edit`` opens the text in ``$VISUAL`` or
-    ``$EDITOR`` first, and the gate judges what you saved.
+    ``liaise case show`` numbers the drafts. The gate judges the text again, every filter of
+    it, against the audience its channel reports now. ``--edit`` opens the text in
+    ``$VISUAL`` or ``$EDITOR`` first, and the gate judges what you saved.
 
-    It then shows you where the message goes, the gate's verdict and the message exactly as
-    it would be sent, and sends it only once you answer ``y`` at a terminal. Without a
-    terminal, as in an agent's shell or a processor run, it sends nothing.
+    It then shows you where the message goes and who can read it there, what the gate holds
+    it back for, and the message exactly as it would be sent, and sends it only once you
+    answer ``y`` at a terminal. Your answer is an approval bound to that text and that
+    audience, recorded with ``--justification``: it releases the message past what it
+    showed you, never past a refusal, and if the text or the audience changes before it
+    goes out, nothing is sent and you see the new verdict. Without a terminal, as in an
+    agent's shell or a processor run, it sends nothing.
 
     Once sent, the draft leaves the case and the send is recorded as yours. When no draft
     is left, a case in needs-owner moves on as a sent message moves it: an ask, a reply or
@@ -786,9 +818,13 @@ def case_send_draft(
             by=cases.OPERATOR_ACTOR,
             now=now,
             registry=registry,
+            justification=justification,
+            fingerprint_key=_key_for(global_config, dry_run=dry_run),
         ),
         first=dict(index=draft_index, seen=opened),
-        bind=lambda judged: dict(index=judged.index, seen=judged.draft),
+        bind=lambda judged: dict(
+            index=judged.index, seen=judged.draft, approval=judged.approval
+        ),
         held=lambda judged: _Held(
             label=f"draft [{judged.index}] of {case_id}",
             stays="on the case",
@@ -933,8 +969,9 @@ def message_send(
 
     ``--ref`` is the conversation it goes to, and a subject must bind it: an issue
     (``github:example/app#12``), or a repository with ``--title`` to open an issue. That
-    subject's policy judges it, through the filters every message passes: reply mode, the
-    leak scan (of the title too), the writing card, deslop and the mention. The text is
+    subject's policy judges it, through the filters every message passes: the hold on a
+    message outside a case, the outbound policy (of the title too), the writing card,
+    deslop and the mention. The text is
     ``--text`` or ``--text-file`` (``-`` reads standard input). ``--purpose`` is ``ask``,
     the default, ``reply`` or ``propose``.
 
@@ -968,6 +1005,7 @@ def message_send(
         registry=registry,
         notify_fn=notify_fn or functools.partial(notify, topic_env=topic_env),
         dry_run=dry_run,
+        fingerprint_key=_key_for(global_config, dry_run=dry_run),
     )
     message, attempt = result.message, result.attempt
     notes = [f"  note: {note}" for note in (attempt.decision.notes if attempt else ())]
@@ -983,7 +1021,7 @@ def message_send(
     elif attempt.decision.send is None:
         decision = attempt.decision
         why, held_back = (
-            f"diverted by {decision.diverted_by}: {decision.diverted}",
+            f"diverted by {decision.diverted_by} ({decision.flow}): {decision.diverted}",
             True,
         )
     else:
@@ -1036,6 +1074,7 @@ def message_send_draft(
     message_id: str,
     *,
     edit: bool = False,
+    justification: str = "",
     dry_run: bool = False,
     root: Optional[str] = None,
     registry: Optional[Mapping[str, Any]] = None,
@@ -1046,7 +1085,8 @@ def message_send_draft(
 ) -> str:
     """Send a held message you approved, through the gate, as ``liaise case send-draft`` does.
 
-    The gate judges it again with your approval recorded, and ``--edit`` opens it in your
+    The gate judges it again, and your answer is an approval bound to the text and the
+    audience it showed you, recorded with ``--justification``. ``--edit`` opens it in your
     editor first. It shows where the message goes, the verdict and the exact text, and sends
     once you answer ``y`` at a terminal. A message the gate diverts stays held with the
     reason and exits 2; one its channel refuses exits 1. ``--dry-run`` judges and plans,
@@ -1077,9 +1117,11 @@ def message_send_draft(
             title=title,
             now=now,
             registry=registry,
+            justification=justification,
+            fingerprint_key=_key_for(global_config, dry_run=dry_run),
         ),
         first=dict(seen=opened),
-        bind=lambda judged: dict(seen=judged.draft),
+        bind=lambda judged: dict(seen=judged.draft, approval=judged.approval),
         held=lambda judged: names,
         then=lambda judged: (),
         ledger_store=ledger_store,

@@ -78,3 +78,17 @@ def config_root(tmp_path: Path) -> Path:
         PAT_PARTNER_TOML.format(brief_path=brief_path.as_posix(), cwd=tmp_path.as_posix())
     )
     return root
+
+
+@pytest.fixture(autouse=True)
+def no_real_state_dir(tmp_path_factory, monkeypatch):
+    """The fingerprint key a test makes without naming a state directory lives under a temporary one.
+
+    The gate fingerprints its findings with a key it creates on first use, in the state
+    directory of the liaise config; a test that sends through the Python API names none,
+    and must never read the real config or write into the real state directory.
+    """
+    from liaise import detect
+
+    state_dir = tmp_path_factory.mktemp("state")
+    monkeypatch.setattr(detect, "_configured_state_dir", lambda: state_dir)

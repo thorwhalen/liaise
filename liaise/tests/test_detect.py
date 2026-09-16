@@ -55,16 +55,19 @@ from liaise.detect import (
     normalise,
     render,
     secret_detector,
+    EMAIL_PATTERN,
+    ENV_FILE_PATTERN,
+    LOCAL_PATH_PATTERNS,
+    PRIVATE_KEY_PATTERN,
+    TOKEN_SHAPES,
+    link_urls,
+    visible,
 )
-from liaise.gate import leak_scan
 from liaise.tests.test_gate import (
     LEAK_TERMS,
     LEAKS,
     LONG_WORD,
     LONG_WORD_SCAN_BOUND_S,
-    _context,
-    _outbound,
-    _subject,
 )
 
 KEY = b"k" * 32
@@ -117,11 +120,36 @@ _LEAK_KINDS = {
 LEAK_DISCLOSURE = {"vocabulary": [{"term": term, "entity": "project:board", "label": "amber"} for term in LEAK_TERMS]}
 
 
+#: The 0.1 leak scan's patterns, as (kind, pattern): the oracle the detectors are held to.
+_LEAK_PATTERNS_0_1 = (
+    *(("local path", pattern) for pattern in LOCAL_PATH_PATTERNS),
+    ("env file", ENV_FILE_PATTERN),
+    ("email", re.compile(EMAIL_PATTERN)),
+    ("private key", re.compile(PRIVATE_KEY_PATTERN)),
+    *(("token", re.compile(rf"\b{shape}")) for shape in TOKEN_SHAPES),
+)
+
+
 def _leak_scan_hits(text):
-    """What the 0.1 leak scan found in ``text``, as (kind, start), read from its notes."""
-    divert = leak_scan(_outbound(text), _context(_subject(leak_terms=LEAK_TERMS)))
-    notes = (re.fullmatch(r"leak scan: (.+) at character (\d+)", note) for note in divert.notes)
-    return [(match.group(1), int(match.group(2))) for match in notes]
+    """What the 0.1 leak scan found in ``text``, as (kind, start).
+
+    The leak scan is gone from the gate (liaise ADR 0002); its search is kept here, over the
+    patterns liaise.detect still owns, so every leak it found is still found where it was.
+    """
+    kept = [index for index, char in enumerate(text) if char not in "\r\n"]
+    unwrapped = "".join(text[index] for index in kept)
+    found = [(kind, match.start()) for kind, pattern in _LEAK_PATTERNS_0_1 for match in pattern.finditer(text)]
+    for shape in TOKEN_SHAPES:  # a token wrapped across lines, its word boundary judged on the text
+        for match in re.finditer(shape, unwrapped):
+            start = kept[match.start()]
+            if start == 0 or not re.fullmatch(r"\w", text[start - 1]):
+                found.append(("token", start))
+    found += [
+        ("leak term", match.start())
+        for term in LEAK_TERMS
+        for match in re.finditer(rf"(?<!\w){re.escape(term)}(?!\w)", text, flags=re.IGNORECASE)
+    ]
+    return list(dict.fromkeys(found))
 
 
 @pytest.mark.parametrize("kind, text", list(LEAKS.values()), ids=list(LEAKS))
@@ -134,6 +162,43 @@ def test_every_0_1_leak_is_found_at_the_same_position(kind, text):
         assert any(
             f.kind == new_kind and f.start == start and rule in (None, f.rule) for f in findings
         ), (hit_kind, start, findings)
+
+
+# ---- what the operator reads before releasing a message (L3) ----
+
+
+def test_visible_spells_out_invisible_and_control_characters_and_keeps_line_breaks_and_tabs():
+    text = "Fixed" + "​" + ".\tSee\n" + "‮" + "txt.exe" + "\x1b[2J" + "\x85"
+    assert visible(text) == "Fixed<U+200B>.\tSee\n<U+202E>txt.exe<U+001B>[2J<U+0085>"
+    assert visible("plain text") == "plain text"
+
+
+def test_link_urls_lists_every_destination_in_full_once_in_order():
+    text = (
+        "Read [the changelog](https://example.org/notes) and ![chart](https://img.example.com/c.png). "
+        "Also <a href='https://example.net/a'>here</a>, https://example.org/notes again, and //example.io/x."
+    )
+    assert link_urls(text) == (
+        "https://example.org/notes",
+        "https://img.example.com/c.png",
+        "https://example.net/a",
+        "//example.io",  # a bare authority is read to the host, as scan_links reads it
+    )
+    assert link_urls("No links here.") == ()
+
+
+def test_a_key_that_may_not_be_created_is_used_once_and_writes_nothing(tmp_path):
+    state = tmp_path / "state"
+    once, again = fingerprint_key(state, create=False), fingerprint_key(state, create=False)
+    assert len(once) == DFLT_KEY_BYTES and once != again and not state.exists()
+    kept = fingerprint_key(state)
+    assert fingerprint_key(state, create=False) == kept  # an existing key is read, never replaced
+
+
+def test_a_finding_names_its_part_only_when_it_has_one():
+    finding = Finding(kind="secret", start=0, end=4, rule="github-token", severity=5, fingerprint="f")
+    assert "part" not in finding.to_dict()
+    assert Finding(**{**finding.__dict__, "part": "title"}).to_dict()["part"] == "title"
 
 
 # ---- vocabulary and normalisation ----
