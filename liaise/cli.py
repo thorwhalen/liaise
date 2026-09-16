@@ -65,7 +65,7 @@ from liaise.config import (
     GlobalConfig,
     load_global_config,
 )
-from liaise.detect import fingerprint_key, link_urls, visible
+from liaise.detect import key_source, link_urls, visible
 from liaise.github import GhCli, GitHub, GitHubError
 from liaise.ledger import DFLT_LEDGER_SUBDIR, Ledger, default_ledger_store
 from liaise.model import HOLD_MODES, require_one_of
@@ -661,10 +661,13 @@ def _not_sent(held: _Held, release: Any, *, dry_run: bool) -> cw.CommandError:
 
 
 def _key_for(global_config: GlobalConfig, *, dry_run: bool) -> Callable[[], bytes]:
-    """The fingerprint key in ``global_config``'s state directory; a dry run creates none."""
-    return functools.partial(
-        fingerprint_key, global_config.state_dir, create=not dry_run
-    )
+    """The fingerprint key in ``global_config``'s state directory; a dry run creates none.
+
+    One key for the whole command (:func:`liaise.detect.key_source`): releasing a draft
+    judges it, shows the operator and judges it again, and a dry run that made a new key
+    each time would flag the same message differently twice, voiding their approval.
+    """
+    return key_source(global_config.state_dir, create=not dry_run)
 
 
 def _preview(held: _Held, release: Any, *, edit: bool, then: Sequence[str]) -> str:

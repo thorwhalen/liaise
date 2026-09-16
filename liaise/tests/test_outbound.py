@@ -155,6 +155,25 @@ def test_a_refusal_on_another_conversation_or_another_subject_does_not_taint():
     assert case_provenance(_case(_message("pat")), _subject(), ledger).tainted is False
 
 
+@pytest.mark.parametrize(
+    "conversation, why",
+    [
+        (f"  {REF.upper()} ", "however it was spelled"),
+        (None, "a conversation the queue does not name"),
+    ],
+    ids=["another spelling of the case's conversation", "a row that names no conversation"],
+)
+def test_a_queued_refusal_this_case_cannot_be_told_apart_from_taints(conversation, why):
+    """The queue is keyed on a delivery id, and only intake fills the rest of a row: a row of
+    this subject that does not name another conversation counts against the run."""
+    ledger = Ledger({})
+    _refused(ledger, conversation=conversation)
+
+    provenance = case_provenance(_case(_message("pat")), _subject(), ledger)
+
+    assert provenance.tainted is True
+
+
 def test_an_unrouted_queue_that_cannot_be_read_taints_rather_than_vouches():
     class Unreadable:
         def unrouted(self):

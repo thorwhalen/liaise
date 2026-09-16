@@ -508,6 +508,23 @@ def test_a_released_draft_records_the_approval_its_justification_and_the_rules_i
     assert world.posted() == ["@pat The dates are on the example-internal board now."]
 
 
+def test_a_dry_run_of_a_draft_the_gate_flags_still_shows_it_as_sendable(world):
+    """The release judges the draft, shows the operator, and judges it again with their
+    approval. A dry run writes no fingerprint key, so both judgements must share the one it
+    used once: two keys would flag the same draft differently and void the approval."""
+    subject = SUBJECT_TOML.format(people='"github:pat" = "pat"') + 'leak_terms = ["example-internal"]\n'
+    (world.root / "subjects" / f"{SLUG}.toml").write_text(subject)
+    world.hold_drafts(_draft("The dates are on the example-internal board now."))
+    assert not (world.tmp_path / "state").exists()  # a fresh install, where --dry-run is reached for
+
+    output = world.send(dry_run=True)
+
+    assert output.splitlines()[0] == f"would send draft [0] of {CASE} on {ISSUE} (gate: passed, 5 filters)"
+    assert "is void" not in output  # not the operator's own approval, judged a second time
+    assert world.previews == []  # a dry run asks nobody
+    assert world.posted() == [] and not (world.tmp_path / "state").exists()
+
+
 def test_case_show_renders_invisible_characters_every_url_in_full_and_the_audience_in_words(world):
     """Acceptance (#36): what the operator reads before releasing a draft."""
     hidden = "Dates are fixed" + "​" + "." + "\x1b[2J" + " See [the changelog](https://example.org/notes)"

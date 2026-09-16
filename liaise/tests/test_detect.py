@@ -60,6 +60,7 @@ from liaise.detect import (
     LOCAL_PATH_PATTERNS,
     PRIVATE_KEY_PATTERN,
     TOKEN_SHAPES,
+    key_source,
     link_urls,
     visible,
 )
@@ -193,6 +194,18 @@ def test_a_key_that_may_not_be_created_is_used_once_and_writes_nothing(tmp_path)
     assert len(once) == DFLT_KEY_BYTES and once != again and not state.exists()
     kept = fingerprint_key(state)
     assert fingerprint_key(state, create=False) == kept  # an existing key is read, never replaced
+
+
+def test_a_key_source_answers_one_key_however_often_it_is_asked(tmp_path):
+    """One command may judge a message twice, and the two judgements must fingerprint alike:
+    a key that is not written down (a dry run) would otherwise be a new key each time."""
+    state = tmp_path / "state"
+    once = key_source(state, create=False)
+    assert once() == once() and not state.exists()
+    assert key_source(state, create=False)() != once()  # another command, another key
+
+    kept = key_source(state)
+    assert kept() == kept() == fingerprint_key(state)
 
 
 def test_a_finding_names_its_part_only_when_it_has_one():

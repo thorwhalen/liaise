@@ -886,6 +886,39 @@ def fingerprint_key(
     return _read_key(path, key_bytes)
 
 
+def key_source(
+    state_dir: Union[str, os.PathLike, None] = None,
+    *,
+    key_file: str = DFLT_KEY_FILE,
+    key_bytes: int = DFLT_KEY_BYTES,
+    create: bool = True,
+) -> Callable[[], bytes]:
+    """A callable that answers one key, however often it is asked: :func:`fingerprint_key`, once.
+
+    One command may judge a message more than once — releasing a draft judges it, shows the
+    operator, and judges it again with their approval — and those judgements have to
+    fingerprint alike, or what the second one flags is not what the first one showed. With
+    ``create`` false a missing key is a key used once, so asking twice would otherwise
+    answer twice.
+
+    >>> source = key_source(create=False)
+    >>> source() == source()
+    True
+    """
+    answered: list[bytes] = []
+
+    def source() -> bytes:
+        if not answered:
+            answered.append(
+                fingerprint_key(
+                    state_dir, key_file=key_file, key_bytes=key_bytes, create=create
+                )
+            )
+        return answered[0]
+
+    return source
+
+
 # ---- the scan ----
 
 

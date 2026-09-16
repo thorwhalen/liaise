@@ -83,7 +83,7 @@ from correspond.errors import ChannelError
 
 from liaise.access import Resolver, resolve_person
 from liaise.config import ConfigError, GlobalConfig
-from liaise.detect import fingerprint_key
+from liaise.detect import key_source
 from liaise.errors import ERROR_ACTIONS, classify_delivery_failure
 from liaise.errors import defer_until as defer_for_error
 from liaise.gate import (
@@ -563,9 +563,7 @@ def run_once(
         now=now,
         dry_run=dry_run,
         outbound_filters=tuple(outbound_filters),
-        fingerprint_key=functools.partial(
-            fingerprint_key, state_dir, create=not dry_run
-        ),
+        fingerprint_key=key_source(state_dir, create=not dry_run),
         triage=triage,
         lost_run_deadline=lost_run_deadline,
         closed_recheck_interval=closed_recheck_interval,

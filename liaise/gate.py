@@ -70,7 +70,6 @@ from liaise.outbound import (
     judge,
     verdict_id,
 )
-from liaise.policy import payload_of
 from liaise.policy import (
     APPROVE,
     DELAY,
@@ -83,6 +82,7 @@ from liaise.policy import (
     flow_rank,
     most_restrictive,
     payload_hash,
+    payload_of,
 )
 from liaise.subjects import Subject
 
@@ -97,6 +97,8 @@ DELAY_HELD = (
 )
 #: The name the gate files its own concerns under: a void approval, a message it cannot hash.
 GATE_CONCERN = "gate"
+#: How far :func:`filter_name` unwraps a filter to find the name of the check it runs.
+MAX_WRAPPED_FILTERS = 8
 #: A GitHub login: letters, digits and hyphens, at most 39 characters.
 _GITHUB_LOGIN_RE = re.compile(r"[A-Za-z0-9][A-Za-z0-9-]{0,38}")
 
@@ -487,10 +489,15 @@ def filter_name(outbound_filter: Any) -> str:
     ``functools.partial``, whose own name is its arguments: its function's name is what
     tells the operator which check held their message back.
     """
-    for candidate in (outbound_filter, getattr(outbound_filter, "func", None)):
+    candidate = outbound_filter
+    for _ in range(MAX_WRAPPED_FILTERS):  # a seam configured twice is a partial of one
         name = getattr(candidate, "__name__", None)
         if isinstance(name, str) and name:
             return name
+        wrapped = getattr(candidate, "func", None)
+        if wrapped is None:
+            break
+        candidate = wrapped
     return type(outbound_filter).__name__
 
 
@@ -618,24 +625,24 @@ def run_gate(
         ):
             given = type(result.outbound if isinstance(result, Pass) else result)
             result = Divert(f"{name} returned {given.__name__}, not a Pass or a Divert")
-        notes.extend(result.notes)
         if result.judgement is not None:
             judgement = result.judgement
-        if isinstance(result, Pass):
-            if _redirected(entry_payload, result.outbound):
-                concerns.append(
-                    Concern(
-                        filter=name,
-                        flow=APPROVE,
-                        text=(
-                            f"{name} changed where the message goes, or what it carries, "
-                            f"not only what it says: the rewrite is dropped, since every "
-                            f"filter judged the message as it stands"
-                        ),
-                    )
+        if isinstance(result, Pass) and _redirected(entry_payload, result.outbound):
+            concerns.append(
+                Concern(
+                    filter=name,
+                    flow=APPROVE,
+                    text=(
+                        f"{name} changed where the message goes, or what it carries, "
+                        f"not only what it says: the rewrite is dropped, since every "
+                        f"filter judged the message as it stands"
+                    ),
                 )
-            else:
-                outbound = result.outbound
+            )
+            continue  # and so are its notes, which describe a rewrite that did not happen
+        notes.extend(result.notes)
+        if isinstance(result, Pass):
+            outbound = result.outbound
         else:
             concerns.extend(_concerns_of(name, result))
     bound = binds(approval, hashes, None if judgement is None else judgement.verdict)

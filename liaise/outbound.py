@@ -299,14 +299,25 @@ def _distrust(entry: LedgerEntry, subject: Subject) -> Optional[str]:
     return None
 
 
+def _same_conversation(one: Any, other: Any) -> bool:
+    """Whether two references name one conversation, however each was spelled."""
+    return str(one or "").strip().casefold() == str(other or "").strip().casefold()
+
+
 def _refused_readings(case: Case, subject: Subject, ledger: Any) -> Iterable[str]:
     """Why each message intake refused on one of ``case``'s conversations taints a run.
 
     A message from someone with no role never becomes an entry: intake queues it as
     unrouted and the case never sees it (:mod:`liaise.intake`). The run reads the
     conversation itself, so it read that message all the same.
+
+    The queue is keyed on a delivery id, and only intake fills the rest of a row, so this
+    errs towards tainting: a queue that cannot be read counts, and so does a row of this
+    subject that names no conversation, or names one however else it was spelled. Only a
+    row that names another conversation is somebody else's. This may say a run read
+    something it did not; it may not say a run read nothing.
     """
-    conversations = {str(ref) for ref in case.conversations}
+    conversations = [str(ref) for ref in case.conversations]
     try:
         queued = list(ledger.unrouted())
     except (
@@ -315,15 +326,19 @@ def _refused_readings(case: Case, subject: Subject, ledger: Any) -> Iterable[str
         return [
             f"the unrouted queue could not be read ({type(error).__name__}: {error})"
         ]
-    return [
-        f"a message from {item.get('author') or 'an unnamed sender'} on "
-        f"{item.get('conversation')}, which intake refused ({item.get('reason')}), and a "
-        f"run reads the conversation itself"
-        for item in queued
-        if isinstance(item, Mapping)
-        and item.get("subject") == subject.slug
-        and str(item.get("conversation")) in conversations
-    ]
+    reasons = []
+    for item in queued:
+        if not isinstance(item, Mapping) or item.get("subject") != subject.slug:
+            continue
+        where = item.get("conversation")
+        if where and not any(_same_conversation(where, ref) for ref in conversations):
+            continue  # another conversation of the same subject: not what this run read
+        reasons.append(
+            f"a message from {item.get('author') or 'an unnamed sender'} on "
+            f"{where or 'a conversation the queue does not name'}, which intake refused "
+            f"({item.get('reason')}), and a run reads the conversation itself"
+        )
+    return reasons
 
 
 def case_provenance(case: Case, subject: Subject, ledger: Any) -> Provenance:

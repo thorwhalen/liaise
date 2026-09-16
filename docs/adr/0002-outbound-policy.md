@@ -55,7 +55,9 @@ Every gated message's `gate` entry records the flow, each concern with its findi
 
 A run is tainted when the case holds a message its subject does not trust for `request_work`: a role that does not grant it, or a grade it does not accept. The channel's own posts are trusted; the tick's own template messages (the daily-cap message, a nudge) are clean; a message outside a case is unknown, which counts as tainted. Every `message` entry of the case counts, not only those a run had read when it started: the ledger does not say which a resumed session saw, and counting one it did not can only hold a message back.
 
-**The unrouted queue counts too.** A message whose author has no role at all never becomes an entry: intake refuses it and queues it as unrouted. It is still on the conversation, and the prompt tells the run to read the conversation itself, so the run read it. `case_provenance` therefore reads the queue as well as the case, and takes a ledger to do it; a queue it cannot read taints rather than vouches. Without this the taint rule would miss the one reader it exists for — the stranger commenting on a public issue.
+**The unrouted queue counts too.** A message whose author has no role at all never becomes an entry: intake refuses it and queues it as unrouted. It is still on the conversation, and the prompt tells the run to read the conversation itself, so the run read it. `case_provenance` therefore reads the queue as well as the case, and takes a ledger to do it. Without this the taint rule would miss the one reader it exists for — the stranger commenting on a public issue. The queue is keyed on a delivery id and only intake fills the rest of a row, so the reading errs towards tainting: a queue that cannot be read, and a row of this subject that does not name another conversation, both count. Only a row that names a different conversation is somebody else's.
+
+**One key per command.** Findings are fingerprinted with a key from the state directory, and a dry run creates none — it uses one key once. A release judges a message, shows the operator and judges it again, so both judgements take that key from a single source (`liaise.detect.key_source`); otherwise the second judgement fingerprints the same finding differently, the verdict is a different verdict, and the gate would tell the operator their own approval was void.
 
 ### Subject policy gains four values, and they are configuration, not seams
 
@@ -71,6 +73,8 @@ A run is tainted when the case holds a message its subject does not trust for `r
 - **Not wired yet, and left for the slices that own them:** the operator's own addresses and handles as `personal` terms, and a recipient's AI tolerance for the disclosure-stance rule. Both are inputs the policy already reads.
 - **`cc`, `bcc` and `attachments` are judged, hashed and refused at the send, and nothing in 0.1 sets them.** They are on `Outbound` for `liaise vet` (L4) and for the day a channel with copies is bound; until then a draft carries none, and `release_draft` rebuilds the message without them. A channel that gains copies must carry them through the draft as well as the gate.
 - **A known miss, filed as issue #46:** private words inside a link's path reach a wide audience at `approve`, since a plain link is shown to the operator in full rather than refused.
+- **Nothing empties the unrouted queue.** One refused comment taints its case's runs for as long as the row is there, and the operator has no verb to clear it. That is the safe direction, and a queue the operator can read and prune is worth a later slice.
+- **A refusal that arrives after the last intake taints nothing until the next one.** Provenance reads the ledger, not the conversation.
 
 ## Rejected
 
