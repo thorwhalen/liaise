@@ -124,7 +124,7 @@ The JSON Schema of a run’s structured result, passed to `claude --json-schema`
 The field each outcome kind cannot do without. [`parse_outcomes()`](#liaise.outcomes.parse_outcomes) enforces it
 and [`OUTCOME_SCHEMA`](#liaise.outcomes.OUTCOME_SCHEMA) states it.
 
-### *class* liaise.outcomes.Send(, ref, channel, recipient, purpose, text, title=None, case_id=None)
+### *class* liaise.outcomes.Send(, ref, channel, recipient, purpose, text, title=None, case_id=None, cc=(), bcc=(), attachments=(), project=None)
 
 Bases: [`Outbound`](liaise.gate.html.md#liaise.gate.Outbound)
 
@@ -142,7 +142,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Move the case to `state`, recording `reason`.
 
-### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=(), title=None)
+### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=(), title=None, gate=None)
 
 One item of a case’s `drafts`: a message held for the operator.
 
@@ -156,7 +156,9 @@ This is the one shape every draft has, JSON-ready:
 - `text`: the message, as it would be sent;
 - `reason`: why it was held (an escalation’s reason, a gate divert, no channel);
 - `notes`: the gate’s notes on it, in order;
-- `title`: the title of the issue it would open, present only when it opens one.
+- `title`: the title of the issue it would open, present only when it opens one;
+- `gate`: what the gate decided, present only when the gate held it: its flow, the
+  audience in words and the reasons ([`liaise.gate.GateDecision.summary()`](liaise.gate.html.md#liaise.gate.GateDecision.summary)).
 
 ```pycon
 >>> from datetime import datetime, timezone

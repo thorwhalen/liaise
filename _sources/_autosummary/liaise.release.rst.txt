@@ -12,11 +12,15 @@ liaise.release
       DELIVER_PURPOSE
       DRAFT_ENTRY_KIND
       GITHUB_CHANNEL
+      CASELESS_PROVENANCE
+      NO_ATTACHMENTS
+      VALIDATION_KIND
    
    .. rubric:: Functions
 
    .. autosummary::
    
+      audience_of
       error_text
       gate_and_send
       github_repo

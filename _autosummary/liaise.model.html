@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -51,11 +51,11 @@
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="liaise.outcomes" href="liaise.outcomes.html" />
+    <link rel="next" title="liaise.outbound" href="liaise.outbound.html" />
     <link rel="prev" title="liaise.migrate" href="liaise.migrate.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -330,6 +330,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -462,8 +463,8 @@ are pure and take the time they record as an argument.</p>
 <p class="rubric">Classes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.Approval" title="liaise.model.Approval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Approval</span></code></a>(by, at)</p></td>
-<td><p>The operator's release of a held message: who released it, and when.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.model.Approval" title="liaise.model.Approval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Approval</span></code></a>(by, at[, payload_hash, ...])</p></td>
+<td><p>The operator's release of a held message, bound to the message and audience they saw.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.model.Case" title="liaise.model.Case"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Case</span></code></a>(id, subject, conversations, reporter, ...)</p></td>
 <td><p>One piece of work on a subject, from its first message to its delivery.</p></td>
@@ -497,15 +498,41 @@ are pure and take the time they record as an argument.</p>
 </div>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.model.Approval">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.model.</span></span><span class="sig-name descname"><span class="pre">Approval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">at</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Approval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.model.Approval" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.model.</span></span><span class="sig-name descname"><span class="pre">Approval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verdict_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">justification</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rules_overridden</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Approval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.model.Approval" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Record</span></code></p>
-<p>The operator’s release of a held message: who released it, and when.</p>
-<p>The gate reads it from <code class="xref py py-attr docutils literal notranslate"><span class="pre">liaise.gate.GateContext.approval</span></code>. It settles
-<a class="reference internal" href="liaise.gate.html#liaise.gate.reply_mode" title="liaise.gate.reply_mode"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.gate.reply_mode()</span></code></a>, which is what <code class="docutils literal notranslate"><span class="pre">draft</span></code> reply mode waits for, and
-nothing else: every other filter still judges the message, so a leak in a released
-draft is diverted all the same. It is recorded with the send.</p>
+<p>The operator’s release of a held message, bound to the message and audience they saw.</p>
+<p><code class="docutils literal notranslate"><span class="pre">by</span></code> released it at <code class="docutils literal notranslate"><span class="pre">at</span></code>. <code class="docutils literal notranslate"><span class="pre">payload_hash</span></code> and <code class="docutils literal notranslate"><span class="pre">audience_hash</span></code> are the hashes of
+the verdict shown to them (<a class="reference internal" href="liaise.policy.html#liaise.policy.payload_hash" title="liaise.policy.payload_hash"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.policy.payload_hash()</span></code></a>,
+<a class="reference internal" href="liaise.policy.html#liaise.policy.audience_hash" title="liaise.policy.audience_hash"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.policy.audience_hash()</span></code></a>), and <code class="docutils literal notranslate"><span class="pre">verdict_id</span></code> names that verdict.
+<code class="docutils literal notranslate"><span class="pre">rules_overridden</span></code> are the rules they released it past, and <code class="docutils literal notranslate"><span class="pre">justification</span></code> says
+why, in their words.</p>
+<p>The gate reads it from <code class="xref py py-attr docutils literal notranslate"><span class="pre">liaise.gate.GateContext.approval</span></code> and runs every filter
+again (liaise ADR 0002). The approval settles only a concern whose rule it names, whose
+flow is at most <code class="docutils literal notranslate"><span class="pre">approve</span></code>, and only while both hashes still match the message and the
+audience computed at send time: a changed text, title, recipient or readership voids it,
+and a <code class="docutils literal notranslate"><span class="pre">refuse</span></code> is never settled. An approval without hashes binds to nothing. It is
+recorded with the send.</p>
 <dl class="field-list simple">
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.model.Approval.binds">
+<span class="sig-name descname"><span class="pre">binds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Approval.binds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.model.Approval.binds" title="Link to this definition">#</a></dt>
+<dd><p>Whether this approval was given for the message and audience these hashes name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">at</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Approval</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">"operator"</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span> <span class="n">payload_hash</span><span class="o">=</span><span class="s2">"p"</span><span class="p">,</span> <span class="n">audience_hash</span><span class="o">=</span><span class="s2">"a"</span><span class="p">)</span><span class="o">.</span><span class="n">binds</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Approval</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">"operator"</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">)</span><span class="o">.</span><span class="n">binds</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span>  <span class="c1"># bound to nothing</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py data">
@@ -753,11 +780,11 @@ so storing the result can never alias the object it came from.</p>
       </div>
     </a>
     <a class="right-next"
-       href="liaise.outcomes.html"
+       href="liaise.outbound.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">liaise.outcomes</p>
+        <p class="prev-next-title">liaise.outbound</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -780,7 +807,10 @@ so storing the result can never alias the object it came from.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Approval"><code class="docutils literal notranslate"><span class="pre">Approval</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Approval"><code class="docutils literal notranslate"><span class="pre">Approval</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Approval.binds"><code class="docutils literal notranslate"><span class="pre">Approval.binds()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.CASE_STATES"><code class="docutils literal notranslate"><span class="pre">CASE_STATES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Case"><code class="docutils literal notranslate"><span class="pre">Case</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.model.Case.with_entry"><code class="docutils literal notranslate"><span class="pre">Case.with_entry()</span></code></a></li>

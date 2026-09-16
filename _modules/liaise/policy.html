@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -894,7 +894,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Provenance">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Provenance">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Provenance">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Provenance</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""What the run that wrote the message read: tainted, clean, or unknown.</span>
@@ -908,7 +908,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">evidence</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
 
 <div class="viewcode-block" id="Provenance.unknown">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Provenance.unknown">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Provenance.unknown">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">unknown</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">evidence</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Provenance</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""A run nobody can vouch for."""</span>
@@ -916,7 +916,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Provenance.clean">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Provenance.clean">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Provenance.clean">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">evidence</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Provenance</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""A run that read only what the subject trusts."""</span>
@@ -924,7 +924,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Provenance.tainted_by">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Provenance.tainted_by">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Provenance.tainted_by">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">tainted_by</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="o">*</span><span class="n">evidence</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Provenance</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""A run that read something the subject does not trust for ``request_work``."""</span>
@@ -932,7 +932,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Provenance.of">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Provenance.of">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Provenance.of">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">of</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Provenance</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Provenance</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""``value`` as a :class:`Provenance`: a record, its dict, a bool, or None."""</span>
@@ -955,7 +955,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Provenance.to_dict">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Provenance.to_dict">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Provenance.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""JSON-ready."""</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">"tainted"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">tainted</span><span class="p">,</span> <span class="s2">"evidence"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">evidence</span><span class="p">)}</span></div>
@@ -964,7 +964,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="OutboundPolicy">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.OutboundPolicy">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.OutboundPolicy">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OutboundPolicy</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The subject's policy as it applies to one message (discussion §5.4).</span>
@@ -1002,7 +1002,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mode is one of </span><span class="si">{</span><span class="n">MODES</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OutboundPolicy.of">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.OutboundPolicy.of">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.OutboundPolicy.of">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">of</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">OutboundPolicy</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">OutboundPolicy</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""``value`` as an :class:`OutboundPolicy`: a record, its dict, or None (defaults)."""</span>
@@ -1022,7 +1022,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="OutboundPolicy.to_dict">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.OutboundPolicy.to_dict">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.OutboundPolicy.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""JSON-ready."""</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">f</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)}</span></div>
@@ -1031,7 +1031,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Reader">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Reader">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Reader">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Reader</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""A reader the ceiling is judged on: their clearance (``None``: no ceiling), in words.</span>
@@ -1045,7 +1045,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">person</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Reader.to_dict">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Reader.to_dict">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Reader.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""JSON-ready."""</span>
         <span class="k">return</span> <span class="p">{</span><span class="s2">"clearance"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">clearance</span><span class="p">,</span> <span class="s2">"who"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">who</span><span class="p">,</span> <span class="s2">"person"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">person</span><span class="p">}</span></div>
@@ -1054,7 +1054,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Reason">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Reason">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Reason">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Reason</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""One rule that fired: the finding and the reader it concerns, and a sentence.</span>
@@ -1070,7 +1070,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">reader</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Reason.to_dict">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Reason.to_dict">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Reason.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""JSON-ready."""</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -1085,7 +1085,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Verdict">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Verdict">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Verdict">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Verdict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""What the policy decided about one message, and why (discussion §5.1).</span>
@@ -1118,7 +1118,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span>
 
 <div class="viewcode-block" id="Verdict.to_dict">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Verdict.to_dict">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Verdict.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""JSON-ready: what the ledger records for a gated message."""</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -1148,7 +1148,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="flow_rank">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.flow_rank">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.flow_rank">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">flow_rank</span><span class="p">(</span><span class="n">flow</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Where ``flow`` stands in :data:`FLOWS`; a ``ValueError`` for an unknown flow."""</span>
     <span class="k">if</span> <span class="n">flow</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FLOWS</span><span class="p">:</span>
@@ -1158,7 +1158,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="most_restrictive">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.most_restrictive">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.most_restrictive">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">most_restrictive</span><span class="p">(</span><span class="n">flows</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The highest of ``flows``, or ``send`` when there are none."""</span>
     <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">flows</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">flow_rank</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">SEND</span><span class="p">)</span></div>
@@ -1174,7 +1174,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="above">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.above">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.above">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">above</span><span class="p">(</span><span class="n">label</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">clearance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Whether ``label`` is more restrictive than ``clearance`` (``None``: no ceiling).</span>
 
@@ -1228,7 +1228,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="payload_of">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.payload_of">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.payload_of">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">payload_of</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The message as the payload hash sees it: recipients, copies, ref, title, text, attachments.</span>
 
@@ -1259,7 +1259,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="canonical_json">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.canonical_json">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.canonical_json">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">canonical_json</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The canonical JSON both hashes are taken over: sorted keys, no spaces, ASCII."""</span>
     <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">separators</span><span class="o">=</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">":"</span><span class="p">))</span></div>
@@ -1271,7 +1271,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="payload_hash">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.payload_hash">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.payload_hash">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">payload_hash</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""SHA-256, in hex, of the canonical JSON of :func:`payload_of`."""</span>
     <span class="k">return</span> <span class="n">_digest</span><span class="p">(</span><span class="n">payload_of</span><span class="p">(</span><span class="n">outbound</span><span class="p">))</span></div>
@@ -1314,7 +1314,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="audience_record">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.audience_record">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.audience_record">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">audience_record</span><span class="p">(</span><span class="n">audience</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""``audience`` as the dict correspond's ``Audience.to_dict`` writes, normalised alike.</span>
 
@@ -1384,7 +1384,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="audience_hash">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.audience_hash">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.audience_hash">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">audience_hash</span><span class="p">(</span><span class="n">audience</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""SHA-256, in hex, of the canonical JSON of :func:`audience_record` without ``as_of`` and ``evidence``.</span>
 
@@ -1397,7 +1397,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="audience_in_words">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.audience_in_words">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.audience_in_words">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">audience_in_words</span><span class="p">(</span><span class="n">audience</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The audience in one line, as correspond's ``Audience.in_words`` says it."""</span>
     <span class="n">record</span> <span class="o">=</span> <span class="n">audience_record</span><span class="p">(</span><span class="n">audience</span><span class="p">)</span>
@@ -1465,6 +1465,7 @@ window.runMermaid = runMermaid;</script>
                     <span class="n">rule</span><span class="o">=</span><span class="n">finding</span><span class="p">[</span><span class="s2">"rule"</span><span class="p">],</span>
                     <span class="n">severity</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">finding</span><span class="p">[</span><span class="s2">"severity"</span><span class="p">]),</span>
                     <span class="n">fingerprint</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"fingerprint"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">),</span>
+                    <span class="n">part</span><span class="o">=</span><span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"part"</span><span class="p">),</span>
                 <span class="p">)</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -1600,7 +1601,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="least_cleared_reader">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.least_cleared_reader">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.least_cleared_reader">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">least_cleared_reader</span><span class="p">(</span>
     <span class="n">audience</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="n">disclosure</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span>
@@ -1675,7 +1676,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Facts">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Facts">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Facts">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Facts</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Everything a rule may look at, computed once from the inputs of :func:`evaluate`."""</span>
@@ -1710,14 +1711,14 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">provenance</span><span class="o">.</span><span class="n">tainted</span>
 
 <div class="viewcode-block" id="Facts.of_kind">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Facts.of_kind">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Facts.of_kind">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">of_kind</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">kinds</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Finding</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The findings whose kind is one of ``kinds``."""</span>
         <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">findings</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">kind</span> <span class="ow">in</span> <span class="n">kinds</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="Facts.sealed_readers">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Facts.sealed_readers">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Facts.sealed_readers">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sealed_readers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">finding</span><span class="p">:</span> <span class="n">Finding</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The resolved readers the finding's entity is sealed from."""</span>
         <span class="k">if</span> <span class="n">finding</span><span class="o">.</span><span class="n">entity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1740,14 +1741,14 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
 
 <div class="viewcode-block" id="Facts.entry">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Facts.entry">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Facts.entry">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">person</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""The disclosure's entry for ``person`` (``{}`` when it has none)."""</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">readers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">person</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span> <span class="p">{})</span></div>
 
 
 <div class="viewcode-block" id="Facts.lapsed">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Facts.lapsed">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Facts.lapsed">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">lapsed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">entry</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Whether a permissive tier is past its review date, by the entry or by ``now``."""</span>
         <span class="k">if</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"lapsed"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">:</span>
@@ -1766,7 +1767,8 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_where</span><span class="p">(</span><span class="n">finding</span><span class="p">:</span> <span class="n">Finding</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">"at characters </span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">start</span><span class="si">}</span><span class="s2">–</span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">end</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">place</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"at characters </span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">start</span><span class="si">}</span><span class="s2">–</span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">end</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">place</span><span class="si">}</span><span class="s2"> of the </span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">part</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">finding</span><span class="o">.</span><span class="n">part</span> <span class="k">else</span> <span class="n">place</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_describe</span><span class="p">(</span><span class="n">finding</span><span class="p">:</span> <span class="n">Finding</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -1786,7 +1788,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Hit">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Hit">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Hit">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Hit</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""One thing a rule found: its sentence, the finding and reader concerned, and the flow</span>
@@ -1803,7 +1805,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="Rule">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Rule">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Rule">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Rule</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""One row of the table: a name, what it looks for, and its minimum flow."""</span>
@@ -1816,7 +1818,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">flow_rank</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flow</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Rule.hits">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.Rule.hits">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.Rule.hits">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">facts</span><span class="p">:</span> <span class="n">Facts</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Reason</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The reasons this rule contributes for ``facts``."""</span>
         <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="p">(</span><span class="n">facts</span><span class="p">):</span>
@@ -2087,7 +2089,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="facts_of">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.facts_of">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.facts_of">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">facts_of</span><span class="p">(</span>
     <span class="n">outbound</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2136,7 +2138,7 @@ window.runMermaid = runMermaid;</script>
 
 
 <div class="viewcode-block" id="evaluate">
-<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.policy.evaluate">[docs]</a>
+<a class="viewcode-back" href="../../_autosummary/liaise.policy.html#liaise.evaluate">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span>
     <span class="n">outbound</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>

@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -711,84 +711,107 @@ window.runMermaid = runMermaid;</script>
                 <article class="bd-article">
                   
   <h1>Source code for liaise.gate</h1><div class="highlight"><pre>
-<span></span><span class="sd">"""The outbound gate: the checks a message passes before liaise sends it.</span>
+<span></span><span class="sd">"""The outbound gate: the checks every message passes before liaise sends it, and the verdict they reach.</span>
 
-<span class="sd">A processor run reports outcomes, :mod:`liaise.outcomes` plans them into actions, and</span>
-<span class="sd">each :class:`~liaise.outcomes.Send` among those is an :class:`Outbound` that the tick</span>
-<span class="sd">hands to :func:`run_gate` before anything reaches a channel. The gate runs</span>
-<span class="sd">:data:`DFLT_OUTBOUND_FILTERS`, in this order:</span>
+<span class="sd">A processor run reports outcomes, :mod:`liaise.outcomes` plans them into actions, and each</span>
+<span class="sd">:class:`~liaise.outcomes.Send` among those is an :class:`Outbound` that the tick hands to</span>
+<span class="sd">:func:`run_gate` before anything reaches a channel. A message outside a case, and a draft</span>
+<span class="sd">the operator releases, pass the same gate. It runs :data:`DFLT_OUTBOUND_FILTERS`, in this</span>
+<span class="sd">order:</span>
 
-<span class="sd">1. :func:`reply_mode`: nothing goes directly to a person in ``draft`` reply mode, nor any</span>
-<span class="sd">   message outside a case, unless the operator released it.</span>
-<span class="sd">2. :func:`leak_scan`: on a public channel, nothing holding an absolute local path, a</span>
-<span class="sd">   ``.env`` path, an email address, a private key, a token (wrapped across lines or not)</span>
-<span class="sd">   or one of ``policy.leak_terms``. It never redacts.</span>
+<span class="sd">1. :func:`outside_a_case`: a message outside any case waits for the operator: its sender</span>
+<span class="sd">   chose where it goes and to whom (liaise #28).</span>
+<span class="sd">2. :func:`outbound_policy`: the policy of liaise discussion 32. Who can read the</span>
+<span class="sd">   destination (the audience on the context), what each reader may be told (the</span>
+<span class="sd">   disclosure), what the message holds (the detectors, over its text, title and attachment</span>
+<span class="sd">   names) and what the run that wrote it read (the provenance on the context), through the</span>
+<span class="sd">   rule table of :mod:`liaise.policy`. Draft reply mode is a row of that table. It</span>
+<span class="sd">   replaces 0.1's leak scan.</span>
 <span class="sd">3. :func:`writing_card`: a note with the recipient's acquaint writing card.</span>
 <span class="sd">4. :func:`deslop`: nothing acquaint's style lint finds machine-sounding.</span>
 <span class="sd">5. :func:`notify_recipient`: on GitHub, the message starts with ``@&lt;login&gt;``, since</span>
 <span class="sd">   GitHub notifies only the people a comment mentions.</span>
 
-<span class="sd">A filter is ``(outbound, ctx) -&gt; Pass | Divert``. A :class:`Pass` hands the message,</span>
-<span class="sd">possibly rewritten, to the next filter; only :func:`notify_recipient` rewrites. The</span>
-<span class="sd">first :class:`Divert` ends the gate: the message is not sent, and goes to the operator</span>
-<span class="sd">instead. Notes accumulate across the filters that ran. acquaint is optional</span>
-<span class="sd">(``liaise[people]``): without it, or for a person it does not know, filters 3 and 4</span>
-<span class="sd">add a note and let the message through.</span>
+<span class="sd">**Every filter runs** (liaise ADR 0002, which amends ADR 0001's "the first divert ends the</span>
+<span class="sd">gate"). A filter is ``(outbound, ctx) -&gt; Pass | Divert``. A :class:`Divert` says how far</span>
+<span class="sd">the message must be held back: its ``flow``, one of :data:`liaise.policy.FLOWS`</span>
+<span class="sd">(``approve`` when it does not say). Each divert is one or more :class:`Concern` records,</span>
+<span class="sd">the policy's one per rule that fired. The decision's flow is the most restrictive concern</span>
+<span class="sd">still standing, and its reasons are all of them, most restrictive first. A message goes out</span>
+<span class="sd">only when that flow is ``send``: ``delay`` waits for the operator until the delay outbox</span>
+<span class="sd">exists (liaise #38). A filter that raises, or answers anything but a ``Pass`` or a</span>
+<span class="sd">``Divert``, contributes an ``approve`` concern with the error as its reason. The order stays</span>
+<span class="sd">fixed and is not a seam: the mention, the one rewrite, comes last, so every filter judges</span>
+<span class="sd">the text as it was written, and the rewrite reaches a send only when nothing held it back.</span>
 
-<span class="sd">The gate only decides. :func:`liaise.release.gate_and_send` sends</span>
-<span class="sd">:attr:`GateDecision.send`, and its callers keep a diverted message as a draft (see</span>
-<span class="sd">:func:`liaise.outcomes.make_draft`). The tick then notifies the operator. When the</span>
-<span class="sd">operator releases a draft (``liaise case send-draft``), the same gate runs again on the</span>
-<span class="sd">final text, with their :class:`~liaise.model.Approval` on :attr:`GateContext.approval`.</span>
+<span class="sd">**Approvals** (discussion §5.7). The operator's :class:`~liaise.model.Approval` on</span>
+<span class="sd">:attr:`GateContext.approval` is bound to the message, the audience and the verdict it was</span>
+<span class="sd">given for: the hashes of the message the filters judged and of the audience on the context</span>
+<span class="sd">(:func:`liaise.policy.payload_hash`, :func:`liaise.policy.audience_hash`), and the name of</span>
+<span class="sd">what that verdict flagged (:func:`liaise.outbound.verdict_id`). While all three still hold,</span>
+<span class="sd">it settles each concern whose rule it names and whose flow is at most ``approve``. A</span>
+<span class="sd">``refuse`` is never settled, nor is a concern with no rule (deslop, a missing handle, a</span>
+<span class="sd">filter that failed). An approval that no longer binds settles nothing, and is itself the</span>
+<span class="sd">first concern the operator reads, naming what changed — a widened audience, an edited text,</span>
+<span class="sd">or a disclosure that now flags something else under the same rule. :func:`approval_for`</span>
+<span class="sd">makes the approval for a decision the operator was shown.</span>
+
+<span class="sd">The gate only decides. :func:`liaise.release.gate_and_send` computes the audience, runs the</span>
+<span class="sd">gate, and sends :attr:`GateDecision.send`; its callers keep a diverted message as a draft</span>
+<span class="sd">(see :func:`liaise.outcomes.make_draft`) and record :meth:`GateDecision.record`. acquaint is</span>
+<span class="sd">optional (``liaise[people]``): without it the disclosure has every reader at</span>
+<span class="sd">``need-to-know`` and the subject's ``leak_terms`` as its vocabulary, and filters 3 and 4</span>
+<span class="sd">add a note and let the message through.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">replace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.detect</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
-    <span class="n">EMAIL_PATTERN</span><span class="p">,</span>
-    <span class="n">ENV_FILE_PATTERN</span><span class="p">,</span>
-    <span class="n">LOCAL_PATH_PATTERNS</span><span class="p">,</span>
-    <span class="n">PRIVATE_KEY_PATTERN</span><span class="p">,</span>
-    <span class="n">TOKEN_SHAPES</span><span class="p">,</span>
-<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.access</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resolver</span><span class="p">,</span> <span class="n">resolve_person</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.detect</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_DETECTORS</span><span class="p">,</span> <span class="n">Detector</span><span class="p">,</span> <span class="n">Finding</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Approval</span><span class="p">,</span> <span class="n">Case</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outbound</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DisclosureSource</span><span class="p">,</span>
+    <span class="n">Judgement</span><span class="p">,</span>
+    <span class="n">acquaint_disclosure</span><span class="p">,</span>
+    <span class="n">audience_snapshot</span><span class="p">,</span>
+    <span class="n">judge</span><span class="p">,</span>
+    <span class="n">verdict_id</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">APPROVE</span><span class="p">,</span>
+    <span class="n">DELAY</span><span class="p">,</span>
+    <span class="n">FLOWS</span><span class="p">,</span>
+    <span class="n">SEND</span><span class="p">,</span>
+    <span class="n">Provenance</span><span class="p">,</span>
+    <span class="n">Verdict</span><span class="p">,</span>
+    <span class="n">audience_hash</span><span class="p">,</span>
+    <span class="n">audience_in_words</span><span class="p">,</span>
+    <span class="n">flow_rank</span><span class="p">,</span>
+    <span class="n">most_restrictive</span><span class="p">,</span>
+    <span class="n">payload_hash</span><span class="p">,</span>
+    <span class="n">payload_of</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span>
 
-<span class="c1">#: The reply mode in which liaise sends nothing without the operator.</span>
-<span class="n">DRAFT_REPLY_MODE</span> <span class="o">=</span> <span class="s2">"draft"</span>
-<span class="c1">#: Why :func:`reply_mode` holds a message outside a case, and how its release note names it.</span>
+<span class="c1">#: The rule :func:`outside_a_case` holds a message for, which an approval names to release it.</span>
 <span class="n">OUTSIDE_A_CASE</span> <span class="o">=</span> <span class="s2">"a message outside a case"</span>
 <span class="n">CASELESS_REASON</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTSIDE_A_CASE</span><span class="si">}</span><span class="s2"> waits for the operator"</span>
-<span class="c1">#: Why :func:`reply_mode` holds a message in draft reply mode, and its release note's name.</span>
-<span class="n">DRAFT_REPLY_REASON</span> <span class="o">=</span> <span class="s2">"draft reply mode"</span>
 <span class="c1">#: The channel whose messages must @mention their recipient to reach them.</span>
 <span class="n">MENTION_CHANNEL</span> <span class="o">=</span> <span class="s2">"github"</span>
-
-<span class="c1">#: What :func:`leak_scan` diverts on, as (kind, pattern): the 0.1 patterns, which</span>
-<span class="c1">#: :mod:`liaise.detect` owns. Local paths are home directories on macOS, Linux and Windows,</span>
-<span class="c1">#: a Windows home through a WSL mount, and macOS's temporary directories. An env file is a</span>
-<span class="c1">#: path ending in ``.env``. No pattern has an unbounded quantifier ahead of a character it</span>
-<span class="c1">#: requires, so the scan stays linear in the message's length.</span>
-<span class="n">_LEAK_PATTERNS</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="o">*</span><span class="p">((</span><span class="s2">"local path"</span><span class="p">,</span> <span class="n">pattern</span><span class="p">)</span> <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">LOCAL_PATH_PATTERNS</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">"env file"</span><span class="p">,</span> <span class="n">ENV_FILE_PATTERN</span><span class="p">),</span>
-    <span class="p">(</span><span class="s2">"email"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">EMAIL_PATTERN</span><span class="p">)),</span>
-    <span class="p">(</span><span class="s2">"private key"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">PRIVATE_KEY_PATTERN</span><span class="p">)),</span>
-    <span class="o">*</span><span class="p">((</span><span class="s2">"token"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"\b</span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span> <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">TOKEN_SHAPES</span><span class="p">),</span>
+<span class="c1">#: What a decision held back as ``delay`` says, until the outbox (liaise #38) exists.</span>
+<span class="n">DELAY_HELD</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"a delay is held for the operator until the delay outbox exists (liaise #38)"</span>
 <span class="p">)</span>
-<span class="c1">#: The token shapes as :func:`leak_scan` looks for them in the text with its line breaks</span>
-<span class="c1">#: removed, so a token wrapped across lines is still found. Their word boundary is checked</span>
-<span class="c1">#: against the message itself, since removing a line break can glue a word to a token.</span>
-<span class="n">_UNWRAPPED_TOKEN_PATTERNS</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span> <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">TOKEN_SHAPES</span><span class="p">)</span>
-<span class="c1">#: The characters that break a line, and one that continues a word.</span>
-<span class="n">_LINE_BREAKS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="s2">"</span><span class="se">\r\n</span><span class="s2">"</span><span class="p">)</span>
-<span class="n">_WORD_CHAR</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"\w"</span><span class="p">)</span>
+<span class="c1">#: The name the gate files its own concerns under: a void approval, a message it cannot hash.</span>
+<span class="n">GATE_CONCERN</span> <span class="o">=</span> <span class="s2">"gate"</span>
+<span class="c1">#: How far :func:`filter_name` unwraps a filter to find the name of the check it runs.</span>
+<span class="n">MAX_WRAPPED_FILTERS</span> <span class="o">=</span> <span class="mi">8</span>
 <span class="c1">#: A GitHub login: letters, digits and hyphens, at most 39 characters.</span>
 <span class="n">_GITHUB_LOGIN_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[A-Za-z0-9][A-Za-z0-9-]{0,38}"</span><span class="p">)</span>
 
@@ -803,8 +826,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    or ``github:example/app`` to open an issue there), and ``channel`` is that ref's</span>
 <span class="sd">    channel. ``purpose`` is the outcome kind it carries out (``ask``, ``reply``,</span>
 <span class="sd">    ``propose``, ``deliver``). ``title`` is the title of the issue it opens, when it opens</span>
-<span class="sd">    one; the leak scan judges it with the text. ``case_id`` is the case the message belongs</span>
-<span class="sd">    to, or None for a message an agent sends outside any case (``liaise message send``).</span>
+<span class="sd">    one. ``case_id`` is the case the message belongs to, or None for a message an agent</span>
+<span class="sd">    sends outside any case (``liaise message send``). ``cc`` and ``bcc`` are further</span>
+<span class="sd">    recipients (addresses), on channels that have them; ``attachments`` are the names of</span>
+<span class="sd">    attached files, and ``project`` the project the message is about, when one is named.</span>
+<span class="sd">    The policy judges every one of these, and the payload hash covers all but ``project``.</span>
 <span class="sd">    """</span>
 
     <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span>
@@ -813,7 +839,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">case_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">case_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">cc</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">bcc</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">attachments</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">project</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -821,19 +851,26 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.GateContext">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GateContext</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""What the filters may consult: the subject and its policy, the case, the time.</span>
+<span class="w">    </span><span class="sd">"""What the filters may consult about one message.</span>
 
-<span class="sd">    ``case`` is the case the message belongs to, or None for a message outside any case.</span>
-<span class="sd">    The subject is the subject either way, so its policy, leak terms, public channels and</span>
-<span class="sd">    people all apply; no filter of the 0.1 gate reads the case. ``approval`` is the</span>
-<span class="sd">    operator's release of this message (``liaise case send-draft``, ``liaise message</span>
-<span class="sd">    send-draft``), and is None for every message sent without one.</span>
+<span class="sd">    ``subject`` is the subject whose policy applies, ``now`` the time of the decision, and</span>
+<span class="sd">    ``case`` the case the message belongs to (None outside any). ``audience`` is</span>
+<span class="sd">    correspond's record of who can read the destination, computed right before the gate</span>
+<span class="sd">    runs (None: unknown, so public). ``provenance`` is what the run that wrote the message</span>
+<span class="sd">    read (None: unknown, so tainted). ``mode`` overrides the subject's ``policy.mode``.</span>
+<span class="sd">    ``approval`` is the operator's release of this message, None for every message sent</span>
+<span class="sd">    without one. ``fingerprint_key`` is the key findings are fingerprinted with (None: the</span>
+<span class="sd">    one in the configured state directory).</span>
 <span class="sd">    """</span>
 
     <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span>
     <span class="n">now</span><span class="p">:</span> <span class="n">datetime</span>
     <span class="n">case</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Case</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">audience</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">provenance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Provenance</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">fingerprint_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -841,10 +878,14 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.Pass">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Pass</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""A filter's verdict to go on, with ``outbound`` as the filter left it."""</span>
+<span class="w">    </span><span class="sd">"""A filter's verdict to go on, with ``outbound`` as the filter left it.</span>
+
+<span class="sd">    ``judgement`` is the policy's, when the filter is the policy.</span>
+<span class="sd">    """</span>
 
     <span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span>
-    <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span></div>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">judgement</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Judgement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -852,10 +893,21 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.Divert">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Divert</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""A filter's verdict to send nothing and hand the message to the operator."""</span>
+<span class="w">    </span><span class="sd">"""A filter's verdict to hold the message back: ``reason``, and how far (``flow``).</span>
+
+<span class="sd">    ``flow`` is one of :data:`liaise.policy.FLOWS` other than ``send``; a divert that does</span>
+<span class="sd">    not say is ``approve``, a flagged draft for the operator. ``findings`` are what it</span>
+<span class="sd">    found. ``rule`` names what an approval may settle it by; a divert without one is</span>
+<span class="sd">    settled only by changing the message. ``judgement`` is the policy's, whose rules become</span>
+<span class="sd">    the concerns.</span>
+<span class="sd">    """</span>
 
     <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span></div>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">flow</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">APPROVE</span>
+    <span class="n">findings</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Finding</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">rule</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">judgement</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Judgement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -863,22 +915,169 @@ window.runMermaid = runMermaid;</script>
 <span class="n">OutboundFilter</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Outbound</span><span class="p">,</span> <span class="n">GateContext</span><span class="p">],</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]]</span>
 
 
+<div class="viewcode-block" id="binds">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.binds">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">binds</span><span class="p">(</span>
+    <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">],</span>
+    <span class="n">hashes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span>
+    <span class="n">verdict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Verdict</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether ``approval`` was given for this message, this audience and this verdict.</span>
+
+<span class="sd">    The one rule the gate settles by, so what a decision records as bound is what its</span>
+<span class="sd">    concerns were judged by: both hashes as the filters computed them, and the name of</span>
+<span class="sd">    what the verdict flags (:func:`liaise.outbound.verdict_id`), which is ``None`` when no</span>
+<span class="sd">    policy judged the message.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">approval</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="kc">None</span> <span class="ow">in</span> <span class="n">hashes</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">shown</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">verdict_id</span><span class="p">(</span><span class="n">verdict</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">approval</span><span class="o">.</span><span class="n">binds</span><span class="p">(</span><span class="o">*</span><span class="n">hashes</span><span class="p">)</span> <span class="ow">and</span> <span class="n">approval</span><span class="o">.</span><span class="n">verdict_id</span> <span class="o">==</span> <span class="n">shown</span></div>
+
+
+
+<div class="viewcode-block" id="Concern">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.Concern">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Concern</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""One reason the gate holds a message back: the filter, the rule, how far, and why.</span>
+
+<span class="sd">    ``text`` is what the operator reads, and never holds a matched value. ``rule`` is None</span>
+<span class="sd">    for a concern no approval settles.</span>
+<span class="sd">    """</span>
+
+    <span class="nb">filter</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">flow</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">rule</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">findings</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Finding</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">settleable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether an approval naming its rule settles it: a rule, and a flow at most ``approve``."""</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">flow_rank</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flow</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">flow_rank</span><span class="p">(</span><span class="n">APPROVE</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Concern.to_dict">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.Concern.to_dict">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""JSON-ready."""</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"filter"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span>
+            <span class="s2">"flow"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span>
+            <span class="s2">"rule"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule</span><span class="p">,</span>
+            <span class="s2">"text"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="s2">"findings"</span><span class="p">:</span> <span class="p">[</span><span class="n">finding</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">finding</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">findings</span><span class="p">],</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
 <div class="viewcode-block" id="GateDecision">
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.GateDecision">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GateDecision</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""What :func:`run_gate` decided: ``send`` a message, or why it was ``diverted``.</span>
+<span class="w">    </span><span class="sd">"""What :func:`run_gate` decided: ``send`` a message, or why it is ``diverted``.</span>
 
-<span class="sd">    Exactly one of ``send`` (the message as the filters left it) and ``diverted`` (the</span>
-<span class="sd">    reason) is set. ``notes`` holds the notes of every filter that ran, in order.</span>
-<span class="sd">    ``diverted_by`` names the filter that diverted, as an operator notification may say it:</span>
-<span class="sd">    the reason can quote what a filter raised.</span>
+<span class="sd">    Exactly one of ``send`` (the message as the filters left it) and ``diverted`` (every</span>
+<span class="sd">    standing concern's text, most restrictive first) is set. ``flow`` is the decision's,</span>
+<span class="sd">    ``concerns`` what still holds the message back and ``settled`` what the approval</span>
+<span class="sd">    released it past. ``notes`` holds every filter's notes, in order. ``diverted_by`` names</span>
+<span class="sd">    the filter of the most restrictive concern, as an operator notification may say it: the</span>
+<span class="sd">    reason can quote what a filter raised. ``verdict`` and ``consulted`` are the policy's</span>
+<span class="sd">    verdict and what it consulted. ``approval`` is the one on the context, and</span>
+<span class="sd">    ``payload_hash`` and ``audience_hash`` what it had to match.</span>
 <span class="sd">    """</span>
 
     <span class="n">send</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Outbound</span><span class="p">]</span>
     <span class="n">diverted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
     <span class="n">notes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
-    <span class="n">diverted_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">diverted_by</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">flow</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">SEND</span>
+    <span class="n">concerns</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Concern</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">settled</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Concern</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">verdict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Verdict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">consulted</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">payload_hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">audience_hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">bound</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the approval binds to this message, this audience and this verdict."""</span>
+        <span class="k">return</span> <span class="n">binds</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">approval</span><span class="p">,</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">audience_hash</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">verdict</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">overridable</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The rules of the standing concerns an approval could settle, each once."""</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">rule</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">concerns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">settleable</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">rule</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">audience_words</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The audience the policy judged, in words; None when the policy did not run."""</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">audience_in_words</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">verdict</span><span class="o">.</span><span class="n">audience</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GateDecision.summary">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.GateDecision.summary">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">summary</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""What a held draft keeps of the decision: the flow, the audience in words, the reasons."""</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"flow"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span>
+            <span class="s2">"audience"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">audience_words</span><span class="p">,</span>
+            <span class="s2">"reasons"</span><span class="p">:</span> <span class="p">[</span><span class="n">concern</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">concerns</span><span class="p">],</span>
+        <span class="p">}</span></div>
+
+
+<div class="viewcode-block" id="GateDecision.record">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.GateDecision.record">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""What a ledger ``gate`` entry records of the decision (discussion §5.7).</span>
+
+<span class="sd">        The flow and every concern with its findings (kinds, positions and fingerprints,</span>
+<span class="sd">        never the value), what the approval settled, the policy's verdict (its audience</span>
+<span class="sd">        snapshot, the readers' tiers and clearances, the mode), the labels, seals and</span>
+<span class="sd">        provenance consulted, and the approval with whether it bound.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">"flow"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span>
+            <span class="s2">"concerns"</span><span class="p">:</span> <span class="p">[</span><span class="n">concern</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">concerns</span><span class="p">],</span>
+            <span class="s2">"settled"</span><span class="p">:</span> <span class="p">[</span><span class="n">concern</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">settled</span><span class="p">],</span>
+            <span class="s2">"verdict"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">verdict</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s2">"consulted"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">consulted</span><span class="p">),</span>
+            <span class="s2">"approval"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">approval</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">approval</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span>
+            <span class="s2">"approval_bound"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">approval</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound</span><span class="p">,</span>
+            <span class="s2">"payload_hash"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span>
+            <span class="s2">"audience_hash"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">audience_hash</span><span class="p">,</span>
+        <span class="p">}</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="approval_for">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.approval_for">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">approval_for</span><span class="p">(</span>
+    <span class="n">decision</span><span class="p">:</span> <span class="n">GateDecision</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">by</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">justification</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Approval</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The approval of ``by``, at ``at``, of the message and audience ``decision`` judged.</span>
+
+<span class="sd">    It overrides every concern of the decision an approval can settle, so the operator must</span>
+<span class="sd">    have been shown ``decision``: its hashes bind the approval to exactly that message and</span>
+<span class="sd">    audience.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Approval</span><span class="p">(</span>
+        <span class="n">by</span><span class="o">=</span><span class="n">by</span><span class="p">,</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span>
+        <span class="n">payload_hash</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span>
+        <span class="n">audience_hash</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">audience_hash</span><span class="p">,</span>
+        <span class="n">verdict_id</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">verdict_id</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">verdict</span><span class="p">),</span>
+        <span class="n">justification</span><span class="o">=</span><span class="n">justification</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
+        <span class="n">rules_overridden</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">overridable</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 
 
@@ -891,103 +1090,61 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># ---- the filters, in their default order ----</span>
 
 
-<div class="viewcode-block" id="reply_mode">
-<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.reply_mode">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">reply_mode</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Divert what waits for the operator: a message in ``draft`` reply mode, or outside a case.</span>
+<div class="viewcode-block" id="outside_a_case">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.outside_a_case">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">outside_a_case</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Hold a message outside any case (``ctx.case`` None) for the operator, whatever its reply mode.</span>
 
-<span class="sd">    The mode is the person's ``policy.reply_modes`` override, else the subject's</span>
-<span class="sd">    ``default_reply_mode`` (see :meth:`~liaise.subjects.Subject.reply_mode_for`). A message</span>
-<span class="sd">    outside any case (``ctx.case`` None) waits whatever the mode. Its sender chose where it</span>
-<span class="sd">    goes and to whom, so a sender who picks a person in ``direct`` mode must not reach an</span>
-<span class="sd">    audience that way. Until the gate can tell who reads a conversation and what the sender</span>
-<span class="sd">    had read (liaise discussion 32, §5.3 and §6), only the operator releases it.</span>
-
-<span class="sd">    A message with the operator's :class:`~liaise.model.Approval` on ``ctx.approval``</span>
-<span class="sd">    passes, with a note saying who released it and when. The approval settles this filter</span>
-<span class="sd">    alone; the filters after it judge the message as they would any other.</span>
+<span class="sd">    Its sender chose where it goes and to whom, so a sender who picks a person in</span>
+<span class="sd">    ``direct`` mode must not reach an audience that way (discussion §6.2). An approval</span>
+<span class="sd">    naming :data:`OUTSIDE_A_CASE`, bound to the message, releases it.</span>
 <span class="sd">    """</span>
-    <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">name</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">OUTSIDE_A_CASE</span><span class="p">,</span> <span class="n">CASELESS_REASON</span>
-    <span class="k">elif</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">reply_mode_for</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="p">)</span> <span class="o">==</span> <span class="n">DRAFT_REPLY_MODE</span><span class="p">:</span>
-        <span class="n">name</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">DRAFT_REPLY_REASON</span><span class="p">,</span> <span class="n">DRAFT_REPLY_REASON</span>
-    <span class="k">else</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
-    <span class="n">approval</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">approval</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">approval</span><span class="p">,</span> <span class="n">Approval</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span>
-    <span class="n">note</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: released by </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">by</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span>
-    <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="p">(</span><span class="n">note</span><span class="p">,))</span></div>
+    <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span><span class="n">CASELESS_REASON</span><span class="p">,</span> <span class="n">rule</span><span class="o">=</span><span class="n">OUTSIDE_A_CASE</span><span class="p">)</span></div>
 
 
 
-<div class="viewcode-block" id="leak_scan">
-<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.leak_scan">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">leak_scan</span><span class="p">(</span><span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""On a public channel, divert a message holding what must not be made public.</span>
+<div class="viewcode-block" id="outbound_policy">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.outbound_policy">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">outbound_policy</span><span class="p">(</span>
+    <span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span>
+    <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">disclosure</span><span class="p">:</span> <span class="n">DisclosureSource</span> <span class="o">=</span> <span class="n">acquaint_disclosure</span><span class="p">,</span>
+    <span class="n">detectors</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Detector</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_DETECTORS</span><span class="p">,</span>
+    <span class="n">resolver</span><span class="p">:</span> <span class="n">Resolver</span> <span class="o">=</span> <span class="n">resolve_person</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Hold back what the outbound policy (discussion §5.4) does not let go now.</span>
 
-<span class="sd">    That is an absolute local path (a home directory on macOS, Linux or Windows, written</span>
-<span class="sd">    with single or JSON-doubled backslashes, a Windows home through a WSL mount, or a</span>
-<span class="sd">    macOS temporary directory), a path ending in ``.env``, an email address, a private</span>
-<span class="sd">    key's ``-----BEGIN ... PRIVATE KEY-----`` or ``-----BEGIN PGP PRIVATE KEY BLOCK-----``</span>
-<span class="sd">    line, a token shape (``ghp_``,</span>
-<span class="sd">    ``github_pat_``, ``sk-``, ``AKIA``, ``hf_``, ``xoxb-``), or one of</span>
-<span class="sd">    ``policy.leak_terms`` as a whole word in any case. Tokens are also looked for with the</span>
-<span class="sd">    text's line breaks removed, so a token wrapped across lines is found. The reason</span>
-<span class="sd">    names each kind found and the notes say where, never what. It never redacts: a leak</span>
-<span class="sd">    is for the operator to fix. A title is scanned the same way, and its notes say "of the</span>
-<span class="sd">    title". A channel outside ``policy.public_channels`` passes unscanned.</span>
+<span class="sd">    The audience is the context's (unknown, so public, when it has none), the disclosure</span>
+<span class="sd">    comes through ``disclosure`` (acquaint's, or every reader at ``need-to-know`` without</span>
+<span class="sd">    it), and the provenance is the context's (unknown, so tainted, when it has none). See</span>
+<span class="sd">    :func:`liaise.outbound.judge`. A ``send`` verdict passes, noting the audience; any</span>
+<span class="sd">    other diverts at its flow, one concern per rule that fired. It never redacts: what it</span>
+<span class="sd">    found is for the operator to fix, and its reasons say where, never what.</span>
 <span class="sd">    """</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">without_line_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">"""``text`` without its line breaks, and where each character left was in ``text``."""</span>
-        <span class="n">kept</span> <span class="o">=</span> <span class="p">[</span><span class="n">index</span> <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">char</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_LINE_BREAKS</span><span class="p">]</span>
-        <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">kept</span><span class="p">),</span> <span class="n">kept</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">hits_in</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">"""Each ``(kind, start)`` of what must not be made public in ``text``, once each."""</span>
-        <span class="n">unwrapped</span><span class="p">,</span> <span class="n">positions</span> <span class="o">=</span> <span class="n">without_line_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="n">found</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
-            <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_LEAK_PATTERNS</span>
-            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-        <span class="p">]</span>
-        <span class="n">unwrapped_starts</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">positions</span><span class="p">[</span><span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span>
-            <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="n">_UNWRAPPED_TOKEN_PATTERNS</span>
-            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">pattern</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="n">unwrapped</span><span class="p">)</span>
-        <span class="p">)</span>
-        <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="s2">"token"</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">unwrapped_starts</span>
-            <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">_WORD_CHAR</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
-        <span class="p">]</span>
-        <span class="n">found</span> <span class="o">+=</span> <span class="p">[</span>
-            <span class="p">(</span><span class="s2">"leak term"</span><span class="p">,</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">())</span>
-            <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">policy</span><span class="o">.</span><span class="n">leak_terms</span>
-            <span class="k">if</span> <span class="n">term</span>
-            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span>
-                <span class="sa">rf</span><span class="s2">"(?&lt;!\w)</span><span class="si">{</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">term</span><span class="p">)</span><span class="si">}</span><span class="s2">(?!\w)"</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span>
-            <span class="p">)</span>
-        <span class="p">]</span>
-        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>  <span class="c1"># a token on one line is found by both scans</span>
-
-    <span class="n">policy</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="o">.</span><span class="n">policy</span>
-    <span class="k">if</span> <span class="n">outbound</span><span class="o">.</span><span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">policy</span><span class="o">.</span><span class="n">public_channels</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
-    <span class="n">places</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">""</span><span class="p">,</span> <span class="n">hits_in</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">))]</span>
-    <span class="k">if</span> <span class="n">outbound</span><span class="o">.</span><span class="n">title</span><span class="p">:</span>
-        <span class="n">places</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="s2">" of the title"</span><span class="p">,</span> <span class="n">hits_in</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">title</span><span class="p">)))</span>
-    <span class="n">kinds</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">kind</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">hits</span> <span class="ow">in</span> <span class="n">places</span> <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">kinds</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+    <span class="n">judgement</span> <span class="o">=</span> <span class="n">judge</span><span class="p">(</span>
+        <span class="n">outbound</span><span class="p">,</span>
+        <span class="n">subject</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">audience</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">audience</span><span class="p">,</span>
+        <span class="n">provenance</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">provenance</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">fingerprint_key</span><span class="p">,</span>
+        <span class="n">disclosure</span><span class="o">=</span><span class="n">disclosure</span><span class="p">,</span>
+        <span class="n">detectors</span><span class="o">=</span><span class="n">detectors</span><span class="p">,</span>
+        <span class="n">resolver</span><span class="o">=</span><span class="n">resolver</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">verdict</span> <span class="o">=</span> <span class="n">judgement</span><span class="o">.</span><span class="n">verdict</span>
+    <span class="k">if</span> <span class="n">verdict</span><span class="o">.</span><span class="n">flow</span> <span class="o">==</span> <span class="n">SEND</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Pass</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="n">judgement</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span> <span class="n">judgement</span><span class="o">=</span><span class="n">judgement</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">Divert</span><span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"leak scan: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">kinds</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-        <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"leak scan: </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2"> at character </span><span class="si">{</span><span class="n">start</span><span class="si">}{</span><span class="n">where</span><span class="si">}</span><span class="s2">"</span>
-            <span class="k">for</span> <span class="n">where</span><span class="p">,</span> <span class="n">hits</span> <span class="ow">in</span> <span class="n">places</span>
-            <span class="k">for</span> <span class="n">kind</span><span class="p">,</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">hits</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">hit</span><span class="p">:</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="p">),</span>
+        <span class="n">verdict</span><span class="o">.</span><span class="n">reasons</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+        <span class="n">notes</span><span class="o">=</span><span class="n">judgement</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
+        <span class="n">flow</span><span class="o">=</span><span class="n">verdict</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span>
+        <span class="n">findings</span><span class="o">=</span><span class="n">verdict</span><span class="o">.</span><span class="n">findings</span><span class="p">,</span>
+        <span class="n">judgement</span><span class="o">=</span><span class="n">judgement</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
@@ -1072,14 +1229,121 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="c1">#: The gate's filters, in the order they run. The order is part of the design, not a</span>
-<span class="c1">#: setting: a draft is diverted before anything else looks at it.</span>
+<span class="c1">#: setting: the mention, the one rewrite, comes after every filter that judges the text.</span>
 <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="n">reply_mode</span><span class="p">,</span>
-    <span class="n">leak_scan</span><span class="p">,</span>
+    <span class="n">outside_a_case</span><span class="p">,</span>
+    <span class="n">outbound_policy</span><span class="p">,</span>
     <span class="n">writing_card</span><span class="p">,</span>
     <span class="n">deslop</span><span class="p">,</span>
     <span class="n">notify_recipient</span><span class="p">,</span>
 <span class="p">)</span>
+
+
+<span class="c1"># ---- the gate ----</span>
+
+
+<div class="viewcode-block" id="filter_name">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.filter_name">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">filter_name</span><span class="p">(</span><span class="n">outbound_filter</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""How the gate names a filter: its name, the name of what a partial wraps, else its type.</span>
+
+<span class="sd">    Never its repr, which can hold what a filter was bound to, such as a local path; the</span>
+<span class="sd">    name reaches the operator's notification. A filter configured at a seam is a</span>
+<span class="sd">    ``functools.partial``, whose own name is its arguments: its function's name is what</span>
+<span class="sd">    tells the operator which check held their message back.</span>
+<span class="sd">    """</span>
+    <span class="n">candidate</span> <span class="o">=</span> <span class="n">outbound_filter</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MAX_WRAPPED_FILTERS</span><span class="p">):</span>  <span class="c1"># a seam configured twice is a partial of one</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">named</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">bool</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">wrapped</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">named</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">candidate</span><span class="p">,</span> <span class="s2">"func"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span>
+            <span class="ne">Exception</span>
+        <span class="p">):</span>  <span class="c1"># an attribute that raises names nothing, and says nothing here</span>
+            <span class="k">break</span>
+        <span class="k">if</span> <span class="n">named</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">wrapped</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">candidate</span> <span class="o">=</span> <span class="n">wrapped</span>
+    <span class="k">return</span> <span class="nb">type</span><span class="p">(</span><span class="n">outbound_filter</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_redirected</span><span class="p">(</span><span class="n">payload</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span> <span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether a filter's rewrite changed the message in anything but its text.</span>
+
+<span class="sd">    A filter may reword a message (the mention); it may never redirect it. Where a message</span>
+<span class="sd">    goes, who it is for and what it carries were judged by every filter before it, and are</span>
+<span class="sd">    what the payload hash binds an approval to.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">payload</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">rewritten</span> <span class="o">=</span> <span class="n">payload_of</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># a rewrite nobody can hash is not one to send</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="n">keep</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">fields</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">fields</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">"text"</span><span class="p">}</span>  <span class="c1"># noqa: E731</span>
+    <span class="k">return</span> <span class="n">keep</span><span class="p">(</span><span class="n">rewritten</span><span class="p">)</span> <span class="o">!=</span> <span class="n">keep</span><span class="p">(</span><span class="n">payload</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_concerns_of</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">divert</span><span class="p">:</span> <span class="n">Divert</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">Concern</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The concerns ``divert``, from the filter ``name``, holds the message back for."""</span>
+    <span class="n">flow</span><span class="p">,</span> <span class="n">reason</span> <span class="o">=</span> <span class="n">divert</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="n">divert</span><span class="o">.</span><span class="n">reason</span>
+    <span class="k">if</span> <span class="n">flow</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FLOWS</span> <span class="ow">or</span> <span class="n">flow</span> <span class="o">==</span> <span class="n">SEND</span><span class="p">:</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> diverted with the flow </span><span class="si">{</span><span class="n">flow</span><span class="si">!r}</span><span class="s2">, read as </span><span class="si">{</span><span class="n">APPROVE</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="n">APPROVE</span>
+    <span class="n">own</span> <span class="o">=</span> <span class="n">Concern</span><span class="p">(</span>
+        <span class="nb">filter</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+        <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+        <span class="n">rule</span><span class="o">=</span><span class="n">divert</span><span class="o">.</span><span class="n">rule</span><span class="p">,</span>
+        <span class="n">findings</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">divert</span><span class="o">.</span><span class="n">findings</span><span class="p">),</span>
+    <span class="p">)</span>
+    <span class="n">verdict</span> <span class="o">=</span> <span class="n">divert</span><span class="o">.</span><span class="n">judgement</span><span class="o">.</span><span class="n">verdict</span> <span class="k">if</span> <span class="n">divert</span><span class="o">.</span><span class="n">judgement</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">own</span><span class="p">]</span>
+    <span class="n">concerns</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">Concern</span><span class="p">(</span>
+            <span class="nb">filter</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+            <span class="n">flow</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">rule</span><span class="o">=</span><span class="n">r</span><span class="o">.</span><span class="n">rule</span><span class="p">,</span>
+            <span class="n">findings</span><span class="o">=</span><span class="p">()</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">finding</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">finding</span><span class="p">,),</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">verdict</span><span class="o">.</span><span class="n">reasons</span>
+        <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">flow</span> <span class="o">!=</span> <span class="n">SEND</span>
+    <span class="p">]</span>
+    <span class="n">strongest</span> <span class="o">=</span> <span class="n">most_restrictive</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">flow</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">concerns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">concerns</span> <span class="ow">or</span> <span class="n">flow_rank</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">flow_rank</span><span class="p">(</span><span class="n">strongest</span><span class="p">):</span>
+        <span class="n">concerns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">replace</span><span class="p">(</span><span class="n">own</span><span class="p">,</span> <span class="n">rule</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="p">)</span>  <span class="c1"># the divert asks for more than its rules</span>
+    <span class="k">return</span> <span class="n">concerns</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_void</span><span class="p">(</span><span class="n">approval</span><span class="p">:</span> <span class="n">Approval</span><span class="p">,</span> <span class="n">hashes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Concern</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The concern an approval that does not bind to this message raises."""</span>
+    <span class="k">if</span> <span class="n">approval</span><span class="o">.</span><span class="n">payload_hash</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">approval</span><span class="o">.</span><span class="n">audience_hash</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">what</span> <span class="o">=</span> <span class="s2">"it is bound to no message"</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s2">"the message"</span><span class="p">,</span> <span class="n">approval</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span> <span class="n">hashes</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+            <span class="p">(</span><span class="s2">"its audience"</span><span class="p">,</span> <span class="n">approval</span><span class="o">.</span><span class="n">audience_hash</span><span class="p">,</span> <span class="n">hashes</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">)</span>
+        <span class="n">changed</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">label</span><span class="p">,</span> <span class="n">given</span><span class="p">,</span> <span class="n">now</span> <span class="ow">in</span> <span class="n">pairs</span> <span class="k">if</span> <span class="n">given</span> <span class="o">!=</span> <span class="n">now</span><span class="p">]</span>
+        <span class="c1"># The hashes can both hold while the verdict names something else: the disclosure</span>
+        <span class="c1"># changed under it, so what the operator released it past is not what it flags now.</span>
+        <span class="n">what</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">' and '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">changed</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="p">[</span><span class="s1">'what the gate flags in it'</span><span class="p">])</span><span class="si">}</span><span class="s2"> changed since it was given"</span>
+    <span class="k">return</span> <span class="n">Concern</span><span class="p">(</span>
+        <span class="nb">filter</span><span class="o">=</span><span class="n">GATE_CONCERN</span><span class="p">,</span>
+        <span class="n">flow</span><span class="o">=</span><span class="n">APPROVE</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"the approval by </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">by</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2"> is void: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2">; the operator must judge the message again"</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
 
 
 <div class="viewcode-block" id="run_gate">
@@ -1090,34 +1354,111 @@ window.runMermaid = runMermaid;</script>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GateDecision</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Run ``outbound`` through ``outbound_filters`` in order, stopping at the first divert.</span>
+<span class="w">    </span><span class="sd">"""Run ``outbound`` through every one of ``outbound_filters``, in order, and decide.</span>
 
-<span class="sd">    Each :class:`Pass` hands its message, possibly rewritten, to the next filter. The</span>
-<span class="sd">    first :class:`Divert` ends the gate with nothing to send. Notes accumulate across</span>
-<span class="sd">    the filters that ran. The gate fails closed: a filter that raises, or returns</span>
-<span class="sd">    anything but a ``Pass`` or a ``Divert``, diverts the message with a reason naming it.</span>
+<span class="sd">    Each :class:`Pass` hands its message, possibly rewritten, to the next filter; each</span>
+<span class="sd">    :class:`Divert` adds its concerns. An approval on the context settles what it binds to</span>
+<span class="sd">    and names (see the module docstring). The decision's flow is the most restrictive</span>
+<span class="sd">    concern left, and only ``send`` sends. The gate fails closed: a filter that raises, or</span>
+<span class="sd">    returns anything but a ``Pass`` (of an :class:`Outbound`) or a ``Divert``, adds an</span>
+<span class="sd">    ``approve`` concern naming it.</span>
 <span class="sd">    """</span>
-    <span class="n">notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">outbound_filter</span> <span class="ow">in</span> <span class="n">outbound_filters</span><span class="p">:</span>
-        <span class="c1"># By its type when it has no name: a repr can hold what a filter was bound to, such</span>
-        <span class="c1"># as a local path, and the name reaches the operator's notification.</span>
-        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">outbound_filter</span><span class="p">,</span> <span class="s2">"__name__"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">outbound_filter</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">verdict</span> <span class="o">=</span> <span class="n">outbound_filter</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
-        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
-            <span class="n">verdict</span> <span class="o">=</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">verdict</span><span class="p">,</span> <span class="n">Pass</span><span class="p">):</span>
-            <span class="n">notes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">verdict</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
-            <span class="n">outbound</span> <span class="o">=</span> <span class="n">verdict</span><span class="o">.</span><span class="n">outbound</span>
-            <span class="k">continue</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">verdict</span><span class="p">,</span> <span class="n">Divert</span><span class="p">):</span>
-            <span class="n">kind</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">verdict</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
-            <span class="n">verdict</span> <span class="o">=</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> returned </span><span class="si">{</span><span class="n">kind</span><span class="si">}</span><span class="s2">, not Pass or Divert"</span><span class="p">)</span>
-        <span class="n">notes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">verdict</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">GateDecision</span><span class="p">(</span>
-            <span class="n">send</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">diverted</span><span class="o">=</span><span class="n">verdict</span><span class="o">.</span><span class="n">reason</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span> <span class="n">diverted_by</span><span class="o">=</span><span class="n">name</span>
+    <span class="n">entry_payload</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">judged_audience</span> <span class="o">=</span> <span class="n">audience_snapshot</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">audience</span><span class="p">,</span> <span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
+        <span class="n">entry_payload</span> <span class="o">=</span> <span class="n">payload_of</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
+        <span class="n">hashes</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">payload_hash</span><span class="p">(</span><span class="n">outbound</span><span class="p">),</span>
+            <span class="n">audience_hash</span><span class="p">(</span><span class="n">judged_audience</span><span class="p">),</span>
         <span class="p">)</span>
-    <span class="k">return</span> <span class="n">GateDecision</span><span class="p">(</span><span class="n">send</span><span class="o">=</span><span class="n">outbound</span><span class="p">,</span> <span class="n">diverted</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">))</span></div>
+        <span class="n">problem</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># a message or an audience nobody can hash binds nothing</span>
+        <span class="n">hashes</span><span class="p">,</span> <span class="n">problem</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span>
+    <span class="n">approval</span> <span class="o">=</span> <span class="n">ctx</span><span class="o">.</span><span class="n">approval</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">approval</span><span class="p">,</span> <span class="n">Approval</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">notes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">concerns</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Concern</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">problem</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">concerns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="n">Concern</span><span class="p">(</span>
+                <span class="nb">filter</span><span class="o">=</span><span class="n">GATE_CONCERN</span><span class="p">,</span>
+                <span class="n">flow</span><span class="o">=</span><span class="n">APPROVE</span><span class="p">,</span>
+                <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">"the message could not be hashed (</span><span class="si">{</span><span class="n">problem</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="n">judgement</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Judgement</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">outbound_filter</span> <span class="ow">in</span> <span class="n">outbound_filters</span><span class="p">:</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">filter_name</span><span class="p">(</span><span class="n">outbound_filter</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">outbound_filter</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="p">(</span><span class="n">Pass</span><span class="p">,</span> <span class="n">Divert</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Pass</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">outbound</span><span class="p">,</span> <span class="n">Outbound</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="n">given</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">outbound</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Pass</span><span class="p">)</span> <span class="k">else</span> <span class="n">result</span><span class="p">)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">Divert</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> returned </span><span class="si">{</span><span class="n">given</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, not a Pass or a Divert"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">judgement</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">judgement</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">judgement</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Pass</span><span class="p">)</span> <span class="ow">and</span> <span class="n">_redirected</span><span class="p">(</span><span class="n">entry_payload</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">outbound</span><span class="p">):</span>
+            <span class="n">concerns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">Concern</span><span class="p">(</span>
+                    <span class="nb">filter</span><span class="o">=</span><span class="n">name</span><span class="p">,</span>
+                    <span class="n">flow</span><span class="o">=</span><span class="n">APPROVE</span><span class="p">,</span>
+                    <span class="n">text</span><span class="o">=</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> changed where the message goes, or what it carries, "</span>
+                        <span class="sa">f</span><span class="s2">"not only what it says: the rewrite is dropped, since every "</span>
+                        <span class="sa">f</span><span class="s2">"filter judged the message as it stands"</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">continue</span>  <span class="c1"># and so are its notes, which describe a rewrite that did not happen</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">notes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">Pass</span><span class="p">):</span>
+            <span class="n">outbound</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">outbound</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">concerns</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_concerns_of</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">result</span><span class="p">))</span>
+    <span class="n">bound</span> <span class="o">=</span> <span class="n">binds</span><span class="p">(</span><span class="n">approval</span><span class="p">,</span> <span class="n">hashes</span><span class="p">,</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">judgement</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">judgement</span><span class="o">.</span><span class="n">verdict</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">approval</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">bound</span><span class="p">:</span>
+        <span class="n">concerns</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span>
+            <span class="mi">0</span><span class="p">,</span> <span class="n">_void</span><span class="p">(</span><span class="n">approval</span><span class="p">,</span> <span class="n">hashes</span><span class="p">)</span>
+        <span class="p">)</span>  <span class="c1"># first among its equals: it explains the rest</span>
+    <span class="n">settled</span><span class="p">,</span> <span class="n">standing</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">concerns</span><span class="p">:</span>
+        <span class="n">releases</span> <span class="o">=</span> <span class="n">bound</span> <span class="ow">and</span> <span class="n">concern</span><span class="o">.</span><span class="n">settleable</span>
+        <span class="p">(</span>
+            <span class="n">settled</span>
+            <span class="k">if</span> <span class="n">releases</span> <span class="ow">and</span> <span class="n">concern</span><span class="o">.</span><span class="n">rule</span> <span class="ow">in</span> <span class="n">approval</span><span class="o">.</span><span class="n">rules_overridden</span>
+            <span class="k">else</span> <span class="n">standing</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">concern</span><span class="p">)</span>
+    <span class="n">standing</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">concern</span><span class="p">:</span> <span class="o">-</span><span class="n">flow_rank</span><span class="p">(</span><span class="n">concern</span><span class="o">.</span><span class="n">flow</span><span class="p">))</span>  <span class="c1"># stable: filter order</span>
+    <span class="k">if</span> <span class="n">settled</span><span class="p">:</span>
+        <span class="n">rules</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">concern</span><span class="o">.</span><span class="n">rule</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">settled</span><span class="p">))</span>
+        <span class="n">why</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">" (</span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">justification</span><span class="si">}</span><span class="s2">)"</span> <span class="k">if</span> <span class="n">approval</span><span class="o">.</span><span class="n">justification</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="n">at</span> <span class="o">=</span> <span class="n">approval</span><span class="o">.</span><span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"released by </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">by</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">at</span><span class="si">}</span><span class="s2">, past: </span><span class="si">{</span><span class="n">rules</span><span class="si">}{</span><span class="n">why</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="n">flow</span> <span class="o">=</span> <span class="n">most_restrictive</span><span class="p">(</span><span class="n">concern</span><span class="o">.</span><span class="n">flow</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">standing</span><span class="p">)</span>
+    <span class="n">common</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span>
+        <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
+        <span class="n">concerns</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">standing</span><span class="p">),</span>
+        <span class="n">settled</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">settled</span><span class="p">),</span>
+        <span class="n">verdict</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">judgement</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">judgement</span><span class="o">.</span><span class="n">verdict</span><span class="p">,</span>
+        <span class="n">consulted</span><span class="o">=</span><span class="p">{}</span> <span class="k">if</span> <span class="n">judgement</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">(</span><span class="n">judgement</span><span class="o">.</span><span class="n">consulted</span><span class="p">),</span>
+        <span class="n">approval</span><span class="o">=</span><span class="n">approval</span><span class="p">,</span>
+        <span class="n">payload_hash</span><span class="o">=</span><span class="n">hashes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="n">audience_hash</span><span class="o">=</span><span class="n">hashes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">flow</span> <span class="o">==</span> <span class="n">SEND</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">GateDecision</span><span class="p">(</span><span class="n">send</span><span class="o">=</span><span class="n">outbound</span><span class="p">,</span> <span class="n">diverted</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>
+    <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="n">concern</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">standing</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">flow</span> <span class="o">==</span> <span class="n">DELAY</span><span class="p">:</span>
+        <span class="n">texts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">DELAY_HELD</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">GateDecision</span><span class="p">(</span>
+        <span class="n">send</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">diverted</span><span class="o">=</span><span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">texts</span><span class="p">),</span>
+        <span class="n">diverted_by</span><span class="o">=</span><span class="n">standing</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">common</span><span class="p">,</span>
+    <span class="p">)</span></div>
 
 </pre></div>
 

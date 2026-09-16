@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="_static/documentation_options.js?v=59fadc99"></script>
+    <script src="_static/documentation_options.js?v=6e0256f3"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
     <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="_static/searchtools.js"></script>
@@ -724,6 +724,8 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.access.html#liaise.access.AccessDecision">AccessDecision (class in liaise.access)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.acquaint_disclosure">acquaint_disclosure() (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.workspace.html#liaise.workspace.SharedCheckout.acquire">acquire() (liaise.workspace.SharedCheckout method)</a>
 </li>
       <li><a href="_autosummary/liaise.outcomes.html#liaise.outcomes.Action">Action (in module liaise.outcomes)</a>
@@ -760,14 +762,16 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.address_key">address_key() (in module liaise.subjects)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.release.html#liaise.release.DraftSentNotRecorded.after">after() (liaise.release.DraftSentNotRecorded class method)</a>
 </li>
       <li><a href="_autosummary/liaise.access.html#liaise.access.ALLOWED">ALLOWED (in module liaise.access)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.allowlist_for">allowlist_for() (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.Scan.allows">allows() (liaise.detect.Scan method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.html#liaise.Ledger.append">append() (liaise.Ledger method)</a>
 
       <ul>
@@ -776,16 +780,36 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.migrate.html#liaise.migrate.apply_plan">apply_plan() (in module liaise.migrate)</a>
 </li>
-      <li><a href="_autosummary/liaise.model.html#liaise.model.Approval">Approval (class in liaise.model)</a>
+      <li><a href="_autosummary/liaise.html#liaise.Approval">Approval (class in liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.model.html#liaise.model.Approval">(class in liaise.model)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.approval_for">approval_for() (in module liaise.gate)</a>
+</li>
+      <li><a href="_autosummary/liaise.testing.html#liaise.testing.FakeGitHubChannel.audience">audience() (liaise.testing.FakeGitHubChannel method)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.audience_hash">audience_hash() (in module liaise.policy)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.audience_in_words">audience_in_words() (in module liaise.policy)</a>
 </li>
+      <li><a href="_autosummary/liaise.release.html#liaise.release.audience_of">audience_of() (in module liaise.release)</a>
+</li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.audience_record">audience_record() (in module liaise.policy)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.Scan.audience_severity">audience_severity (liaise.detect.Scan property)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.audience_snapshot">audience_snapshot() (in module liaise.outbound)</a>
+</li>
+      <li><a href="_autosummary/liaise.cases.html#liaise.cases.AUDIENCE_UNKNOWN">AUDIENCE_UNKNOWN (in module liaise.cases)</a>
+</li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateDecision.audience_words">audience_words (liaise.gate.GateDecision property)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.GateDecision.audience_words">(liaise.GateDecision property)</a>
+</li>
+      </ul></li>
       <li><a href="_autosummary/liaise.tick.html#liaise.tick.AUTH_PROBE_INTERVAL">AUTH_PROBE_INTERVAL (in module liaise.tick)</a>
 </li>
       <li><a href="_autosummary/liaise.html#liaise.authorize">authorize() (in module liaise)</a>
@@ -818,18 +842,32 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.migrate.html#liaise.migrate.PlannedSubject.binding_problems">binding_problems (liaise.migrate.PlannedSubject attribute)</a>
 </li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.binds">binds() (in module liaise.gate)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.Approval.binds">(liaise.Approval method)</a>
+</li>
+        <li><a href="_autosummary/liaise.model.html#liaise.model.Approval.binds">(liaise.model.Approval method)</a>
+</li>
+      </ul></li>
       <li><a href="_autosummary/liaise.holds.html#liaise.holds.blocking_hold">blocking_hold() (in module liaise.holds)</a>
 </li>
       <li><a href="_autosummary/liaise.holds.html#liaise.holds.BLOCKING_MODES">BLOCKING_MODES (in module liaise.holds)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateDecision.bound">bound (liaise.gate.GateDecision property)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.GateDecision.bound">(liaise.GateDecision property)</a>
+</li>
+      </ul></li>
       <li><a href="_autosummary/liaise.html#liaise.Subject.brief_for">brief_for() (liaise.Subject method)</a>
 
       <ul>
         <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.Subject.brief_for">(liaise.subjects.Subject method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.Policy.briefs">briefs (liaise.subjects.Policy attribute)</a>
 </li>
       <li><a href="_autosummary/liaise.config.html#liaise.config.Budget">Budget (class in liaise.config)</a>
@@ -884,6 +922,8 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.case_list">case_list() (in module liaise.cli)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.case_provenance">case_provenance() (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.case_reject_draft">case_reject_draft() (in module liaise.cli)</a>
 </li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.case_send_draft">case_send_draft() (in module liaise.cli)</a>
@@ -896,6 +936,8 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.model.html#liaise.model.CASE_STATES">CASE_STATES (in module liaise.model)</a>
 </li>
+      <li><a href="_autosummary/liaise.release.html#liaise.release.CASELESS_PROVENANCE">CASELESS_PROVENANCE (in module liaise.release)</a>
+</li>
       <li><a href="_autosummary/liaise.html#liaise.Ledger.cases">cases() (liaise.Ledger method)</a>
 
       <ul>
@@ -903,6 +945,8 @@ window.runMermaid = runMermaid;</script>
 </li>
       </ul></li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.chain">chain() (in module liaise.detect)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.CHANNEL_HOSTS">CHANNEL_HOSTS (in module liaise.outbound)</a>
 </li>
       <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.check_bindings">check_bindings() (in module liaise.subjects)</a>
 </li>
@@ -925,7 +969,11 @@ window.runMermaid = runMermaid;</script>
 </li>
       </ul></li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance.clean">clean() (liaise.policy.Provenance class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.Provenance.clean">(liaise.Provenance class method)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/liaise.html#liaise.Ledger.clear_hold">clear_hold() (liaise.Ledger method)</a>
 
       <ul>
@@ -950,6 +998,8 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.readiness.html#liaise.readiness.compute_readiness">compute_readiness() (in module liaise.readiness)</a>
 </li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.Concern">Concern (class in liaise.gate)</a>
+</li>
       <li><a href="_autosummary/liaise.config.html#liaise.config.Config">Config (class in liaise.config)</a>
 </li>
       <li><a href="_autosummary/liaise.config.html#liaise.config.ConfigError">ConfigError</a>, <a href="_autosummary/liaise.html#liaise.ConfigError">[1]</a>
@@ -963,6 +1013,8 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.migrate.html#liaise.migrate.PlannedSubject.conflicts">conflicts (liaise.migrate.PlannedSubject attribute)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.CONFUSABLES_RESOURCE">CONFUSABLES_RESOURCE (in module liaise.detect)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.consulted_of">consulted_of() (in module liaise.outbound)</a>
 </li>
       <li><a href="_autosummary/liaise.prompt.html#liaise.prompt.conversation_link">conversation_link() (in module liaise.prompt)</a>
 </li>
@@ -1015,6 +1067,8 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.outcomes.html#liaise.outcomes.Defer">Defer (class in liaise.outcomes)</a>
 </li>
       <li><a href="_autosummary/liaise.errors.html#liaise.errors.defer_until">defer_until() (in module liaise.errors)</a>
+</li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.DELAY_HELD">DELAY_HELD (in module liaise.gate)</a>
 </li>
       <li><a href="_autosummary/liaise.outcomes.html#liaise.outcomes.Deliver">Deliver (class in liaise.outcomes)</a>
 </li>
@@ -1116,6 +1170,12 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.outcomes.html#liaise.outcomes.DigestNote">DigestNote (class in liaise.outcomes)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.disclosed_records">disclosed_records() (in module liaise.outbound)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.DISCLOSURE_SOURCE">DISCLOSURE_SOURCE (in module liaise.outbound)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.DisclosureSource">DisclosureSource (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.config.html#liaise.config.DispatchConfig">DispatchConfig (class in liaise.config)</a>
 </li>
       <li><a href="_autosummary/liaise.tick.html#liaise.tick.Diversion">Diversion (class in liaise.tick)</a>
@@ -1127,10 +1187,6 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.release.html#liaise.release.DRAFT_ENTRY_KIND">DRAFT_ENTRY_KIND (in module liaise.release)</a>
 </li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.DRAFT_FILE_NAME">DRAFT_FILE_NAME (in module liaise.cli)</a>
-</li>
-      <li><a href="_autosummary/liaise.gate.html#liaise.gate.DRAFT_REPLY_MODE">DRAFT_REPLY_MODE (in module liaise.gate)</a>
-</li>
-      <li><a href="_autosummary/liaise.gate.html#liaise.gate.DRAFT_REPLY_REASON">DRAFT_REPLY_REASON (in module liaise.gate)</a>
 </li>
       <li><a href="_autosummary/liaise.release.html#liaise.release.DraftOutcome">DraftOutcome (class in liaise.release)</a>
 </li>
@@ -1170,10 +1226,10 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.github.html#liaise.github.GitHub.ensure_last_comment_mentions">(liaise.github.GitHub method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Facts.entry">entry() (liaise.policy.Facts method)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.model.html#liaise.model.ENTRY_KINDS">ENTRY_KINDS (in module liaise.model)</a>
 </li>
       <li><a href="_autosummary/liaise.cases.html#liaise.cases.entry_line">entry_line() (in module liaise.cases)</a>
@@ -1188,8 +1244,12 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.cases.html#liaise.cases.ESCALATION_KINDS">ESCALATION_KINDS (in module liaise.cases)</a>
 </li>
-      <li><a href="_autosummary/liaise.policy.html#liaise.policy.evaluate">evaluate() (in module liaise.policy)</a>
+      <li><a href="_autosummary/liaise.html#liaise.evaluate">evaluate() (in module liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.policy.html#liaise.policy.evaluate">(in module liaise.policy)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.EXFILTRATION_SCANNERS">EXFILTRATION_SCANNERS (in module liaise.detect)</a>
 </li>
   </ul></td>
@@ -1210,6 +1270,8 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.testing.html#liaise.testing.FakeGitHubChannel">FakeGitHubChannel (class in liaise.testing)</a>
 </li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.filter_name">filter_name() (in module liaise.gate)</a>
+</li>
       <li><a href="_autosummary/liaise.cases.html#liaise.cases.find_draft">find_draft() (in module liaise.cases)</a>
 </li>
       <li><a href="_autosummary/liaise.messages.html#liaise.messages.find_message">find_message() (in module liaise.messages)</a>
@@ -1220,6 +1282,8 @@ window.runMermaid = runMermaid;</script>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.findings_in">findings_in() (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.Scan.fingerprint">fingerprint() (liaise.detect.Scan method)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.fingerprint_key">fingerprint_key() (in module liaise.detect)</a>
@@ -1238,6 +1302,8 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.processor.html#liaise.processor.FRESH">FRESH (in module liaise.processor)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.FROM_ACQUAINT">FROM_ACQUAINT (in module liaise.outbound)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1246,10 +1312,22 @@ window.runMermaid = runMermaid;</script>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.release.html#liaise.release.gate_and_send">gate_and_send() (in module liaise.release)</a>
 </li>
-      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateContext">GateContext (class in liaise.gate)</a>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GATE_CONCERN">GATE_CONCERN (in module liaise.gate)</a>
 </li>
-      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateDecision">GateDecision (class in liaise.gate)</a>
+      <li><a href="_autosummary/liaise.cases.html#liaise.cases.gate_summary">gate_summary() (in module liaise.cases)</a>
 </li>
+      <li><a href="_autosummary/liaise.html#liaise.GateContext">GateContext (class in liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateContext">(class in liaise.gate)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/liaise.html#liaise.GateDecision">GateDecision (class in liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateDecision">(class in liaise.gate)</a>
+</li>
+      </ul></li>
       <li><a href="_autosummary/liaise.html#liaise.Ledger.get_case">get_case() (liaise.Ledger method)</a>
 
       <ul>
@@ -1280,14 +1358,14 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.ledger.html#liaise.ledger.Ledger.get_message">(liaise.ledger.Ledger method)</a>
 </li>
       </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.html#liaise.Ledger.get_run">get_run() (liaise.Ledger method)</a>
 
       <ul>
         <li><a href="_autosummary/liaise.ledger.html#liaise.ledger.Ledger.get_run">(liaise.ledger.Ledger method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.html#liaise.GhCli">GhCli (class in liaise)</a>
 
       <ul>
@@ -1340,6 +1418,8 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.model.html#liaise.model.Health">(class in liaise.model)</a>
 </li>
       </ul></li>
+      <li><a href="_autosummary/liaise.cases.html#liaise.cases.held_lines">held_lines() (in module liaise.cases)</a>
+</li>
       <li><a href="_autosummary/liaise.messages.html#liaise.messages.held_message">held_message() (in module liaise.messages)</a>
 </li>
       <li><a href="_autosummary/liaise.outcomes.html#liaise.outcomes.HELD_REASON_PREFIX">HELD_REASON_PREFIX (in module liaise.outcomes)</a>
@@ -1382,6 +1462,10 @@ window.runMermaid = runMermaid;</script>
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.IDENTIFYING_KINDS">IDENTIFYING_KINDS (in module liaise.outbound)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.identities_for">identities_for() (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.SecretRule.in_stripped">in_stripped (liaise.detect.SecretRule property)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.SecretRule.in_text">in_text (liaise.detect.SecretRule property)</a>
@@ -1398,10 +1482,10 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.schedule.html#liaise.schedule.install_schedule">install_schedule() (in module liaise.schedule)</a>
 </li>
-      <li><a href="_autosummary/liaise.html#liaise.intake">intake() (in module liaise)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/liaise.html#liaise.intake">intake() (in module liaise)</a>
+</li>
       <li><a href="_autosummary/liaise.html#liaise.IntakeReport">IntakeReport (class in liaise)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.INTERNAL_NETWORKS">INTERNAL_NETWORKS (in module liaise.detect)</a>
@@ -1436,6 +1520,10 @@ window.runMermaid = runMermaid;</script>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.schedule.html#liaise.schedule.job_environment">job_environment() (in module liaise.schedule)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.judge">judge() (in module liaise.outbound)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.Judgement">Judgement (class in liaise.outbound)</a>
+</li>
   </ul></td>
 </tr></table>
 
@@ -1448,6 +1536,8 @@ window.runMermaid = runMermaid;</script>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/liaise.detect.html#liaise.detect.key_source">key_source() (in module liaise.detect)</a>
+</li>
       <li><a href="_autosummary/liaise.processor.html#liaise.processor.KILL_GRACE_S">KILL_GRACE_S (in module liaise.processor)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.KINDS">KINDS (in module liaise.detect)</a>
@@ -1476,7 +1566,7 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.schedule.html#liaise.schedule.LAUNCHD_DETACH_SETTING">LAUNCHD_DETACH_SETTING (in module liaise.schedule)</a>
 </li>
-      <li><a href="_autosummary/liaise.gate.html#liaise.gate.leak_scan">leak_scan() (in module liaise.gate)</a>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.LEAK_TERMS_ENTITY">LEAK_TERMS_ENTITY (in module liaise.outbound)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Facts.leaks">leaks (liaise.policy.Facts property)</a>
 </li>
@@ -1589,13 +1679,20 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.migrate.html#module-liaise.migrate">module</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li>
     liaise.model
 
       <ul>
         <li><a href="_autosummary/liaise.model.html#module-liaise.model">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    liaise.outbound
+
+      <ul>
+        <li><a href="_autosummary/liaise.outbound.html#module-liaise.outbound">module</a>
 </li>
       </ul></li>
       <li>
@@ -1684,6 +1781,8 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.migrate.html#liaise.migrate.MigrationPlan.lines">lines() (liaise.migrate.MigrationPlan method)</a>
 </li>
+      <li><a href="_autosummary/liaise.detect.html#liaise.detect.link_urls">link_urls() (in module liaise.detect)</a>
+</li>
       <li><a href="_autosummary/liaise.html#liaise.GitHub.list_issues">list_issues() (liaise.GitHub method)</a>
 
       <ul>
@@ -1746,6 +1845,8 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.MAX_TAG_LOOKBACK">MAX_TAG_LOOKBACK (in module liaise.detect)</a>
 </li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.MAX_WRAPPED_FILTERS">MAX_WRAPPED_FILTERS (in module liaise.gate)</a>
+</li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.PathRule.may_match">may_match() (liaise.detect.PathRule method)</a>
 
       <ul>
@@ -1759,6 +1860,8 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.ledger.html#liaise.ledger.MESSAGE_ID_HEX_DIGITS">MESSAGE_ID_HEX_DIGITS (in module liaise.ledger)</a>
 </li>
       <li><a href="_autosummary/liaise.ledger.html#liaise.ledger.MESSAGE_ID_INFIX">MESSAGE_ID_INFIX (in module liaise.ledger)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.MESSAGE_KIND">MESSAGE_KIND (in module liaise.outbound)</a>
 </li>
       <li><a href="_autosummary/liaise.messages.html#liaise.messages.message_lines">message_lines() (in module liaise.messages)</a>
 </li>
@@ -1840,6 +1943,8 @@ window.runMermaid = runMermaid;</script>
 </li>
         <li><a href="_autosummary/liaise.model.html#module-liaise.model">liaise.model</a>
 </li>
+        <li><a href="_autosummary/liaise.outbound.html#module-liaise.outbound">liaise.outbound</a>
+</li>
         <li><a href="_autosummary/liaise.outcomes.html#module-liaise.outcomes">liaise.outcomes</a>
 </li>
         <li><a href="_autosummary/liaise.policy.html#module-liaise.policy">liaise.policy</a>
@@ -1875,6 +1980,10 @@ window.runMermaid = runMermaid;</script>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.testing.html#liaise.testing.NATIVE_FIELDS">NATIVE_FIELDS (in module liaise.testing)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.NEED_TO_KNOW">NEED_TO_KNOW (in module liaise.outbound)</a>
+</li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.need_to_know_disclosure">need_to_know_disclosure() (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.cases.html#liaise.cases.NEEDS_OWNER">NEEDS_OWNER (in module liaise.cases)</a>
 </li>
       <li><a href="_autosummary/liaise.html#liaise.Ledger.new_case">new_case() (liaise.Ledger method)</a>
@@ -1889,6 +1998,8 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.ledger.html#liaise.ledger.Ledger.new_message_id">(liaise.ledger.Ledger method)</a>
 </li>
       </ul></li>
+      <li><a href="_autosummary/liaise.release.html#liaise.release.NO_ATTACHMENTS">NO_ATTACHMENTS (in module liaise.release)</a>
+</li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.NO_TERMINAL">NO_TERMINAL (in module liaise.cli)</a>
 </li>
       <li><a href="_autosummary/liaise.cases.html#liaise.cases.NONE_SHOWN">NONE_SHOWN (in module liaise.cases)</a>
@@ -1899,12 +2010,12 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.normalise">normalise() (in module liaise.detect)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.Normalised">Normalised (class in liaise.detect)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.Scan.normalised">normalised (liaise.detect.Scan property)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.outcomes.html#liaise.outcomes.normalize">normalize() (in module liaise.outcomes)</a>
 </li>
       <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.normalize_binding">normalize_binding() (in module liaise.subjects)</a>
@@ -1944,6 +2055,8 @@ window.runMermaid = runMermaid;</script>
       <ul>
         <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance.of">(liaise.policy.Provenance class method)</a>
 </li>
+        <li><a href="_autosummary/liaise.html#liaise.Provenance.of">(liaise.Provenance class method)</a>
+</li>
       </ul></li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Facts.of_kind">of_kind() (liaise.policy.Facts method)</a>
 </li>
@@ -1955,10 +2068,20 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.messages.html#liaise.messages.OPERATOR_ACTOR">(in module liaise.messages)</a>
 </li>
       </ul></li>
-      <li><a href="_autosummary/liaise.gate.html#liaise.gate.Outbound">Outbound (class in liaise.gate)</a>
+      <li><a href="_autosummary/liaise.html#liaise.Outbound">Outbound (class in liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.gate.html#liaise.gate.Outbound">(class in liaise.gate)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/liaise.release.html#liaise.release.SendAttempt.outbound">outbound (liaise.release.SendAttempt property)</a>
 </li>
+      <li><a href="_autosummary/liaise.html#liaise.outbound_policy">outbound_policy() (in module liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.gate.html#liaise.gate.outbound_policy">(in module liaise.gate)</a>
+</li>
+      </ul></li>
       <li><a href="_autosummary/liaise.gate.html#liaise.gate.OutboundFilter">OutboundFilter (in module liaise.gate)</a>
 </li>
   </ul></td>
@@ -1982,6 +2105,16 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.schedule.html#liaise.schedule.OUTDATED_SCHEDULE_NOTE">OUTDATED_SCHEDULE_NOTE (in module liaise.schedule)</a>
 </li>
       <li><a href="_autosummary/liaise.gate.html#liaise.gate.OUTSIDE_A_CASE">OUTSIDE_A_CASE (in module liaise.gate)</a>
+</li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.outside_a_case">outside_a_case() (in module liaise.gate)</a>
+</li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateDecision.overridable">overridable (liaise.gate.GateDecision property)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.GateDecision.overridable">(liaise.GateDecision property)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/liaise.tick.html#liaise.tick.OWN_MESSAGE_PROVENANCE">OWN_MESSAGE_PROVENANCE (in module liaise.tick)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2099,8 +2232,12 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.processor.html#liaise.processor.PROMPT_POINTER">PROMPT_POINTER (in module liaise.processor)</a>
 </li>
-      <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance">Provenance (class in liaise.policy)</a>
+      <li><a href="_autosummary/liaise.html#liaise.Provenance">Provenance (class in liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance">(class in liaise.policy)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/liaise.workspace.html#liaise.workspace.PS_COMMAND">PS_COMMAND (in module liaise.workspace)</a>
 </li>
   </ul></td>
@@ -2120,6 +2257,14 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.ReadinessPolicy">ReadinessPolicy (class in liaise.subjects)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Reason">Reason (class in liaise.policy)</a>
+</li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateDecision.record">record() (liaise.gate.GateDecision method)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.GateDecision.record">(liaise.GateDecision method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.record_disclosure">record_disclosure() (in module liaise.outbound)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Facts.ref">ref (liaise.policy.Facts property)</a>
 </li>
@@ -2147,8 +2292,6 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.Scan.rendered">rendered (liaise.detect.Scan property)</a>
 </li>
-      <li><a href="_autosummary/liaise.gate.html#liaise.gate.reply_mode">reply_mode() (in module liaise.gate)</a>
-</li>
       <li><a href="_autosummary/liaise.html#liaise.Subject.reply_mode_for">reply_mode_for() (liaise.Subject method)</a>
 
       <ul>
@@ -2157,8 +2300,12 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.REPLY_MODES">REPLY_MODES (in module liaise.subjects)</a>
 </li>
-      <li><a href="_autosummary/liaise.tick.html#liaise.tick.REQUEST_WORK">REQUEST_WORK (in module liaise.tick)</a>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.REQUEST_WORK">REQUEST_WORK (in module liaise.outbound)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.tick.html#liaise.tick.REQUEST_WORK">(in module liaise.tick)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/liaise.model.html#liaise.model.require_one_of">require_one_of() (in module liaise.model)</a>
 </li>
       <li><a href="_autosummary/liaise.outcomes.html#liaise.outcomes.REQUIRED_FIELD_BY_KIND">REQUIRED_FIELD_BY_KIND (in module liaise.outcomes)</a>
@@ -2177,6 +2324,8 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.processor.html#liaise.processor.RESUME">RESUME (in module liaise.processor)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.html#liaise.ClaudeHeadless.resume">resume() (liaise.ClaudeHeadless method)</a>
 
       <ul>
@@ -2187,8 +2336,6 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.processor.html#liaise.processor.Processor.resume">(liaise.processor.Processor method)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.ROUTES">ROUTES (in module liaise.policy)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Rule">Rule (class in liaise.policy)</a>
@@ -2196,7 +2343,11 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.RULES">RULES (in module liaise.policy)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Verdict.rules">rules (liaise.policy.Verdict property)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.Verdict.rules">(liaise.Verdict property)</a>
 </li>
+      </ul></li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.run">run() (in module liaise.cli)</a>
 </li>
       <li><a href="_autosummary/liaise.tick.html#liaise.tick.RUN_DEPLOY_FAILED">RUN_DEPLOY_FAILED (in module liaise.tick)</a>
@@ -2371,10 +2522,10 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.tick.html#liaise.tick.SEND_REFUSED_CAUSE">(in module liaise.tick)</a>
 </li>
       </ul></li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.release.html#liaise.release.sendable_ref">sendable_ref() (in module liaise.release)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.release.html#liaise.release.SendAttempt">SendAttempt (class in liaise.release)</a>
 </li>
       <li><a href="_autosummary/liaise.messages.html#liaise.messages.MessageSent.sent">sent (liaise.messages.MessageSent property)</a>
@@ -2392,6 +2543,10 @@ window.runMermaid = runMermaid;</script>
 </li>
       </ul></li>
       <li><a href="_autosummary/liaise.testing.html#liaise.testing.FakeGitHubChannel.set_state">set_state() (liaise.testing.FakeGitHubChannel method)</a>
+</li>
+      <li><a href="_autosummary/liaise.testing.html#liaise.testing.FakeGitHubChannel.set_visibility">set_visibility() (liaise.testing.FakeGitHubChannel method)</a>
+</li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.Concern.settleable">settleable (liaise.gate.Concern property)</a>
 </li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.setup">setup() (in module liaise.cli)</a>
 </li>
@@ -2475,6 +2630,12 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.subject_show">subject_show() (in module liaise.cli)</a>
 </li>
+      <li><a href="_autosummary/liaise.gate.html#liaise.gate.GateDecision.summary">summary() (liaise.gate.GateDecision method)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.GateDecision.summary">(liaise.GateDecision method)</a>
+</li>
+      </ul></li>
   </ul></td>
 </tr></table>
 
@@ -2484,6 +2645,12 @@ window.runMermaid = runMermaid;</script>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Facts.tainted">tainted (liaise.policy.Facts property)</a>
 </li>
       <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance.tainted_by">tainted_by() (liaise.policy.Provenance class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.Provenance.tainted_by">(liaise.Provenance class method)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/liaise.subjects.html#liaise.subjects.TAINTED_RUNS">TAINTED_RUNS (in module liaise.subjects)</a>
 </li>
       <li><a href="_autosummary/liaise.cases.html#liaise.cases.TEXT_INDENT">TEXT_INDENT (in module liaise.cases)</a>
 </li>
@@ -2503,9 +2670,13 @@ window.runMermaid = runMermaid;</script>
 </li>
       <li><a href="_autosummary/liaise.cli.html#liaise.cli.TITLE_LINE_PREFIX">TITLE_LINE_PREFIX (in module liaise.cli)</a>
 </li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.TITLE_PART">TITLE_PART (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.Finding.to_dict">to_dict() (liaise.detect.Finding method)</a>
 
       <ul>
+        <li><a href="_autosummary/liaise.gate.html#liaise.gate.Concern.to_dict">(liaise.gate.Concern method)</a>
+</li>
         <li><a href="_autosummary/liaise.policy.html#liaise.policy.OutboundPolicy.to_dict">(liaise.policy.OutboundPolicy method)</a>
 </li>
         <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance.to_dict">(liaise.policy.Provenance method)</a>
@@ -2515,6 +2686,10 @@ window.runMermaid = runMermaid;</script>
         <li><a href="_autosummary/liaise.policy.html#liaise.policy.Reason.to_dict">(liaise.policy.Reason method)</a>
 </li>
         <li><a href="_autosummary/liaise.policy.html#liaise.policy.Verdict.to_dict">(liaise.policy.Verdict method)</a>
+</li>
+        <li><a href="_autosummary/liaise.html#liaise.Provenance.to_dict">(liaise.Provenance method)</a>
+</li>
+        <li><a href="_autosummary/liaise.html#liaise.Verdict.to_dict">(liaise.Verdict method)</a>
 </li>
       </ul></li>
   </ul></td>
@@ -2553,10 +2728,14 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
       <li><a href="_autosummary/liaise.schedule.html#liaise.schedule.uninstall_schedule">uninstall_schedule() (in module liaise.schedule)</a>
 </li>
+      <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance.unknown">unknown() (liaise.policy.Provenance class method)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.html#liaise.Provenance.unknown">(liaise.Provenance class method)</a>
+</li>
+      </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_autosummary/liaise.policy.html#liaise.policy.Provenance.unknown">unknown() (liaise.policy.Provenance class method)</a>
-</li>
       <li><a href="_autosummary/liaise.html#liaise.Ledger.unrouted">unrouted() (liaise.Ledger method)</a>
 
       <ul>
@@ -2573,13 +2752,25 @@ window.runMermaid = runMermaid;</script>
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
-      <li><a href="_autosummary/liaise.policy.html#liaise.policy.Verdict">Verdict (class in liaise.policy)</a>
+      <li><a href="_autosummary/liaise.release.html#liaise.release.VALIDATION_KIND">VALIDATION_KIND (in module liaise.release)</a>
+</li>
+      <li><a href="_autosummary/liaise.html#liaise.Verdict">Verdict (class in liaise)</a>
+
+      <ul>
+        <li><a href="_autosummary/liaise.policy.html#liaise.policy.Verdict">(class in liaise.policy)</a>
+</li>
+      </ul></li>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.verdict_id">verdict_id() (in module liaise.outbound)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="_autosummary/liaise.access.html#liaise.access.VIA_HANDLE">VIA_HANDLE (in module liaise.access)</a>
 </li>
       <li><a href="_autosummary/liaise.detect.html#liaise.detect.View">View (class in liaise.detect)</a>
+</li>
+      <li><a href="_autosummary/liaise.testing.html#liaise.testing.VISIBILITIES">VISIBILITIES (in module liaise.testing)</a>
+</li>
+      <li><a href="_autosummary/liaise.detect.html#liaise.detect.visible">visible() (in module liaise.detect)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -2607,6 +2798,8 @@ window.runMermaid = runMermaid;</script>
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="_autosummary/liaise.outbound.html#liaise.outbound.with_leak_terms">with_leak_terms() (in module liaise.outbound)</a>
+</li>
       <li><a href="_autosummary/liaise.html#liaise.Case.with_state">with_state() (liaise.Case method)</a>
 
       <ul>

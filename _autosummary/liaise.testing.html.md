@@ -34,6 +34,7 @@ site `example-site` and the relay `example-bot`.
 | [`DFLT_SITE_SECRET`](#liaise.testing.DFLT_SITE_SECRET)      | What the fake web inbox's host application signs its logged-in users with.                                                            |
 | [`NATIVE_FIELDS`](#liaise.testing.NATIVE_FIELDS)         | The `native` fields an issue opening carries.                                                                                         |
 | [`ISSUE_STATES`](#liaise.testing.ISSUE_STATES)          | The states an issue is in, as GitHub names them (see [`FakeGitHubChannel.set_state()`](#liaise.testing.FakeGitHubChannel.set_state)). |
+| [`VISIBILITIES`](#liaise.testing.VISIBILITIES)          | GitHub's three, and `hidden` for one the account cannot see.                                                                          |
 
 ### Functions
 
@@ -43,8 +44,8 @@ site `example-site` and the relay `example-bot`.
 
 ### Classes
 
-| [`FakeGitHubChannel`](#liaise.testing.FakeGitHubChannel)(\*[, name, lookback, clock])   | GitHub issues held in memory, as a correspond channel that reads, listens and sends.   |
-|---------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`FakeGitHubChannel`](#liaise.testing.FakeGitHubChannel)(\*[, name, lookback, ...])   | GitHub issues held in memory, as a correspond channel that reads, listens and sends.   |
+|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 
 ### liaise.testing.DFLT_GITHUB_CHANNEL *= 'github'*
 
@@ -57,7 +58,7 @@ correspond’s own adapter’s.
 
 What the fake web inbox’s host application signs its logged-in users with.
 
-### *class* liaise.testing.FakeGitHubChannel(\*, name='github', lookback=None, clock=<function \_utc_now>)
+### *class* liaise.testing.FakeGitHubChannel(\*, name='github', lookback=None, clock=<function \_utc_now>, visibility='private', owner_type='User')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -73,6 +74,12 @@ turns into a failed result.
 `lookback` makes a first poll (one without a cursor) skip what last changed more
 than that long before `clock()`, as correspond’s GitHub adapter looks back only
 `LISTEN_LOOKBACK`. With None, the default, a first poll yields everything.
+
+[`audience()`](#liaise.testing.FakeGitHubChannel.audience) answers who reads a repository as correspond’s GitHub adapter does,
+from its visibility: `visibility` for every repository, unless [`set_visibility()`](#liaise.testing.FakeGitHubChannel.set_visibility)
+gave one its own. The default is a private repository its owner (a user) owns, whose
+audience is `named` and so neither public nor organisation-wide; a test of the gate on a
+public repository says so.
 
 #### add_comment(repo, number, , author, body, created_at, edited_at=None, is_self=False)
 
@@ -94,6 +101,15 @@ Raises `ValueError` for an issue already seeded.
 
 * **Return type:**
   `Message`
+
+#### audience(ref, , draft=None)
+
+Who can read `ref`’s repository, as correspond’s GitHub adapter answers from its visibility.
+
+A draft changes nothing: a mention decides who is notified, not who can read.
+
+* **Return type:**
+  `Audience`
 
 #### *property* capabilities *: Capabilities*
 
@@ -148,6 +164,17 @@ changes only through its comments. Returns the opening as it is now; raises
 * **Return type:**
   `Message`
 
+#### set_visibility(repo, visibility, , owner_type=None)
+
+Make `repo` (`owner/repo`) `public`, `private`, `internal` or `hidden`.
+
+`hidden` answers as GitHub does for a repository the account cannot see, and the
+audience defaults to public. `owner_type` is `User` or `Organization`; it
+keeps the repository’s own, or the channel’s default.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
 ### liaise.testing.ISSUE_STATES *= ('open', 'closed')*
 
 The states an issue is in, as GitHub names them (see [`FakeGitHubChannel.set_state()`](#liaise.testing.FakeGitHubChannel.set_state)).
@@ -159,6 +186,14 @@ The `native` fields an issue opening carries. Comments carry none.
 ### liaise.testing.SELF_LOGIN *= 'liaise-bot'*
 
 The login a fake GitHub channel’s own sends go out under (`FakeGitHub`’s, too).
+
+### liaise.testing.VISIBILITIES *= ('public', 'private', 'internal', 'hidden')*
+
+GitHub’s three, and `hidden` for one the
+account cannot see. A fake repository is private and owned by a user unless told.
+
+* **Type:**
+  What a fake repository’s visibility may be
 
 ### liaise.testing.add_webinbox_report(inbox, site, , text, received_at, user=None, name=None, email=None, page=None, context=None, secret='example-site-secret')
 

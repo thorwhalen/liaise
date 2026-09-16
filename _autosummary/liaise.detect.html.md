@@ -123,8 +123,10 @@ share-alike source.
 | `detect_personal`(scan)                                                                            |                                                                                                                                                                                                                                                                                                                              |
 | [`detect_third_parties`](#liaise.detect.detect_third_parties)(scan)                        | A `third_party` finding for each whole-word occurrence of a person's disclosure term, when that person is not a reader.                                                                                                                                                                                                      |
 | [`detect_vocabulary`](#liaise.detect.detect_vocabulary)(scan)                           | A `vocabulary` finding for each whole-word occurrence of a disclosure term whose entity is not a person.                                                                                                                                                                                                                     |
-| [`fingerprint_key`](#liaise.detect.fingerprint_key)([state_dir, key_file, key_bytes]) | The fingerprint key in `<state_dir>/<key_file>`, created on first use.                                                                                                                                                                                                                                                       |
+| [`fingerprint_key`](#liaise.detect.fingerprint_key)([state_dir, key_file, ...])       | The fingerprint key in `<state_dir>/<key_file>`, created on first use.                                                                                                                                                                                                                                                       |
 | [`fold_term`](#liaise.detect.fold_term)(term)                                   | `term` folded as [`normalise()`](#liaise.detect.normalise) folds a message, with its word breaks.                                                                                                                                                                                                         |
+| [`key_source`](#liaise.detect.key_source)([state_dir, key_file, key_bytes, ...]) | A callable that answers one key, however often it is asked: [`fingerprint_key()`](#liaise.detect.fingerprint_key), once.                                                                                                                                                                                        |
+| [`link_urls`](#liaise.detect.link_urls)(text)                                   | Every link and image destination in `text`, in full, in order, each once.                                                                                                                                                                                                                                                    |
 | [`local_path_scanner`](#liaise.detect.local_path_scanner)([rules])                       | A check for `rules`: an `exfiltration` finding spanning each path, from where its rule matched to the end of the path.                                                                                                                                                                                                       |
 | [`normalise`](#liaise.detect.normalise)(text)                                   | Fold `text` for matching, keeping where each folded character came from.                                                                                                                                                                                                                                                     |
 | [`render`](#liaise.detect.render)(text)                                      | `text` as a Markdown or HTML reader sees it, or None when rendering changes nothing.                                                                                                                                                                                                                                         |
@@ -136,6 +138,7 @@ share-alike source.
 | [`scan_personal_terms`](#liaise.detect.scan_personal_terms)(scan)                         | A `personal` finding for each whole-word occurrence of a personal term.                                                                                                                                                                                                                                                      |
 | [`scan_private_addresses`](#liaise.detect.scan_private_addresses)(scan)                      | An `exfiltration` finding for each IPv4 or IPv6 address in [`INTERNAL_NETWORKS`](#liaise.detect.INTERNAL_NETWORKS).                                                                                                                                                                                               |
 | [`secret_detector`](#liaise.detect.secret_detector)([rules])                          | A detector of `rules`: a `secret` finding for each match, severity 5.                                                                                                                                                                                                                                                        |
+| [`visible`](#liaise.detect.visible)(text)                                     | `text` with each invisible or control character written as `<U+XXXX>`.                                                                                                                                                                                                                                                       |
 
 ### Classes
 
@@ -201,7 +204,7 @@ The checks `detect_exfiltration` runs.
 
 The kinds whose fingerprint is taken over the normalised value.
 
-### *class* liaise.detect.Finding(, kind, start, end, entity=None, label=None, sealed_from=(), rule, severity, fingerprint)
+### *class* liaise.detect.Finding(, kind, start, end, entity=None, label=None, sealed_from=(), rule, severity, fingerprint, part=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -209,11 +212,13 @@ Something a detector found in a message: never the matched text.
 
 `start` and `end` are offsets into the message as written. `entity`, `label`
 and `sealed_from` are set for terms from the disclosure. `rule` names the pattern
-or check that matched; `fingerprint` is the keyed HMAC of the value.
+or check that matched; `fingerprint` is the keyed HMAC of the value. `part` names
+the part of the message the offsets are into when it is not the text (`title`,
+`attachment name`); [`detect()`](#liaise.detect.detect) scans one part and leaves it None.
 
 #### to_dict()
 
-The finding as a JSON-ready dict.
+The finding as a JSON-ready dict; `part` only when it names one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -402,7 +407,7 @@ a reader sees it; or of `material` exactly, when a check names what it found.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-#### key(, key_file='fingerprint.key', key_bytes=32)
+#### key(, key_file='fingerprint.key', key_bytes=32, create=True)
 
 The fingerprint key in `<state_dir>/<key_file>`, created on first use.
 
@@ -411,6 +416,9 @@ is `key_bytes` random bytes in a file only its owner can read, put in place
 atomically, so processes racing to create it all read the same key. A directory
 created here is owner-only. An existing file shorter than `key_bytes` raises
 [`FingerprintKeyError`](#liaise.detect.FingerprintKeyError).
+
+With `create` false (a dry run, which writes nothing), a missing key is not created:
+the answer is a key used once, so its fingerprints correlate with nothing recorded.
 
 * **Return type:**
   [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
@@ -587,7 +595,7 @@ entity is not a person.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Finding`](#liaise.detect.Finding)]
 
-### liaise.detect.fingerprint_key(state_dir=None, , key_file='fingerprint.key', key_bytes=32)
+### liaise.detect.fingerprint_key(state_dir=None, , key_file='fingerprint.key', key_bytes=32, create=True)
 
 The fingerprint key in `<state_dir>/<key_file>`, created on first use.
 
@@ -596,6 +604,9 @@ is `key_bytes` random bytes in a file only its owner can read, put in place
 atomically, so processes racing to create it all read the same key. A directory
 created here is owner-only. An existing file shorter than `key_bytes` raises
 [`FingerprintKeyError`](#liaise.detect.FingerprintKeyError).
+
+With `create` false (a dry run, which writes nothing), a missing key is not created:
+the answer is a key used once, so its fingerprints correlate with nothing recorded.
 
 * **Return type:**
   [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
@@ -606,6 +617,42 @@ created here is owner-only. An existing file shorter than `key_bytes` raises
 
 * **Return type:**
   [`FoldedTerm`](#liaise.detect.FoldedTerm)
+
+### liaise.detect.key_source(state_dir=None, , key_file='fingerprint.key', key_bytes=32, create=True)
+
+A callable that answers one key, however often it is asked: [`fingerprint_key()`](#liaise.detect.fingerprint_key), once.
+
+One command may judge a message more than once — releasing a draft judges it, shows the
+operator, and judges it again with their approval — and those judgements have to
+fingerprint alike, or what the second one flags is not what the first one showed. With
+`create` false a missing key is a key used once, so asking twice would otherwise
+answer twice.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[], [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]
+
+```pycon
+>>> source = key_source(create=False)
+>>> source() == source()
+True
+```
+
+### liaise.detect.link_urls(text)
+
+Every link and image destination in `text`, in full, in order, each once.
+
+Read as [`scan_links()`](#liaise.detect.scan_links) reads them (Markdown, HTML attributes, autolinks, plain
+URLs, then any `//host` outside those), whatever their host: what the operator reads
+before releasing a message, since a link’s title can say one place and its
+destination another.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
+
+```pycon
+>>> link_urls("See [the docs](https://example.org/a) and https://example.com/b.")
+('https://example.org/a', 'https://example.com/b')
+```
 
 ### liaise.detect.local_path_scanner(rules=(PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:Users|home|root)/'), literals=('/Users/', '/home/', '/root/')), PathRule(rule='local-path', pattern=re.compile('\\\\\\\\b[A-Za-z]:(?:\\\\\\\\\\\\\\\\{1,2}|/)Users(?:\\\\\\\\\\\\\\\\{1,2}|/)', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/mnt/[A-Za-z]/Users/', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:private/var|var/folders)/'), literals=('/private/var/', '/var/folders/')), PathRule(rule='env-file', pattern=re.compile('(?<=[\\\\\\\\\\\\\\\\/])\\\\\\\\.env(?![\\\\\\\\w-]|\\\\\\\\.\\\\\\\\w)'), literals=('.env',))))
 
@@ -729,3 +776,20 @@ longest match.
 
 * **Return type:**
   [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Scan`](#liaise.detect.Scan)], [`Iterable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable)[[`Finding`](#liaise.detect.Finding)]]
+
+### liaise.detect.visible(text)
+
+`text` with each invisible or control character written as `<U+XXXX>`.
+
+What the operator reads before releasing a message: a zero-width space, a direction
+override or a terminal escape shows as what it is, where it is.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> visible("He" + chr(0x200B) + "ron")
+'He<U+200B>ron'
+>>> visible("two\nlines\tand a tab")
+'two\nlines\tand a tab'
+```

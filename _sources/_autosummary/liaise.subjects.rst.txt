@@ -8,6 +8,7 @@ liaise.subjects
 
    .. autosummary::
    
+      TAINTED_RUNS
       DFLT_SUBJECTS_SUBDIR
       REPLY_MODES
       DELIVERY_KINDS

@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.config" href="liaise.config.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -330,6 +330,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -597,11 +598,17 @@ share-alike source.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.detect_vocabulary" title="liaise.detect.detect_vocabulary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_vocabulary</span></code></a>(scan)</p></td>
 <td><p>A <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> finding for each whole-word occurrence of a disclosure term whose entity is not a person.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.fingerprint_key" title="liaise.detect.fingerprint_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fingerprint_key</span></code></a>([state_dir, key_file, key_bytes])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.fingerprint_key" title="liaise.detect.fingerprint_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fingerprint_key</span></code></a>([state_dir, key_file, ...])</p></td>
 <td><p>The fingerprint key in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/&lt;key_file&gt;</span></code>, created on first use.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.fold_term" title="liaise.detect.fold_term"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fold_term</span></code></a>(term)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">term</span></code> folded as <a class="reference internal" href="#liaise.detect.normalise" title="liaise.detect.normalise"><code class="xref py py-func docutils literal notranslate"><span class="pre">normalise()</span></code></a> folds a message, with its word breaks.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.key_source" title="liaise.detect.key_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">key_source</span></code></a>([state_dir, key_file, key_bytes, ...])</p></td>
+<td><p>A callable that answers one key, however often it is asked: <a class="reference internal" href="#liaise.detect.fingerprint_key" title="liaise.detect.fingerprint_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">fingerprint_key()</span></code></a>, once.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.link_urls" title="liaise.detect.link_urls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">link_urls</span></code></a>(text)</p></td>
+<td><p>Every link and image destination in <code class="docutils literal notranslate"><span class="pre">text</span></code>, in full, in order, each once.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.local_path_scanner" title="liaise.detect.local_path_scanner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">local_path_scanner</span></code></a>([rules])</p></td>
 <td><p>A check for <code class="docutils literal notranslate"><span class="pre">rules</span></code>: an <code class="docutils literal notranslate"><span class="pre">exfiltration</span></code> finding spanning each path, from where its rule matched to the end of the path.</p></td>
@@ -635,6 +642,9 @@ share-alike source.</p>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.secret_detector" title="liaise.detect.secret_detector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">secret_detector</span></code></a>([rules])</p></td>
 <td><p>A detector of <code class="docutils literal notranslate"><span class="pre">rules</span></code>: a <code class="docutils literal notranslate"><span class="pre">secret</span></code> finding for each match, severity 5.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.visible" title="liaise.detect.visible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">visible</span></code></a>(text)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with each invisible or control character written as <code class="docutils literal notranslate"><span class="pre">&lt;U+XXXX&gt;</span></code>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -746,18 +756,20 @@ character. Each domain label and the label count are bounded too.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.detect.Finding">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">Finding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sealed_from</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">severity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fingerprint</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#Finding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.Finding" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">Finding</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sealed_from</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">severity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fingerprint</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">part</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#Finding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.Finding" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Something a detector found in a message: never the matched text.</p>
 <p><code class="docutils literal notranslate"><span class="pre">start</span></code> and <code class="docutils literal notranslate"><span class="pre">end</span></code> are offsets into the message as written. <code class="docutils literal notranslate"><span class="pre">entity</span></code>, <code class="docutils literal notranslate"><span class="pre">label</span></code>
 and <code class="docutils literal notranslate"><span class="pre">sealed_from</span></code> are set for terms from the disclosure. <code class="docutils literal notranslate"><span class="pre">rule</span></code> names the pattern
-or check that matched; <code class="docutils literal notranslate"><span class="pre">fingerprint</span></code> is the keyed HMAC of the value.</p>
+or check that matched; <code class="docutils literal notranslate"><span class="pre">fingerprint</span></code> is the keyed HMAC of the value. <code class="docutils literal notranslate"><span class="pre">part</span></code> names
+the part of the message the offsets are into when it is not the text (<code class="docutils literal notranslate"><span class="pre">title</span></code>,
+<code class="docutils literal notranslate"><span class="pre">attachment</span> <span class="pre">name</span></code>); <a class="reference internal" href="#liaise.detect.detect" title="liaise.detect.detect"><code class="xref py py-func docutils literal notranslate"><span class="pre">detect()</span></code></a> scans one part and leaves it None.</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="liaise.detect.Finding.to_dict">
 <span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#Finding.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.Finding.to_dict" title="Link to this definition">#</a></dt>
-<dd><p>The finding as a JSON-ready dict.</p>
+<dd><p>The finding as a JSON-ready dict; <code class="docutils literal notranslate"><span class="pre">part</span></code> only when it names one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -1025,13 +1037,15 @@ a reader sees it; or of <code class="docutils literal notranslate"><span class="
 
 <dl class="py method">
 <dt class="sig sig-object py" id="liaise.detect.Scan.key">
-<span class="sig-name descname"><span class="pre">key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fingerprint.key'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#liaise.detect.Scan.key" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fingerprint.key'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#liaise.detect.Scan.key" title="Link to this definition">#</a></dt>
 <dd><p>The fingerprint key in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/&lt;key_file&gt;</span></code>, created on first use.</p>
 <p><code class="docutils literal notranslate"><span class="pre">state_dir</span></code> defaults to the liaise config’s, else <a class="reference internal" href="#liaise.detect.DFLT_STATE_DIR" title="liaise.detect.DFLT_STATE_DIR"><code class="xref py py-data docutils literal notranslate"><span class="pre">DFLT_STATE_DIR</span></code></a>. A new key
 is <code class="docutils literal notranslate"><span class="pre">key_bytes</span></code> random bytes in a file only its owner can read, put in place
 atomically, so processes racing to create it all read the same key. A directory
 created here is owner-only. An existing file shorter than <code class="docutils literal notranslate"><span class="pre">key_bytes</span></code> raises
 <a class="reference internal" href="#liaise.detect.FingerprintKeyError" title="liaise.detect.FingerprintKeyError"><code class="xref py py-class docutils literal notranslate"><span class="pre">FingerprintKeyError</span></code></a>.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">create</span></code> false (a dry run, which writes nothing), a missing key is not created:
+the answer is a key used once, so its fingerprints correlate with nothing recorded.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
@@ -1284,13 +1298,15 @@ entity is not a person.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.detect.fingerprint_key">
-<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">fingerprint_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fingerprint.key'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#fingerprint_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.fingerprint_key" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">fingerprint_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fingerprint.key'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#fingerprint_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.fingerprint_key" title="Link to this definition">#</a></dt>
 <dd><p>The fingerprint key in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/&lt;key_file&gt;</span></code>, created on first use.</p>
 <p><code class="docutils literal notranslate"><span class="pre">state_dir</span></code> defaults to the liaise config’s, else <a class="reference internal" href="#liaise.detect.DFLT_STATE_DIR" title="liaise.detect.DFLT_STATE_DIR"><code class="xref py py-data docutils literal notranslate"><span class="pre">DFLT_STATE_DIR</span></code></a>. A new key
 is <code class="docutils literal notranslate"><span class="pre">key_bytes</span></code> random bytes in a file only its owner can read, put in place
 atomically, so processes racing to create it all read the same key. A directory
 created here is owner-only. An existing file shorter than <code class="docutils literal notranslate"><span class="pre">key_bytes</span></code> raises
 <a class="reference internal" href="#liaise.detect.FingerprintKeyError" title="liaise.detect.FingerprintKeyError"><code class="xref py py-class docutils literal notranslate"><span class="pre">FingerprintKeyError</span></code></a>.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">create</span></code> false (a dry run, which writes nothing), a missing key is not created:
+the answer is a key used once, so its fingerprints correlate with nothing recorded.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
@@ -1307,6 +1323,46 @@ created here is owner-only. An existing file shorter than <code class="docutils 
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.detect.FoldedTerm" title="liaise.detect.FoldedTerm"><code class="xref py py-class docutils literal notranslate"><span class="pre">FoldedTerm</span></code></a></span></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.detect.key_source">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">key_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'fingerprint.key'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">create</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#key_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.key_source" title="Link to this definition">#</a></dt>
+<dd><p>A callable that answers one key, however often it is asked: <a class="reference internal" href="#liaise.detect.fingerprint_key" title="liaise.detect.fingerprint_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">fingerprint_key()</span></code></a>, once.</p>
+<p>One command may judge a message more than once — releasing a draft judges it, shows the
+operator, and judges it again with their approval — and those judgements have to
+fingerprint alike, or what the second one flags is not what the first one showed. With
+<code class="docutils literal notranslate"><span class="pre">create</span></code> false a missing key is a key used once, so asking twice would otherwise
+answer twice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[[], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a>]</span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">source</span> <span class="o">=</span> <span class="n">key_source</span><span class="p">(</span><span class="n">create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source</span><span class="p">()</span> <span class="o">==</span> <span class="n">source</span><span class="p">()</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.detect.link_urls">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">link_urls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#link_urls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.link_urls" title="Link to this definition">#</a></dt>
+<dd><p>Every link and image destination in <code class="docutils literal notranslate"><span class="pre">text</span></code>, in full, in order, each once.</p>
+<p>Read as <a class="reference internal" href="#liaise.detect.scan_links" title="liaise.detect.scan_links"><code class="xref py py-func docutils literal notranslate"><span class="pre">scan_links()</span></code></a> reads them (Markdown, HTML attributes, autolinks, plain
+URLs, then any <code class="docutils literal notranslate"><span class="pre">//host</span></code> outside those), whatever their host: what the operator reads
+before releasing a message, since a link’s title can say one place and its
+destination another.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link_urls</span><span class="p">(</span><span class="s2">"See [the docs](https://example.org/a) and https://example.com/b."</span><span class="p">)</span>
+<span class="go">('https://example.org/a', 'https://example.com/b')</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -1470,6 +1526,25 @@ longest match.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.detect.visible">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">visible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#visible"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.visible" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with each invisible or control character written as <code class="docutils literal notranslate"><span class="pre">&lt;U+XXXX&gt;</span></code>.</p>
+<p>What the operator reads before releasing a message: a zero-width space, a direction
+override or a terminal escape shows as what it is, where it is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">visible</span><span class="p">(</span><span class="s2">"He"</span> <span class="o">+</span> <span class="nb">chr</span><span class="p">(</span><span class="mh">0x200B</span><span class="p">)</span> <span class="o">+</span> <span class="s2">"ron"</span><span class="p">)</span>
+<span class="go">'He&lt;U+200B&gt;ron'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">visible</span><span class="p">(</span><span class="s2">"two</span><span class="se">\n</span><span class="s2">lines</span><span class="se">\t</span><span class="s2">and a tab"</span><span class="p">)</span>
+<span class="go">'two\nlines\tand a tab'</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </section>
 
 
@@ -1595,6 +1670,8 @@ longest match.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.detect_vocabulary"><code class="docutils literal notranslate"><span class="pre">detect_vocabulary()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.fingerprint_key"><code class="docutils literal notranslate"><span class="pre">fingerprint_key()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.fold_term"><code class="docutils literal notranslate"><span class="pre">fold_term()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.key_source"><code class="docutils literal notranslate"><span class="pre">key_source()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.link_urls"><code class="docutils literal notranslate"><span class="pre">link_urls()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.local_path_scanner"><code class="docutils literal notranslate"><span class="pre">local_path_scanner()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.normalise"><code class="docutils literal notranslate"><span class="pre">normalise()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>
@@ -1606,6 +1683,7 @@ longest match.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.scan_personal_terms"><code class="docutils literal notranslate"><span class="pre">scan_personal_terms()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.scan_private_addresses"><code class="docutils literal notranslate"><span class="pre">scan_private_addresses()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.secret_detector"><code class="docutils literal notranslate"><span class="pre">secret_detector()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.visible"><code class="docutils literal notranslate"><span class="pre">visible()</span></code></a></li>
 </ul>
   </nav></div>
 

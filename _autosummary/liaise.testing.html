@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="liaise.subjects" href="liaise.subjects.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -330,6 +330,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -449,6 +450,9 @@ site <code class="docutils literal notranslate"><span class="pre">example-site</
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.testing.ISSUE_STATES" title="liaise.testing.ISSUE_STATES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ISSUE_STATES</span></code></a></p></td>
 <td><p>The states an issue is in, as GitHub names them (see <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.set_state" title="liaise.testing.FakeGitHubChannel.set_state"><code class="xref py py-meth docutils literal notranslate"><span class="pre">FakeGitHubChannel.set_state()</span></code></a>).</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.testing.VISIBILITIES" title="liaise.testing.VISIBILITIES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VISIBILITIES</span></code></a></p></td>
+<td><p>GitHub's three, and <code class="docutils literal notranslate"><span class="pre">hidden</span></code> for one the account cannot see.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -467,7 +471,7 @@ site <code class="docutils literal notranslate"><span class="pre">example-site</
 <p class="rubric">Classes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.testing.FakeGitHubChannel" title="liaise.testing.FakeGitHubChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FakeGitHubChannel</span></code></a>(*[, name, lookback, clock])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.testing.FakeGitHubChannel" title="liaise.testing.FakeGitHubChannel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FakeGitHubChannel</span></code></a>(*[, name, lookback, ...])</p></td>
 <td><p>GitHub issues held in memory, as a correspond channel that reads, listens and sends.</p></td>
 </tr>
 </tbody>
@@ -492,7 +496,7 @@ site <code class="docutils literal notranslate"><span class="pre">example-site</
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">FakeGitHubChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'github'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">_utc_now&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/testing.html#FakeGitHubChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">FakeGitHubChannel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'github'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lookback</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">_utc_now&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visibility</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'private'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'User'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/testing.html#FakeGitHubChannel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>GitHub issues held in memory, as a correspond channel that reads, listens and sends.</p>
 <p>Seed it with <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.add_issue" title="liaise.testing.FakeGitHubChannel.add_issue"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_issue()</span></code></a> and <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.add_comment" title="liaise.testing.FakeGitHubChannel.add_comment"><code class="xref py py-meth docutils literal notranslate"><span class="pre">add_comment()</span></code></a>; <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.poll" title="liaise.testing.FakeGitHubChannel.poll"><code class="xref py py-meth docutils literal notranslate"><span class="pre">poll()</span></code></a> yields what was
@@ -504,6 +508,11 @@ turns into a failed result.</p>
 <p><code class="docutils literal notranslate"><span class="pre">lookback</span></code> makes a first poll (one without a cursor) skip what last changed more
 than that long before <code class="docutils literal notranslate"><span class="pre">clock()</span></code>, as correspond’s GitHub adapter looks back only
 <code class="docutils literal notranslate"><span class="pre">LISTEN_LOOKBACK</span></code>. With None, the default, a first poll yields everything.</p>
+<p><a class="reference internal" href="#liaise.testing.FakeGitHubChannel.audience" title="liaise.testing.FakeGitHubChannel.audience"><code class="xref py py-meth docutils literal notranslate"><span class="pre">audience()</span></code></a> answers who reads a repository as correspond’s GitHub adapter does,
+from its visibility: <code class="docutils literal notranslate"><span class="pre">visibility</span></code> for every repository, unless <a class="reference internal" href="#liaise.testing.FakeGitHubChannel.set_visibility" title="liaise.testing.FakeGitHubChannel.set_visibility"><code class="xref py py-meth docutils literal notranslate"><span class="pre">set_visibility()</span></code></a>
+gave one its own. The default is a private repository its owner (a user) owns, whose
+audience is <code class="docutils literal notranslate"><span class="pre">named</span></code> and so neither public nor organisation-wide; a test of the gate on a
+public repository says so.</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py method">
@@ -529,6 +538,18 @@ Raises <code class="docutils literal notranslate"><span class="pre">ValueError</
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Message</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.audience">
+<span class="sig-name descname"><span class="pre">audience</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">draft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/testing.html#FakeGitHubChannel.audience"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.audience" title="Link to this definition">#</a></dt>
+<dd><p>Who can read <code class="docutils literal notranslate"><span class="pre">ref</span></code>’s repository, as correspond’s GitHub adapter answers from its visibility.</p>
+<p>A draft changes nothing: a mention decides who is notified, not who can read.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">Audience</span></code></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -605,6 +626,20 @@ changes only through its comments. Returns the opening as it is now; raises
 </dl>
 </dd></dl>
 
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.testing.FakeGitHubChannel.set_visibility">
+<span class="sig-name descname"><span class="pre">set_visibility</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">repo</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visibility</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">owner_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/testing.html#FakeGitHubChannel.set_visibility"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.testing.FakeGitHubChannel.set_visibility" title="Link to this definition">#</a></dt>
+<dd><p>Make <code class="docutils literal notranslate"><span class="pre">repo</span></code> (<code class="docutils literal notranslate"><span class="pre">owner/repo</span></code>) <code class="docutils literal notranslate"><span class="pre">public</span></code>, <code class="docutils literal notranslate"><span class="pre">private</span></code>, <code class="docutils literal notranslate"><span class="pre">internal</span></code> or <code class="docutils literal notranslate"><span class="pre">hidden</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">hidden</span></code> answers as GitHub does for a repository the account cannot see, and the
+audience defaults to public. <code class="docutils literal notranslate"><span class="pre">owner_type</span></code> is <code class="docutils literal notranslate"><span class="pre">User</span></code> or <code class="docutils literal notranslate"><span class="pre">Organization</span></code>; it
+keeps the repository’s own, or the channel’s default.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py data">
@@ -623,6 +658,18 @@ changes only through its comments. Returns the opening as it is now; raises
 <dt class="sig sig-object py" id="liaise.testing.SELF_LOGIN">
 <span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">SELF_LOGIN</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'liaise-bot'</span></span><a class="headerlink" href="#liaise.testing.SELF_LOGIN" title="Link to this definition">#</a></dt>
 <dd><p>The login a fake GitHub channel’s own sends go out under (<code class="docutils literal notranslate"><span class="pre">FakeGitHub</span></code>’s, too).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.testing.VISIBILITIES">
+<span class="sig-prename descclassname"><span class="pre">liaise.testing.</span></span><span class="sig-name descname"><span class="pre">VISIBILITIES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('public',</span> <span class="pre">'private',</span> <span class="pre">'internal',</span> <span class="pre">'hidden')</span></span><a class="headerlink" href="#liaise.testing.VISIBILITIES" title="Link to this definition">#</a></dt>
+<dd><p>GitHub’s three, and <code class="docutils literal notranslate"><span class="pre">hidden</span></code> for one the
+account cannot see. A fake repository is private and owned by a user unless told.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>What a fake repository’s visibility may be</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -709,17 +756,20 @@ correspond’s <code class="docutils literal notranslate"><span class="pre">WebI
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.add_comment"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.add_comment()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.add_issue"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.add_issue()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.audience"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.audience()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.capabilities"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.capabilities</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.parse_ref"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.parse_ref()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.poll"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.poll()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.read"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.read()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.send"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.send()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.set_state"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.set_state()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.FakeGitHubChannel.set_visibility"><code class="docutils literal notranslate"><span class="pre">FakeGitHubChannel.set_visibility()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.ISSUE_STATES"><code class="docutils literal notranslate"><span class="pre">ISSUE_STATES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.NATIVE_FIELDS"><code class="docutils literal notranslate"><span class="pre">NATIVE_FIELDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.SELF_LOGIN"><code class="docutils literal notranslate"><span class="pre">SELF_LOGIN</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.VISIBILITIES"><code class="docutils literal notranslate"><span class="pre">VISIBILITIES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.add_webinbox_report"><code class="docutils literal notranslate"><span class="pre">add_webinbox_report()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.testing.demo_registry"><code class="docutils literal notranslate"><span class="pre">demo_registry()</span></code></a></li>
 </ul>

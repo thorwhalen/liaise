@@ -8,10 +8,11 @@ liaise.gate
 
    .. autosummary::
    
-      DRAFT_REPLY_MODE
       OUTSIDE_A_CASE
-      DRAFT_REPLY_REASON
       MENTION_CHANNEL
+      DELAY_HELD
+      GATE_CONCERN
+      MAX_WRAPPED_FILTERS
       OutboundFilter
       DFLT_OUTBOUND_FILTERS
    
@@ -19,10 +20,13 @@ liaise.gate
 
    .. autosummary::
    
+      approval_for
+      binds
       deslop
-      leak_scan
+      filter_name
       notify_recipient
-      reply_mode
+      outbound_policy
+      outside_a_case
       run_gate
       writing_card
    
@@ -30,6 +34,7 @@ liaise.gate
 
    .. autosummary::
    
+      Concern
       Divert
       GateContext
       GateDecision

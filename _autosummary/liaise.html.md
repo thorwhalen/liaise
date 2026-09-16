@@ -14,27 +14,32 @@ nothing.
 | [`authorize`](#liaise.authorize)(message, subject, permission, \*[, ...])   | Whether `message` may exercise `permission` on `subject`, by the label-as-claim rule.                                                       |
 |-------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
 | [`default_ledger_store`](#liaise.default_ledger_store)(state_dir)                      | The default ledger store: one JSON file per key in `<state_dir>/ledger`.                                                                    |
+| [`evaluate`](#liaise.evaluate)(outbound, \*, audience, disclosure, ...)    | The [`Verdict`](#liaise.Verdict) for `outbound`, through every rule of the table.                               |
 | [`hold`](#liaise.hold)(ledger, scope, \*[, mode, reason, ...])         | Put a `mode` hold on `scope`, replacing any hold already there, and return it.                                                              |
 | [`intake`](#liaise.intake)(subject, ledger, \*[, registry, ...])         | Take in what arrived on `subject`'s bindings since the ledger's cursors.                                                                    |
 | [`load_global_config`](#liaise.load_global_config)([root])                           | Load `<root>/config.toml` into a [`GlobalConfig`](#liaise.GlobalConfig), defaults applied.                           |
 | [`load_subjects`](#liaise.load_subjects)([root])                                | Every subject under `<root>/subjects/*.toml`, keyed by slug, in slug order.                                                                 |
 | [`migrate_config`](#liaise.migrate_config)([root, apply, registry])              | Plan the 0.1 subject files for the 0.0.x config under `root`; write them if `apply`.                                                        |
 | [`notify`](#liaise.notify)(title, body, \*[, priority, ...])             | POST `body` to the ntfy topic named by the `topic_env` environment variable.                                                                |
+| [`outbound_policy`](#liaise.outbound_policy)(outbound, ctx, \*[, ...])            | Hold back what the outbound policy (discussion §5.4) does not let go now.                                                                   |
 | [`parse_outcomes`](#liaise.parse_outcomes)(structured_output)                    | The outcomes of a run's structured output, checked against `OUTCOME_SCHEMA`.                                                                |
 | [`plan_outcomes`](#liaise.plan_outcomes)(case, outcomes, subject, \*, now)      | The actions that carry out `outcomes` on `case`, one group per outcome, in order.                                                           |
 | [`resolve_person`](#liaise.resolve_person)(address, subject)                     | The person id `address` belongs to on `subject`, or None.                                                                                   |
-| [`run_gate`](#liaise.run_gate)(outbound, ctx, \*[, outbound_filters])      | Run `outbound` through `outbound_filters` in order, stopping at the first divert.                                                           |
+| [`run_gate`](#liaise.run_gate)(outbound, ctx, \*[, outbound_filters])      | Run `outbound` through every one of `outbound_filters`, in order, and decide.                                                               |
 | [`run_once`](#liaise.run_once)(subjects, store, \*, global_config)         | One tick over `subjects` (slug to [`Subject`](liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`. |
 | [`status_lines`](#liaise.status_lines)(subjects, store, \*, global_config)     | What `liaise status` prints: what the ledger in `store` says, read only.                                                                    |
 | [`unhold`](#liaise.unhold)(ledger, scope)                                | Lift the hold on `scope`, whoever set it; True when there was one.                                                                          |
 
 ### Classes
 
-| [`Case`](#liaise.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                                       |
+| [`Approval`](#liaise.Approval)(by, at[, payload_hash, ...])             | The operator's release of a held message, bound to the message and audience they saw.                                         |
 |----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| [`Case`](#liaise.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                                       |
 | [`ClaudeHeadless`](#liaise.ClaudeHeadless)(\*[, claude_bin, runs_dir, ...])   | The default [`Processor`](#liaise.Processor): the `claude` CLI, headless, stream-JSON, detached.    |
 | [`EchoProcessor`](#liaise.EchoProcessor)(\*[, results, default, health])     | A [`Processor`](#liaise.Processor) that runs nothing: it records jobs and returns scripted results. |
 | [`FakeGitHub`](#liaise.FakeGitHub)([issues])                              | In-memory [`GitHub`](#liaise.GitHub), for tests.                                                 |
+| [`GateContext`](#liaise.GateContext)(\*, subject, now[, case, ...])        | What the filters may consult about one message.                                                                               |
+| [`GateDecision`](#liaise.GateDecision)(send, diverted[, notes, ...])        | What [`run_gate()`](#liaise.run_gate) decided: `send` a message, or why it is `diverted`.          |
 | [`GhCli`](#liaise.GhCli)(\*[, gh_bin])                               | The default [`GitHub`](#liaise.GitHub): every call shells out to the `gh` CLI.                   |
 | [`GitHub`](#liaise.GitHub)(\*args, \*\*kwargs)                        | What `liaise` needs from GitHub.                                                                                              |
 | [`GlobalConfig`](#liaise.GlobalConfig)(owner_login, state_dir[, ...])       | `~/.config/liaise/config.toml`: the owner, the state directory, and notifications.                                            |
@@ -44,18 +49,56 @@ nothing.
 | [`Job`](#liaise.Job)(run_id, case_id, subject, prompt, cwd, ...)   | Everything a [`Processor`](#liaise.Processor) needs to run one case once.                           |
 | [`Ledger`](#liaise.Ledger)(store)                                     | What liaise has seen, its cases, runs and holds, the unrouted queue and the cursors.                                          |
 | [`LedgerEntry`](#liaise.LedgerEntry)(at, kind[, actor, grade, ...])        | One thing that happened on a case: appended, never changed.                                                                   |
+| [`Outbound`](#liaise.Outbound)(\*, ref, channel, recipient, ...[, ...]) | A message liaise would send: `text` for `recipient` (a person id) at `ref`.                                                   |
 | [`Outcome`](#liaise.Outcome)(kind[, text, questions, reason])          | One outcome a processor run reports: `kind` from `OUTCOME_KINDS`.                                                             |
 | [`Processor`](#liaise.Processor)(\*args, \*\*kwargs)                     | What the tick needs to run a case's work: the processor seam (`processor=`).                                                  |
+| [`Provenance`](#liaise.Provenance)([tainted, evidence])                   | What the run that wrote the message read: tainted, clean, or unknown.                                                         |
 | [`RunRecord`](#liaise.RunRecord)(run_id, case_id, subject, mode, ...)    | A processor run started on a case: how it was started, and where it is now.                                                   |
 | [`RunResult`](#liaise.RunResult)(run_id[, outcomes, usage, ...])         | What a finished run returned: its outcomes, what it cost, and how it ended.                                                   |
 | [`Subject`](#liaise.Subject)(slug, bindings, policy[, ...])            | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                        |
 | [`TickReport`](#liaise.TickReport)([plan_lines, dispatched, ...])         | What one [`run_once()`](#liaise.run_once) did or, in a dry run, would do.                          |
+| [`Verdict`](#liaise.Verdict)(\*, flow, route, reasons, axes, ...)      | What the policy decided about one message, and why (discussion §5.1).                                                         |
 
 ### Exceptions
 
 | [`ConfigError`](#liaise.ConfigError)   | Raised when configuration is missing or malformed.          |
 |----------------------------------------------------------------|-------------------------------------------------------------|
 | [`GitHubError`](#liaise.GitHubError)   | Raised when the `gh` CLI fails — its stderr is the message. |
+
+### *class* liaise.Approval(by, at, payload_hash=None, audience_hash=None, verdict_id=None, justification='', rules_overridden=())
+
+Bases: `_Record`
+
+The operator’s release of a held message, bound to the message and audience they saw.
+
+`by` released it at `at`. `payload_hash` and `audience_hash` are the hashes of
+the verdict shown to them ([`liaise.policy.payload_hash()`](liaise.policy.html.md#liaise.policy.payload_hash),
+[`liaise.policy.audience_hash()`](liaise.policy.html.md#liaise.policy.audience_hash)), and `verdict_id` names that verdict.
+`rules_overridden` are the rules they released it past, and `justification` says
+why, in their words.
+
+The gate reads it from `liaise.gate.GateContext.approval` and runs every filter
+again (liaise ADR 0002). The approval settles only a concern whose rule it names, whose
+flow is at most `approve`, and only while both hashes still match the message and the
+audience computed at send time: a changed text, title, recipient or readership voids it,
+and a `refuse` is never settled. An approval without hashes binds to nothing. It is
+recorded with the send.
+
+#### binds(payload_hash, audience_hash)
+
+Whether this approval was given for the message and audience these hashes name.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+```pycon
+>>> from datetime import datetime, timezone
+>>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
+>>> Approval(by="operator", at=at, payload_hash="p", audience_hash="a").binds("p", "a")
+True
+>>> Approval(by="operator", at=at).binds("p", "a")  # bound to nothing
+False
+```
 
 ### *class* liaise.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), defer_until=None)
 
@@ -247,6 +290,67 @@ Add or replace an issue, for test setup.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### *class* liaise.GateContext(, subject, now, case=None, approval=None, audience=None, provenance=None, mode=None, fingerprint_key=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What the filters may consult about one message.
+
+`subject` is the subject whose policy applies, `now` the time of the decision, and
+`case` the case the message belongs to (None outside any). `audience` is
+correspond’s record of who can read the destination, computed right before the gate
+runs (None: unknown, so public). `provenance` is what the run that wrote the message
+read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`.
+`approval` is the operator’s release of this message, None for every message sent
+without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
+one in the configured state directory).
+
+### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What [`run_gate()`](#liaise.run_gate) decided: `send` a message, or why it is `diverted`.
+
+Exactly one of `send` (the message as the filters left it) and `diverted` (every
+standing concern’s text, most restrictive first) is set. `flow` is the decision’s,
+`concerns` what still holds the message back and `settled` what the approval
+released it past. `notes` holds every filter’s notes, in order. `diverted_by` names
+the filter of the most restrictive concern, as an operator notification may say it: the
+reason can quote what a filter raised. `verdict` and `consulted` are the policy’s
+verdict and what it consulted. `approval` is the one on the context, and
+`payload_hash` and `audience_hash` what it had to match.
+
+#### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+
+The audience the policy judged, in words; None when the policy did not run.
+
+#### *property* bound *: [bool](https://docs.python.org/3/builtins/functions.html#bool)*
+
+Whether the approval binds to this message, this audience and this verdict.
+
+#### *property* overridable *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), ...]*
+
+The rules of the standing concerns an approval could settle, each once.
+
+#### record()
+
+What a ledger `gate` entry records of the decision (discussion §5.7).
+
+The flow and every concern with its findings (kinds, positions and fingerprints,
+never the value), what the approval settled, the policy’s verdict (its audience
+snapshot, the readers’ tiers and clearances, the mode), the labels, seals and
+provenance consulted, and the approval with whether it bound.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### summary()
+
+What a held draft keeps of the decision: the flow, the audience in words, the reasons.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### *class* liaise.GhCli(, gh_bin='gh')
 
@@ -636,6 +740,22 @@ what access was judged on; `delivery_id` is the channel event it came from.
 `detail` holds whatever else the kind needs, such as a transition’s `from`,
 `to` and `reason`.
 
+### *class* liaise.Outbound(, ref, channel, recipient, purpose, text, title=None, case_id=None, cc=(), bcc=(), attachments=(), project=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A message liaise would send: `text` for `recipient` (a person id) at `ref`.
+
+`ref` is the encoded conversation or address it goes to (`github:example/app#12`,
+or `github:example/app` to open an issue there), and `channel` is that ref’s
+channel. `purpose` is the outcome kind it carries out (`ask`, `reply`,
+`propose`, `deliver`). `title` is the title of the issue it opens, when it opens
+one. `case_id` is the case the message belongs to, or None for a message an agent
+sends outside any case (`liaise message send`). `cc` and `bcc` are further
+recipients (addresses), on channels that have them; `attachments` are the names of
+attached files, and `project` the project the message is about, when one is named.
+The policy judges every one of these, and the payload hash covers all but `project`.
+
 ### *class* liaise.Outcome(kind, text='', questions=(), reason='')
 
 Bases: `_Record`
@@ -695,6 +815,51 @@ With `persist=False`, as in a dry run, the processor writes nothing of its own.
 
 * **Return type:**
   [`RunRecord`](liaise.model.html.md#liaise.model.RunRecord)
+
+### *class* liaise.Provenance(tainted=None, evidence=())
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What the run that wrote the message read: tainted, clean, or unknown.
+
+`tainted` is `None` when nobody can say (the hook path), which counts as tainted
+(decision 10). `evidence` says why: the messages read and the grades and roles that
+the subject does not trust, in words.
+
+#### *classmethod* clean(\*evidence)
+
+A run that read only what the subject trusts.
+
+* **Return type:**
+  [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
+
+#### *classmethod* of(value)
+
+`value` as a [`Provenance`](#liaise.Provenance): a record, its dict, a bool, or None.
+
+* **Return type:**
+  [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
+
+#### *classmethod* tainted_by(\*evidence)
+
+A run that read something the subject does not trust for `request_work`.
+
+* **Return type:**
+  [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
+
+#### to_dict()
+
+JSON-ready.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### *classmethod* unknown(\*evidence)
+
+A run nobody can vouch for.
+
+* **Return type:**
+  [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
 
 ### *class* liaise.RunRecord(run_id, case_id, subject, mode, status, started_at, pid=None, heartbeat_at=None, ended_at=None, session_id=None, stream_path=None, cancel_sent_at=None)
 
@@ -792,6 +957,36 @@ What one [`run_once()`](#liaise.run_once) did or, in a dry run, would do.
 print. `dispatched` and `collected` are run ids, `sent` the messages as they went
 out (mention added), `diverted` those that stayed with the operator as drafts.
 
+### *class* liaise.Verdict(, flow, route, reasons, axes, least_cleared, findings, payload_hash, audience_hash, audience, readers, as_of, mode)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What the policy decided about one message, and why (discussion §5.1).
+
+`flow` is one of `FLOWS` and `route` its `ROUTES` entry. `reasons`
+are every rule that fired, most restrictive first. `axes` are the values the decision
+was made on: `audience` (the scope), `sensitivity` (the highest finding severity,
+0 when nothing was found), `relationship` (the most restrictive standing among the
+explicit recipients, a tier or `stranger`), `irreversible` (the audience is not
+retractable) and `tainted` (true, false, or `None` for unknown). `least_cleared`
+is the reader the content ceiling came from. `payload_hash` and `audience_hash`
+are what an approval binds to; `audience` is the snapshot the hash was taken over
+and `readers` the standing (tier, clearance) of every reader consulted, so the
+ledger entry explains itself (§5.7); `as_of` is the `now` the verdict was made
+at, and `mode` the policy’s. `route` is `draft` for `delay` until the outbox
+exists (`OutboundPolicy.outbox`).
+
+#### *property* rules *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), ...]*
+
+The names of the rules that fired, most restrictive first, each once.
+
+#### to_dict()
+
+JSON-ready: what the ledger records for a gated message.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### liaise.authorize(message, subject, permission, \*, resolver=<function resolve_person>)
 
 Whether `message` may exercise `permission` on `subject`, by the label-as-claim rule.
@@ -811,6 +1006,32 @@ Creates the directory, since `dol.Jsons` will not create one on write.
 
 * **Return type:**
   [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+### liaise.evaluate(outbound, \*, audience, disclosure, findings, provenance, policy=None, now, identities=None, \_rules=(Rule(name='secrets', predicate=<function secrets>, flow='refuse'), Rule(name='seals', predicate=<function seals>, flow='refuse'), Rule(name='exfiltration', predicate=<function exfiltration>, flow='refuse'), Rule(name='personal, public', predicate=<function personal_public>, flow='refuse'), Rule(name='no write-down', predicate=<function no_write_down>, flow='revise'), Rule(name='co-ownership', predicate=<function co_ownership>, flow='revise'), Rule(name='personal, private', predicate=<function personal_private>, flow='approve'), Rule(name='tier', predicate=<function tier>, flow='approve'), Rule(name='stranger', predicate=<function stranger>, flow='approve'), Rule(name='disclosure stance', predicate=<function disclosure_stance>, flow='approve'), Rule(name='taint', predicate=<function taint>, flow='approve'), Rule(name='reply mode', predicate=<function reply_mode>, flow='approve'), Rule(name='irreversibility', predicate=<function irreversibility>, flow='delay'), Rule(name='unknown audience', predicate=<function unknown_audience>, flow='send')))
+
+The [`Verdict`](#liaise.Verdict) for `outbound`, through every rule of the table.
+
+Pure: no I/O, no clock (`now` is given), and the same verdict for the same inputs.
+See the module docstring for what each input is. `_rules` is for the mutation
+checks of the test suite only (the table is not a seam); it must hold rules of the
+table by name.
+
+* **Return type:**
+  [`Verdict`](liaise.policy.html.md#liaise.policy.Verdict)
+
+```pycon
+>>> from datetime import datetime, timezone
+>>> now = datetime(2026, 9, 15, tzinfo=timezone.utc)
+>>> ada = {"people": {"ada": {"tier": "open", "clearance": "amber"}}}
+>>> email = {"ref": "email:ada", "scope": "named", "readers": ["email:ada"]}
+>>> message = {"ref": "email:ada", "channel": "email", "recipient": "ada", "text": "hi", "case_id": "s-1"}
+>>> verdict = evaluate(message, audience=email, disclosure=ada, findings=(), provenance=False,
+...                    now=now, identities={"email:ada": "ada"})
+>>> verdict.flow, verdict.route, verdict.rules
+('send', 'send', ())
+>>> evaluate(message, audience=None, disclosure=ada, findings=(), provenance=False, now=now).rules
+('irreversibility', 'unknown audience')
+```
 
 ### liaise.hold(ledger, scope, , mode='block', reason='', set_by='operator', now=None)
 
@@ -935,6 +1156,20 @@ that otherwise succeeded. Build `body` with `notice_body()`.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
+### liaise.outbound_policy(outbound, ctx, \*, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>), resolver=<function resolve_person>)
+
+Hold back what the outbound policy (discussion §5.4) does not let go now.
+
+The audience is the context’s (unknown, so public, when it has none), the disclosure
+comes through `disclosure` (acquaint’s, or every reader at `need-to-know` without
+it), and the provenance is the context’s (unknown, so tainted, when it has none). See
+[`liaise.outbound.judge()`](liaise.outbound.html.md#liaise.outbound.judge). A `send` verdict passes, noting the audience; any
+other diverts at its flow, one concern per rule that fired. It never redacts: what it
+found is for the operator to fix, and its reasons say where, never what.
+
+* **Return type:**
+  `Union`[[`Pass`](liaise.gate.html.md#liaise.gate.Pass), [`Divert`](liaise.gate.html.md#liaise.gate.Divert)]
+
 ### liaise.parse_outcomes(structured_output)
 
 The outcomes of a run’s structured output, checked against `OUTCOME_SCHEMA`.
@@ -975,19 +1210,21 @@ A missing or broken acquaint, or any error it raises, resolves to None.
 * **Return type:**
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-### liaise.run_gate(outbound, ctx, \*, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+### liaise.run_gate(outbound, ctx, \*, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>))
 
-Run `outbound` through `outbound_filters` in order, stopping at the first divert.
+Run `outbound` through every one of `outbound_filters`, in order, and decide.
 
-Each `Pass` hands its message, possibly rewritten, to the next filter. The
-first `Divert` ends the gate with nothing to send. Notes accumulate across
-the filters that ran. The gate fails closed: a filter that raises, or returns
-anything but a `Pass` or a `Divert`, diverts the message with a reason naming it.
+Each `Pass` hands its message, possibly rewritten, to the next filter; each
+`Divert` adds its concerns. An approval on the context settles what it binds to
+and names (see the module docstring). The decision’s flow is the most restrictive
+concern left, and only `send` sends. The gate fails closed: a filter that raises, or
+returns anything but a `Pass` (of an [`Outbound`](#liaise.Outbound)) or a `Divert`, adds an
+`approve` concern naming it.
 
 * **Return type:**
   [`GateDecision`](liaise.gate.html.md#liaise.gate.GateDecision)
 
-### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600))
+### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600))
 
 One tick over `subjects` (slug to [`Subject`](liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`.
 
@@ -1050,13 +1287,14 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`config`](liaise.config.html.md#module-liaise.config)         | The global config, and the 0.0.x partner files `liaise migrate-config` reads.                                        |
 | [`detect`](liaise.detect.html.md#module-liaise.detect)         | Detectors for outbound messages: what a message holds, reported without the value.                                   |
 | [`errors`](liaise.errors.html.md#module-liaise.errors)         | Processor error taxonomy (design §3.6): classify how a run ended, and what the tick does.                            |
-| [`gate`](liaise.gate.html.md#module-liaise.gate)             | The outbound gate: the checks a message passes before liaise sends it.                                               |
+| [`gate`](liaise.gate.html.md#module-liaise.gate)             | The outbound gate: the checks every message passes before liaise sends it, and the verdict they reach.               |
 | [`github`](liaise.github.html.md#module-liaise.github)         | The GitHub seam: one protocol, two implementations.                                                                  |
 | [`holds`](liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
 | [`ledger`](liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
 | [`messages`](liaise.messages.html.md#module-liaise.messages)     | Messages outside a case: what an agent says to a person on its own initiative, through the gate.                     |
 | [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
 | [`model`](liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |
+| [`outbound`](liaise.outbound.html.md#module-liaise.outbound)     | What the outbound gate's policy filter gathers before the policy decides.                                            |
 | [`outcomes`](liaise.outcomes.html.md#module-liaise.outcomes)     | Outcomes: what a processor run reports, checked, then planned into actions.                                          |
 | [`policy`](liaise.policy.html.md#module-liaise.policy)         | Policy and verdict for outbound messages: from findings and an audience to a flow.                                   |
 | [`processor`](liaise.processor.html.md#module-liaise.processor)   | Processors (design §3.6): what runs a case's work, detached, and how that run ended.                                 |

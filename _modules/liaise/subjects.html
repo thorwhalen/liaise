@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -771,6 +771,11 @@ window.runMermaid = runMermaid;</script>
     <span class="n">Markers</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">CASE_STATES</span><span class="p">,</span> <span class="n">PERMISSIONS</span><span class="p">,</span> <span class="n">require_one_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">ENFORCE</span><span class="p">,</span> <span class="n">MODES</span><span class="p">,</span> <span class="n">TAINTED_RUNS_APPROVE</span><span class="p">,</span> <span class="n">TAINTED_RUNS_SEND</span>
+
+<span class="c1">#: What ``policy.tainted_runs`` may say: ``approve`` (a run that read untrusted input needs</span>
+<span class="c1">#: the operator for any audience wider than them) or ``send`` (the subject waives that).</span>
+<span class="n">TAINTED_RUNS</span> <span class="o">=</span> <span class="p">(</span><span class="n">TAINTED_RUNS_APPROVE</span><span class="p">,</span> <span class="n">TAINTED_RUNS_SEND</span><span class="p">)</span>
 
 <span class="c1">#: Subject files live in this directory under the config root.</span>
 <span class="n">DFLT_SUBJECTS_SUBDIR</span> <span class="o">=</span> <span class="s2">"subjects"</span>
@@ -896,6 +901,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    :mod:`liaise.access`. ``waiting_labels`` (person to label) is the mirror of</span>
 <span class="sd">    ``claim_labels``: a label liaise writes on a case's issues while the case waits on that</span>
 <span class="sd">    person, where a claim label is one it reads (see :mod:`liaise.projection`).</span>
+
+<span class="sd">    The outbound gate's policy (liaise ADR 0002) reads four more: ``tainted_runs``</span>
+<span class="sd">    (``approve``, or ``send`` to waive the taint rule), ``link_allowlist`` (hosts a link</span>
+<span class="sd">    may point at besides the channel's own), ``canary_terms`` (terms planted in private</span>
+<span class="sd">    context, never to be sent) and ``mode`` (``enforce``, or ``shadow``, recorded on every</span>
+<span class="sd">    verdict and enforced alike until shadow mode lands). ``leak_terms`` are scanned for as</span>
+<span class="sd">    a label no reader is cleared for; ``public_channels`` is still read, and decides</span>
+<span class="sd">    nothing: the audience correspond computes does. Both go after one release.</span>
 <span class="sd">    """</span>
 
     <span class="n">people</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
@@ -921,7 +934,11 @@ window.runMermaid = runMermaid;</script>
     <span class="c1">#: Person id to the brief a run on their case reads (see :meth:`Subject.brief_for`).</span>
     <span class="n">briefs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
     <span class="c1">#: Person id to the label a case's issues carry while the case waits on them.</span>
-    <span class="n">waiting_labels</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span></div>
+    <span class="n">waiting_labels</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+    <span class="n">tainted_runs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">TAINTED_RUNS_APPROVE</span>
+    <span class="n">link_allowlist</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">canary_terms</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ENFORCE</span></div>
 
 
 
@@ -1521,6 +1538,19 @@ window.runMermaid = runMermaid;</script>
         <span class="n">deployed_nudge_days</span><span class="o">=</span><span class="n">deployed_nudge_days</span><span class="p">,</span>
         <span class="n">briefs</span><span class="o">=</span><span class="n">briefs</span><span class="p">,</span>
         <span class="n">waiting_labels</span><span class="o">=</span><span class="n">waiting_labels</span><span class="p">,</span>
+        <span class="n">tainted_runs</span><span class="o">=</span><span class="n">_choice</span><span class="p">(</span>
+            <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tainted_runs"</span><span class="p">,</span> <span class="n">TAINTED_RUNS_APPROVE</span><span class="p">),</span>
+            <span class="n">TAINTED_RUNS</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy.tainted_runs"</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">link_allowlist</span><span class="o">=</span><span class="n">_strings</span><span class="p">(</span>
+            <span class="n">raw</span><span class="p">,</span> <span class="s2">"link_allowlist"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy.link_allowlist"</span>
+        <span class="p">),</span>
+        <span class="n">canary_terms</span><span class="o">=</span><span class="n">_strings</span><span class="p">(</span>
+            <span class="n">raw</span><span class="p">,</span> <span class="s2">"canary_terms"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy.canary_terms"</span>
+        <span class="p">),</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">_choice</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mode"</span><span class="p">,</span> <span class="n">ENFORCE</span><span class="p">),</span> <span class="n">MODES</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy.mode"</span><span class="p">),</span>
     <span class="p">)</span>
 
 

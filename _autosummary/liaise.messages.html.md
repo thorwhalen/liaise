@@ -13,7 +13,7 @@ gate’s context.
   ([`liaise.subjects.subject_for_ref()`](liaise.subjects.html.md#liaise.subjects.subject_for_ref)), so the caller cannot pick a laxer policy. The
   gate judges it with that subject’s policy and no case on its context, which in 0.1 means
   it is held for the operator: its sender chose where it goes, and only the operator’s
-  release lets such a message out (see [`liaise.gate.reply_mode()`](liaise.gate.html.md#liaise.gate.reply_mode)). The operator is
+  release lets such a message out (see `liaise.gate.reply_mode()`). The operator is
   told, without its text, when a subject’s held queue stops being empty. A hold on the
   subject, the recipient, the repository or the checkout keeps it before the gate judges
   it. Every message is recorded.
@@ -66,7 +66,7 @@ a question, a reply or a proposal.
 * **Type:**
   What a message outside a case may carry out
 
-### *class* liaise.messages.MessageRelease(draft, attempt, filters, edited, message)
+### *class* liaise.messages.MessageRelease(draft, attempt, filters, edited, message, approval=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -75,6 +75,7 @@ What [`send_held_message()`](#liaise.messages.send_held_message) did, as [`liais
 `draft` is the held message as the operator saw it, `attempt` the gate’s decision
 and the send, `filters` how many filters ran, `edited` whether the operator’s text
 replaced the message’s, and `message` the record as the release left it.
+`approval` is the approval the gate was given.
 
 ### *class* liaise.messages.MessageSent(message, attempt, filters, hold=None)
 
@@ -137,8 +138,10 @@ oldest first. Reads only. Raises `ValueError` for a state outside
 What `liaise message show` prints: the message `message_id`, with its text.
 
 Its subject, state, recipient, reference, purpose and title; why it is held, with the
-gate’s notes; its whole text; and its `entries` latest entries. Reads only. Raises
-`ValueError` for a message the ledger `store` does not hold.
+gate’s notes; the gate’s last flow and the audience in words, its whole text with
+invisible characters made visible, and every link in full
+([`liaise.cases.held_lines()`](liaise.cases.html.md#liaise.cases.held_lines)); and its `entries` latest entries. Reads only.
+Raises `ValueError` for a message the ledger `store` does not hold.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
@@ -156,7 +159,7 @@ does not hold, and one that is not held.
 * **Return type:**
   [`OutboundMessage`](liaise.model.html.md#liaise.model.OutboundMessage)
 
-### liaise.messages.send_held_message(ledger, subjects, message_id, \*, by, text=None, title=None, seen=None, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+### liaise.messages.send_held_message(ledger, subjects, message_id, \*, by, text=None, title=None, seen=None, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None)
 
 Send the held message `message_id` as `by`, through the gate again.
 
@@ -167,8 +170,11 @@ one, and `liaise message send-draft` passes the operator only after asking at a
 terminal. Sent, the message is recorded as sent. Diverted or refused,
 it stays held with the text that was judged and the new reason. Either way an entry
 by `by` records the attempt. `seen` is the message as the operator saw it
-([`message_draft()`](#liaise.messages.message_draft)): one that changed since is not sent. `send=False` and
-`dry_run` are as [`release_draft()`](liaise.release.html.md#liaise.release.release_draft) has them.
+([`message_draft()`](#liaise.messages.message_draft)): one that changed since is not sent. `send=False`,
+`dry_run`, `approval` (the dry run’s, bound to what the operator was shown),
+`approve_shown`, `justification` and `fingerprint_key` are as
+[`release_draft()`](liaise.release.html.md#liaise.release.release_draft) has them: with neither an approval nor
+`approve_shown`, nothing is settled and a held message stays held.
 
 Raises `ValueError`, sending and writing nothing, for a message the ledger does not
 hold, one that is not held, one whose subject is not in `subjects`, one that changed
@@ -177,7 +183,7 @@ since `seen`, and anything [`release_draft()`](liaise.release.html.md#liaise.rel
 * **Return type:**
   [`MessageRelease`](#liaise.messages.MessageRelease)
 
-### liaise.messages.send_message(ledger, subjects, recipient, \*, ref, text, title=None, purpose='ask', by='agent', now=None, registry=None, notify_fn=None, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+### liaise.messages.send_message(ledger, subjects, recipient, \*, ref, text, title=None, purpose='ask', by='agent', now=None, registry=None, notify_fn=None, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), fingerprint_key=None)
 
 Send `text` to `recipient` (a person id) at `ref` outside any case, or hold it.
 
@@ -198,8 +204,10 @@ it binds with a `title`, to open an issue there; it is kept as
 - **Sent**, when a gate without that rule passes it: recorded as sent, with the text
   as it went out and its url.
 
-Each record’s one entry is by `by`, at `now`. A dry run judges and plans the same,
-and records and tells nothing.
+Each record’s one entry is by `by`, at `now`, with the gate’s audit record. The gate
+judges it with its provenance unknown (nobody can say what its sender read), and
+`fingerprint_key` is as [`GateContext`](liaise.gate.html.md#liaise.gate.GateContext) has it. A dry run judges
+and plans the same, and records and tells nothing.
 
 Raises `ValueError`, sending and recording nothing, for any of these:
 

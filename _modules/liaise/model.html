@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -995,16 +995,49 @@ window.runMermaid = runMermaid;</script>
 <a class="viewcode-back" href="../../_autosummary/liaise.model.html#liaise.Approval">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Approval</span><span class="p">(</span><span class="n">_Record</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""The operator's release of a held message: who released it, and when.</span>
+<span class="w">    </span><span class="sd">"""The operator's release of a held message, bound to the message and audience they saw.</span>
 
-<span class="sd">    The gate reads it from :attr:`liaise.gate.GateContext.approval`. It settles</span>
-<span class="sd">    :func:`liaise.gate.reply_mode`, which is what ``draft`` reply mode waits for, and</span>
-<span class="sd">    nothing else: every other filter still judges the message, so a leak in a released</span>
-<span class="sd">    draft is diverted all the same. It is recorded with the send.</span>
+<span class="sd">    ``by`` released it at ``at``. ``payload_hash`` and ``audience_hash`` are the hashes of</span>
+<span class="sd">    the verdict shown to them (:func:`liaise.policy.payload_hash`,</span>
+<span class="sd">    :func:`liaise.policy.audience_hash`), and ``verdict_id`` names that verdict.</span>
+<span class="sd">    ``rules_overridden`` are the rules they released it past, and ``justification`` says</span>
+<span class="sd">    why, in their words.</span>
+
+<span class="sd">    The gate reads it from :attr:`liaise.gate.GateContext.approval` and runs every filter</span>
+<span class="sd">    again (liaise ADR 0002). The approval settles only a concern whose rule it names, whose</span>
+<span class="sd">    flow is at most ``approve``, and only while both hashes still match the message and the</span>
+<span class="sd">    audience computed at send time: a changed text, title, recipient or readership voids it,</span>
+<span class="sd">    and a ``refuse`` is never settled. An approval without hashes binds to nothing. It is</span>
+<span class="sd">    recorded with the send.</span>
 <span class="sd">    """</span>
 
     <span class="n">by</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span></div>
+    <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">payload_hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">audience_hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">verdict_id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">justification</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">rules_overridden</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+
+<div class="viewcode-block" id="Approval.binds">
+<a class="viewcode-back" href="../../_autosummary/liaise.model.html#liaise.Approval.binds">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">binds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload_hash</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">audience_hash</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether this approval was given for the message and audience these hashes name.</span>
+
+<span class="sd">        &gt;&gt;&gt; from datetime import datetime, timezone</span>
+<span class="sd">        &gt;&gt;&gt; at = datetime(2026, 9, 15, tzinfo=timezone.utc)</span>
+<span class="sd">        &gt;&gt;&gt; Approval(by="operator", at=at, payload_hash="p", audience_hash="a").binds("p", "a")</span>
+<span class="sd">        True</span>
+<span class="sd">        &gt;&gt;&gt; Approval(by="operator", at=at).binds("p", "a")  # bound to nothing</span>
+<span class="sd">        False</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">payload_hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">audience_hash</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload_hash</span> <span class="o">==</span> <span class="n">payload_hash</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">audience_hash</span> <span class="o">==</span> <span class="n">audience_hash</span>
+        <span class="p">)</span></div>
+</div>
 
 
 

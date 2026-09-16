@@ -34,7 +34,7 @@ are pure and take the time they record as an argument.
 
 ### Classes
 
-| [`Approval`](#liaise.model.Approval)(by, at)                                  | The operator's release of a held message: who released it, and when.                                             |
+| [`Approval`](#liaise.model.Approval)(by, at[, payload_hash, ...])             | The operator's release of a held message, bound to the message and audience they saw.                            |
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------|
 | [`Case`](#liaise.model.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                          |
 | [`Health`](#liaise.model.Health)(ok[, defer_until, error])                  | Whether a processor can take work now, and if not, until when or why.                                            |
@@ -46,16 +46,40 @@ are pure and take the time they record as an argument.
 | [`RunRecord`](#liaise.model.RunRecord)(run_id, case_id, subject, mode, ...)    | A processor run started on a case: how it was started, and where it is now.                                      |
 | [`RunResult`](#liaise.model.RunResult)(run_id[, outcomes, usage, ...])         | What a finished run returned: its outcomes, what it cost, and how it ended.                                      |
 
-### *class* liaise.model.Approval(by, at)
+### *class* liaise.model.Approval(by, at, payload_hash=None, audience_hash=None, verdict_id=None, justification='', rules_overridden=())
 
 Bases: `_Record`
 
-The operator’s release of a held message: who released it, and when.
+The operator’s release of a held message, bound to the message and audience they saw.
 
-The gate reads it from `liaise.gate.GateContext.approval`. It settles
-[`liaise.gate.reply_mode()`](liaise.gate.html.md#liaise.gate.reply_mode), which is what `draft` reply mode waits for, and
-nothing else: every other filter still judges the message, so a leak in a released
-draft is diverted all the same. It is recorded with the send.
+`by` released it at `at`. `payload_hash` and `audience_hash` are the hashes of
+the verdict shown to them ([`liaise.policy.payload_hash()`](liaise.policy.html.md#liaise.policy.payload_hash),
+[`liaise.policy.audience_hash()`](liaise.policy.html.md#liaise.policy.audience_hash)), and `verdict_id` names that verdict.
+`rules_overridden` are the rules they released it past, and `justification` says
+why, in their words.
+
+The gate reads it from `liaise.gate.GateContext.approval` and runs every filter
+again (liaise ADR 0002). The approval settles only a concern whose rule it names, whose
+flow is at most `approve`, and only while both hashes still match the message and the
+audience computed at send time: a changed text, title, recipient or readership voids it,
+and a `refuse` is never settled. An approval without hashes binds to nothing. It is
+recorded with the send.
+
+#### binds(payload_hash, audience_hash)
+
+Whether this approval was given for the message and audience these hashes name.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+```pycon
+>>> from datetime import datetime, timezone
+>>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
+>>> Approval(by="operator", at=at, payload_hash="p", audience_hash="a").binds("p", "a")
+True
+>>> Approval(by="operator", at=at).binds("p", "a")  # bound to nothing
+False
+```
 
 ### liaise.model.CASE_STATES *= ('intake', 'paused', 'working', 'needs-partner', 'needs-owner', 'deployed', 'budget')*
 

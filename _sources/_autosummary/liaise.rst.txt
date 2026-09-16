@@ -10,12 +10,14 @@
    
       authorize
       default_ledger_store
+      evaluate
       hold
       intake
       load_global_config
       load_subjects
       migrate_config
       notify
+      outbound_policy
       parse_outcomes
       plan_outcomes
       resolve_person
@@ -28,10 +30,13 @@
 
    .. autosummary::
    
+      Approval
       Case
       ClaudeHeadless
       EchoProcessor
       FakeGitHub
+      GateContext
+      GateDecision
       GhCli
       GitHub
       GlobalConfig
@@ -41,12 +46,15 @@
       Job
       Ledger
       LedgerEntry
+      Outbound
       Outcome
       Processor
+      Provenance
       RunRecord
       RunResult
       Subject
       TickReport
+      Verdict
    
    .. rubric:: Exceptions
 
@@ -74,6 +82,7 @@
    messages
    migrate
    model
+   outbound
    outcomes
    policy
    processor

@@ -18,6 +18,7 @@ liaise.cases
       TEXT_INDENT
       NEEDS_OWNER
       STATE_AFTER_SENT_DRAFT
+      AUDIENCE_UNKNOWN
    
    .. rubric:: Functions
 
@@ -27,6 +28,8 @@ liaise.cases
       case_show_lines
       entry_line
       find_draft
+      gate_summary
+      held_lines
       pick_draft
       reject_draft
       send_draft

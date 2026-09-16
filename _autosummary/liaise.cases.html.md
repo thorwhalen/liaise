@@ -37,6 +37,7 @@ that the operator declined one, and why.
 | [`TEXT_INDENT`](#liaise.cases.TEXT_INDENT)            | How `liaise case show` indents a draft's text and a deploy's output.                                                                                                                                                                                           |
 | [`NEEDS_OWNER`](#liaise.cases.NEEDS_OWNER)            | The state a held message leaves its case waiting on the operator in.                                                                                                                                                                                           |
 | [`STATE_AFTER_SENT_DRAFT`](#liaise.cases.STATE_AFTER_SENT_DRAFT) | Where a case in [`NEEDS_OWNER`](#liaise.cases.NEEDS_OWNER) goes once the operator sends its last draft, by the outcome that draft carries out: a question, a reply or a proposal now waits on the reporter, as it does when a run sends one. |
+| [`AUDIENCE_UNKNOWN`](#liaise.cases.AUDIENCE_UNKNOWN)       | How a held message's audience reads when no verdict names it.                                                                                                                                                                                                  |
 
 ### Functions
 
@@ -45,6 +46,8 @@ that the operator declined one, and why.
 | [`case_show_lines`](#liaise.cases.case_show_lines)(store, case_id, \*[, entries])    | What `liaise case show` prints: the case `case_id`, with all a notification leaves out.                            |
 | [`entry_line`](#liaise.cases.entry_line)(entry)                                 | One entry on one line: when, what, by whom, its detail, and the start of its text.                                 |
 | [`find_draft`](#liaise.cases.find_draft)(ledger, case_id, \*[, index])          | `(index, draft)` of the case `case_id`, as [`pick_draft()`](#liaise.cases.pick_draft) picks it. |
+| [`gate_summary`](#liaise.cases.gate_summary)(detail)                              | What a `gate` entry's `detail` says of its decision, as a held draft keeps it.                                     |
+| [`held_lines`](#liaise.cases.held_lines)(text, \*[, gate, indent])              | A held message as the operator reads it before releasing it (discussion §5.7).                                     |
 | [`pick_draft`](#liaise.cases.pick_draft)(case[, index])                         | `(index, draft)`: `case`'s draft at `index`, or its only draft when `index` is None.                               |
 | [`reject_draft`](#liaise.cases.reject_draft)(ledger, case_id, \*, reason[, ...])  | Decline the case `case_id`'s draft at `index` as `by`, recording `reason`.                                         |
 | [`send_draft`](#liaise.cases.send_draft)(ledger, subjects, case_id, \*[, ...])  | Send the case `case_id`'s draft at `index` as `by`, through the gate again.                                        |
@@ -55,6 +58,10 @@ that the operator declined one, and why.
 | [`DraftRejection`](#liaise.cases.DraftRejection)(index, draft, case)                | What [`reject_draft()`](#liaise.cases.reject_draft) did: the draft it took off the case, and the case after it.   |
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [`DraftRelease`](#liaise.cases.DraftRelease)(index, draft, attempt, filters, ...) | What [`send_draft()`](#liaise.cases.send_draft) did with one of a case's drafts.                                |
+
+### liaise.cases.AUDIENCE_UNKNOWN *= 'not judged'*
+
+How a held message’s audience reads when no verdict names it.
 
 ### liaise.cases.DFLT_OPERATOR_REASON *= 'set by the operator'*
 
@@ -70,7 +77,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 What [`reject_draft()`](#liaise.cases.reject_draft) did: the draft it took off the case, and the case after it.
 
-### *class* liaise.cases.DraftRelease(index, draft, attempt, filters, edited, case, moved=None)
+### *class* liaise.cases.DraftRelease(index, draft, attempt, filters, edited, case, moved=None, approval=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -81,6 +88,8 @@ decision and the send (see [`SendAttempt`](liaise.release.html.md#liaise.release
 how many filters the gate ran it through. `edited` says whether the operator’s text
 replaced the draft’s. `case` is the case as the release left it, or would leave it in
 a dry run, and `moved` is its `(from, to)` states when the send moved it on.
+`approval` is the approval the gate was given: the one to pass back to send exactly
+what was judged.
 
 ### liaise.cases.ESCALATION_KINDS *= ('escalate', 'decline')*
 
@@ -139,9 +148,11 @@ What `liaise case show` prints: the case `case_id`, with all a notification leav
 
 Its state and conversations; the reason of its last `escalate` or `decline`; its
 last failed deploy, with the tail of the command’s output; each draft waiting for the
-operator, with its whole text; and its `entries` latest ledger entries, oldest first,
-a line each with its detail and the start of its text. Reads only. Raises
-`ValueError` for a case the ledger `store` does not hold.
+operator, with the gate’s flow, the audience in words, its whole text with invisible
+characters made visible and every link in full ([`held_lines()`](#liaise.cases.held_lines)); and its
+`entries` latest ledger entries, oldest first, a line each with its detail and the
+start of its text. Reads only. Raises `ValueError` for a case the ledger `store`
+does not hold.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
@@ -161,6 +172,28 @@ Raises `ValueError` for a case the ledger does not hold, and as [`pick_draft()`]
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
+### liaise.cases.gate_summary(detail)
+
+What a `gate` entry’s `detail` says of its decision, as a held draft keeps it.
+
+None for an entry that records no verdict (one written before liaise ADR 0002, a
+rejection, a nudge).
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
+### liaise.cases.held_lines(text, , gate=None, indent='    ')
+
+A held message as the operator reads it before releasing it (discussion §5.7).
+
+What the gate decided and the audience in words, when `gate` (a draft’s, or
+[`gate_summary()`](#liaise.cases.gate_summary)’s) says; the text, each invisible or control character written as
+`<U+XXXX>`; and every link and image destination in full, since a link’s title can
+say one place and its destination another.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### liaise.cases.pick_draft(case, index=None)
 
@@ -187,20 +220,23 @@ not hold, and a draft [`pick_draft()`](#liaise.cases.pick_draft) cannot pick.
 * **Return type:**
   [`DraftRejection`](#liaise.cases.DraftRejection)
 
-### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>))
+### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None)
 
 Send the case `case_id`’s draft at `index` as `by`, through the gate again.
 
 The message is the draft’s text, or `text` when the operator edited it. It goes out
 through [`liaise.release.release_draft()`](liaise.release.html.md#liaise.release.release_draft), with an [`Approval`](liaise.model.html.md#liaise.model.Approval)
-by `by` at `now` (the current UTC time when None) on the gate’s context. Draft
-reply mode lets it through, and every other filter judges it as it would a message
-the tick sends, the mention included.
+by `by` at `now` (the current UTC time when None) on the gate’s context, bound to
+the message and the audience its channel reports at send time. The approval settles
+what it names and binds to, draft reply mode among them, and every other concern of the
+gate holds, a `refuse` always.
 
 It asks no one, and `by` has no default: the caller says who releases the draft. Its
-caller shows the operator the message and the gate’s verdict first, from a dry run, and
-passes the draft they saw as `seen`, as `liaise case send-draft` does after asking
-at a terminal.
+caller shows the operator the message and the gate’s verdict first, from a dry run with
+`approve_shown`, and passes the draft they saw as `seen` and that dry run’s
+`approval`, as `liaise case send-draft` does after asking at a terminal. With
+neither, nothing is settled and a draft the gate holds back stays held. A text, an
+audience or a verdict that changed since the approval voids it, and nothing is sent.
 
 - **Sent:** the draft leaves the case. A `gate` entry by `by` records the text as
   it went out, its url, the approval and why the draft was held. Once no draft is

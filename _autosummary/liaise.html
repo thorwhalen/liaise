@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +55,7 @@
     <link rel="prev" title="API reference" href="../api.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -330,6 +330,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -422,23 +423,29 @@ nothing.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.default_ledger_store" title="liaise.default_ledger_store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_ledger_store</span></code></a>(state_dir)</p></td>
 <td><p>The default ledger store: one JSON file per key in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/ledger</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.hold" title="liaise.hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hold</span></code></a>(ledger, scope, *[, mode, reason, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.evaluate" title="liaise.evaluate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate</span></code></a>(outbound, *, audience, disclosure, ...)</p></td>
+<td><p>The <a class="reference internal" href="#liaise.Verdict" title="liaise.Verdict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Verdict</span></code></a> for <code class="docutils literal notranslate"><span class="pre">outbound</span></code>, through every rule of the table.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.hold" title="liaise.hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hold</span></code></a>(ledger, scope, *[, mode, reason, ...])</p></td>
 <td><p>Put a <code class="docutils literal notranslate"><span class="pre">mode</span></code> hold on <code class="docutils literal notranslate"><span class="pre">scope</span></code>, replacing any hold already there, and return it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.intake" title="liaise.intake"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intake</span></code></a>(subject, ledger, *[, registry, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.intake" title="liaise.intake"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intake</span></code></a>(subject, ledger, *[, registry, ...])</p></td>
 <td><p>Take in what arrived on <code class="docutils literal notranslate"><span class="pre">subject</span></code>'s bindings since the ledger's cursors.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.load_global_config" title="liaise.load_global_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_global_config</span></code></a>([root])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.load_global_config" title="liaise.load_global_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_global_config</span></code></a>([root])</p></td>
 <td><p>Load <code class="docutils literal notranslate"><span class="pre">&lt;root&gt;/config.toml</span></code> into a <a class="reference internal" href="#liaise.GlobalConfig" title="liaise.GlobalConfig"><code class="xref py py-class docutils literal notranslate"><span class="pre">GlobalConfig</span></code></a>, defaults applied.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.load_subjects" title="liaise.load_subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_subjects</span></code></a>([root])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.load_subjects" title="liaise.load_subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_subjects</span></code></a>([root])</p></td>
 <td><p>Every subject under <code class="docutils literal notranslate"><span class="pre">&lt;root&gt;/subjects/*.toml</span></code>, keyed by slug, in slug order.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.migrate_config" title="liaise.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>([root, apply, registry])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.migrate_config" title="liaise.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>([root, apply, registry])</p></td>
 <td><p>Plan the 0.1 subject files for the 0.0.x config under <code class="docutils literal notranslate"><span class="pre">root</span></code>; write them if <code class="docutils literal notranslate"><span class="pre">apply</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.notify" title="liaise.notify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">notify</span></code></a>(title, body, *[, priority, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.notify" title="liaise.notify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">notify</span></code></a>(title, body, *[, priority, ...])</p></td>
 <td><p>POST <code class="code docutils literal notranslate"><span class="pre">body</span></code> to the ntfy topic named by the <code class="code docutils literal notranslate"><span class="pre">topic_env</span></code> environment variable.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.outbound_policy" title="liaise.outbound_policy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outbound_policy</span></code></a>(outbound, ctx, *[, ...])</p></td>
+<td><p>Hold back what the outbound policy (discussion §5.4) does not let go now.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.parse_outcomes" title="liaise.parse_outcomes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_outcomes</span></code></a>(structured_output)</p></td>
 <td><p>The outcomes of a run's structured output, checked against <code class="xref py py-data docutils literal notranslate"><span class="pre">OUTCOME_SCHEMA</span></code>.</p></td>
@@ -450,7 +457,7 @@ nothing.</p>
 <td><p>The person id <code class="docutils literal notranslate"><span class="pre">address</span></code> belongs to on <code class="docutils literal notranslate"><span class="pre">subject</span></code>, or None.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.run_gate" title="liaise.run_gate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_gate</span></code></a>(outbound, ctx, *[, outbound_filters])</p></td>
-<td><p>Run <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through <code class="docutils literal notranslate"><span class="pre">outbound_filters</span></code> in order, stopping at the first divert.</p></td>
+<td><p>Run <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through every one of <code class="docutils literal notranslate"><span class="pre">outbound_filters</span></code>, in order, and decide.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.run_once" title="liaise.run_once"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_once</span></code></a>(subjects, store, *, global_config)</p></td>
 <td><p>One tick over <code class="docutils literal notranslate"><span class="pre">subjects</span></code> (slug to <a class="reference internal" href="liaise.subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a>), on the ledger <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p></td>
@@ -467,44 +474,56 @@ nothing.</p>
 <p class="rubric">Classes</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Case" title="liaise.Case"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Case</span></code></a>(id, subject, conversations, reporter, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Approval" title="liaise.Approval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Approval</span></code></a>(by, at[, payload_hash, ...])</p></td>
+<td><p>The operator's release of a held message, bound to the message and audience they saw.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.Case" title="liaise.Case"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Case</span></code></a>(id, subject, conversations, reporter, ...)</p></td>
 <td><p>One piece of work on a subject, from its first message to its delivery.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.ClaudeHeadless" title="liaise.ClaudeHeadless"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClaudeHeadless</span></code></a>(*[, claude_bin, runs_dir, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.ClaudeHeadless" title="liaise.ClaudeHeadless"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClaudeHeadless</span></code></a>(*[, claude_bin, runs_dir, ...])</p></td>
 <td><p>The default <a class="reference internal" href="#liaise.Processor" title="liaise.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a>: the <code class="docutils literal notranslate"><span class="pre">claude</span></code> CLI, headless, stream-JSON, detached.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.EchoProcessor" title="liaise.EchoProcessor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EchoProcessor</span></code></a>(*[, results, default, health])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.EchoProcessor" title="liaise.EchoProcessor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EchoProcessor</span></code></a>(*[, results, default, health])</p></td>
 <td><p>A <a class="reference internal" href="#liaise.Processor" title="liaise.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a> that runs nothing: it records jobs and returns scripted results.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.FakeGitHub" title="liaise.FakeGitHub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FakeGitHub</span></code></a>([issues])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.FakeGitHub" title="liaise.FakeGitHub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FakeGitHub</span></code></a>([issues])</p></td>
 <td><p>In-memory <a class="reference internal" href="#liaise.GitHub" title="liaise.GitHub"><code class="xref py py-class docutils literal notranslate"><span class="pre">GitHub</span></code></a>, for tests.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.GhCli" title="liaise.GhCli"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GhCli</span></code></a>(*[, gh_bin])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.GateContext" title="liaise.GateContext"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GateContext</span></code></a>(*, subject, now[, case, ...])</p></td>
+<td><p>What the filters may consult about one message.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.GateDecision" title="liaise.GateDecision"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GateDecision</span></code></a>(send, diverted[, notes, ...])</p></td>
+<td><p>What <a class="reference internal" href="#liaise.run_gate" title="liaise.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_gate()</span></code></a> decided: <code class="docutils literal notranslate"><span class="pre">send</span></code> a message, or why it is <code class="docutils literal notranslate"><span class="pre">diverted</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.GhCli" title="liaise.GhCli"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GhCli</span></code></a>(*[, gh_bin])</p></td>
 <td><p>The default <a class="reference internal" href="#liaise.GitHub" title="liaise.GitHub"><code class="xref py py-class docutils literal notranslate"><span class="pre">GitHub</span></code></a>: every call shells out to the <code class="code docutils literal notranslate"><span class="pre">gh</span></code> CLI.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.GitHub" title="liaise.GitHub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GitHub</span></code></a>(*args, **kwargs)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.GitHub" title="liaise.GitHub"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GitHub</span></code></a>(*args, **kwargs)</p></td>
 <td><p>What <code class="code docutils literal notranslate"><span class="pre">liaise</span></code> needs from GitHub.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.GlobalConfig" title="liaise.GlobalConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalConfig</span></code></a>(owner_login, state_dir[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.GlobalConfig" title="liaise.GlobalConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GlobalConfig</span></code></a>(owner_login, state_dir[, ...])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">~/.config/liaise/config.toml</span></code>: the owner, the state directory, and notifications.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.Health" title="liaise.Health"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Health</span></code></a>(ok[, defer_until, error])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Health" title="liaise.Health"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Health</span></code></a>(ok[, defer_until, error])</p></td>
 <td><p>Whether a processor can take work now, and if not, until when or why.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Hold" title="liaise.Hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hold</span></code></a>(scope, mode[, reason, set_by, set_at])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.Hold" title="liaise.Hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hold</span></code></a>(scope, mode[, reason, set_by, set_at])</p></td>
 <td><p>A stop on work in <code class="docutils literal notranslate"><span class="pre">scope</span></code> (<code class="docutils literal notranslate"><span class="pre">global</span></code>, <code class="docutils literal notranslate"><span class="pre">subject:&lt;slug&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">repo:&lt;o/r&gt;</span></code>, ...).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.IntakeReport" title="liaise.IntakeReport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IntakeReport</span></code></a>(subject[, events, new_cases, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.IntakeReport" title="liaise.IntakeReport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IntakeReport</span></code></a>(subject[, events, new_cases, ...])</p></td>
 <td><p>What one <a class="reference internal" href="#liaise.intake" title="liaise.intake"><code class="xref py py-func docutils literal notranslate"><span class="pre">intake()</span></code></a> of a subject took in.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Job" title="liaise.Job"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Job</span></code></a>(run_id, case_id, subject, prompt, cwd, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.Job" title="liaise.Job"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Job</span></code></a>(run_id, case_id, subject, prompt, cwd, ...)</p></td>
 <td><p>Everything a <a class="reference internal" href="#liaise.Processor" title="liaise.Processor"><code class="xref py py-class docutils literal notranslate"><span class="pre">Processor</span></code></a> needs to run one case once.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.Ledger" title="liaise.Ledger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ledger</span></code></a>(store)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Ledger" title="liaise.Ledger"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ledger</span></code></a>(store)</p></td>
 <td><p>What liaise has seen, its cases, runs and holds, the unrouted queue and the cursors.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.LedgerEntry" title="liaise.LedgerEntry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LedgerEntry</span></code></a>(at, kind[, actor, grade, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.LedgerEntry" title="liaise.LedgerEntry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LedgerEntry</span></code></a>(at, kind[, actor, grade, ...])</p></td>
 <td><p>One thing that happened on a case: appended, never changed.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Outbound" title="liaise.Outbound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Outbound</span></code></a>(*, ref, channel, recipient, ...[, ...])</p></td>
+<td><p>A message liaise would send: <code class="docutils literal notranslate"><span class="pre">text</span></code> for <code class="docutils literal notranslate"><span class="pre">recipient</span></code> (a person id) at <code class="docutils literal notranslate"><span class="pre">ref</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.Outcome" title="liaise.Outcome"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Outcome</span></code></a>(kind[, text, questions, reason])</p></td>
 <td><p>One outcome a processor run reports: <code class="docutils literal notranslate"><span class="pre">kind</span></code> from <code class="xref py py-data docutils literal notranslate"><span class="pre">OUTCOME_KINDS</span></code>.</p></td>
@@ -512,17 +531,23 @@ nothing.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Processor" title="liaise.Processor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Processor</span></code></a>(*args, **kwargs)</p></td>
 <td><p>What the tick needs to run a case's work: the processor seam (<code class="docutils literal notranslate"><span class="pre">processor=</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.RunRecord" title="liaise.RunRecord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunRecord</span></code></a>(run_id, case_id, subject, mode, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.Provenance" title="liaise.Provenance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Provenance</span></code></a>([tainted, evidence])</p></td>
+<td><p>What the run that wrote the message read: tainted, clean, or unknown.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.RunRecord" title="liaise.RunRecord"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunRecord</span></code></a>(run_id, case_id, subject, mode, ...)</p></td>
 <td><p>A processor run started on a case: how it was started, and where it is now.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.RunResult" title="liaise.RunResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunResult</span></code></a>(run_id[, outcomes, usage, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.RunResult" title="liaise.RunResult"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RunResult</span></code></a>(run_id[, outcomes, usage, ...])</p></td>
 <td><p>What a finished run returned: its outcomes, what it cost, and how it ended.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.Subject" title="liaise.Subject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subject</span></code></a>(slug, bindings, policy[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Subject" title="liaise.Subject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subject</span></code></a>(slug, bindings, policy[, ...])</p></td>
 <td><p>A resolved subject: <code class="docutils literal notranslate"><span class="pre">subjects/&lt;slug&gt;.toml</span></code> with every default applied.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.TickReport" title="liaise.TickReport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TickReport</span></code></a>([plan_lines, dispatched, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.TickReport" title="liaise.TickReport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TickReport</span></code></a>([plan_lines, dispatched, ...])</p></td>
 <td><p>What one <a class="reference internal" href="#liaise.run_once" title="liaise.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_once()</span></code></a> did or, in a dry run, would do.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.Verdict" title="liaise.Verdict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Verdict</span></code></a>(*, flow, route, reasons, axes, ...)</p></td>
+<td><p>What the policy decided about one message, and why (discussion §5.1).</p></td>
 </tr>
 </tbody>
 </table>
@@ -539,6 +564,45 @@ nothing.</p>
 </tbody>
 </table>
 </div>
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.Approval">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Approval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verdict_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">justification</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rules_overridden</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Approval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Approval" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Record</span></code></p>
+<p>The operator’s release of a held message, bound to the message and audience they saw.</p>
+<p><code class="docutils literal notranslate"><span class="pre">by</span></code> released it at <code class="docutils literal notranslate"><span class="pre">at</span></code>. <code class="docutils literal notranslate"><span class="pre">payload_hash</span></code> and <code class="docutils literal notranslate"><span class="pre">audience_hash</span></code> are the hashes of
+the verdict shown to them (<a class="reference internal" href="liaise.policy.html#liaise.policy.payload_hash" title="liaise.policy.payload_hash"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.policy.payload_hash()</span></code></a>,
+<a class="reference internal" href="liaise.policy.html#liaise.policy.audience_hash" title="liaise.policy.audience_hash"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.policy.audience_hash()</span></code></a>), and <code class="docutils literal notranslate"><span class="pre">verdict_id</span></code> names that verdict.
+<code class="docutils literal notranslate"><span class="pre">rules_overridden</span></code> are the rules they released it past, and <code class="docutils literal notranslate"><span class="pre">justification</span></code> says
+why, in their words.</p>
+<p>The gate reads it from <code class="xref py py-attr docutils literal notranslate"><span class="pre">liaise.gate.GateContext.approval</span></code> and runs every filter
+again (liaise ADR 0002). The approval settles only a concern whose rule it names, whose
+flow is at most <code class="docutils literal notranslate"><span class="pre">approve</span></code>, and only while both hashes still match the message and the
+audience computed at send time: a changed text, title, recipient or readership voids it,
+and a <code class="docutils literal notranslate"><span class="pre">refuse</span></code> is never settled. An approval without hashes binds to nothing. It is
+recorded with the send.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.Approval.binds">
+<span class="sig-name descname"><span class="pre">binds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Approval.binds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Approval.binds" title="Link to this definition">#</a></dt>
+<dd><p>Whether this approval was given for the message and audience these hashes name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">at</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Approval</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">"operator"</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span> <span class="n">payload_hash</span><span class="o">=</span><span class="s2">"p"</span><span class="p">,</span> <span class="n">audience_hash</span><span class="o">=</span><span class="s2">"a"</span><span class="p">)</span><span class="o">.</span><span class="n">binds</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span>
+<span class="go">True</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">Approval</span><span class="p">(</span><span class="n">by</span><span class="o">=</span><span class="s2">"operator"</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">)</span><span class="o">.</span><span class="n">binds</span><span class="p">(</span><span class="s2">"p"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">)</span>  <span class="c1"># bound to nothing</span>
+<span class="go">False</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.Case">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drafts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defer_until</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Case" title="Link to this definition">#</a></dt>
@@ -771,6 +835,84 @@ tests, so <code class="xref py py-meth docutils literal notranslate"><span class
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.GateContext">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">GateContext</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provenance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fingerprint_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateContext"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.GateContext" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What the filters may consult about one message.</p>
+<p><code class="docutils literal notranslate"><span class="pre">subject</span></code> is the subject whose policy applies, <code class="docutils literal notranslate"><span class="pre">now</span></code> the time of the decision, and
+<code class="docutils literal notranslate"><span class="pre">case</span></code> the case the message belongs to (None outside any). <code class="docutils literal notranslate"><span class="pre">audience</span></code> is
+correspond’s record of who can read the destination, computed right before the gate
+runs (None: unknown, so public). <code class="docutils literal notranslate"><span class="pre">provenance</span></code> is what the run that wrote the message
+read (None: unknown, so tainted). <code class="docutils literal notranslate"><span class="pre">mode</span></code> overrides the subject’s <code class="docutils literal notranslate"><span class="pre">policy.mode</span></code>.
+<code class="docutils literal notranslate"><span class="pre">approval</span></code> is the operator’s release of this message, None for every message sent
+without one. <code class="docutils literal notranslate"><span class="pre">fingerprint_key</span></code> is the key findings are fingerprinted with (None: the
+one in the configured state directory).</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.GateDecision">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">GateDecision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">send</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'send'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concerns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consulted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateDecision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.GateDecision" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What <a class="reference internal" href="#liaise.run_gate" title="liaise.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_gate()</span></code></a> decided: <code class="docutils literal notranslate"><span class="pre">send</span></code> a message, or why it is <code class="docutils literal notranslate"><span class="pre">diverted</span></code>.</p>
+<p>Exactly one of <code class="docutils literal notranslate"><span class="pre">send</span></code> (the message as the filters left it) and <code class="docutils literal notranslate"><span class="pre">diverted</span></code> (every
+standing concern’s text, most restrictive first) is set. <code class="docutils literal notranslate"><span class="pre">flow</span></code> is the decision’s,
+<code class="docutils literal notranslate"><span class="pre">concerns</span></code> what still holds the message back and <code class="docutils literal notranslate"><span class="pre">settled</span></code> what the approval
+released it past. <code class="docutils literal notranslate"><span class="pre">notes</span></code> holds every filter’s notes, in order. <code class="docutils literal notranslate"><span class="pre">diverted_by</span></code> names
+the filter of the most restrictive concern, as an operator notification may say it: the
+reason can quote what a filter raised. <code class="docutils literal notranslate"><span class="pre">verdict</span></code> and <code class="docutils literal notranslate"><span class="pre">consulted</span></code> are the policy’s
+verdict and what it consulted. <code class="docutils literal notranslate"><span class="pre">approval</span></code> is the one on the context, and
+<code class="docutils literal notranslate"><span class="pre">payload_hash</span></code> and <code class="docutils literal notranslate"><span class="pre">audience_hash</span></code> what it had to match.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.GateDecision.audience_words">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">audience_words</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.GateDecision.audience_words" title="Link to this definition">#</a></dt>
+<dd><p>The audience the policy judged, in words; None when the policy did not run.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.GateDecision.bound">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">bound</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.GateDecision.bound" title="Link to this definition">#</a></dt>
+<dd><p>Whether the approval binds to this message, this audience and this verdict.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.GateDecision.overridable">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">overridable</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.GateDecision.overridable" title="Link to this definition">#</a></dt>
+<dd><p>The rules of the standing concerns an approval could settle, each once.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.GateDecision.record">
+<span class="sig-name descname"><span class="pre">record</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateDecision.record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.GateDecision.record" title="Link to this definition">#</a></dt>
+<dd><p>What a ledger <code class="docutils literal notranslate"><span class="pre">gate</span></code> entry records of the decision (discussion §5.7).</p>
+<p>The flow and every concern with its findings (kinds, positions and fingerprints,
+never the value), what the approval settled, the policy’s verdict (its audience
+snapshot, the readers’ tiers and clearances, the mode), the labels, seals and
+provenance consulted, and the approval with whether it bound.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.GateDecision.summary">
+<span class="sig-name descname"><span class="pre">summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateDecision.summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.GateDecision.summary" title="Link to this definition">#</a></dt>
+<dd><p>What a held draft keeps of the decision: the flow, the audience in words, the reasons.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1330,6 +1472,24 @@ what access was judged on; <code class="docutils literal notranslate"><span clas
 </dd></dl>
 
 <dl class="py class">
+<dt class="sig sig-object py" id="liaise.Outbound">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Outbound</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purpose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attachments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#Outbound"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Outbound" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A message liaise would send: <code class="docutils literal notranslate"><span class="pre">text</span></code> for <code class="docutils literal notranslate"><span class="pre">recipient</span></code> (a person id) at <code class="docutils literal notranslate"><span class="pre">ref</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">ref</span></code> is the encoded conversation or address it goes to (<code class="docutils literal notranslate"><span class="pre">github:example/app#12</span></code>,
+or <code class="docutils literal notranslate"><span class="pre">github:example/app</span></code> to open an issue there), and <code class="docutils literal notranslate"><span class="pre">channel</span></code> is that ref’s
+channel. <code class="docutils literal notranslate"><span class="pre">purpose</span></code> is the outcome kind it carries out (<code class="docutils literal notranslate"><span class="pre">ask</span></code>, <code class="docutils literal notranslate"><span class="pre">reply</span></code>,
+<code class="docutils literal notranslate"><span class="pre">propose</span></code>, <code class="docutils literal notranslate"><span class="pre">deliver</span></code>). <code class="docutils literal notranslate"><span class="pre">title</span></code> is the title of the issue it opens, when it opens
+one. <code class="docutils literal notranslate"><span class="pre">case_id</span></code> is the case the message belongs to, or None for a message an agent
+sends outside any case (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">message</span> <span class="pre">send</span></code>). <code class="docutils literal notranslate"><span class="pre">cc</span></code> and <code class="docutils literal notranslate"><span class="pre">bcc</span></code> are further
+recipients (addresses), on channels that have them; <code class="docutils literal notranslate"><span class="pre">attachments</span></code> are the names of
+attached files, and <code class="docutils literal notranslate"><span class="pre">project</span></code> the project the message is about, when one is named.
+The policy judges every one of these, and the payload hash covers all but <code class="docutils literal notranslate"><span class="pre">project</span></code>.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="liaise.Outcome">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Outcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">questions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Outcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Outcome" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Record</span></code></p>
@@ -1408,6 +1568,73 @@ what access was judged on; <code class="docutils literal notranslate"><span clas
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.model.html#liaise.model.RunRecord" title="liaise.model.RunRecord"><code class="xref py py-class docutils literal notranslate"><span class="pre">RunRecord</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.Provenance">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Provenance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Provenance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Provenance" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What the run that wrote the message read: tainted, clean, or unknown.</p>
+<p><code class="docutils literal notranslate"><span class="pre">tainted</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> when nobody can say (the hook path), which counts as tainted
+(decision 10). <code class="docutils literal notranslate"><span class="pre">evidence</span></code> says why: the messages read and the grades and roles that
+the subject does not trust, in words.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.Provenance.clean">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">evidence</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Provenance.clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Provenance.clean" title="Link to this definition">#</a></dt>
+<dd><p>A run that read only what the subject trusts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.policy.html#liaise.policy.Provenance" title="liaise.policy.Provenance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Provenance</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.Provenance.of">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Provenance.of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Provenance.of" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">value</span></code> as a <a class="reference internal" href="#liaise.Provenance" title="liaise.Provenance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Provenance</span></code></a>: a record, its dict, a bool, or None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.policy.html#liaise.policy.Provenance" title="liaise.policy.Provenance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Provenance</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.Provenance.tainted_by">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tainted_by</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">evidence</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Provenance.tainted_by"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Provenance.tainted_by" title="Link to this definition">#</a></dt>
+<dd><p>A run that read something the subject does not trust for <code class="docutils literal notranslate"><span class="pre">request_work</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.policy.html#liaise.policy.Provenance" title="liaise.policy.Provenance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Provenance</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.Provenance.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Provenance.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Provenance.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>JSON-ready.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.Provenance.unknown">
+<span class="property"><span class="k"><span class="pre">classmethod</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">unknown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">evidence</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Provenance.unknown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Provenance.unknown" title="Link to this definition">#</a></dt>
+<dd><p>A run nobody can vouch for.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.policy.html#liaise.policy.Provenance" title="liaise.policy.Provenance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Provenance</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1547,6 +1774,44 @@ out (mention added), <code class="docutils literal notranslate"><span class="pre
 </dl>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="liaise.Verdict">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Verdict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">route</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">least_cleared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">findings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Verdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Verdict" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What the policy decided about one message, and why (discussion §5.1).</p>
+<p><code class="docutils literal notranslate"><span class="pre">flow</span></code> is one of <code class="xref py py-data docutils literal notranslate"><span class="pre">FLOWS</span></code> and <code class="docutils literal notranslate"><span class="pre">route</span></code> its <code class="xref py py-data docutils literal notranslate"><span class="pre">ROUTES</span></code> entry. <code class="docutils literal notranslate"><span class="pre">reasons</span></code>
+are every rule that fired, most restrictive first. <code class="docutils literal notranslate"><span class="pre">axes</span></code> are the values the decision
+was made on: <code class="docutils literal notranslate"><span class="pre">audience</span></code> (the scope), <code class="docutils literal notranslate"><span class="pre">sensitivity</span></code> (the highest finding severity,
+0 when nothing was found), <code class="docutils literal notranslate"><span class="pre">relationship</span></code> (the most restrictive standing among the
+explicit recipients, a tier or <code class="docutils literal notranslate"><span class="pre">stranger</span></code>), <code class="docutils literal notranslate"><span class="pre">irreversible</span></code> (the audience is not
+retractable) and <code class="docutils literal notranslate"><span class="pre">tainted</span></code> (true, false, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for unknown). <code class="docutils literal notranslate"><span class="pre">least_cleared</span></code>
+is the reader the content ceiling came from. <code class="docutils literal notranslate"><span class="pre">payload_hash</span></code> and <code class="docutils literal notranslate"><span class="pre">audience_hash</span></code>
+are what an approval binds to; <code class="docutils literal notranslate"><span class="pre">audience</span></code> is the snapshot the hash was taken over
+and <code class="docutils literal notranslate"><span class="pre">readers</span></code> the standing (tier, clearance) of every reader consulted, so the
+ledger entry explains itself (§5.7); <code class="docutils literal notranslate"><span class="pre">as_of</span></code> is the <code class="docutils literal notranslate"><span class="pre">now</span></code> the verdict was made
+at, and <code class="docutils literal notranslate"><span class="pre">mode</span></code> the policy’s. <code class="docutils literal notranslate"><span class="pre">route</span></code> is <code class="docutils literal notranslate"><span class="pre">draft</span></code> for <code class="docutils literal notranslate"><span class="pre">delay</span></code> until the outbox
+exists (<code class="docutils literal notranslate"><span class="pre">OutboundPolicy.outbox</span></code>).</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.Verdict.rules">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">rules</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.Verdict.rules" title="Link to this definition">#</a></dt>
+<dd><p>The names of the rules that fired, most restrictive first, each once.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="liaise.Verdict.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Verdict.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Verdict.to_dict" title="Link to this definition">#</a></dt>
+<dd><p>JSON-ready: what the ledger records for a gated message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.authorize">
 <span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">authorize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permission</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/access.html#authorize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.authorize" title="Link to this definition">#</a></dt>
@@ -1571,6 +1836,34 @@ outside <a class="reference internal" href="liaise.model.html#liaise.model.PERMI
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MutableMapping</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.evaluate">
+<span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">evaluate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">findings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provenance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">identities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">_rules</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(Rule(name='secrets'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">secrets&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'refuse')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'seals'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">seals&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'refuse')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'exfiltration'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">exfiltration&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'refuse')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">personal_public&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'refuse')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'no</span> <span class="pre">write-down'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">no_write_down&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'revise')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'co-ownership'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">co_ownership&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'revise')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'personal</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">personal_private&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'tier'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">tier&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'stranger'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">stranger&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'disclosure</span> <span class="pre">stance'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">disclosure_stance&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'taint'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">taint&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'reply</span> <span class="pre">mode'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">reply_mode&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'irreversibility'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">irreversibility&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'delay')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">Rule(name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'unknown</span> <span class="pre">audience'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">unknown_audience&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'send'))</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#evaluate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.evaluate" title="Link to this definition">#</a></dt>
+<dd><p>The <a class="reference internal" href="#liaise.Verdict" title="liaise.Verdict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Verdict</span></code></a> for <code class="docutils literal notranslate"><span class="pre">outbound</span></code>, through every rule of the table.</p>
+<p>Pure: no I/O, no clock (<code class="docutils literal notranslate"><span class="pre">now</span></code> is given), and the same verdict for the same inputs.
+See the module docstring for what each input is. <code class="docutils literal notranslate"><span class="pre">_rules</span></code> is for the mutation
+checks of the test suite only (the table is not a seam); it must hold rules of the
+table by name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.policy.html#liaise.policy.Verdict" title="liaise.policy.Verdict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Verdict</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ada</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"people"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ada"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"tier"</span><span class="p">:</span> <span class="s2">"open"</span><span class="p">,</span> <span class="s2">"clearance"</span><span class="p">:</span> <span class="s2">"amber"</span><span class="p">}}}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">email</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ref"</span><span class="p">:</span> <span class="s2">"email:ada"</span><span class="p">,</span> <span class="s2">"scope"</span><span class="p">:</span> <span class="s2">"named"</span><span class="p">,</span> <span class="s2">"readers"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"email:ada"</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">message</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ref"</span><span class="p">:</span> <span class="s2">"email:ada"</span><span class="p">,</span> <span class="s2">"channel"</span><span class="p">:</span> <span class="s2">"email"</span><span class="p">,</span> <span class="s2">"recipient"</span><span class="p">:</span> <span class="s2">"ada"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"hi"</span><span class="p">,</span> <span class="s2">"case_id"</span><span class="p">:</span> <span class="s2">"s-1"</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">verdict</span> <span class="o">=</span> <span class="n">evaluate</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">audience</span><span class="o">=</span><span class="n">email</span><span class="p">,</span> <span class="n">disclosure</span><span class="o">=</span><span class="n">ada</span><span class="p">,</span> <span class="n">findings</span><span class="o">=</span><span class="p">(),</span> <span class="n">provenance</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="gp">... </span>                   <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">identities</span><span class="o">=</span><span class="p">{</span><span class="s2">"email:ada"</span><span class="p">:</span> <span class="s2">"ada"</span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">verdict</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span> <span class="n">verdict</span><span class="o">.</span><span class="n">route</span><span class="p">,</span> <span class="n">verdict</span><span class="o">.</span><span class="n">rules</span>
+<span class="go">('send', 'send', ())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">evaluate</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">audience</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">disclosure</span><span class="o">=</span><span class="n">ada</span><span class="p">,</span> <span class="n">findings</span><span class="o">=</span><span class="p">(),</span> <span class="n">provenance</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">)</span><span class="o">.</span><span class="n">rules</span>
+<span class="go">('irreversibility', 'unknown audience')</span>
+</pre></div>
+</div>
 </dd></dl>
 
 <dl class="py function">
@@ -1710,6 +2003,23 @@ that otherwise succeeded. Build <code class="code docutils literal notranslate">
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="liaise.outbound_policy">
+<span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">outbound_policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">acquaint_disclosure&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detectors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">secret_detector.&lt;locals&gt;.detect_secrets&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_canaries&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_vocabulary&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_third_parties&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#outbound_policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outbound_policy" title="Link to this definition">#</a></dt>
+<dd><p>Hold back what the outbound policy (discussion §5.4) does not let go now.</p>
+<p>The audience is the context’s (unknown, so public, when it has none), the disclosure
+comes through <code class="docutils literal notranslate"><span class="pre">disclosure</span></code> (acquaint’s, or every reader at <code class="docutils literal notranslate"><span class="pre">need-to-know</span></code> without
+it), and the provenance is the context’s (unknown, so tainted, when it has none). See
+<a class="reference internal" href="liaise.outbound.html#liaise.outbound.judge" title="liaise.outbound.judge"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.outbound.judge()</span></code></a>. A <code class="docutils literal notranslate"><span class="pre">send</span></code> verdict passes, noting the audience; any
+other diverts at its flow, one concern per rule that fired. It never redacts: what it
+found is for the operator to fix, and its reasons say where, never what.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-data docutils literal notranslate"><span class="pre">Union</span></code>[<a class="reference internal" href="liaise.gate.html#liaise.gate.Pass" title="liaise.gate.Pass"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pass</span></code></a>, <a class="reference internal" href="liaise.gate.html#liaise.gate.Divert" title="liaise.gate.Divert"><code class="xref py py-class docutils literal notranslate"><span class="pre">Divert</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="liaise.parse_outcomes">
 <span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">parse_outcomes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">structured_output</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outcomes.html#parse_outcomes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.parse_outcomes" title="Link to this definition">#</a></dt>
 <dd><p>The outcomes of a run’s structured output, checked against <code class="xref py py-data docutils literal notranslate"><span class="pre">OUTCOME_SCHEMA</span></code>.</p>
@@ -1759,12 +2069,14 @@ A missing or broken acquaint, or any error it raises, resolves to None.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.run_gate">
-<span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">run_gate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">reply_mode&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">leak_scan&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#run_gate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.run_gate" title="Link to this definition">#</a></dt>
-<dd><p>Run <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through <code class="docutils literal notranslate"><span class="pre">outbound_filters</span></code> in order, stopping at the first divert.</p>
-<p>Each <code class="xref py py-class docutils literal notranslate"><span class="pre">Pass</span></code> hands its message, possibly rewritten, to the next filter. The
-first <code class="xref py py-class docutils literal notranslate"><span class="pre">Divert</span></code> ends the gate with nothing to send. Notes accumulate across
-the filters that ran. The gate fails closed: a filter that raises, or returns
-anything but a <code class="docutils literal notranslate"><span class="pre">Pass</span></code> or a <code class="docutils literal notranslate"><span class="pre">Divert</span></code>, diverts the message with a reason naming it.</p>
+<span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">run_gate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#run_gate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.run_gate" title="Link to this definition">#</a></dt>
+<dd><p>Run <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through every one of <code class="docutils literal notranslate"><span class="pre">outbound_filters</span></code>, in order, and decide.</p>
+<p>Each <code class="xref py py-class docutils literal notranslate"><span class="pre">Pass</span></code> hands its message, possibly rewritten, to the next filter; each
+<code class="xref py py-class docutils literal notranslate"><span class="pre">Divert</span></code> adds its concerns. An approval on the context settles what it binds to
+and names (see the module docstring). The decision’s flow is the most restrictive
+concern left, and only <code class="docutils literal notranslate"><span class="pre">send</span></code> sends. The gate fails closed: a filter that raises, or
+returns anything but a <code class="docutils literal notranslate"><span class="pre">Pass</span></code> (of an <a class="reference internal" href="#liaise.Outbound" title="liaise.Outbound"><code class="xref py py-class docutils literal notranslate"><span class="pre">Outbound</span></code></a>) or a <code class="docutils literal notranslate"><span class="pre">Divert</span></code>, adds an
+<code class="docutils literal notranslate"><span class="pre">approve</span></code> concern naming it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.gate.html#liaise.gate.GateDecision" title="liaise.gate.GateDecision"><code class="xref py py-class docutils literal notranslate"><span class="pre">GateDecision</span></code></a></span></p>
@@ -1774,7 +2086,7 @@ anything but a <code class="docutils literal notranslate"><span class="pre">Pass
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.run_once">
-<span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">run_once</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">workspace_for&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sessions_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">reply_mode&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">leak_scan&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lost_run_deadline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=600)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">closed_recheck_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=3600)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_once"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.run_once" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">run_once</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">workspace_for&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sessions_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lost_run_deadline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=600)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">closed_recheck_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=3600)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_once"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.run_once" title="Link to this definition">#</a></dt>
 <dd><p>One tick over <code class="docutils literal notranslate"><span class="pre">subjects</span></code> (slug to <a class="reference internal" href="liaise.subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a>), on the ledger <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p>
 <p>See the module docstring for the steps. The seams, each with a working default:</p>
 <ul class="simple">
@@ -1857,7 +2169,7 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <td><p>Processor error taxonomy (design §3.6): classify how a run ended, and what the tick does.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="liaise.gate.html#module-liaise.gate" title="liaise.gate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gate</span></code></a></p></td>
-<td><p>The outbound gate: the checks a message passes before liaise sends it.</p></td>
+<td><p>The outbound gate: the checks every message passes before liaise sends it, and the verdict they reach.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="liaise.github.html#module-liaise.github" title="liaise.github"><code class="xref py py-obj docutils literal notranslate"><span class="pre">github</span></code></a></p></td>
 <td><p>The GitHub seam: one protocol, two implementations.</p></td>
@@ -1877,40 +2189,43 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <tr class="row-odd"><td><p><a class="reference internal" href="liaise.model.html#module-liaise.model" title="liaise.model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">model</span></code></a></p></td>
 <td><p>The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.outcomes.html#module-liaise.outcomes" title="liaise.outcomes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outcomes</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.outbound.html#module-liaise.outbound" title="liaise.outbound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outbound</span></code></a></p></td>
+<td><p>What the outbound gate's policy filter gathers before the policy decides.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.outcomes.html#module-liaise.outcomes" title="liaise.outcomes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outcomes</span></code></a></p></td>
 <td><p>Outcomes: what a processor run reports, checked, then planned into actions.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.policy.html#module-liaise.policy" title="liaise.policy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">policy</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.policy.html#module-liaise.policy" title="liaise.policy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">policy</span></code></a></p></td>
 <td><p>Policy and verdict for outbound messages: from findings and an audience to a flow.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.processor.html#module-liaise.processor" title="liaise.processor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">processor</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.processor.html#module-liaise.processor" title="liaise.processor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">processor</span></code></a></p></td>
 <td><p>Processors (design §3.6): what runs a case's work, detached, and how that run ended.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.projection.html#module-liaise.projection" title="liaise.projection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">projection</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.projection.html#module-liaise.projection" title="liaise.projection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">projection</span></code></a></p></td>
 <td><p>Label projection: a case's state, shown on each of its GitHub issues as one label.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.prompt.html#module-liaise.prompt" title="liaise.prompt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prompt</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.prompt.html#module-liaise.prompt" title="liaise.prompt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prompt</span></code></a></p></td>
 <td><p>The prompt composer: the whole prompt a processor run on one case starts from.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.readiness.html#module-liaise.readiness" title="liaise.readiness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readiness</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.readiness.html#module-liaise.readiness" title="liaise.readiness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readiness</span></code></a></p></td>
 <td><p>Readiness: whether a case is ready to dispatch, read off its own ledger entries.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.release.html#module-liaise.release" title="liaise.release"><code class="xref py py-obj docutils literal notranslate"><span class="pre">release</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.release.html#module-liaise.release" title="liaise.release"><code class="xref py py-obj docutils literal notranslate"><span class="pre">release</span></code></a></p></td>
 <td><p>Releasing a message: through the gate, then through correspond, as one step.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.schedule.html#module-liaise.schedule" title="liaise.schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.schedule.html#module-liaise.schedule" title="liaise.schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule</span></code></a></p></td>
 <td><p>Scheduling <code class="code docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">run</span> <span class="pre">--once</span></code> (A.7): a launchd agent on macOS, a systemd user timer on Linux.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.subjects.html#module-liaise.subjects" title="liaise.subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subjects</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.subjects.html#module-liaise.subjects" title="liaise.subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subjects</span></code></a></p></td>
 <td><p>Subjects: the bodies of work liaise runs, each loaded from <code class="docutils literal notranslate"><span class="pre">subjects/&lt;slug&gt;.toml</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.testing.html#module-liaise.testing" title="liaise.testing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">testing</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.testing.html#module-liaise.testing" title="liaise.testing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">testing</span></code></a></p></td>
 <td><p>Fakes shipped with liaise: for its tests, and for the one-command smoke test.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.tick.html#module-liaise.tick" title="liaise.tick"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tick</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.tick.html#module-liaise.tick" title="liaise.tick"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tick</span></code></a></p></td>
 <td><p>The tick: one pass of liaise 0.1's loop (design §3.1).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.workspace.html#module-liaise.workspace" title="liaise.workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">workspace</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.workspace.html#module-liaise.workspace" title="liaise.workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">workspace</span></code></a></p></td>
 <td><p>The checkout a subject's runs share: one run at a time, and never beside a live session.</p></td>
 </tr>
 </tbody>
@@ -1965,6 +2280,10 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Approval"><code class="docutils literal notranslate"><span class="pre">Approval</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Approval.binds"><code class="docutils literal notranslate"><span class="pre">Approval.binds()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Case"><code class="docutils literal notranslate"><span class="pre">Case</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Case.with_entry"><code class="docutils literal notranslate"><span class="pre">Case.with_entry()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Case.with_state"><code class="docutils literal notranslate"><span class="pre">Case.with_state()</span></code></a></li>
@@ -1986,6 +2305,15 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.FakeGitHub.SELF_AUTHOR"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.SELF_AUTHOR</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.FakeGitHub.labels_created"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.labels_created()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.FakeGitHub.seed"><code class="docutils literal notranslate"><span class="pre">FakeGitHub.seed()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GateContext"><code class="docutils literal notranslate"><span class="pre">GateContext</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GateDecision"><code class="docutils literal notranslate"><span class="pre">GateDecision</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GateDecision.audience_words"><code class="docutils literal notranslate"><span class="pre">GateDecision.audience_words</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GateDecision.bound"><code class="docutils literal notranslate"><span class="pre">GateDecision.bound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GateDecision.overridable"><code class="docutils literal notranslate"><span class="pre">GateDecision.overridable</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GateDecision.record"><code class="docutils literal notranslate"><span class="pre">GateDecision.record()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GateDecision.summary"><code class="docutils literal notranslate"><span class="pre">GateDecision.summary()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.GhCli"><code class="docutils literal notranslate"><span class="pre">GhCli</span></code></a></li>
@@ -2043,6 +2371,7 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.LedgerEntry"><code class="docutils literal notranslate"><span class="pre">LedgerEntry</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Outbound"><code class="docutils literal notranslate"><span class="pre">Outbound</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Outcome"><code class="docutils literal notranslate"><span class="pre">Outcome</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Processor"><code class="docutils literal notranslate"><span class="pre">Processor</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Processor.cancel"><code class="docutils literal notranslate"><span class="pre">Processor.cancel()</span></code></a></li>
@@ -2051,6 +2380,14 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Processor.resume"><code class="docutils literal notranslate"><span class="pre">Processor.resume()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Processor.start"><code class="docutils literal notranslate"><span class="pre">Processor.start()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Processor.status"><code class="docutils literal notranslate"><span class="pre">Processor.status()</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Provenance"><code class="docutils literal notranslate"><span class="pre">Provenance</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Provenance.clean"><code class="docutils literal notranslate"><span class="pre">Provenance.clean()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Provenance.of"><code class="docutils literal notranslate"><span class="pre">Provenance.of()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Provenance.tainted_by"><code class="docutils literal notranslate"><span class="pre">Provenance.tainted_by()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Provenance.to_dict"><code class="docutils literal notranslate"><span class="pre">Provenance.to_dict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Provenance.unknown"><code class="docutils literal notranslate"><span class="pre">Provenance.unknown()</span></code></a></li>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.RunRecord"><code class="docutils literal notranslate"><span class="pre">RunRecord</span></code></a></li>
@@ -2067,14 +2404,21 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.TickReport"><code class="docutils literal notranslate"><span class="pre">TickReport</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Verdict"><code class="docutils literal notranslate"><span class="pre">Verdict</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Verdict.rules"><code class="docutils literal notranslate"><span class="pre">Verdict.rules</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.Verdict.to_dict"><code class="docutils literal notranslate"><span class="pre">Verdict.to_dict()</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.authorize"><code class="docutils literal notranslate"><span class="pre">authorize()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.default_ledger_store"><code class="docutils literal notranslate"><span class="pre">default_ledger_store()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.evaluate"><code class="docutils literal notranslate"><span class="pre">evaluate()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.hold"><code class="docutils literal notranslate"><span class="pre">hold()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.intake"><code class="docutils literal notranslate"><span class="pre">intake()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.load_global_config"><code class="docutils literal notranslate"><span class="pre">load_global_config()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.load_subjects"><code class="docutils literal notranslate"><span class="pre">load_subjects()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.migrate_config"><code class="docutils literal notranslate"><span class="pre">migrate_config()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.notify"><code class="docutils literal notranslate"><span class="pre">notify()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.outbound_policy"><code class="docutils literal notranslate"><span class="pre">outbound_policy()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.parse_outcomes"><code class="docutils literal notranslate"><span class="pre">parse_outcomes()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.plan_outcomes"><code class="docutils literal notranslate"><span class="pre">plan_outcomes()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.resolve_person"><code class="docutils literal notranslate"><span class="pre">resolve_person()</span></code></a></li>

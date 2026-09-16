@@ -42,7 +42,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -52,10 +52,10 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="liaise.policy" href="liaise.policy.html" />
-    <link rel="prev" title="liaise.model" href="liaise.model.html" />
+    <link rel="prev" title="liaise.outbound" href="liaise.outbound.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -330,6 +330,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -601,7 +602,7 @@ and <a class="reference internal" href="#liaise.outcomes.OUTCOME_SCHEMA" title="
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.outcomes.Send">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.outcomes.</span></span><span class="sig-name descname"><span class="pre">Send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purpose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outcomes.html#Send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outcomes.Send" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.outcomes.</span></span><span class="sig-name descname"><span class="pre">Send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">purpose</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attachments</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outcomes.html#Send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outcomes.Send" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><code class="xref py py-class docutils literal notranslate"><span class="pre">Outbound</span></code></a></p>
 <p>Send <code class="docutils literal notranslate"><span class="pre">text</span></code> to <code class="docutils literal notranslate"><span class="pre">recipient</span></code> at <code class="docutils literal notranslate"><span class="pre">ref</span></code>. Every Send is the Outbound the gate checks.</p>
 <dl class="field-list simple">
@@ -628,7 +629,7 @@ and <a class="reference internal" href="#liaise.outcomes.OUTCOME_SCHEMA" title="
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.outcomes.make_draft">
-<span class="sig-prename descclassname"><span class="pre">liaise.outcomes.</span></span><span class="sig-name descname"><span class="pre">make_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outcomes.html#make_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outcomes.make_draft" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.outcomes.</span></span><span class="sig-name descname"><span class="pre">make_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outcome</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipient</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outcomes.html#make_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outcomes.make_draft" title="Link to this definition">#</a></dt>
 <dd><p>One item of a case’s <code class="docutils literal notranslate"><span class="pre">drafts</span></code>: a message held for the operator.</p>
 <p>This is the one shape every draft has, JSON-ready:</p>
 <ul class="simple">
@@ -640,7 +641,9 @@ can reach the recipient;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">text</span></code>: the message, as it would be sent;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">reason</span></code>: why it was held (an escalation’s reason, a gate divert, no channel);</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">notes</span></code>: the gate’s notes on it, in order;</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">title</span></code>: the title of the issue it would open, present only when it opens one.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">title</span></code>: the title of the issue it would open, present only when it opens one;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gate</span></code>: what the gate decided, present only when the gate held it: its flow, the
+audience in words and the reasons (<a class="reference internal" href="liaise.gate.html#liaise.gate.GateDecision.summary" title="liaise.gate.GateDecision.summary"><code class="xref py py-meth docutils literal notranslate"><span class="pre">liaise.gate.GateDecision.summary()</span></code></a>).</p></li>
 </ul>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">make_draft</span><span class="p">(</span><span class="n">at</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span> <span class="n">outcome</span><span class="o">=</span><span class="s2">"reply"</span><span class="p">,</span>
@@ -718,12 +721,12 @@ to the reporter’s first notify address on one of <code class="docutils literal
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="liaise.model.html"
+       href="liaise.outbound.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">liaise.model</p>
+        <p class="prev-next-title">liaise.outbound</p>
       </div>
     </a>
     <a class="right-next"

@@ -34,8 +34,9 @@ roles = { pat = "partner" }
 
 ### Module Attributes
 
-| [`DFLT_SUBJECTS_SUBDIR`](#liaise.subjects.DFLT_SUBJECTS_SUBDIR)          | Subject files live in this directory under the config root.                                                                                                        |
+| [`TAINTED_RUNS`](#liaise.subjects.TAINTED_RUNS)                  | `approve` (a run that read untrusted input needs the operator for any audience wider than them) or `send` (the subject waives that).                               |
 |--------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_SUBJECTS_SUBDIR`](#liaise.subjects.DFLT_SUBJECTS_SUBDIR)          | Subject files live in this directory under the config root.                                                                                                        |
 | [`REPLY_MODES`](#liaise.subjects.REPLY_MODES)                   | `direct` posts replies to the conversation; `draft` holds them for the operator.                                                                                   |
 | [`DELIVERY_KINDS`](#liaise.subjects.DELIVERY_KINDS)                | `deploy` runs the delivery command; `pr_only` stops at a pull request.                                                                                             |
 | [`DELIVERY_PERS`](#liaise.subjects.DELIVERY_PERS)                 | `batch` once per tick, for every case delivered in it; `issue` for each case, right after that case's outcomes.                                                    |
@@ -114,7 +115,7 @@ succeeded. `pr_only` stops at a pull request and runs nothing.
 
 Authenticity grades, weakest first, as correspond names them.
 
-### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>)
+### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>, tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -127,6 +128,14 @@ authors whose `claim_labels` (routing label to person) count as claims. See
 [`liaise.access`](liaise.access.html.md#module-liaise.access). `waiting_labels` (person to label) is the mirror of
 `claim_labels`: a label liaise writes on a case’s issues while the case waits on that
 person, where a claim label is one it reads (see [`liaise.projection`](liaise.projection.html.md#module-liaise.projection)).
+
+The outbound gate’s policy (liaise ADR 0002) reads four more: `tainted_runs`
+(`approve`, or `send` to waive the taint rule), `link_allowlist` (hosts a link
+may point at besides the channel’s own), `canary_terms` (terms planted in private
+context, never to be sent) and `mode` (`enforce`, or `shadow`, recorded on every
+verdict and enforced alike until shadow mode lands). `leak_terms` are scanned for as
+a label no reader is cleared for; `public_channels` is still read, and decides
+nothing: the audience correspond computes does. Both go after one release.
 
 #### briefs *: [Mapping](https://docs.python.org/3/library/typing.html#typing.Mapping)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
@@ -231,6 +240,14 @@ The permissions `role` grants on this subject (none for an unknown role).
 #### source *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
 
 The file this subject was loaded from, when it was.
+
+### liaise.subjects.TAINTED_RUNS *= ('approve', 'send')*
+
+`approve` (a run that read untrusted input needs
+the operator for any audience wider than them) or `send` (the subject waives that).
+
+* **Type:**
+  What `policy.tainted_runs` may say
 
 ### liaise.subjects.WORKSPACE_KINDS *= ('shared',)*
 

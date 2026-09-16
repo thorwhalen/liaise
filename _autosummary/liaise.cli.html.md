@@ -163,18 +163,21 @@ changes nothing.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.case_send_draft(case_id, \*index, edit=False, dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
+### liaise.cli.case_send_draft(case_id, \*index, edit=False, justification='', dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
 
 Send a draft you approved: CASE_ID’s draft INDEX, or its only one, through the gate.
 
-`liaise case show` numbers the drafts. The gate judges the text again, with your
-approval recorded: draft reply mode lets it through, and the leak scan, deslop and the
-mention judge it as they judge any message. `--edit` opens the text in `$VISUAL` or
-`$EDITOR` first, and the gate judges what you saved.
+`liaise case show` numbers the drafts. The gate judges the text again, every filter of
+it, against the audience its channel reports now. `--edit` opens the text in
+`$VISUAL` or `$EDITOR` first, and the gate judges what you saved.
 
-It then shows you where the message goes, the gate’s verdict and the message exactly as
-it would be sent, and sends it only once you answer `y` at a terminal. Without a
-terminal, as in an agent’s shell or a processor run, it sends nothing.
+It then shows you where the message goes and who can read it there, what the gate holds
+it back for, and the message exactly as it would be sent, and sends it only once you
+answer `y` at a terminal. Your answer is an approval bound to that text and that
+audience, recorded with `--justification`: it releases the message past what it
+showed you, never past a refusal, and if the text or the audience changes before it
+goes out, nothing is sent and you see the new verdict. Without a terminal, as in an
+agent’s shell or a processor run, it sends nothing.
 
 Once sent, the draft leaves the case and the send is recorded as yours. When no draft
 is left, a case in needs-owner moves on as a sent message moves it: an ask, a reply or
@@ -284,8 +287,9 @@ Send a message to PERSON outside any case, through the gate, or hold it for the 
 
 `--ref` is the conversation it goes to, and a subject must bind it: an issue
 (`github:example/app#12`), or a repository with `--title` to open an issue. That
-subject’s policy judges it, through the filters every message passes: reply mode, the
-leak scan (of the title too), the writing card, deslop and the mention. The text is
+subject’s policy judges it, through the filters every message passes: the hold on a
+message outside a case, the outbound policy (of the title too), the writing card,
+deslop and the mention. The text is
 `--text` or `--text-file` (`-` reads standard input). `--purpose` is `ask`,
 the default, `reply` or `propose`.
 
@@ -300,11 +304,12 @@ plans, and records and tells nothing.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.message_send_draft(message_id, , edit=False, dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
+### liaise.cli.message_send_draft(message_id, , edit=False, justification='', dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
 
 Send a held message you approved, through the gate, as `liaise case send-draft` does.
 
-The gate judges it again with your approval recorded, and `--edit` opens it in your
+The gate judges it again, and your answer is an approval bound to the text and the
+audience it showed you, recorded with `--justification`. `--edit` opens it in your
 editor first. It shows where the message goes, the verdict and the exact text, and sends
 once you answer `y` at a terminal. A message the gate diverts stays held with the
 reason and exits 2; one its channel refuses exits 1. `--dry-run` judges and plans,

@@ -13,6 +13,7 @@ liaise.testing
       DFLT_SITE_SECRET
       NATIVE_FIELDS
       ISSUE_STATES
+      VISIBILITIES
    
    .. rubric:: Functions
 

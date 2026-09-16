@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -796,6 +796,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.access</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resolver</span><span class="p">,</span> <span class="n">resolve_person</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigError</span><span class="p">,</span> <span class="n">GlobalConfig</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.detect</span><span class="w"> </span><span class="kn">import</span> <span class="n">key_source</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ERROR_ACTIONS</span><span class="p">,</span> <span class="n">classify_delivery_failure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">defer_until</span> <span class="k">as</span> <span class="n">defer_for_error</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -820,6 +821,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">intake</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outbound</span><span class="w"> </span><span class="kn">import</span> <span class="n">case_provenance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provenance</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">CASE_STATES</span><span class="p">,</span>
     <span class="n">MESSAGE_HELD</span><span class="p">,</span>
@@ -974,6 +977,11 @@ window.runMermaid = runMermaid;</script>
 <span class="c1">#: triage seam (#19). The tick starts the cases group by group, each group in its order,</span>
 <span class="c1">#: and a case left out is not started this tick. None keeps the tick's own order.</span>
 <span class="n">Triage</span> <span class="o">=</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">Case</span><span class="p">]],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">Case</span><span class="p">]]]</span>
+
+
+<span class="c1">#: The provenance of a message the tick writes itself (the daily-cap message, a nudge): a</span>
+<span class="c1">#: fixed text no run wrote, so nothing a run read is in it.</span>
+<span class="n">OWN_MESSAGE_PROVENANCE</span> <span class="o">=</span> <span class="s2">"the tick's own message, a fixed text no run wrote"</span>
 
 
 <div class="viewcode-block" id="Diversion">
@@ -1276,6 +1284,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
         <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
         <span class="n">outbound_filters</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">outbound_filters</span><span class="p">),</span>
+        <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">key_source</span><span class="p">(</span><span class="n">state_dir</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="ow">not</span> <span class="n">dry_run</span><span class="p">),</span>
         <span class="n">triage</span><span class="o">=</span><span class="n">triage</span><span class="p">,</span>
         <span class="n">lost_run_deadline</span><span class="o">=</span><span class="n">lost_run_deadline</span><span class="p">,</span>
         <span class="n">closed_recheck_interval</span><span class="o">=</span><span class="n">closed_recheck_interval</span><span class="p">,</span>
@@ -1685,6 +1694,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">triage</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Triage</span><span class="p">],</span>
         <span class="n">lost_run_deadline</span><span class="p">:</span> <span class="n">timedelta</span><span class="p">,</span>
         <span class="n">closed_recheck_interval</span><span class="p">:</span> <span class="n">timedelta</span><span class="p">,</span>
+        <span class="n">fingerprint_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subjects</span> <span class="o">=</span> <span class="n">subjects</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ledger</span> <span class="o">=</span> <span class="n">ledger</span>
@@ -1703,6 +1713,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">triage</span> <span class="o">=</span> <span class="n">triage</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lost_run_deadline</span> <span class="o">=</span> <span class="n">lost_run_deadline</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">closed_recheck_interval</span> <span class="o">=</span> <span class="n">closed_recheck_interval</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint_key</span> <span class="o">=</span> <span class="n">fingerprint_key</span>
         <span class="c1">#: Per case, whether its GitHub issue was read closed this tick (None: unreadable).</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">issue_closed</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lines</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -2386,12 +2397,29 @@ window.runMermaid = runMermaid;</script>
         <span class="n">text</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">send</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">TRY_IT_MESSAGE</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">send</span><span class="o">.</span><span class="n">text</span> <span class="k">else</span> <span class="n">TRY_IT_MESSAGE</span>
         <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">send</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="nf">_send</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">send</span><span class="p">:</span> <span class="n">Send</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Put ``send`` through the gate, then send it or keep it as a draft; True once sent."""</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_send</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">send</span><span class="p">:</span> <span class="n">Send</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">provenance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Provenance</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Put ``send`` through the gate, then send it or keep it as a draft; True once sent.</span>
+
+<span class="sd">        ``provenance`` is what wrote the message: None for a run's, which is judged from the</span>
+<span class="sd">        case's messages (:func:`liaise.outbound.case_provenance`).</span>
+<span class="sd">        """</span>
         <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">send</span><span class="o">.</span><span class="n">case_id</span><span class="p">)</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="n">GateContext</span><span class="p">(</span>
+            <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
+            <span class="n">case</span><span class="o">=</span><span class="n">case</span><span class="p">,</span>
+            <span class="n">now</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">provenance</span><span class="o">=</span><span class="p">(</span>
+                <span class="n">provenance</span>
+                <span class="k">if</span> <span class="n">provenance</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="k">else</span> <span class="n">case_provenance</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">subject</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ledger</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">fingerprint_key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fingerprint_key</span><span class="p">,</span>
+        <span class="p">)</span>
         <span class="n">attempt</span> <span class="o">=</span> <span class="n">gate_and_send</span><span class="p">(</span>
             <span class="n">send</span><span class="p">,</span>
-            <span class="n">GateContext</span><span class="p">(</span><span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="o">=</span><span class="n">case</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">),</span>
+            <span class="n">context</span><span class="p">,</span>
             <span class="n">registry</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">registry</span><span class="p">,</span>
             <span class="n">dry_run</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dry_run</span><span class="p">,</span>
             <span class="n">outbound_filters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">outbound_filters</span><span class="p">,</span>
@@ -2402,6 +2430,7 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">"purpose"</span><span class="p">:</span> <span class="n">send</span><span class="o">.</span><span class="n">purpose</span><span class="p">,</span>
             <span class="s2">"ref"</span><span class="p">:</span> <span class="n">send</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
             <span class="s2">"notes"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
+            <span class="o">**</span><span class="n">decision</span><span class="o">.</span><span class="n">record</span><span class="p">(),</span>
         <span class="p">}</span>
         <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"    note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2413,6 +2442,7 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">text</span><span class="o">=</span><span class="n">send</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
                 <span class="n">reason</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="p">,</span>
                 <span class="n">notes</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
+                <span class="n">gate</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">summary</span><span class="p">(),</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_add_draft</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">draft</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_entry</span><span class="p">(</span>
@@ -2422,7 +2452,9 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">detail</span><span class="p">,</span> <span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"divert"</span><span class="p">,</span> <span class="s2">"reason"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="p">},</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">diverted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Diversion</span><span class="p">(</span><span class="n">send</span><span class="p">,</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="p">))</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">head</span><span class="si">}</span><span class="s2">: diverted (</span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="si">}</span><span class="s2">), kept as a draft"</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">head</span><span class="si">}</span><span class="s2">: diverted (</span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">flow</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="si">}</span><span class="s2">), kept as a draft"</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">+=</span> <span class="n">notes</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_notice</span><span class="p">(</span>
                 <span class="n">NOTICE_DIVERTED</span><span class="p">,</span>
@@ -2465,8 +2497,22 @@ window.runMermaid = runMermaid;</script>
             <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
             <span class="s2">"gate"</span><span class="p">,</span>
             <span class="n">text</span><span class="o">=</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
-            <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">detail</span><span class="p">,</span> <span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">url</span><span class="p">},</span>
+            <span class="n">detail</span><span class="o">=</span><span class="p">{</span>
+                <span class="o">**</span><span class="n">detail</span><span class="p">,</span>
+                <span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span>
+                <span class="s2">"url"</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="o">.</span><span class="n">url</span><span class="p">,</span>
+                <span class="o">**</span><span class="p">(</span>
+                    <span class="p">{</span><span class="s2">"disclosure_failure"</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">disclosure_failure</span><span class="p">}</span>
+                    <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">disclosure_failure</span>
+                    <span class="k">else</span> <span class="p">{}</span>
+                <span class="p">),</span>
+            <span class="p">},</span>
         <span class="p">)</span>
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">disclosure_failure</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: the </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2"> went out, and "</span>
+                <span class="sa">f</span><span class="s2">"recording what it disclosed failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">disclosure_failure</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
         <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would send"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dry_run</span> <span class="k">else</span> <span class="s2">"sent"</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">head</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_preview</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -2485,7 +2531,8 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">send</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">purpose</span><span class="o">=</span><span class="n">purpose</span><span class="p">)</span>
                 <span class="n">hold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_effect_hold</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">hold</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">_send</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">send</span><span class="p">)</span>
+                    <span class="n">own</span> <span class="o">=</span> <span class="n">Provenance</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">OWN_MESSAGE_PROVENANCE</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_send</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">send</span><span class="p">,</span> <span class="n">provenance</span><span class="o">=</span><span class="n">own</span><span class="p">)</span>
                     <span class="k">continue</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_hold_send</span><span class="p">(</span><span class="n">send</span><span class="p">,</span> <span class="n">hold</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_notice</span><span class="p">(</span>

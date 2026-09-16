@@ -83,6 +83,7 @@ tell a running tick from a finished or an interrupted one. [`status_lines()`](#l
 | [`DEPLOY_OUTPUT_TAIL_CHARS`](#liaise.tick.DEPLOY_OUTPUT_TAIL_CHARS) | How many of a failed deploy's last output characters its `run` entry keeps.                                                                                                    |
 | [`WorkspaceFactory`](#liaise.tick.WorkspaceFactory)         | the workspace seam (see [`liaise.workspace.workspace_for()`](liaise.workspace.html.md#liaise.workspace.workspace_for)).                                     |
 | [`Triage`](#liaise.tick.Triage)                   | the triage seam (#19).                                                                                                                                                         |
+| [`OWN_MESSAGE_PROVENANCE`](#liaise.tick.OWN_MESSAGE_PROVENANCE)   | a fixed text no run wrote, so nothing a run read is in it.                                                                                                                     |
 | [`RUN_LOCK_FILE`](#liaise.tick.RUN_LOCK_FILE)            | The run lock's file under `state_dir`.                                                                                                                                         |
 | [`RUN_STARTED_KEY`](#liaise.tick.RUN_STARTED_KEY)          | Where the store keeps a tick's start and end.                                                                                                                                  |
 | [`LEGACY_LAST_RUN_KEY`](#liaise.tick.LEGACY_LAST_RUN_KEY)      | a pass's start, written once the pass had finished.                                                                                                                            |
@@ -193,6 +194,14 @@ How long after the tick first cancelled a run for passing its wall clock it wait
 the run to stop. A run its processor still reports running by then is finished as
 `timed_out`, sent nothing more (its pid may be another process’s by then), and its
 case goes to the owner. A run no tick has cancelled is never given up.
+
+### liaise.tick.OWN_MESSAGE_PROVENANCE *= "the tick's own message, a fixed text no run wrote"*
+
+a
+fixed text no run wrote, so nothing a run read is in it.
+
+* **Type:**
+  The provenance of a message the tick writes itself (the daily-cap message, a nudge)
 
 ### liaise.tick.PERMANENT_READ_ERRORS *= frozenset({'not_found', 'permission'})*
 
@@ -350,7 +359,7 @@ Where a tick keeps its run lock.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### liaise.tick.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function reply_mode>, <function leak_scan>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600))
+### liaise.tick.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600))
 
 One tick over `subjects` (slug to [`Subject`](liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`.
 

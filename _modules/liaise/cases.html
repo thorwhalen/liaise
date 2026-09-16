@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -743,12 +743,14 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.detect</span><span class="w"> </span><span class="kn">import</span> <span class="n">link_urls</span><span class="p">,</span> <span class="n">visible</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span> <span class="n">OutboundFilter</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.holds</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_SET_BY</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">CASE_STATES</span><span class="p">,</span> <span class="n">Case</span><span class="p">,</span> <span class="n">LedgerEntry</span><span class="p">,</span> <span class="n">require_one_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">CASE_STATES</span><span class="p">,</span> <span class="n">Approval</span><span class="p">,</span> <span class="n">Case</span><span class="p">,</span> <span class="n">LedgerEntry</span><span class="p">,</span> <span class="n">require_one_of</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">audience_in_words</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">RUNNING</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DRAFT_ENTRY_KIND</span><span class="p">,</span>
@@ -798,13 +800,107 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">moment</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s2">"seconds"</span><span class="p">)</span>
 
 
+<span class="c1">#: The keys of a ``gate`` entry's audit record that ``liaise case show`` sums up rather than</span>
+<span class="c1">#: prints: the verdict, the audience snapshot and the fingerprints stay in the ledger.</span>
+<span class="n">_AUDIT_KEYS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span>
+        <span class="s2">"concerns"</span><span class="p">,</span>
+        <span class="s2">"settled"</span><span class="p">,</span>
+        <span class="s2">"verdict"</span><span class="p">,</span>
+        <span class="s2">"consulted"</span><span class="p">,</span>
+        <span class="s2">"payload_hash"</span><span class="p">,</span>
+        <span class="s2">"audience_hash"</span><span class="p">,</span>
+        <span class="s2">"approval_bound"</span><span class="p">,</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="c1">#: How a held message's audience reads when no verdict names it.</span>
+<span class="n">AUDIENCE_UNKNOWN</span> <span class="o">=</span> <span class="s2">"not judged"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_shown_detail</span><span class="p">(</span><span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``detail`` as an entry's line shows it: an audit record summed up by its rules and approval."""</span>
+    <span class="n">shown</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">detail</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_AUDIT_KEYS</span><span class="p">}</span>
+    <span class="n">approval</span> <span class="o">=</span> <span class="n">shown</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"approval"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">approval</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="n">past</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">approval</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rules_overridden"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">())</span>
+        <span class="n">shown</span><span class="p">[</span><span class="s2">"approval"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"by </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'by'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">" past </span><span class="si">{</span><span class="n">past</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">past</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="p">)</span>
+    <span class="n">rules</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">str</span><span class="p">(</span><span class="n">concern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rule"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">concern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"filter"</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"concerns"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concern</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="n">rules</span><span class="p">:</span>
+        <span class="n">shown</span><span class="p">[</span><span class="s2">"rules"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">rules</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"approval_bound"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="n">shown</span><span class="p">[</span><span class="s2">"approval"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">shown</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'approval'</span><span class="p">)</span><span class="si">}</span><span class="s2"> (void)"</span>
+    <span class="k">return</span> <span class="n">shown</span>
+
+
+<div class="viewcode-block" id="gate_summary">
+<a class="viewcode-back" href="../../_autosummary/liaise.cases.html#liaise.cases.gate_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">gate_summary</span><span class="p">(</span><span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""What a ``gate`` entry's ``detail`` says of its decision, as a held draft keeps it.</span>
+
+<span class="sd">    None for an entry that records no verdict (one written before liaise ADR 0002, a</span>
+<span class="sd">    rejection, a nudge).</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"flow"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">detail</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">verdict</span> <span class="o">=</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"verdict"</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">audience</span> <span class="o">=</span> <span class="n">audience_in_words</span><span class="p">(</span><span class="n">verdict</span><span class="p">[</span><span class="s2">"audience"</span><span class="p">])</span> <span class="k">if</span> <span class="n">verdict</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="k">except</span> <span class="p">(</span>
+        <span class="ne">KeyError</span><span class="p">,</span>
+        <span class="ne">TypeError</span><span class="p">,</span>
+        <span class="ne">ValueError</span><span class="p">,</span>
+    <span class="p">):</span>  <span class="c1"># a record nobody can read names no audience</span>
+        <span class="n">audience</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">concerns</span> <span class="o">=</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"concerns"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">()</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"flow"</span><span class="p">:</span> <span class="n">detail</span><span class="p">[</span><span class="s2">"flow"</span><span class="p">],</span>
+        <span class="s2">"audience"</span><span class="p">:</span> <span class="n">audience</span><span class="p">,</span>
+        <span class="s2">"reasons"</span><span class="p">:</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">concerns</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)],</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="held_lines">
+<a class="viewcode-back" href="../../_autosummary/liaise.cases.html#liaise.cases.held_lines">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">held_lines</span><span class="p">(</span>
+    <span class="n">text</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">gate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">indent</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">TEXT_INDENT</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""A held message as the operator reads it before releasing it (discussion §5.7).</span>
+
+<span class="sd">    What the gate decided and the audience in words, when ``gate`` (a draft's, or</span>
+<span class="sd">    :func:`gate_summary`'s) says; the text, each invisible or control character written as</span>
+<span class="sd">    ``&lt;U+XXXX&gt;``; and every link and image destination in full, since a link's title can</span>
+<span class="sd">    say one place and its destination another.</span>
+<span class="sd">    """</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">gate</span><span class="p">:</span>
+        <span class="n">audience</span> <span class="o">=</span> <span class="n">gate</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"audience"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">AUDIENCE_UNKNOWN</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">indent</span><span class="si">}</span><span class="s2">[gate: </span><span class="si">{</span><span class="n">gate</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'flow'</span><span class="p">)</span><span class="si">}</span><span class="s2">; audience: </span><span class="si">{</span><span class="n">audience</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
+    <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">indent</span><span class="si">}{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">visible</span><span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="n">NONE_SHOWN</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()]</span>
+    <span class="n">urls</span> <span class="o">=</span> <span class="n">link_urls</span><span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">urls</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">indent</span><span class="si">}</span><span class="s2">[links, in full:]"</span><span class="p">)</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">indent</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">visible</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">url</span> <span class="ow">in</span> <span class="n">urls</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">lines</span></div>
+
+
+
 <div class="viewcode-block" id="entry_line">
 <a class="viewcode-back" href="../../_autosummary/liaise.cases.html#liaise.cases.entry_line">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">entry_line</span><span class="p">(</span><span class="n">entry</span><span class="p">:</span> <span class="n">LedgerEntry</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""One entry on one line: when, what, by whom, its detail, and the start of its text."""</span>
     <span class="n">detail</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">=</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span>
-        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">entry</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_shown_detail</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">detail</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="p">[],</span> <span class="p">{})</span>
     <span class="p">)</span>
     <span class="n">line</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">_stamp</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">at</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">entry</span><span class="o">.</span><span class="n">kind</span><span class="si">}</span><span class="s2">"</span> <span class="o">+</span> <span class="p">(</span>
@@ -812,7 +908,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">detail</span><span class="p">:</span>
         <span class="n">line</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">": </span><span class="si">{</span><span class="n">detail</span><span class="si">}</span><span class="s2">"</span>
-    <span class="n">text</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="n">entry</span><span class="o">.</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">visible</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">SHOW_TEXT_CHARS</span><span class="p">:</span>
         <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[:</span> <span class="n">SHOW_TEXT_CHARS</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">"…"</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2"> | </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">text</span> <span class="k">else</span> <span class="n">line</span></div>
@@ -856,9 +952,11 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    Its state and conversations; the reason of its last ``escalate`` or ``decline``; its</span>
 <span class="sd">    last failed deploy, with the tail of the command's output; each draft waiting for the</span>
-<span class="sd">    operator, with its whole text; and its ``entries`` latest ledger entries, oldest first,</span>
-<span class="sd">    a line each with its detail and the start of its text. Reads only. Raises</span>
-<span class="sd">    ``ValueError`` for a case the ledger ``store`` does not hold.</span>
+<span class="sd">    operator, with the gate's flow, the audience in words, its whole text with invisible</span>
+<span class="sd">    characters made visible and every link in full (:func:`held_lines`); and its</span>
+<span class="sd">    ``entries`` latest ledger entries, oldest first, a line each with its detail and the</span>
+<span class="sd">    start of its text. Reads only. Raises ``ValueError`` for a case the ledger ``store``</span>
+<span class="sd">    does not hold.</span>
 <span class="sd">    """</span>
     <span class="n">case</span> <span class="o">=</span> <span class="n">Ledger</span><span class="p">(</span><span class="n">store</span><span class="p">)</span><span class="o">.</span><span class="n">get_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -901,7 +999,7 @@ window.runMermaid = runMermaid;</script>
             <span class="sa">f</span><span class="s2">"  [</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'at'</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">to</span><span class="si">}</span><span class="s2">: "</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
-        <span class="n">lines</span> <span class="o">+=</span> <span class="n">indented</span><span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">))</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="n">held_lines</span><span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">),</span> <span class="n">gate</span><span class="o">=</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"gate"</span><span class="p">))</span>
     <span class="n">shown</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="o">-</span><span class="n">entries</span><span class="p">:]</span> <span class="k">if</span> <span class="n">entries</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">()</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"latest entries: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">shown</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">entry_line</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">shown</span><span class="p">]</span>
@@ -981,6 +1079,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    how many filters the gate ran it through. ``edited`` says whether the operator's text</span>
 <span class="sd">    replaced the draft's. ``case`` is the case as the release left it, or would leave it in</span>
 <span class="sd">    a dry run, and ``moved`` is its ``(from, to)`` states when the send moved it on.</span>
+<span class="sd">    ``approval`` is the approval the gate was given: the one to pass back to send exactly</span>
+<span class="sd">    what was judged.</span>
 <span class="sd">    """</span>
 
     <span class="n">index</span><span class="p">:</span> <span class="nb">int</span>
@@ -989,7 +1089,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">filters</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">edited</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">case</span><span class="p">:</span> <span class="n">Case</span>
-    <span class="n">moved</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="n">moved</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></div>
 
 
 
@@ -1067,19 +1168,26 @@ window.runMermaid = runMermaid;</script>
     <span class="n">send</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
+    <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">approve_shown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">justification</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">fingerprint_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DraftRelease</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Send the case ``case_id``'s draft at ``index`` as ``by``, through the gate again.</span>
 
 <span class="sd">    The message is the draft's text, or ``text`` when the operator edited it. It goes out</span>
 <span class="sd">    through :func:`liaise.release.release_draft`, with an :class:`~liaise.model.Approval`</span>
-<span class="sd">    by ``by`` at ``now`` (the current UTC time when None) on the gate's context. Draft</span>
-<span class="sd">    reply mode lets it through, and every other filter judges it as it would a message</span>
-<span class="sd">    the tick sends, the mention included.</span>
+<span class="sd">    by ``by`` at ``now`` (the current UTC time when None) on the gate's context, bound to</span>
+<span class="sd">    the message and the audience its channel reports at send time. The approval settles</span>
+<span class="sd">    what it names and binds to, draft reply mode among them, and every other concern of the</span>
+<span class="sd">    gate holds, a ``refuse`` always.</span>
 
 <span class="sd">    It asks no one, and ``by`` has no default: the caller says who releases the draft. Its</span>
-<span class="sd">    caller shows the operator the message and the gate's verdict first, from a dry run, and</span>
-<span class="sd">    passes the draft they saw as ``seen``, as ``liaise case send-draft`` does after asking</span>
-<span class="sd">    at a terminal.</span>
+<span class="sd">    caller shows the operator the message and the gate's verdict first, from a dry run with</span>
+<span class="sd">    ``approve_shown``, and passes the draft they saw as ``seen`` and that dry run's</span>
+<span class="sd">    ``approval``, as ``liaise case send-draft`` does after asking at a terminal. With</span>
+<span class="sd">    neither, nothing is settled and a draft the gate holds back stays held. A text, an</span>
+<span class="sd">    audience or a verdict that changed since the approval voids it, and nothing is sent.</span>
 
 <span class="sd">    - **Sent:** the draft leaves the case. A ``gate`` entry by ``by`` records the text as</span>
 <span class="sd">      it went out, its url, the approval and why the draft was held. Once no draft is</span>
@@ -1142,6 +1250,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">send</span><span class="o">=</span><span class="n">send</span><span class="p">,</span>
         <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
         <span class="n">outbound_filters</span><span class="o">=</span><span class="n">outbound_filters</span><span class="p">,</span>
+        <span class="n">approval</span><span class="o">=</span><span class="n">approval</span><span class="p">,</span>
+        <span class="n">approve_shown</span><span class="o">=</span><span class="n">approve_shown</span><span class="p">,</span>
+        <span class="n">justification</span><span class="o">=</span><span class="n">justification</span><span class="p">,</span>
+        <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">fingerprint_key</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">release</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
         <span class="n">DraftRelease</span><span class="p">,</span>
@@ -1150,6 +1262,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">attempt</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">attempt</span><span class="p">,</span>
         <span class="n">filters</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span>
         <span class="n">edited</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">edited</span><span class="p">,</span>
+        <span class="n">approval</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">approval</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">outcome</span><span class="o">.</span><span class="n">entry</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">release</span><span class="p">(</span><span class="n">case</span><span class="o">=</span><span class="n">case</span><span class="p">)</span>  <span class="c1"># only a plan: nothing went out, so nothing changes</span>

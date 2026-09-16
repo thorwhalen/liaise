@@ -1,0 +1,45 @@
+liaise.outbound
+===============
+
+.. automodule:: liaise.outbound
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      LEAK_TERMS_ENTITY
+      NEED_TO_KNOW
+      FROM_ACQUAINT
+      REQUEST_WORK
+      MESSAGE_KIND
+      CHANNEL_HOSTS
+      IDENTIFYING_KINDS
+      DISCLOSURE_SOURCE
+      TITLE_PART
+      DisclosureSource
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      acquaint_disclosure
+      allowlist_for
+      audience_snapshot
+      case_provenance
+      consulted_of
+      disclosed_records
+      findings_in
+      identities_for
+      judge
+      need_to_know_disclosure
+      record_disclosure
+      verdict_id
+      with_leak_terms
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Judgement
+   

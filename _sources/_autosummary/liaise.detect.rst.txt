@@ -51,6 +51,8 @@ liaise.detect
       detect_vocabulary
       fingerprint_key
       fold_term
+      key_source
+      link_urls
       local_path_scanner
       normalise
       render
@@ -62,6 +64,7 @@ liaise.detect
       scan_personal_terms
       scan_private_addresses
       secret_detector
+      visible
    
    .. rubric:: Classes
 

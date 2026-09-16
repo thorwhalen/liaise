@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -951,6 +951,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">notes</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
     <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">gate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""One item of a case's ``drafts``: a message held for the operator.</span>
 
@@ -964,7 +965,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    - ``text``: the message, as it would be sent;</span>
 <span class="sd">    - ``reason``: why it was held (an escalation's reason, a gate divert, no channel);</span>
 <span class="sd">    - ``notes``: the gate's notes on it, in order;</span>
-<span class="sd">    - ``title``: the title of the issue it would open, present only when it opens one.</span>
+<span class="sd">    - ``title``: the title of the issue it would open, present only when it opens one;</span>
+<span class="sd">    - ``gate``: what the gate decided, present only when the gate held it: its flow, the</span>
+<span class="sd">      audience in words and the reasons (:meth:`liaise.gate.GateDecision.summary`).</span>
 
 <span class="sd">    &gt;&gt;&gt; from datetime import datetime, timezone</span>
 <span class="sd">    &gt;&gt;&gt; make_draft(at=datetime(2026, 9, 11, tzinfo=timezone.utc), outcome="reply",</span>
@@ -985,6 +988,8 @@ window.runMermaid = runMermaid;</script>
     <span class="p">}</span>
     <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">draft</span><span class="p">[</span><span class="s2">"title"</span><span class="p">]</span> <span class="o">=</span> <span class="n">title</span>
+    <span class="k">if</span> <span class="n">gate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">draft</span><span class="p">[</span><span class="s2">"gate"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">gate</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">draft</span></div>
 
 

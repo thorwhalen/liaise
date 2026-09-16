@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=59fadc99"></script>
+    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.5" />
+  <meta name="docsearch:version" content="0.1.6" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -951,7 +951,9 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    ``start`` and ``end`` are offsets into the message as written. ``entity``, ``label``</span>
 <span class="sd">    and ``sealed_from`` are set for terms from the disclosure. ``rule`` names the pattern</span>
-<span class="sd">    or check that matched; ``fingerprint`` is the keyed HMAC of the value.</span>
+<span class="sd">    or check that matched; ``fingerprint`` is the keyed HMAC of the value. ``part`` names</span>
+<span class="sd">    the part of the message the offsets are into when it is not the text (``title``,</span>
+<span class="sd">    ``attachment name``); :func:`detect` scans one part and leaves it None.</span>
 <span class="sd">    """</span>
 
     <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
@@ -963,11 +965,12 @@ window.runMermaid = runMermaid;</script>
     <span class="n">rule</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">severity</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">fingerprint</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">part</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 <div class="viewcode-block" id="Finding.to_dict">
 <a class="viewcode-back" href="../../_autosummary/liaise.detect.html#liaise.detect.Finding.to_dict">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""The finding as a JSON-ready dict."""</span>
+<span class="w">        </span><span class="sd">"""The finding as a JSON-ready dict; ``part`` only when it names one."""</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">"kind"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
             <span class="s2">"start"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
@@ -978,6 +981,7 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">"rule"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">rule</span><span class="p">,</span>
             <span class="s2">"severity"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="p">,</span>
             <span class="s2">"fingerprint"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">fingerprint</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">({</span><span class="s2">"part"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">part</span><span class="p">}</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">part</span> <span class="k">else</span> <span class="p">{}),</span>
         <span class="p">}</span></div>
 </div>
 
@@ -1030,6 +1034,31 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span>
 <span class="n">_INVISIBLE_CHAR</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">_INVISIBLE_CLASS</span><span class="si">}</span><span class="s2">]"</span><span class="p">)</span>
 <span class="n">_INVISIBLE_RUN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">_INVISIBLE_CLASS</span><span class="si">}</span><span class="s2">]+"</span><span class="p">)</span>
+<span class="c1">#: What :func:`visible` spells out: every invisible character, and every control</span>
+<span class="c1">#: character but the tab and the line breaks (a terminal obeys an escape sequence, so a</span>
+<span class="c1">#: message holding one could redraw what the operator reads).</span>
+<span class="n">_SHOWN_AS_CODE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">_INVISIBLE_CLASS</span><span class="si">}</span><span class="se">\\</span><span class="s2">x00-</span><span class="se">\\</span><span class="s2">x08</span><span class="se">\\</span><span class="s2">x0b</span><span class="se">\\</span><span class="s2">x0c</span><span class="se">\\</span><span class="s2">x0e-</span><span class="se">\\</span><span class="s2">x1f</span><span class="se">\\</span><span class="s2">x7f-</span><span class="se">\\</span><span class="s2">x9f]"</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="visible">
+<a class="viewcode-back" href="../../_autosummary/liaise.detect.html#liaise.detect.visible">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">visible</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``text`` with each invisible or control character written as ``&lt;U+XXXX&gt;``.</span>
+
+<span class="sd">    What the operator reads before releasing a message: a zero-width space, a direction</span>
+<span class="sd">    override or a terminal escape shows as what it is, where it is.</span>
+
+<span class="sd">    &gt;&gt;&gt; visible("He" + chr(0x200B) + "ron")</span>
+<span class="sd">    'He&lt;U+200B&gt;ron'</span>
+<span class="sd">    &gt;&gt;&gt; visible("two\\nlines\\tand a tab")</span>
+<span class="sd">    'two\\nlines\\tand a tab'</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">_SHOWN_AS_CODE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="k">lambda</span> <span class="n">match</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"&lt;U+</span><span class="si">{</span><span class="nb">ord</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">())</span><span class="si">:</span><span class="s2">04X</span><span class="si">}</span><span class="s2">&gt;"</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span></div>
+
+
+
 <span class="c1">#: Combining marks, dropped by normalisation. Spacing marks (``Mc``) carry a syllable's</span>
 <span class="c1">#: sound in many scripts and are kept.</span>
 <span class="n">_MARK_CATEGORIES</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"Mn"</span><span class="p">,</span> <span class="s2">"Me"</span><span class="p">})</span>
@@ -1588,6 +1617,7 @@ window.runMermaid = runMermaid;</script>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">key_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_KEY_FILE</span><span class="p">,</span>
     <span class="n">key_bytes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_KEY_BYTES</span><span class="p">,</span>
+    <span class="n">create</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""The fingerprint key in ``&lt;state_dir&gt;/&lt;key_file&gt;``, created on first use.</span>
 
@@ -1596,12 +1626,17 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    atomically, so processes racing to create it all read the same key. A directory</span>
 <span class="sd">    created here is owner-only. An existing file shorter than ``key_bytes`` raises</span>
 <span class="sd">    :class:`FingerprintKeyError`.</span>
+
+<span class="sd">    With ``create`` false (a dry run, which writes nothing), a missing key is not created:</span>
+<span class="sd">    the answer is a key used once, so its fingerprints correlate with nothing recorded.</span>
 <span class="sd">    """</span>
     <span class="n">directory</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">Path</span><span class="p">(</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">state_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
         <span class="k">else</span> <span class="n">_configured_state_dir</span><span class="p">()</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">create</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">directory</span> <span class="o">/</span> <span class="n">key_file</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">secrets</span><span class="o">.</span><span class="n">token_bytes</span><span class="p">(</span><span class="n">key_bytes</span><span class="p">)</span>
     <span class="n">directory</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">STATE_DIR_MODE</span><span class="p">)</span>
     <span class="n">path</span> <span class="o">=</span> <span class="n">directory</span> <span class="o">/</span> <span class="n">key_file</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
@@ -1609,6 +1644,42 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">created</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">created</span>
     <span class="k">return</span> <span class="n">_read_key</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">key_bytes</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="key_source">
+<a class="viewcode-back" href="../../_autosummary/liaise.detect.html#liaise.detect.key_source">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">key_source</span><span class="p">(</span>
+    <span class="n">state_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">key_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_KEY_FILE</span><span class="p">,</span>
+    <span class="n">key_bytes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_KEY_BYTES</span><span class="p">,</span>
+    <span class="n">create</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""A callable that answers one key, however often it is asked: :func:`fingerprint_key`, once.</span>
+
+<span class="sd">    One command may judge a message more than once — releasing a draft judges it, shows the</span>
+<span class="sd">    operator, and judges it again with their approval — and those judgements have to</span>
+<span class="sd">    fingerprint alike, or what the second one flags is not what the first one showed. With</span>
+<span class="sd">    ``create`` false a missing key is a key used once, so asking twice would otherwise</span>
+<span class="sd">    answer twice.</span>
+
+<span class="sd">    &gt;&gt;&gt; source = key_source(create=False)</span>
+<span class="sd">    &gt;&gt;&gt; source() == source()</span>
+<span class="sd">    True</span>
+<span class="sd">    """</span>
+    <span class="n">answered</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">source</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">answered</span><span class="p">:</span>
+            <span class="n">answered</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">fingerprint_key</span><span class="p">(</span>
+                    <span class="n">state_dir</span><span class="p">,</span> <span class="n">key_file</span><span class="o">=</span><span class="n">key_file</span><span class="p">,</span> <span class="n">key_bytes</span><span class="o">=</span><span class="n">key_bytes</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="n">create</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">answered</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">source</span></div>
 
 
 
@@ -2404,6 +2475,36 @@ window.runMermaid = runMermaid;</script>
             <span class="n">rule</span><span class="o">=</span><span class="s2">"image-host"</span> <span class="k">if</span> <span class="n">image</span> <span class="k">else</span> <span class="s2">"link-host"</span><span class="p">,</span>
             <span class="n">severity</span><span class="o">=</span><span class="n">SEVERITY_EXFILTRATION</span><span class="p">,</span>
         <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="link_urls">
+<a class="viewcode-back" href="../../_autosummary/liaise.detect.html#liaise.detect.link_urls">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">link_urls</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Every link and image destination in ``text``, in full, in order, each once.</span>
+
+<span class="sd">    Read as :func:`scan_links` reads them (Markdown, HTML attributes, autolinks, plain</span>
+<span class="sd">    URLs, then any ``//host`` outside those), whatever their host: what the operator reads</span>
+<span class="sd">    before releasing a message, since a link's title can say one place and its</span>
+<span class="sd">    destination another.</span>
+
+<span class="sd">    &gt;&gt;&gt; link_urls("See [the docs](https://example.org/a) and https://example.com/b.")</span>
+<span class="sd">    ('https://example.org/a', 'https://example.com/b')</span>
+<span class="sd">    """</span>
+    <span class="n">found</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">parsed</span> <span class="o">=</span> <span class="n">chain_iterables</span><span class="p">(</span>
+        <span class="n">_markdown_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_html_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_text_urls</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">parsed</span><span class="p">:</span>
+        <span class="n">found</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+    <span class="n">spans</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">start</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">spans</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">_loose_urls</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">bisect_right</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">starts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">spans</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">continue</span>  <span class="c1"># inside a URL already found</span>
+        <span class="n">found</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span></div>
 
 
 
