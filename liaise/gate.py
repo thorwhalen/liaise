@@ -32,14 +32,16 @@ fixed and is not a seam: the mention, the one rewrite, comes last, so every filt
 the text as it was written, and the rewrite reaches a send only when nothing held it back.
 
 **Approvals** (discussion §5.7). The operator's :class:`~liaise.model.Approval` on
-:attr:`GateContext.approval` is bound to the hashes of the message and the audience it was
-given for. While both still match (:func:`liaise.policy.payload_hash` of the message the
-filters judged, :func:`liaise.policy.audience_hash` of the audience on the context), it
-settles each concern whose rule it names and whose flow is at most ``approve``. A
+:attr:`GateContext.approval` is bound to the message, the audience and the verdict it was
+given for: the hashes of the message the filters judged and of the audience on the context
+(:func:`liaise.policy.payload_hash`, :func:`liaise.policy.audience_hash`), and the name of
+what that verdict flagged (:func:`liaise.outbound.verdict_id`). While all three still hold,
+it settles each concern whose rule it names and whose flow is at most ``approve``. A
 ``refuse`` is never settled, nor is a concern with no rule (deslop, a missing handle, a
-filter that failed). An approval whose hashes differ settles nothing, and is itself a
-concern that names what changed. :func:`approval_for` makes the approval for a decision the
-operator was shown.
+filter that failed). An approval that no longer binds settles nothing, and is itself the
+first concern the operator reads, naming what changed — a widened audience, an edited text,
+or a disclosure that now flags something else under the same rule. :func:`approval_for`
+makes the approval for a decision the operator was shown.
 
 The gate only decides. :func:`liaise.release.gate_and_send` computes the audience, runs the
 gate, and sends :attr:`GateDecision.send`; its callers keep a diverted message as a draft
@@ -68,6 +70,7 @@ from liaise.outbound import (
     judge,
     verdict_id,
 )
+from liaise.policy import payload_of
 from liaise.policy import (
     APPROVE,
     DELAY,
@@ -185,6 +188,24 @@ class Divert:
 OutboundFilter = Callable[[Outbound, GateContext], Union[Pass, Divert]]
 
 
+def binds(
+    approval: Optional[Approval],
+    hashes: tuple[Optional[str], Optional[str]],
+    verdict: Optional[Verdict],
+) -> bool:
+    """Whether ``approval`` was given for this message, this audience and this verdict.
+
+    The one rule the gate settles by, so what a decision records as bound is what its
+    concerns were judged by: both hashes as the filters computed them, and the name of
+    what the verdict flags (:func:`liaise.outbound.verdict_id`), which is ``None`` when no
+    policy judged the message.
+    """
+    if approval is None or None in hashes:
+        return False
+    shown = None if verdict is None else verdict_id(verdict)
+    return approval.binds(*hashes) and approval.verdict_id == shown
+
+
 @dataclass(frozen=True, kw_only=True)
 class Concern:
     """One reason the gate holds a message back: the filter, the rule, how far, and why.
@@ -244,12 +265,9 @@ class GateDecision:
 
     @property
     def bound(self) -> bool:
-        """Whether the decision had an approval that binds to this message and audience."""
-        return (
-            self.approval is not None
-            and self.payload_hash is not None
-            and self.audience_hash is not None
-            and self.approval.binds(self.payload_hash, self.audience_hash)
+        """Whether the approval binds to this message, this audience and this verdict."""
+        return binds(
+            self.approval, (self.payload_hash, self.audience_hash), self.verdict
         )
 
     @property
@@ -462,12 +480,35 @@ DFLT_OUTBOUND_FILTERS: tuple[OutboundFilter, ...] = (
 
 
 def filter_name(outbound_filter: Any) -> str:
-    """How the gate names a filter: its name, or its type when it has none (a partial).
+    """How the gate names a filter: its name, the name of what a partial wraps, else its type.
 
     Never its repr, which can hold what a filter was bound to, such as a local path; the
-    name reaches the operator's notification.
+    name reaches the operator's notification. A filter configured at a seam is a
+    ``functools.partial``, whose own name is its arguments: its function's name is what
+    tells the operator which check held their message back.
     """
-    return getattr(outbound_filter, "__name__", type(outbound_filter).__name__)
+    for candidate in (outbound_filter, getattr(outbound_filter, "func", None)):
+        name = getattr(candidate, "__name__", None)
+        if isinstance(name, str) and name:
+            return name
+    return type(outbound_filter).__name__
+
+
+def _redirected(payload: Optional[Mapping[str, Any]], outbound: Outbound) -> bool:
+    """Whether a filter's rewrite changed the message in anything but its text.
+
+    A filter may reword a message (the mention); it may never redirect it. Where a message
+    goes, who it is for and what it carries were judged by every filter before it, and are
+    what the payload hash binds an approval to.
+    """
+    if payload is None:
+        return False
+    try:
+        rewritten = payload_of(outbound)
+    except Exception:  # a rewrite nobody can hash is not one to send
+        return True
+    keep = lambda fields: {k: v for k, v in fields.items() if k != "text"}  # noqa: E731
+    return keep(rewritten) != keep(payload)
 
 
 def _concerns_of(name: str, divert: Divert) -> list[Concern]:
@@ -515,7 +556,9 @@ def _void(approval: Approval, hashes: tuple[Optional[str], Optional[str]]) -> Co
             ("its audience", approval.audience_hash, hashes[1]),
         )
         changed = [label for label, given, now in pairs if given != now]
-        what = f"{' and '.join(changed)} changed since it was given"
+        # The hashes can both hold while the verdict names something else: the disclosure
+        # changed under it, so what the operator released it past is not what it flags now.
+        what = f"{' and '.join(changed or ['what the gate flags in it'])} changed since it was given"
     return Concern(
         filter=GATE_CONCERN,
         flow=APPROVE,
@@ -541,8 +584,10 @@ def run_gate(
     returns anything but a ``Pass`` (of an :class:`Outbound`) or a ``Divert``, adds an
     ``approve`` concern naming it.
     """
+    entry_payload: Optional[Mapping[str, Any]] = None
     try:
         judged_audience = audience_snapshot(ctx.audience, outbound.ref)
+        entry_payload = payload_of(outbound)
         hashes: tuple[Optional[str], Optional[str]] = (
             payload_hash(outbound),
             audience_hash(judged_audience),
@@ -577,10 +622,23 @@ def run_gate(
         if result.judgement is not None:
             judgement = result.judgement
         if isinstance(result, Pass):
-            outbound = result.outbound
+            if _redirected(entry_payload, result.outbound):
+                concerns.append(
+                    Concern(
+                        filter=name,
+                        flow=APPROVE,
+                        text=(
+                            f"{name} changed where the message goes, or what it carries, "
+                            f"not only what it says: the rewrite is dropped, since every "
+                            f"filter judged the message as it stands"
+                        ),
+                    )
+                )
+            else:
+                outbound = result.outbound
         else:
             concerns.extend(_concerns_of(name, result))
-    bound = approval is not None and None not in hashes and approval.binds(*hashes)
+    bound = binds(approval, hashes, None if judgement is None else judgement.verdict)
     if approval is not None and not bound:
         concerns.insert(
             0, _void(approval, hashes)

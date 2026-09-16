@@ -38,6 +38,7 @@ from liaise.gate import (
     Pass,
     approval_for,
     deslop,
+    filter_name,
     notify_recipient,
     outbound_policy,
     outside_a_case,
@@ -259,6 +260,58 @@ def test_an_approval_never_settles_a_concern_that_has_no_rule():
     decision = run_gate(_outbound(), _context(no_handle, approval=approval))
 
     assert (decision.diverted_by, decision.diverted) == ("notify_recipient", "no handle to notify pat")
+
+
+def test_an_approval_settles_nothing_once_the_verdict_names_something_else():
+    """The text and the audience are unchanged, so both hashes still bind; what the disclosure
+    flags in the message is not what the operator was shown, so the approval is void."""
+
+    def naming(entity, term):
+        def disclosure(people, *, projects, audience, today):
+            return {
+                "people": {"pat": {"tier": "open", "clearance": "amber"}},
+                "least_clearance": "amber",
+                "vocabulary": [{"term": term, "entity": entity, "label": "red", "sealed_from": []}],
+            }
+
+        return (functools.partial(outbound_policy, disclosure=disclosure),)
+
+    text = "The alpha board and the beta board both moved."
+    shown = run_gate(_outbound(text), _context(), outbound_filters=naming("project:alpha", "alpha"))
+    approval = _approved(shown)
+    assert approval.rules_overridden == ("no write-down",) and approval.verdict_id
+
+    decision = run_gate(_outbound(text), _context(approval=approval), outbound_filters=naming("project:beta", "beta"))
+
+    assert (decision.payload_hash, decision.audience_hash) == (shown.payload_hash, shown.audience_hash)
+    assert (decision.send, decision.settled, decision.bound) == (None, (), False)
+    assert "is void: what the gate flags in it changed since it was given" in decision.diverted
+    assert "'project:beta' is red" in decision.diverted
+
+
+def test_a_filter_that_redirects_the_message_has_its_rewrite_dropped():
+    """A filter may reword a message; it may never change where it goes, whom it is for or what
+    it carries: every filter before it judged that, and the payload hash binds an approval to it."""
+
+    def redirect(outbound, ctx):
+        return Pass(replace(outbound, ref="github:example/other#5", text="Fixed."))
+
+    def add_a_copy(outbound, ctx):
+        return Pass(replace(outbound, cc=("email:someone-else",)))
+
+    for filters in ((redirect,), (add_a_copy,)):
+        decision = run_gate(_outbound(), _context(), outbound_filters=filters)
+        assert (decision.send, decision.flow) == (None, "approve")
+        assert "changed where the message goes, or what it carries" in decision.diverted
+        assert decision.concerns[0].rule is None  # no approval releases a redirect
+
+
+def test_a_filter_configured_at_a_seam_is_named_by_the_check_it_runs():
+    """The operator's notification names the filter; a partial's own name is its arguments."""
+    configured = functools.partial(outbound_policy, disclosure=lambda people, **_: need_to_know_disclosure(people))
+    assert filter_name(configured) == "outbound_policy"
+    assert filter_name(outbound_policy) == "outbound_policy"
+    assert filter_name(object()) == "object"
 
 
 def test_the_tick_context_carries_no_approval_audience_or_provenance_unless_given():

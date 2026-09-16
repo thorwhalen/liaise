@@ -27,15 +27,23 @@ Each `Divert` says how far it holds the message back (its `flow`, one of `liaise
 
 The order stays fixed and is not a seam. The mention, the gate's one rewrite, comes last, so every filter judges the text as it was written, and the rewrite reaches the channel only when nothing held the message back.
 
-### An approval binds to the payload and the audience it was given for
+### An approval binds to the message, the audience and the verdict it was given for
 
-An `Approval` carries the payload hash and the audience hash of the decision the operator was shown, the id of that verdict, the rules it overrides and a justification. At send time the gate runs again and recomputes both hashes:
+An `Approval` carries the payload hash and the audience hash of the decision the operator was shown, the name of what that verdict flagged (`verdict_id`: the rules that fired, their flows and readers, and the fingerprint and entity of each finding they name — not the time it was made), the rules it overrides and a justification. At send time the gate runs again and recomputes all three:
 
 - while they match, the approval settles each concern whose rule it names and whose flow is at most `approve`;
-- a `refuse` is never settled, nor is a concern with no rule (deslop, a missing handle, a filter that failed);
-- an approval whose hashes differ settles nothing and is itself the first concern the operator reads, naming what changed.
+- a `refuse` is never settled, nor is a concern with no rule (deslop, a missing handle, a filter that failed, a filter that tried to redirect the message);
+- an approval that no longer binds settles nothing and is itself the first concern the operator reads, naming what changed.
 
-So a released draft whose repository went public between the answer and the send is not sent, and the operator sees the new verdict. `liaise case send-draft` and `liaise message send-draft` judge the message first, show the audience in words and what the answer would release it past, and send only on a typed `y` at a terminal.
+The verdict is part of the binding because the hashes are not enough: the text and the audience can be untouched while the disclosure under them changes, so the same rule fires for a different entity. An approval given for one finding must not release another that happens to share its rule.
+
+So a released draft whose repository went public between the answer and the send is not sent, and neither is one whose disclosure started flagging something else; the operator sees the new verdict. `liaise case send-draft` and `liaise message send-draft` judge the message first, show the audience in words and what the answer would release it past, and send only on a typed `y` at a terminal.
+
+**Releasing takes an explicit act.** `release_draft` (and `cases.send_draft`, `messages.send_held_message`) settle nothing without an approval: naming who releases a draft is not itself a release. A caller that shows the operator a decision and asks them passes `approve_shown=True`, which judges the message and makes that operator's approval of exactly what was shown; the command line does this on the dry run it prints, and then sends with the approval the operator answered to. Any other caller — a script, a later surface, an agent with a Python prompt — gets a gate that holds what it held before.
+
+### A filter may reword a message, never redirect it
+
+Only the text of a `Pass` is a rewrite. A filter that changes the reference, the recipient, the copies, the title or the attachments has its rewrite dropped and raises an `approve` concern no approval can settle: every filter before it judged those, and the payload hash binds the operator's approval to them.
 
 ### What the ledger keeps
 
@@ -45,7 +53,9 @@ Every gated message's `gate` entry records the flow, each concern with its findi
 
 ### Provenance is computed from the ledger, not guessed
 
-A run is tainted when the case holds a message its subject does not trust for `request_work`: an author with no role, a role that does not grant it, or a grade it does not accept. The channel's own posts are trusted; the tick's own template messages (the daily-cap message, a nudge) are clean; a message outside a case is unknown, which counts as tainted. Every `message` entry of the case counts, not only those a run had read when it started: the ledger does not say which a resumed session saw, and counting one it did not can only hold a message back.
+A run is tainted when the case holds a message its subject does not trust for `request_work`: a role that does not grant it, or a grade it does not accept. The channel's own posts are trusted; the tick's own template messages (the daily-cap message, a nudge) are clean; a message outside a case is unknown, which counts as tainted. Every `message` entry of the case counts, not only those a run had read when it started: the ledger does not say which a resumed session saw, and counting one it did not can only hold a message back.
+
+**The unrouted queue counts too.** A message whose author has no role at all never becomes an entry: intake refuses it and queues it as unrouted. It is still on the conversation, and the prompt tells the run to read the conversation itself, so the run read it. `case_provenance` therefore reads the queue as well as the case, and takes a ledger to do it; a queue it cannot read taints rather than vouches. Without this the taint rule would miss the one reader it exists for — the stranger commenting on a public issue.
 
 ### Subject policy gains four values, and they are configuration, not seams
 
@@ -59,6 +69,7 @@ A run is tainted when the case holds a message its subject does not trust for `r
 - **acquaint that imports and then fails holds every message back**, with the error as the reason: the gate does not judge a message with less than it should know. Without acquaint, every reader is `need-to-know` and the subject's leak terms are the vocabulary.
 - **`mode = "shadow"` is accepted, recorded on every verdict, and enforces like `enforce`** until shadow mode lands (issue #39).
 - **Not wired yet, and left for the slices that own them:** the operator's own addresses and handles as `personal` terms, and a recipient's AI tolerance for the disclosure-stance rule. Both are inputs the policy already reads.
+- **`cc`, `bcc` and `attachments` are judged, hashed and refused at the send, and nothing in 0.1 sets them.** They are on `Outbound` for `liaise vet` (L4) and for the day a channel with copies is bound; until then a draft carries none, and `release_draft` rebuilds the message without them. A channel that gains copies must carry them through the draft as well as the gate.
 - **A known miss, filed as issue #46:** private words inside a link's path reach a wide audience at `approve`, since a plain link is shown to the operator in full rather than refused.
 
 ## Rejected

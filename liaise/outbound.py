@@ -299,7 +299,34 @@ def _distrust(entry: LedgerEntry, subject: Subject) -> Optional[str]:
     return None
 
 
-def case_provenance(case: Case, subject: Subject) -> Provenance:
+def _refused_readings(case: Case, subject: Subject, ledger: Any) -> Iterable[str]:
+    """Why each message intake refused on one of ``case``'s conversations taints a run.
+
+    A message from someone with no role never becomes an entry: intake queues it as
+    unrouted and the case never sees it (:mod:`liaise.intake`). The run reads the
+    conversation itself, so it read that message all the same.
+    """
+    conversations = {str(ref) for ref in case.conversations}
+    try:
+        queued = list(ledger.unrouted())
+    except (
+        Exception
+    ) as error:  # a queue nobody can read is a reading nobody can vouch for
+        return [
+            f"the unrouted queue could not be read ({type(error).__name__}: {error})"
+        ]
+    return [
+        f"a message from {item.get('author') or 'an unnamed sender'} on "
+        f"{item.get('conversation')}, which intake refused ({item.get('reason')}), and a "
+        f"run reads the conversation itself"
+        for item in queued
+        if isinstance(item, Mapping)
+        and item.get("subject") == subject.slug
+        and str(item.get("conversation")) in conversations
+    ]
+
+
+def case_provenance(case: Case, subject: Subject, ledger: Any) -> Provenance:
     """Whether a run on ``case`` read anything ``subject`` does not trust for ``request_work``.
 
     Every ``message`` entry of the case counts, not only those a run had read when it
@@ -308,16 +335,22 @@ def case_provenance(case: Case, subject: Subject) -> Provenance:
     wrote it, or its author has a role that grants ``request_work`` at the grade it was
     received at.
 
+    ``ledger`` is read for the same reason: a message whose author has no role at all is
+    refused at intake and queued as unrouted, so it is on the conversation the run reads
+    and on no entry of the case. It counts too, which is what makes the rule cover the
+    stranger it exists for (liaise discussion 32, §5.3).
+
     >>> from datetime import datetime, timezone
+    >>> from liaise.ledger import Ledger
     >>> from liaise.subjects import Policy
     >>> subject = Subject("app", ("github:example/app",), Policy(people={}, roles={"pat": "partner", "obi": "observer"}))
     >>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
     >>> case = Case(id="app-1", subject="app", conversations=(), reporter="pat", state="working", created_at=at, updated_at=at,
     ...             entries=(LedgerEntry(at=at, kind="message", actor="pat", grade="platform"),))
-    >>> case_provenance(case, subject).tainted
+    >>> case_provenance(case, subject, Ledger({})).tainted
     False
     >>> case = case.with_entry(LedgerEntry(at=at, kind="message", actor="obi", grade="platform"))
-    >>> case_provenance(case, subject).evidence
+    >>> case_provenance(case, subject, Ledger({})).evidence
     ('a message from obi, whose role observer does not grant request_work',)
     """
     reasons = [
@@ -327,10 +360,12 @@ def case_provenance(case: Case, subject: Subject) -> Provenance:
         for why in (_distrust(entry, subject),)
         if why is not None
     ]
+    reasons += list(_refused_readings(case, subject, ledger))
     if reasons:
         return Provenance.tainted_by(*dict.fromkeys(reasons))
     return Provenance.clean(
-        f"every message on {case.id} is from someone trusted with {REQUEST_WORK}"
+        f"every message on {case.id} is from someone trusted with {REQUEST_WORK}, and "
+        f"intake refused none of its conversations' messages"
     )
 
 
@@ -420,8 +455,29 @@ def judge(
 
 
 def verdict_id(verdict: Verdict) -> str:
-    """A name for ``verdict``: the SHA-256, in hex, of its canonical JSON."""
-    return sha256(canonical_json(verdict.to_dict()).encode("utf-8")).hexdigest()
+    """A name for what an approval of ``verdict`` releases: the rules that fired and what they found.
+
+    Each reason's rule, flow and reader, the fingerprint and entity of the finding it names
+    (never its value), and the two hashes an approval binds to. The time the verdict was
+    made is left out, so the same message judged twice has the same name — and a verdict
+    that flags something else does not, which is how an approval given for one finding
+    cannot settle another (liaise ADR 0002).
+    """
+    shape = {
+        "reasons": sorted(
+            [
+                reason.rule,
+                reason.flow,
+                reason.reader or "",
+                "" if reason.finding is None else reason.finding.fingerprint,
+                "" if reason.finding is None else (reason.finding.entity or ""),
+            ]
+            for reason in verdict.reasons
+        ),
+        "payload_hash": verdict.payload_hash,
+        "audience_hash": verdict.audience_hash,
+    }
+    return sha256(canonical_json(shape).encode("utf-8")).hexdigest()
 
 
 # ---- after a send ----

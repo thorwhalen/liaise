@@ -16,6 +16,7 @@ from datetime import datetime, timezone
 import pytest
 
 from liaise.gate import Outbound
+from liaise.ledger import Ledger
 from liaise.model import Case, LedgerEntry
 from liaise.outbound import (
     FROM_ACQUAINT,
@@ -91,10 +92,22 @@ def _install_acquaint(monkeypatch, **functions) -> None:
 # ---- provenance ----
 
 
+def _refused(ledger, *, conversation=REF, subject="example-app", author="github:stranger"):
+    """What intake queues when it refuses a message: no entry on the case, a row in the queue."""
+    ledger.add_unrouted(
+        delivery_id=f"{conversation}:comment-{author}",
+        subject=subject,
+        author=author,
+        grade="platform",
+        reason="unresolved sender",
+        conversation=conversation,
+    )
+
+
 def test_a_case_whose_messages_come_from_people_trusted_with_request_work_is_clean():
-    provenance = case_provenance(_case(_message("pat"), _message("liaise", role="self")), _subject())
+    provenance = case_provenance(_case(_message("pat"), _message("liaise", role="self")), _subject(), Ledger({}))
     assert provenance.tainted is False
-    assert provenance.evidence == ("every message on example-app-1 is from someone trusted with request_work",)
+    assert provenance.evidence[0].startswith("every message on example-app-1 is from someone trusted with request_work")
 
 
 @pytest.mark.parametrize(
@@ -108,15 +121,49 @@ def test_a_case_whose_messages_come_from_people_trusted_with_request_work_is_cle
     ids=["a role without request_work", "a grade request_work does not accept", "nobody", "a relay's own words"],
 )
 def test_a_message_the_subject_does_not_trust_for_request_work_taints_the_run(entry, why):
-    provenance = case_provenance(_case(_message("pat"), entry), _subject())
+    provenance = case_provenance(_case(_message("pat"), entry), _subject(), Ledger({}))
     assert (provenance.tainted, provenance.evidence) == (True, (why,))
 
 
 def test_each_reason_to_distrust_is_given_once_and_other_entries_do_not_count():
     note = LedgerEntry(at=NOW, kind="note", actor="obi", text="not something a run read as a message")
-    provenance = case_provenance(_case(_message("obi"), _message("obi"), note), _subject())
+    provenance = case_provenance(_case(_message("obi"), _message("obi"), note), _subject(), Ledger({}))
     assert len(provenance.evidence) == 1
-    assert case_provenance(_case(note), _subject()).tainted is False
+    assert case_provenance(_case(note), _subject(), Ledger({})).tainted is False
+
+
+def test_a_message_intake_refused_taints_the_run_that_read_the_conversation():
+    """A sender with no role never becomes an entry: intake queues the message as unrouted and
+    the case never sees it. The run reads the conversation itself, so it read that message."""
+    ledger = Ledger({})
+    _refused(ledger)
+
+    provenance = case_provenance(_case(_message("pat")), _subject(), ledger)
+
+    assert provenance.tainted is True
+    assert provenance.evidence == (
+        "a message from github:stranger on github:example/app#12, which intake refused "
+        "(unresolved sender), and a run reads the conversation itself",
+    )
+
+
+def test_a_refusal_on_another_conversation_or_another_subject_does_not_taint():
+    ledger = Ledger({})
+    _refused(ledger, conversation="github:example/app#99")
+    _refused(ledger, subject="another-app", author="github:someone-else")
+
+    assert case_provenance(_case(_message("pat")), _subject(), ledger).tainted is False
+
+
+def test_an_unrouted_queue_that_cannot_be_read_taints_rather_than_vouches():
+    class Unreadable:
+        def unrouted(self):
+            raise RuntimeError("the queue is unreadable")
+
+    provenance = case_provenance(_case(_message("pat")), _subject(), Unreadable())
+
+    assert provenance.tainted is True
+    assert provenance.evidence == ("the unrouted queue could not be read (RuntimeError: the queue is unreadable)",)
 
 
 # ---- the disclosure ----

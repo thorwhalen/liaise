@@ -362,6 +362,7 @@ def send_held_message(
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
     approval: Optional[Approval] = None,
+    approve_shown: bool = False,
     justification: str = "",
     fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
 ) -> MessageRelease:
@@ -376,8 +377,9 @@ def send_held_message(
     by ``by`` records the attempt. ``seen`` is the message as the operator saw it
     (:func:`message_draft`): one that changed since is not sent. ``send=False``,
     ``dry_run``, ``approval`` (the dry run's, bound to what the operator was shown),
-    ``justification`` and ``fingerprint_key`` are as :func:`~liaise.release.release_draft`
-    has them.
+    ``approve_shown``, ``justification`` and ``fingerprint_key`` are as
+    :func:`~liaise.release.release_draft` has them: with neither an approval nor
+    ``approve_shown``, nothing is settled and a held message stays held.
 
     Raises ``ValueError``, sending and writing nothing, for a message the ledger does not
     hold, one that is not held, one whose subject is not in ``subjects``, one that changed
@@ -412,6 +414,7 @@ def send_held_message(
         dry_run=dry_run,
         outbound_filters=outbound_filters,
         approval=approval,
+        approve_shown=approve_shown,
         justification=justification,
         fingerprint_key=fingerprint_key,
     )

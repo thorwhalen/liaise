@@ -721,7 +721,9 @@ def _release_after_confirmation(
 
     ``release(ledger, **kwargs)`` is :func:`liaise.cases.send_draft` or
     :func:`liaise.messages.send_held_message`, with all but the ledger bound. It is judged
-    first, as a dry run on an overlay of the ledger, with ``first``. A message the gate
+    first, as a dry run on an overlay of the ledger, with ``first`` — which carries
+    ``approve_shown``, so that judgement is what the operator is asked about, and its
+    approval is what ``bind`` then sends with. A message the gate
     diverts, or its channel refuses, is never shown: outside a dry run its reason is
     recorded, sending nothing, and the command fails. One the gate passes is shown to
     ``confirm`` and, once confirmed, sent under the run lock, bound by ``bind`` to what the
@@ -821,7 +823,7 @@ def case_send_draft(
             justification=justification,
             fingerprint_key=_key_for(global_config, dry_run=dry_run),
         ),
-        first=dict(index=draft_index, seen=opened),
+        first=dict(index=draft_index, seen=opened, approve_shown=True),
         bind=lambda judged: dict(
             index=judged.index, seen=judged.draft, approval=judged.approval
         ),
@@ -1120,7 +1122,7 @@ def message_send_draft(
             justification=justification,
             fingerprint_key=_key_for(global_config, dry_run=dry_run),
         ),
-        first=dict(seen=opened),
+        first=dict(seen=opened, approve_shown=True),
         bind=lambda judged: dict(seen=judged.draft, approval=judged.approval),
         held=lambda judged: names,
         then=lambda judged: (),

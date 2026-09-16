@@ -1670,7 +1670,9 @@ class _Tick:
             case=case,
             now=self.now,
             provenance=(
-                provenance if provenance is not None else case_provenance(case, subject)
+                provenance
+                if provenance is not None
+                else case_provenance(case, subject, self.ledger)
             ),
             fingerprint_key=self.fingerprint_key,
         )

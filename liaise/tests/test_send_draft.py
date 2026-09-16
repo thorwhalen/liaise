@@ -373,7 +373,7 @@ def test_the_gate_sees_the_operators_approval_and_the_case(world):
 
     release = cases.send_draft(
         world.ledger, load_subjects(world.root), CASE, by="operator", now=LATER, registry=world.registry,
-        outbound_filters=(spy,),
+        outbound_filters=(spy,), approve_shown=True,
     )
 
     assert [entry[:3] for entry in seen] == [("ask", TEXT, CASE)] * 2  # judged, then sent with the approval
@@ -385,16 +385,42 @@ def test_the_gate_sees_the_operators_approval_and_the_case(world):
     assert world.posted() == [TEXT]  # no mention: this gate has only the spy
 
 
+def test_a_release_without_the_operators_approval_settles_nothing(world):
+    """A caller that says who releases a draft has not shown them anything: only a caller that
+    judged the message and asked (``approve_shown``, as the command does) releases it."""
+    world.hold_drafts(_draft())
+    subjects = load_subjects(world.root)
+    kwargs = dict(by="operator", now=LATER, registry=world.registry)
+
+    unapproved = cases.send_draft(world.ledger, subjects, CASE, **kwargs)
+
+    assert not unapproved.attempt.sent and world.posted() == []
+    assert (unapproved.approval, unapproved.attempt.decision.diverted) == (None, DRAFT_REASON)
+    assert unapproved.attempt.decision.settled == ()
+
+    released = cases.send_draft(
+        world.ledger, subjects, CASE, approve_shown=True, justification="Pat asked on a call", **kwargs
+    )
+
+    assert released.attempt.sent and world.posted() == [f"@pat {TEXT}"]
+    assert released.approval.rules_overridden == ("reply mode",)
+    assert released.approval.justification == "Pat asked on a call"
+
+
 def test_judging_without_sending_records_a_divert_and_leaves_a_passing_draft_alone(world):
     subjects = load_subjects(world.root)
     world.hold_drafts(_draft())
     before = copy.deepcopy(world.store)
 
-    judged = cases.send_draft(world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False)
+    judged = cases.send_draft(
+        world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False, approve_shown=True
+    )
 
     assert judged.attempt.sent and world.store == before and world.posted() == []
     world.hold_drafts(_draft(LEAK))
-    judged = cases.send_draft(world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False)
+    judged = cases.send_draft(
+        world.ledger, subjects, CASE, by="operator", now=LATER, registry=world.registry, send=False, approve_shown=True
+    )
     with pytest.raises(TypeError):
         cases.send_draft(world.ledger, subjects, CASE, now=LATER)  # who releases it must be said
     assert judged.attempt.decision.diverted.startswith("an exfiltration shape (local-path)")

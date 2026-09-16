@@ -2015,9 +2015,10 @@ def test_a_run_that_ended_inside_its_wall_clock_keeps_its_outcomes_however_late_
     assert _titled(world, "timed_out") == 0
 
 
-def test_a_filter_with_no_name_is_named_by_its_type_so_what_it_is_bound_to_stays_out_of_the_notice(world):
+def test_a_filter_is_named_by_the_check_it_runs_so_what_it_is_bound_to_stays_out_of_the_notice(world):
     """S9 #5: a filter's repr holds what it was bound to, a local path say, and the name of the
-    filter that diverted a message reaches the operator's notification."""
+    filter that diverted a message reaches the operator's notification. A filter configured at a
+    seam is a partial: it is named by the function it wraps, never by its arguments."""
     rules_path = "/Us" + "ers/someone/liaise/outbound-rules.toml"
 
     def refuse_by_rules(rules, outbound, ctx):
@@ -2029,5 +2030,5 @@ def test_a_filter_with_no_name_is_named_by_its_type_so_what_it_is_bound_to_stays
     world.tick(LATER, outbound_filters=(functools.partial(refuse_by_rules, rules_path),))
 
     ((_, body, _),) = [note for note in world.notes if "waits for you" in note[0]]
-    assert "cause: partial" in body
+    assert "cause: refuse_by_rules" in body
     assert all(rules_path not in title and rules_path not in body for title, body, _ in world.notes)

@@ -296,6 +296,7 @@ def release_draft(
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
     approval: Optional[Approval] = None,
+    approve_shown: bool = False,
     justification: str = "",
     fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
 ) -> DraftOutcome:
@@ -308,14 +309,19 @@ def release_draft(
     :func:`liaise.outbound.case_provenance`), or unknown outside a case.
 
     ``approval`` is the operator's :class:`~liaise.model.Approval` of the decision they
-    were shown, bound to its hashes (:func:`liaise.gate.approval_for`), as ``liaise case
-    send-draft`` passes it after asking at a terminal. It must be ``by``'s. When None, the
-    gate first judges the message as it stands, and the approval is ``by``'s of that
-    decision, with ``justification``: the caller releases whatever the gate says now, so it
-    must show the operator that decision first, as a dry run does. The message then passes
-    through :func:`gate_and_send` with the approval on the context: what it binds to and
-    names is settled, and every other concern holds, a ``refuse`` always. ``fingerprint_key``
-    is as :class:`~liaise.gate.GateContext` has it.
+    were shown, bound to its hashes and to what that verdict flagged
+    (:func:`liaise.gate.approval_for`), as ``liaise case send-draft`` passes it after asking
+    at a terminal. It must be ``by``'s. The message passes through :func:`gate_and_send`
+    with it on the context: what it binds to and names is settled, and every other concern
+    holds, a ``refuse`` always.
+
+    **Without an approval, nothing is settled**: a draft the gate holds back stays held,
+    even for a caller who says who releases it. ``approve_shown`` is how a caller that
+    shows the operator a decision and asks them releases it: the gate judges the message as
+    it stands, and the approval is ``by``'s of exactly that decision, with
+    ``justification``. Nothing else in this package sets it; ``liaise case send-draft``
+    does, on the dry run it shows, and then sends what the operator answered to.
+    ``fingerprint_key`` is as :class:`~liaise.gate.GateContext` has it.
 
     It asks no one and records nothing. Its caller records the outcome's ``entry`` (with
     ``detail`` added to it) and, when nothing went out, its ``kept`` draft. The kept draft
@@ -394,13 +400,13 @@ def release_draft(
         now=now,
         audience=audience_of(outbound, registry=registry),
         provenance=(
-            case_provenance(case, subject)
+            case_provenance(case, subject, ledger)
             if case is not None
             else Provenance.unknown(CASELESS_PROVENANCE)
         ),
         fingerprint_key=fingerprint_key,
     )
-    if approval is None:
+    if approval is None and approve_shown:
         shown = run_gate(outbound, context, outbound_filters=filters)
         approval = approval_for(shown, by=by, at=now, justification=justification)
     attempt = gate_and_send(

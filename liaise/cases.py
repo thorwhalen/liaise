@@ -424,6 +424,7 @@ def send_draft(
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
     approval: Optional[Approval] = None,
+    approve_shown: bool = False,
     justification: str = "",
     fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
 ) -> DraftRelease:
@@ -437,11 +438,11 @@ def send_draft(
     gate holds, a ``refuse`` always.
 
     It asks no one, and ``by`` has no default: the caller says who releases the draft. Its
-    caller shows the operator the message and the gate's verdict first, from a dry run, and
-    passes the draft they saw as ``seen`` and that dry run's ``approval``, as ``liaise case
-    send-draft`` does after asking at a terminal. Without ``approval`` the release approves
-    whatever the gate decides now, with ``justification``. A text or an audience that
-    changed since the approval voids it, and nothing is sent.
+    caller shows the operator the message and the gate's verdict first, from a dry run with
+    ``approve_shown``, and passes the draft they saw as ``seen`` and that dry run's
+    ``approval``, as ``liaise case send-draft`` does after asking at a terminal. With
+    neither, nothing is settled and a draft the gate holds back stays held. A text, an
+    audience or a verdict that changed since the approval voids it, and nothing is sent.
 
     - **Sent:** the draft leaves the case. A ``gate`` entry by ``by`` records the text as
       it went out, its url, the approval and why the draft was held. Once no draft is
@@ -505,6 +506,7 @@ def send_draft(
         dry_run=dry_run,
         outbound_filters=outbound_filters,
         approval=approval,
+        approve_shown=approve_shown,
         justification=justification,
         fingerprint_key=fingerprint_key,
     )
