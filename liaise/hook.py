@@ -387,9 +387,16 @@ def _heredocs(command: str) -> tuple[str, dict[str, tuple[str, bool]], list[str]
             index += 1
             continue
         if char == "#" and (not out or out[-1][-1:] in " \t\n;&|()"):
-            while index < length and command[index] != "\n":
-                index += 1
+            end = command.find("\n", index)
+            end = length if end < 0 else end
+            if _mentions_a_writer(command[index:end]):
+                # Whether bash reads it as a comment depends on what came before (a
+                # dropped redirection, an escaped space): the hook does not guess.
+                redirects.append("a comment that names gh or correspond")
+            index = end
             continue
+        if char in "{}~":
+            redirects.append(f"an unquoted {char!r}, which the shell expands")
         if command.startswith("<<", index) and not command.startswith("<<<", index):
             match = _HEREDOC_RE.match(command, index)
             if match is None:
@@ -484,6 +491,8 @@ def _mentions_a_writer(text: str) -> bool:
     ``gh``-shaped command line (``issue comment``, ``api repos/``) counts even without the
     program's name, which a ``$`` may have built.
     """
+    if "$'" in text:  # ANSI-C quoting can spell any name
+        return True
     plain = re.sub(r"[\"'\\]", "", text)
     return bool(
         re.search(r"(?<![\w.-])(gh|correspond)(?![\w.-])", plain)
@@ -567,7 +576,7 @@ def _checked(
     """``(text, problem)``: a body the shell would compute is a problem, not a text."""
     if text is None:
         return None, f"{NO_BODY} ({source})"
-    if expands and _SHELL_EXPANSION_RE.search(text):
+    if expands and (_SHELL_EXPANSION_RE.search(text) or "\\" in text):
         return None, f"{NO_BODY}: the shell computes part of it ({source})"
     return text, None
 
@@ -621,25 +630,28 @@ def _gh_write(
     titles = _flag_values(args, ("--title", "-t"))
     bodies = _flag_values(args, ("--body", "-b"))
     files = _flag_values(args, ("--body-file", "-F"))
+    derived = [
+        a
+        for a in args
+        if a.startswith("--fill")
+        or a in ("-f", "--template", "-T", "--recover")
+        or a.startswith("--template=")
+    ]
+    if derived:
+        return Write(
+            what,
+            ref=ref,
+            problem=(
+                f"{NO_BODY}: {derived[0].partition('=')[0]} takes it from commits, a "
+                f"template or a saved draft"
+            ),
+        )
     if not bodies and not files:
         if titles:
             text, problem = _checked(titles[-1], expands=False, source="--title")
             return Write(what, ref=ref, text=text, problem=problem)
-        if verb in ("create", "edit", "review"):
-            if (
-                verb == "create"
-                and "--fill" not in args
-                and "--fill-first" not in args
-                and "-f" not in args
-            ):
-                return Write(
-                    what,
-                    ref=ref,
-                    problem=f"{NO_BODY}: {what} with no --body asks for one interactively",
-                )
-            return Write(
-                what, ref=ref, text=""
-            )  # nothing written but what the command derives
+        if verb in ("edit", "review"):
+            return Write(what, ref=ref, text="")  # a title, a label, an approval
         return Write(
             what, ref=ref, problem=f"{NO_BODY}: {what} with no --body or --body-file"
         )
@@ -844,6 +856,28 @@ def _correspond(
         return None
     verb = verbs[0]
     rest = [w for i, w in enumerate(words) if i != words.index(verb)]
+    known = {
+        "--title",
+        "--reply-to",
+        "--priority",
+        "--cc",
+        "--bcc",
+        "--idempotency-key",
+        "--dry-run",
+    }
+    unknown = [
+        w
+        for w in rest
+        if w.startswith("-") and w != "-" and w.partition("=")[0] not in known
+    ]
+    if unknown:
+        return Write(
+            f"correspond {verb}",
+            problem=(
+                f"{unknown[0].partition('=')[0]} is a flag the hook does not read as "
+                f"correspond does; spell the long flags out"
+            ),
+        )
     if "--dry-run" in rest:
         return None  # a dry run writes nothing, and correspond runs its own check on it
     positionals = [a for a in _positionals(rest) if not a.startswith("<<")]
@@ -862,7 +896,10 @@ def _correspond(
     if not positionals:
         return Write(what, problem=f"{NO_BODY}: {what} with no reference")
     ref = positionals[0]
-    raw = positionals[-1] if len(positionals) >= (2 if verb == "send" else 3) else None
+    wanted = 2 if verb == "send" else 3
+    if len(positionals) > wanted:
+        return Write(what, ref=ref, problem=f"{what} with more arguments than it takes")
+    raw = positionals[-1] if len(positionals) == wanted else None
     if raw is None:
         return Write(what, ref=ref, problem=f"{NO_BODY}: {what} with no text")
     if raw == "-":
@@ -973,6 +1010,8 @@ def writes_in(
             piped = next((w[2:] for w in rest if w[2:] in bodies), None)
             previous = "cat"
             continue
+        if program in ("gh", "correspond") and words[0] != program:
+            return unplain(f"{words[0]} is not the {program} on the PATH")
         if program not in ("gh", "correspond"):
             if piping and previous == "read" and program in INERT_FILTERS:
                 continue  # ``gh issue list | jq …``
@@ -1354,11 +1393,15 @@ def _read_settings(path: Path) -> dict:
     return data
 
 
+#: liaise's hook command, bare or with liaise's path (quoted when it has spaces).
+_OUR_COMMAND_RE = re.compile(r"(?:[^\s'\"]*/|'[^']*/)?liaise'? vet --hook")
+
+
 def _is_ours(hook_entry: Any) -> bool:
     """Whether one hook command is liaise's."""
-    return isinstance(hook_entry, Mapping) and str(
-        hook_entry.get("command", "")
-    ).strip().endswith(HOOK_COMMAND)
+    return isinstance(hook_entry, Mapping) and bool(
+        _OUR_COMMAND_RE.fullmatch(str(hook_entry.get("command", "")).strip())
+    )
 
 
 def _without_ours(entries: list) -> tuple[list, int]:
@@ -1395,6 +1438,8 @@ def _write_settings(path: Path, data: Mapping[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(path.name + ".liaise-tmp")
     temporary.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    if path.exists():
+        os.chmod(temporary, path.stat().st_mode & 0o7777)  # keep a private file private
     os.replace(temporary, path)
 
 
@@ -1442,6 +1487,7 @@ def install_hooks(
         if (
             command is None
             and len(mine) == 1
+            and isinstance(mine[0]["hooks"][0], Mapping)
             and _our_entry(mine[0]["hooks"][0].get("command", "")) == mine[0]
         ):
             continue  # installed, with the path the user has: keep it

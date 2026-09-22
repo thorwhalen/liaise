@@ -535,3 +535,39 @@ def test_harmless_redirections_are_fine(run_hook):
 )
 def test_a_program_name_the_shell_assembles_is_still_seen(run_hook, command):
     assert decision(run_hook.bash(command)) in ("ask", "deny"), command
+
+
+# ---- what the fourth review found ----
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        f"gh issue list >/dev/null#; gh issue comment 13 -R example/app -b {T}",
+        f"gh issue list 2>&1#; gh issue comment 13 -R example/app -b {T}",
+        f"gh issue list -S x\\\\ #; gh issue comment 13 -R example/app -b {T}",
+        f"correspond send github:example/app#1 {T} -i key1",
+        f"correspond send github:example/app#1 {T} --idem k",
+        f"correspond send -t {T} github:example/app ok",
+        f"gh issue comment 12 -R example/app -F - <<EOF\nSEC\\\\\nRET {T}\nEOF",
+        f"gh issue comment 12 -R example/app --body={{x,{T}}}",
+        "gh issue comment 12 -R example/app -b ~/private/notes",
+        "$'\\x67h' $'\\x69ssue' comment 12 -R example/app -b hi",
+        "./gh issue comment 12 -R example/app -b hi",
+        "gh pr create -R example/app -t ok --fill-verbose",
+    ],
+)
+def test_fourth_review_writes_are_held(run_hook, command):
+    assert decision(run_hook.bash(command)) in ("ask", "deny"), command
+
+
+def test_a_users_hook_that_ends_like_ours_is_not_ours(tmp_path):
+    settings = tmp_path / "settings.json"
+    theirs = {"matcher": "Bash", "hooks": [{"type": "command", "command": "echo done && liaise vet --hook"}]}
+    settings.write_text(json.dumps({"hooks": {"PreToolUse": [theirs]}}))
+    settings.chmod(0o600)
+    cli.hook_install(settings=str(settings))
+    assert json.loads(settings.read_text())["hooks"]["PreToolUse"][0] == theirs
+    assert settings.stat().st_mode & 0o777 == 0o600
+    cli.hook_uninstall(settings=str(settings))
+    assert json.loads(settings.read_text())["hooks"]["PreToolUse"] == [theirs]
