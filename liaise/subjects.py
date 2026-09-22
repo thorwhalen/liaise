@@ -297,6 +297,10 @@ def ref_key(ref: str) -> str:
 _ISSUE_SEPARATOR = "#"
 
 
+class NoSubjectBinding(ValueError):
+    """No subject's bindings take in a reference (see :func:`subject_for_ref`)."""
+
+
 def subject_for_ref(subjects: Mapping[str, Subject], ref: str) -> Subject:
     """The subject whose bindings take in ``ref``, the conversation a message outside a case goes to.
 
@@ -316,8 +320,9 @@ def subject_for_ref(subjects: Mapping[str, Subject], ref: str) -> Subject:
     >>> subject_for_ref({"heron": heron}, "github:Example/Heron#12").slug
     'heron'
 
-    Raises ``ValueError`` naming the subjects there are when none takes ``ref`` in, and
-    naming each when several name it equally closely.
+    Raises :class:`NoSubjectBinding` (a ``ValueError``) naming the subjects there are when
+    none takes ``ref`` in, and ``ValueError`` naming each when several name it equally
+    closely.
     """
     key = ref_key(ref)
     closeness: dict[str, int] = {}
@@ -337,7 +342,7 @@ def subject_for_ref(subjects: Mapping[str, Subject], ref: str) -> Subject:
             closeness[slug] = max(closeness.get(slug, 0), score)
     if not closeness:
         known = ", ".join(sorted(subjects)) or "(none)"
-        raise ValueError(
+        raise NoSubjectBinding(
             f"no subject binds {ref}, so there is no policy to judge a message to it by "
             f"(the subjects are: {known}); bind it in a subject's file first"
         )
@@ -424,6 +429,25 @@ class Subject:
         return str(getattr(grade, "value", grade)) in self.policy.grades.get(
             permission, ()
         )
+
+
+#: The slug of :func:`unbound_subject`.
+UNBOUND_SLUG = "(unbound)"
+
+
+def unbound_subject() -> Subject:
+    """The subject a reference no subject binds is judged under, where one must be (``liaise vet``).
+
+    It is what a subject file with nothing but ``[policy]``, ``people = {}`` and
+    ``roles = {}`` loads to: nobody known, ``direct`` reply mode, the taint rule in force,
+    ``enforce`` mode. It binds nothing and is inert, so nothing ever polls it.
+
+    >>> subject = unbound_subject()
+    >>> subject.slug, subject.bindings, subject.policy.tainted_runs, subject.active
+    ('(unbound)', (), 'approve', False)
+    """
+    policy = _policy_from({"people": {}, "roles": {}}, path=Path(UNBOUND_SLUG))
+    return Subject(UNBOUND_SLUG, (), policy, active=False)
 
 
 def check_bindings(
