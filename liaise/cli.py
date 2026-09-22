@@ -1324,6 +1324,15 @@ def _vet_lines(found: Mapping[str, Any]) -> list[str]:
     return lines
 
 
+def _readers(given: Optional[Sequence[str]]) -> tuple[str, ...]:
+    """The readers of ``--to``, ``--cc`` or ``--bcc``: a ``-`` among them is standard input, not a reader.
+
+    ``liaise vet --to ada -`` (the form acquaint-write runs) reads the draft on stdin, as
+    the default does.
+    """
+    return tuple(reader for reader in given or () if reader != STDIN_FILE_NAME)
+
+
 def _vet_hook(
     *,
     refused: Sequence[str],
@@ -1497,9 +1506,9 @@ def vet(
     found = vetting.vet(
         body,
         ref=ref,
-        to=to or (),
-        cc=cc or (),
-        bcc=bcc or (),
+        to=_readers(to),
+        cc=_readers(cc),
+        bcc=_readers(bcc),
         title=title or None,
         project=project or None,
         tainted=True if tainted else (False if untainted else None),

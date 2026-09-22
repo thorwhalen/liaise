@@ -320,3 +320,11 @@ def _with_defaults(function, **defaults):
         return function(*args, **{**defaults, **kwargs})
 
     return call
+
+
+def test_a_dash_after_to_is_standard_input_as_acquaint_write_runs_it(root, monkeypatch, capsys):
+    import liaise.release
+
+    monkeypatch.setattr(liaise.release.correspond, "audience", lambda *a, **k: 1 / 0)
+    code, out, _ = run_cli(["vet", "--ref", REF, "--to", "ada", "-", "--root", root, "--json"], EXPORT, monkeypatch, capsys)
+    assert list(json.loads(out)["readers"]) == ["ada"]

@@ -213,6 +213,7 @@ liaise vet --ref github:example/app#12 --to ada --text-file reply.md --untainted
 - The hook never answers allow: a write the gate would send, and every command that writes nothing, gets no answer, and your permission rules decide as before.
 - Its provenance is always unknown, so every post wider than the operator is at least ask. That is intended: in a coding session the model chose the destination.
 - What it cannot read is ask, never let through: a `--body-file` that is not there, a body the shell computes (`"$(cat f)"`, `$VAR`, an unquoted heredoc with `$`), `gh` behind `eval`, `bash -c`, `xargs` or `$(…)`, a `gh` command that carries text and is not in its table. To be vetted, give the body literally, in a file, or in a quoted heredoc (`--body-file - <<'EOF'`).
+- It watches correspond's MCP tools under a server name holding `correspond`; a server registered under another name is not watched (correspond's own `before_send` still is).
 - When you answer yes to an ask, the PostToolUse hook records an override in liaise's ledger (the rules and hashes, never the text).
 
 ## Migrating from 0.0.x

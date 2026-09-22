@@ -67,27 +67,6 @@ PENDING_TTL = timedelta(hours=24)
 #: The ref a write goes to when the command does not say and the checkout cannot tell:
 #: its audience is unknown, which resolves to public.
 UNKNOWN_REF = "unknown:destination"
-#: The shell wrappers a ``gh`` or ``correspond`` write is never looked through.
-WRAPPERS = frozenset(
-    {
-        "eval",
-        "bash",
-        "sh",
-        "zsh",
-        "xargs",
-        "env",
-        "timeout",
-        "nohup",
-        "sudo",
-        "exec",
-        "command",
-        "builtin",
-        "watch",
-        "parallel",
-        "time",
-        "nice",
-    }
-)
 #: What the hook answers when it cannot read a write's body.
 NO_BODY = "could not read the body"
 #: The flags of a ``gh`` command that carry text to someone.
@@ -108,6 +87,32 @@ GH_BODY_FLAGS = frozenset(
         "--input",
         "--message",
         "-m",
+        "-c",
+        "--comment",
+    }
+)
+#: ``gh`` verbs that only read, whatever flags they take (``gh run list -b main``).
+GH_READ_VERBS = frozenset(
+    {
+        "list",
+        "view",
+        "status",
+        "diff",
+        "checks",
+        "watch",
+        "download",
+        "browse",
+        "search",
+    }
+)
+#: ``gh <group> <verb>`` commands that publish files or text the hook does not read.
+GH_PUBLISHES = frozenset(
+    {
+        ("gist", "create"),
+        ("gist", "edit"),
+        ("release", "create"),
+        ("release", "edit"),
+        ("release", "upload"),
     }
 )
 #: The ``gh <group> <verb>`` commands that write text, and whether the first positional is
@@ -197,7 +202,62 @@ _HEREDOC_RE = re.compile(
 #: What in a body means the shell computes it: its value is not the text the hook read.
 _SHELL_EXPANSION_RE = re.compile(r"\$[\w{(]|`")
 _SHELL_QUERY_RE = re.compile(r"\$[{(]|`")
-_SEPARATORS = frozenset({"&&", "||", ";", "|", "&", "\n", ";;", "|&"})
+_SEPARATORS = frozenset(
+    {"&&", "||", ";", "|", "&", "\n", ";;", "|&", "(", ")", "((", "))", ";&", ";;&"}
+)
+#: Words that open or continue a compound command: what follows is a command.
+_KEYWORDS = frozenset(
+    {"if", "then", "else", "elif", "do", "while", "until", "!", "{", "}", "fi", "done"}
+)
+_ASSIGNMENT_RE = re.compile(r"^[A-Za-z_]\w*(\[[^]]*\])?\+?=")
+#: Programs that never run a word they are given as a command, so ``gh`` in their
+#: arguments is text (``git commit -m "fix the gh hook"``, ``grep gh``).
+INERT_PROGRAMS = frozenset(
+    {
+        "echo",
+        "printf",
+        "git",
+        "grep",
+        "egrep",
+        "fgrep",
+        "rg",
+        "cat",
+        "head",
+        "tail",
+        "less",
+        "more",
+        "wc",
+        "sort",
+        "uniq",
+        "jq",
+        "ls",
+        "cd",
+        "mkdir",
+        "touch",
+        "rm",
+        "cp",
+        "mv",
+        "cut",
+        "tr",
+        "diff",
+        "test",
+        "[",
+        "which",
+        "type",
+        "man",
+        "true",
+        "false",
+        "export",
+        "unset",
+        "read",
+        "tee",
+        "stat",
+        "file",
+        "basename",
+        "dirname",
+        "realpath",
+    }
+)
 _HEREDOC_TOKEN = "\x00liaise-heredoc-{}\x00"
 
 
@@ -237,47 +297,97 @@ class Answer:
 
 
 def _heredocs(command: str) -> tuple[str, dict[str, tuple[str, bool]]]:
-    """``command`` with each heredoc body replaced by a token, and the bodies by token.
+    """``command`` with comments dropped, each heredoc body replaced by a token, and the bodies.
 
-    A body is ``(text, expands)``: ``expands`` when the delimiter is unquoted, so the shell
-    substitutes ``$…`` and backticks in it. A heredoc with no terminator line runs to the
-    end, as the shell would complain; the body is what the hook has.
+    A quote-aware scan: ``<<WORD`` counts only outside quotes (and ``<<<`` never), a
+    ``#`` starts a comment only at the start of a word outside quotes, and a
+    backslash-newline joins two lines, as the shell reads them. A body is
+    ``(text, expands)``: ``expands`` when the delimiter is unquoted, so the shell
+    substitutes ``$…`` and backticks in it. Raises ``ValueError`` for an unterminated quote.
     """
     bodies: dict[str, tuple[str, bool]] = {}
-    lines = command.split("\n")
     out: list[str] = []
-    index = 0
-    while index < len(lines):
-        line = lines[index]
-        found = list(_HEREDOC_RE.finditer(line))
-        index += 1
-        if not found:
-            out.append(line)
+    pending: list[tuple[str, str, bool, bool]] = []  # token, word, dash, expands
+    quote: Optional[str] = None
+    index, length = 0, len(command)
+    while index < length:
+        char = command[index]
+        if quote == "'":
+            out.append(char)
+            if char == "'":
+                quote = None
+            index += 1
             continue
-        rewritten = line
-        for match in found:
-            token = _HEREDOC_TOKEN.format(len(bodies))
-            body: list[str] = []
-            while index < len(lines):
-                candidate = lines[index]
+        if char == "\\" and index + 1 < length:
+            if command[index + 1] == "\n":  # a line continuation: the two lines are one
+                index += 2
+                continue
+            out.append(command[index : index + 2])
+            index += 2
+            continue
+        if quote == '"':
+            out.append(char)
+            if char == '"':
+                quote = None
+            index += 1
+            continue
+        if char in "'\"":
+            quote = char
+            out.append(char)
+            index += 1
+            continue
+        if char == "#" and (not out or out[-1][-1:] in " \t\n;&|()"):
+            while index < length and command[index] != "\n":
                 index += 1
-                stripped = candidate.lstrip("\t") if match["dash"] else candidate
-                if stripped == match["word"]:
-                    break
-                body.append(stripped)
-            text = "\n".join(body) + ("\n" if body else "")
-            bodies[token] = (text, not match["quote"])
-            rewritten = rewritten.replace(match.group(0), f"<<{token}", 1)
-        out.append(rewritten)
-    return "\n".join(out), bodies
+            continue
+        if command.startswith("<<", index) and not command.startswith("<<<", index):
+            match = _HEREDOC_RE.match(command, index)
+            if match is None:
+                raise ValueError("a heredoc whose delimiter the hook cannot read")
+            token = _HEREDOC_TOKEN.format(len(bodies) + len(pending))
+            pending.append(
+                (token, match["word"], bool(match["dash"]), not match["quote"])
+            )
+            out.append(f"<<{token}")
+            index = match.end()
+            continue
+        if command.startswith("<<<", index):
+            out.append("<<<")
+            index += 3
+            continue
+        if char == "\n" and pending:
+            out.append(char)
+            index += 1
+            for token, word, dash, expands in pending:
+                body: list[str] = []
+                while index < length:
+                    end = command.find("\n", index)
+                    end = length if end < 0 else end
+                    line = command[index:end]
+                    index = end + 1
+                    stripped = line.lstrip("\t") if dash else line
+                    if stripped == word:
+                        break
+                    body.append(stripped)
+                bodies[token] = ("\n".join(body) + ("\n" if body else ""), expands)
+            pending = []
+            continue
+        out.append(char)
+        index += 1
+    if quote is not None:
+        raise ValueError("an unterminated quote")
+    for token, _, _, _ in pending:  # a heredoc on the last line has no body
+        bodies[token] = ("", False)
+    return "".join(out), bodies
 
 
 def _tokens(command: str) -> list[str]:
-    """``command`` as shell words and separators; raises ``ValueError`` when it does not parse."""
-    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|")
-    lexer.whitespace = (
-        " \t\r"  # a newline separates commands, so it is a token of its own
-    )
+    """``command`` as shell words and separators; raises ``ValueError`` when it does not parse.
+
+    A newline and the grouping parentheses are separators, as ``;`` is.
+    """
+    lexer = shlex.shlex(command, posix=True, punctuation_chars=";&|\n()")
+    lexer.whitespace = " \t\r"
     lexer.whitespace_split = True
     lexer.commenters = ""
     tokens: list[str] = []
@@ -292,7 +402,8 @@ def _segments(tokens: Sequence[str]) -> list[tuple[list[str], Optional[str]]]:
     current: list[str] = []
     before: Optional[str] = None
     for token in tokens:
-        if token in _SEPARATORS:
+        # shlex joins neighbouring punctuation (``)\n``, ``;;``): any run of it separates.
+        if token in _SEPARATORS or (token and set(token) <= set(";&|\n()")):
             if current:
                 segments.append((current, before))
             current, before = [], token
@@ -322,11 +433,17 @@ def _flag_values(args: Sequence[str], names: Iterable[str]) -> list[str]:
     while index < len(args):
         arg = args[index]
         name, eq, value = arg.partition("=")
+        short = arg[:2]
         if eq and name in names and name.startswith("--"):
             values.append(value)
-        elif arg in names and index + 1 < len(args):
-            values.append(args[index + 1])
+        elif arg in names:
+            if index + 1 < len(args):
+                values.append(args[index + 1])
             index += 1
+        elif short in names and len(arg) > 2 and not arg.startswith("--"):
+            values.append(
+                arg[2:].removeprefix("=")
+            )  # -bTEXT, -b=TEXT, as pflag reads them
         index += 1
     return values
 
@@ -562,9 +679,7 @@ def _gh_api(
                     parts = (query, _graphql_body(variables))
                     body = "\n".join(p for p in parts if p) or None
                 else:
-                    body = (
-                        data.get("body") if isinstance(data.get("body"), str) else body
-                    )
+                    body = "\n".join(_strings(data)) or body
     if endpoint.strip("/") == "graphql":
         if problem:
             return Write(f"{what} graphql", problem=problem)
@@ -599,38 +714,60 @@ def _gh_api(
         ref += f"#{int(match['number'])}"
     if problem:
         return Write(f"{what} {method}", ref=ref, problem=problem)
-    if body is None:
-        title = fields.get("title")
-        if title is not None and not title.startswith("@"):
-            text, problem = _checked(title, expands=True, source="-f title=…")
-            return Write(f"{what} {method}", ref=ref, text=text, problem=problem)
+    # Every text field goes out (a review's ``comments[][body]`` too), so all are vetted.
+    texts = [body] if body else []
+    for name, value in fields.items():
+        if name in ("body", "query"):
+            continue
+        if value.startswith("@"):
+            return Write(
+                f"{what} {method}",
+                ref=ref,
+                problem=f"{NO_BODY}: -F {name}=@… is a file the hook does not read",
+            )
+        text, problem = _checked(value, expands=True, source=f"-f {name}=…")
+        if problem:
+            return Write(f"{what} {method}", ref=ref, problem=problem)
+        texts.append(text)
+    texts = [t for t in texts if t]
+    if not texts:
         if method == "DELETE" or (not fields and not inputs):
             return None  # nothing written to anyone
         return Write(
             f"{what} {method}",
             ref=ref,
-            problem=f"{NO_BODY}: no body field the hook can read",
+            problem=f"{NO_BODY}: no text field the hook can read",
         )
-    return Write(f"{what} {method}", ref=ref, text=body, title=fields.get("title"))
+    return Write(f"{what} {method}", ref=ref, text="\n".join(texts))
+
+
+def _strings(value: Any) -> list[str]:
+    """Every string in a JSON value, depth first."""
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, Mapping):
+        return [s for v in value.values() for s in _strings(v)]
+    if isinstance(value, (list, tuple)):
+        return [s for v in value for s in _strings(v)]
+    return []
 
 
 def _graphql_body(variables: Any) -> Optional[str]:
     if not isinstance(variables, Mapping):
         return None
-    texts = [
-        str(v)
-        for k, v in variables.items()
-        if isinstance(v, str) and k.lower() in ("body", "title", "text")
-    ]
+    texts = _strings(variables)
     return "\n".join(texts) if texts else None
 
 
 def _correspond(
     args: Sequence[str], *, stdin: Optional[tuple[str, bool]]
 ) -> Optional[Write]:
-    if not args or args[0] not in ("send", "edit"):
+    words = [a for a in args if a != "--json"]  # correspond takes --json anywhere
+    verbs = [w for w in words if not w.startswith("-")]
+    if not verbs or verbs[0] not in ("send", "edit"):
         return None
-    verb, rest = args[0], list(args[1:])
+    verb = verbs[0]
+    rest = [w for i, w in enumerate(words) if i != words.index(verb)]
     if "--dry-run" in rest:
         return None  # a dry run writes nothing, and correspond runs its own check on it
     positionals = [a for a in _positionals(rest) if not a.startswith("<<")]
@@ -724,48 +861,60 @@ def writes_in(
                 problem=f"the hook could not parse the command ({error})",
             )
         ]
+    if "$(" in stripped or "`" in stripped:
+        return [
+            Write(
+                "a shell command",
+                problem=(
+                    "a command substitution in a command that runs gh or correspond: "
+                    "the operator judges it"
+                ),
+            )
+        ]
     writes: list[Write] = []
     piped: Optional[tuple[str, bool]] = None
     for words, before in _segments(tokens):
-        stdin = piped if before in ("|", "|&") else None
+        stdin = piped if before and "|" in before and "||" not in before else None
         piped = None
+        words = _command_words(words)
         if not words:
             continue
         program = _program(words[0])
         rest = words[1:]
-        if program == "cat" and all(w.startswith("<<") for w in rest) and rest:
+        if program == "cat" and rest and all(w.startswith("<<") for w in rest):
             piped = _stdin_of(rest, bodies, None)
-            continue
-        if any("$(" in w or "`" in w for w in words) and any(
-            _mentions_a_writer(w) for w in words
-        ):
-            writes.append(
-                Write(
-                    "a shell command",
-                    problem="a gh or correspond command inside a command substitution: the operator judges it",
-                )
-            )
-            continue
-        if program in WRAPPERS and any(
-            _program(w) in ("gh", "correspond") or _mentions_a_writer(w) for w in rest
-        ):
-            writes.append(
-                Write(
-                    f"{program} …",
-                    problem=f"gh or correspond run through {program}: the hook does not look through it",
-                )
-            )
             continue
         own_stdin = _stdin_of(rest, bodies, stdin)
         if program == "gh":
             write = _gh(rest, cwd=cwd, stdin=own_stdin, repo_of=repo_of)
         elif program == "correspond":
             write = _correspond(rest, stdin=own_stdin)
+        elif program not in INERT_PROGRAMS and any(map(_mentions_a_writer, rest)):
+            # ``sudo gh``, ``ssh host gh``, ``python -c "…gh…"``: the hook does not look
+            # through another program, so the operator judges it.
+            write = Write(
+                f"{program} …",
+                problem=(
+                    f"gh or correspond run through {program}: the hook does not look "
+                    f"through it"
+                ),
+            )
         else:
             continue
         if write is not None:
             writes.append(write)
     return writes
+
+
+def _command_words(words: Sequence[str]) -> list[str]:
+    """``words`` from the program on: leading keywords (``then``, ``do``, ``!``, ``{``) and
+    variable assignments (``FOO=1``) dropped, as the shell runs what follows them."""
+    index = 0
+    while index < len(words) and (
+        words[index] in _KEYWORDS or _ASSIGNMENT_RE.match(words[index])
+    ):
+        index += 1
+    return list(words[index:])
 
 
 def _gh(
@@ -777,7 +926,7 @@ def _gh(
 ) -> Optional[Write]:
     # gh's own global flags come before the group: -R is also a command flag, so keep it.
     words = [a for a in args if not a.startswith("<<")]
-    groups = [w for w in words if not w.startswith("-")]
+    groups = _positionals(words)
     if not groups:
         return None
     group = groups[0]
@@ -795,7 +944,19 @@ def _gh(
             stdin=stdin,
             repo_of=repo_of,
         )
-    carries = [w for w in words if w.partition("=")[0] in GH_BODY_FLAGS]
+    if (group, verb) in GH_PUBLISHES:
+        return Write(
+            f"gh {group} {verb}",
+            problem=f"gh {group} {verb} publishes what the hook cannot vet; the operator judges it",
+        )
+    if verb in GH_READ_VERBS:
+        return None
+    carries = [
+        w
+        for w in words
+        if w.partition("=")[0] in GH_BODY_FLAGS
+        or (not w.startswith("--") and w[:2] in GH_BODY_FLAGS)
+    ]
     if carries:
         return Write(
             f"gh {group} {verb}".strip(),
@@ -1062,17 +1223,60 @@ def _read_settings(path: Path) -> dict:
     return data
 
 
-def _ours(entry: Any) -> bool:
-    hooks = entry.get("hooks") if isinstance(entry, Mapping) else None
-    return isinstance(hooks, list) and any(
-        isinstance(h, Mapping)
-        and str(h.get("command", "")).strip().endswith(HOOK_COMMAND)
-        for h in hooks
-    )
+def _is_ours(hook_entry: Any) -> bool:
+    """Whether one hook command is liaise's."""
+    return isinstance(hook_entry, Mapping) and str(
+        hook_entry.get("command", "")
+    ).strip().endswith(HOOK_COMMAND)
+
+
+def _without_ours(entries: list) -> tuple[list, int]:
+    """``entries`` with liaise's hook commands taken out of each, and how many were.
+
+    An entry that also holds someone else's hook keeps it; an entry left with no hook is
+    dropped.
+    """
+    kept, removed = [], 0
+    for entry in entries:
+        hooks = entry.get("hooks") if isinstance(entry, Mapping) else None
+        if not isinstance(hooks, list):
+            kept.append(entry)
+            continue
+        others = [h for h in hooks if not _is_ours(h)]
+        removed += len(hooks) - len(others)
+        if others:
+            kept.append(
+                {**entry, "hooks": others} if len(others) < len(hooks) else entry
+            )
+    return kept, removed
 
 
 def _our_entry(command: str) -> dict:
     return {"matcher": HOOK_MATCHER, "hooks": [{"type": "command", "command": command}]}
+
+
+def _settings_path(settings: Union[str, os.PathLike]) -> Path:
+    """The file to read and write: a symlinked settings file is written through its link."""
+    return Path(settings).expanduser().resolve()
+
+
+def _write_settings(path: Path, data: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(path.name + ".liaise-tmp")
+    temporary.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    os.replace(temporary, path)
+
+
+def _events(data: Mapping[str, Any], path: Path) -> dict:
+    hooks = data.get("hooks", {})
+    if not isinstance(hooks, dict):
+        raise ValueError(f"{path}: 'hooks' is not an object, so it was left as it is")
+    for event in HOOK_EVENTS:
+        if not isinstance(hooks.get(event, []), list):
+            raise ValueError(
+                f"{path}: hooks.{event} is not a list, so it was left as it is"
+            )
+    return hooks
 
 
 def install_hooks(
@@ -1080,70 +1284,65 @@ def install_hooks(
 ) -> str:
     """Write the PreToolUse and PostToolUse hooks into ``settings``, keeping every other hook and setting.
 
-    Idempotent: liaise's own entries are replaced, never doubled. Returns what it did.
+    Idempotent: liaise's own hook commands are replaced, never doubled, and a hook someone
+    else put in the same entry stays. Returns what it did.
     """
-    path = Path(settings).expanduser()
+    path = _settings_path(settings)
     data = _read_settings(path)
-    hooks = data.setdefault("hooks", {})
-    if not isinstance(hooks, dict):
-        raise ValueError(f"{path}: 'hooks' is not an object, so it was left as it is")
+    hooks = _events(data, path)
     changed = False
     for event in HOOK_EVENTS:
-        entries = hooks.setdefault(event, [])
-        if not isinstance(entries, list):
-            raise ValueError(
-                f"{path}: hooks.{event} is not a list, so it was left as it is"
-            )
+        entries = list(hooks.get(event, []))
         wanted = _our_entry(command)
-        kept = [e for e in entries if not _ours(e)]
-        mine = [e for e in entries if _ours(e)]
-        if mine != [wanted]:
-            changed = True
+        if wanted in entries and _without_ours(entries)[1] == 1:
+            continue
+        kept, _ = _without_ours(entries)
         hooks[event] = [*kept, wanted]
-    if changed:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temporary = path.with_name(path.name + ".liaise-tmp")
-        temporary.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-        os.replace(temporary, path)
-        return f"installed the liaise hooks ({', '.join(HOOK_EVENTS)}) in {path}"
-    return f"the liaise hooks are already installed in {path}"
+        changed = True
+    if not changed:
+        return f"the liaise hooks are already installed in {path}"
+    data["hooks"] = hooks
+    _write_settings(path, data)
+    return f"installed the liaise hooks ({', '.join(HOOK_EVENTS)}) in {path}"
 
 
 def uninstall_hooks(settings: Union[str, os.PathLike] = DFLT_SETTINGS) -> str:
     """Remove liaise's hooks from ``settings``, keeping everything else."""
-    path = Path(settings).expanduser()
+    path = _settings_path(settings)
     data = _read_settings(path)
-    hooks = data.get("hooks")
+    hooks = _events(data, path)
     removed = 0
-    if isinstance(hooks, dict):
-        for event in HOOK_EVENTS:
-            entries = hooks.get(event)
-            if isinstance(entries, list):
-                kept = [e for e in entries if not _ours(e)]
-                removed += len(entries) - len(kept)
-                if kept:
-                    hooks[event] = kept
-                else:
-                    hooks.pop(event, None)
-        if not hooks:
-            data.pop("hooks", None)
+    for event in HOOK_EVENTS:
+        if event not in hooks:
+            continue
+        kept, count = _without_ours(hooks[event])
+        removed += count
+        if kept:
+            hooks[event] = kept
+        else:
+            hooks.pop(event)
     if not removed:
         return f"no liaise hooks in {path}"
-    temporary = path.with_name(path.name + ".liaise-tmp")
-    temporary.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
-    os.replace(temporary, path)
+    if hooks:
+        data["hooks"] = hooks
+    else:
+        data.pop("hooks", None)
+    _write_settings(path, data)
     return f"removed the liaise hooks from {path}"
 
 
 def hook_status(settings: Union[str, os.PathLike] = DFLT_SETTINGS) -> dict[str, str]:
     """Each hook event's state in ``settings``: ``installed``, ``outdated`` or ``missing``."""
-    path = Path(settings).expanduser()
-    data = _read_settings(path)
-    hooks = data.get("hooks") if isinstance(data.get("hooks"), dict) else {}
+    path = _settings_path(settings)
+    hooks = _events(_read_settings(path), path)
     states = {}
     for event in HOOK_EVENTS:
-        entries = hooks.get(event) if isinstance(hooks.get(event), list) else []
-        mine = [e for e in entries if _ours(e)]
+        entries = hooks.get(event, [])
+        mine = [
+            e
+            for e in entries
+            if isinstance(e, Mapping) and any(map(_is_ours, e.get("hooks") or []))
+        ]
         if not mine:
             states[event] = "missing"
         elif any(e.get("matcher") == HOOK_MATCHER for e in mine):
