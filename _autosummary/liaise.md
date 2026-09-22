@@ -1307,6 +1307,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`prompt`](liaise.prompt.md#module-liaise.prompt)         | The prompt composer: the whole prompt a processor run on one case starts from.                                       |
 | [`readiness`](liaise.readiness.md#module-liaise.readiness)   | Readiness: whether a case is ready to dispatch, read off its own ledger entries.                                     |
 | [`release`](liaise.release.md#module-liaise.release)       | Releasing a message: through the gate, then through correspond, as one step.                                         |
+| [`report`](liaise.report.md#module-liaise.report)         | `liaise gate report`: what the outbound gate did, in counts, and whether to enforce (liaise #39).                    |
 | [`schedule`](liaise.schedule.md#module-liaise.schedule)     | Scheduling `liaise run --once` (A.7): a launchd agent on macOS, a systemd user timer on Linux.                       |
 | [`subjects`](liaise.subjects.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.                                   |
 | [`testing`](liaise.testing.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                                        |

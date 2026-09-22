@@ -30,13 +30,14 @@
 - [liaise.prompt](_autosummary/liaise.prompt.html.md): The prompt composer: the whole prompt a processor run on one case starts from.
 - [liaise.readiness](_autosummary/liaise.readiness.html.md): Readiness: whether a case is ready to dispatch, read off its own ledger entries.
 - [liaise.release](_autosummary/liaise.release.html.md): Releasing a message: through the gate, then through correspond, as one step.
+- [liaise.report](_autosummary/liaise.report.html.md): &#96;liaise gate report&#96;: what the outbound gate did, in counts, and whether to enforce (liaise #39).
 - [liaise.schedule](_autosummary/liaise.schedule.html.md): Scheduling &#96;liaise run --once&#96; (A.7): a launchd agent on macOS, a systemd
 - [liaise.subjects](_autosummary/liaise.subjects.html.md): Subjects: the bodies of work liaise runs, each loaded from &#96;subjects/&lt;slug&gt;.toml&#96;.
 - [liaise.testing](_autosummary/liaise.testing.html.md): Fakes shipped with liaise: for its tests, and for the one-command smoke test.
 - [liaise.tick](_autosummary/liaise.tick.html.md): The tick: one pass of liaise 0.1’s loop (design §3.1).
 - [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 - [For AI agents](ai-agents.html.md): &#96;liaise&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-09-22 13:34 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-09-22 13:56 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

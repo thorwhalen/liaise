@@ -28,6 +28,7 @@
 - [liaise.prompt](liaise.prompt.html.md): The prompt composer: the whole prompt a processor run on one case starts from.
 - [liaise.readiness](liaise.readiness.html.md): Readiness: whether a case is ready to dispatch, read off its own ledger entries.
 - [liaise.release](liaise.release.html.md): Releasing a message: through the gate, then through correspond, as one step.
+- [liaise.report](liaise.report.html.md): &#96;liaise gate report&#96;: what the outbound gate did, in counts, and whether to enforce (liaise #39).
 - [liaise.schedule](liaise.schedule.html.md): Scheduling &#96;liaise run --once&#96; (A.7): a launchd agent on macOS, a systemd
 - [liaise.subjects](liaise.subjects.html.md): Subjects: the bodies of work liaise runs, each loaded from &#96;subjects/&lt;slug&gt;.toml&#96;.
 - [liaise.testing](liaise.testing.html.md): Fakes shipped with liaise: for its tests, and for the one-command smoke test.

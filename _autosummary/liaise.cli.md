@@ -69,6 +69,7 @@ traceback.
 | [`case_show`](#liaise.cli.case_show)(case_id, \*[, root, store])               | CASE_ID as the ledger holds it: what a notification from liaise leaves out.                                  |
 | [`confirm_at_terminal`](#liaise.cli.confirm_at_terminal)(preview)                        | Show `preview` and ask, at the operator's terminal, whether to send it; True for yes.                        |
 | [`edit_in_editor`](#liaise.cli.edit_in_editor)(text)                                | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.                             |
+| [`gate_report`](#liaise.cli.gate_report)(\*[, subject, since, root, store])      | What the outbound gate did, in counts: judged, released, rejected, per rule, and whether to enforce.         |
 | [`hold`](#liaise.cli.hold)(scope, \*[, mode, reason, root, store])        | Stop work in SCOPE until `liaise unhold`.                                                                    |
 | [`message_list`](#liaise.cli.message_list)(\*[, state, root, store])              | Every message sent or held outside a case, a line each: id, state, and where it goes.                        |
 | [`message_reject_draft`](#liaise.cli.message_reject_draft)(message_id, \*[, ...])         | Decline a held message, recording `--reason`.                                                                |
@@ -263,6 +264,17 @@ without its wait flag (`code --wait`), hands the text back unchanged, and the
 confirmation says so. On Windows the command runs through the shell, which a `.cmd`
 editor needs. Raises `ValueError` when the editor cannot be started or exits
 nonzero, so nothing is sent.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.gate_report(, subject=None, since=None, root=None, store=None)
+
+What the outbound gate did, in counts: judged, released, rejected, per rule, and whether to enforce.
+
+`--subject` keeps one subject’s messages and `--since` (ISO 8601; a date or a time
+without an offset is UTC) the entries at or after it. Counts only: it never prints a message’s text, a value or a fingerprint. The
+last line applies the rollout rule of discussion 32 (liaise #39). It changes nothing.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

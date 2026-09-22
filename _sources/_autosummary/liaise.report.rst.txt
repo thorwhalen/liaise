@@ -1,0 +1,25 @@
+liaise.report
+=============
+
+.. automodule:: liaise.report
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      MIN_SHADOW_MESSAGES
+      MISSED_SEVERITY
+      MAX_FALSE_DIVERT_RATE
+      MAX_RULE_NAME
+      GATE_KIND
+      SHADOW_PENDING
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      enforce_recommended
+      gate_report
+      report_lines
+   

@@ -33,6 +33,7 @@ liaise.cli
       case_show
       confirm_at_terminal
       edit_in_editor
+      gate_report
       hold
       message_list
       message_reject_draft

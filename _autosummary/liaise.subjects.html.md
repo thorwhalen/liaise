@@ -148,7 +148,8 @@ Who is who on a subject, what each may do, and how liaise answers them.
 > (`approve`, or `send` to waive the taint rule), `link_allowlist` (hosts a link
 > may point at besides the channel’s own), `canary_terms` (terms planted in private
 > context, never to be sent) and `mode` (`enforce`, or `shadow`, recorded on every
-> verdict and enforced alike until shadow mode lands). `delay_minutes` turns the delay
+> verdict, counted by `liaise gate report`, and enforced alike until its sending
+> semantics are decided, liaise #51). `delay_minutes` turns the delay
 
 outbox on (liaise #38): how long a `delay` verdict (an irreversible send to an
 organisation-wide or public place) waits, cancellable, before the tick sends it; 0 sends
