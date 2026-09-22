@@ -45,11 +45,12 @@ from hashlib import sha256
 import os
 from pathlib import Path
 import re
+import warnings
 from typing import Any, Optional, Union
 
 import correspond
 from correspond.channels.github import REF_RE
-from correspond.idempotency import FAILED
+from correspond.idempotency import FAILED, MAX_KEY_LENGTH
 from correspond.model import Audience, ConversationRef, Draft
 from correspond.stores import SendStore
 
@@ -96,6 +97,10 @@ DFLT_SENDS_SUBDIR = "sends"
 KEY_DIGEST_DIGITS = 16
 #: What ends a key that is not its message's first attempt: ``~2``, ``~3``, ...
 ATTEMPT_SUFFIX_RE = re.compile(r"~(\d+)$")
+#: Room a key keeps for attempt suffixes (``~NN``) under correspond's length limit.
+ATTEMPT_ROOM = 8
+#: How many characters of a too-long key's head :func:`bounded_key` keeps, for reading.
+KEY_HEAD_CHARS = 60
 #: The first attempt suffix :func:`next_attempt_key` adds.
 FIRST_RETRY = 2
 #: Why a send whose earlier attempt may have gone out is kept for the operator.
@@ -128,8 +133,25 @@ def _digest(*parts: Any) -> str:
     ]
 
 
+def bounded_key(key: str) -> str:
+    """``key``, or, when too long for correspond (a long subject slug), its head and a digest of it.
+
+    >>> bounded_key("c/h1")
+    'c/h1'
+    >>> len(bounded_key("s" * 200 + "-1/h1")) <= 128
+    True
+    """
+    if len(key) <= MAX_KEY_LENGTH - ATTEMPT_ROOM:
+        return key
+    return f"{key[:KEY_HEAD_CHARS]}/{sha256(key.encode('utf-8')).hexdigest()[:32]}"
+
+
 def tick_send_key(
-    case_id: str, ref: Optional[str], text: str, title: Optional[str], serial: int
+    case_id: str,
+    ref: Optional[str],
+    text: str,
+    title: Optional[str],
+    serial: Union[int, str],
 ) -> str:
     """The key of a message a tick sends: ``<case>/<payload digest>/<entry serial>``.
 
@@ -141,7 +163,7 @@ def tick_send_key(
     >>> key.startswith("app3/") and key.endswith("/7")
     True
     """
-    return f"{case_id}/{_digest(ref, text, title)}/{serial}"
+    return bounded_key(f"{case_id}/{_digest(ref, text, title)}/{serial}")
 
 
 def outbox_key(case_id: str, held: str) -> str:
@@ -150,7 +172,7 @@ def outbox_key(case_id: str, held: str) -> str:
     >>> print(outbox_key("example", "h3f9a0c12"))
     example/h3f9a0c12
     """
-    return f"{case_id}/{held}"
+    return bounded_key(f"{case_id}/{held}")
 
 
 def draft_send_key(owner: str, draft: Mapping[str, Any]) -> str:
@@ -161,11 +183,11 @@ def draft_send_key(owner: str, draft: Mapping[str, Any]) -> str:
     stores that key on whatever draft stays, so a second release reuses it.
     """
     if draft.get("send_key"):
-        return str(draft["send_key"])
+        return bounded_key(str(draft["send_key"]))
     digest = _digest(
         draft.get("at"), draft.get("ref"), draft.get("text"), draft.get("title")
     )
-    return f"{owner}/d{digest}"
+    return bounded_key(f"{owner}/d{digest}")
 
 
 def next_attempt_key(key: str) -> str:
@@ -374,9 +396,7 @@ def gate_and_send(
                 )
             except Exception as error:  # the message went out: report, never raise
                 failure = error_text(error)
-        return SendAttempt(
-            decision, result=result, disclosure_failure=failure, key=key
-        )
+        return SendAttempt(decision, result=result, disclosure_failure=failure, key=key)
     return SendAttempt(
         decision,
         result=result,
@@ -579,6 +599,13 @@ def release_draft(
         ),
         fingerprint_key=fingerprint_key,
     )
+    if sends is None and send and not dry_run:
+        warnings.warn(
+            f"{label} is released without a store of sends, so it is sent unkeyed: an "
+            f"earlier attempt that went out would be posted again. Pass sends="
+            f"default_send_store(state_dir).",
+            stacklevel=2,
+        )
     if approval is None and approve_shown:
         shown = run_gate(outbound, context, outbound_filters=filters)
         approval = approval_for(shown, by=by, at=now, justification=justification)

@@ -85,6 +85,31 @@ def test_the_default_store_lives_under_the_state_dir(tmp_path):
     assert default_send_store(tmp_path).folder == str(tmp_path / DFLT_SENDS_SUBDIR)
 
 
+def test_a_key_from_a_long_subject_slug_stays_within_correspond_s_limit():
+    from correspond.idempotency import check_key
+
+    long_case = "s" * 150 + "-1"
+    for key in (outbox_key(long_case, "h1"), draft_send_key(long_case, _draft())):
+        assert check_key(next_attempt_key(next_attempt_key(key)))
+    assert outbox_key(long_case, "h1") != outbox_key(long_case, "h2")
+
+
+def test_two_held_sends_of_one_text_in_a_tick_get_different_keys(world, monkeypatch):
+    from liaise.model import Hold
+    from liaise.outcomes import Outcome
+    from liaise.processor import EchoProcessor, RunResult
+
+    reply = Outcome(kind="reply", text="Same words.")
+    world.processor = EchoProcessor(results={CASE_1: RunResult(run_id="", outcomes=(reply, reply))})
+    world.issue()
+    world.tick()
+    world.ledger.set_hold(Hold(scope=f"subject:{SLUG}", mode="block"))
+    world.tick(LATER)
+
+    keys = [draft.get("send_key") for draft in world.case().drafts]
+    assert len(keys) == 2 and len(set(keys)) == 2
+
+
 # ---- the outbox: a release that posts and then fails ----
 
 
@@ -248,7 +273,7 @@ def test_send_draft_dry_run_of_an_unconfirmed_draft_asks_nothing_and_sends_nothi
     restore()
     previews = len(operator.previews)
 
-    with pytest.raises(cw.CommandError, match="would not be sent: an earlier attempt may have gone out"):
+    with pytest.raises(cw.CommandError, match="would not be sent: an earlier attempt may have gone out .*reads .* back first"):
         operator.send(dry_run=True)
 
     assert len(operator.previews) == previews and operator.posted() == []

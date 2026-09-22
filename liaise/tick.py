@@ -1699,8 +1699,13 @@ class _Tick:
             self._deliver(subject, immediate)  # a deploy per issue: a batch of one, now
 
     def _send_key(self, send: Send) -> str:
-        """The idempotency key of ``send`` now (:func:`liaise.release.tick_send_key`)."""
-        serial = len(self._case(send.case_id).entries)
+        """The idempotency key of ``send`` now (:func:`liaise.release.tick_send_key`).
+
+        The serial is the case's entry count and draft count: a held send adds a draft and
+        no entry, so two held sends of one text in a tick still differ.
+        """
+        case = self._case(send.case_id)
+        serial = f"{len(case.entries)}.{len(case.drafts)}"
         return tick_send_key(send.case_id, send.ref, send.text, send.title, serial)
 
     def _hold_send(self, send: Send, hold: Hold) -> None:

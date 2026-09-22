@@ -313,8 +313,9 @@ class OutboundMessage(_Record):
     :data:`MESSAGE_STATES`, and while it is ``held``, ``reason`` and ``notes`` say why.
     ``entries`` is its append-only history of gate decisions, as a case keeps its own. A
     message has no reporter, no run and no label: it is not a unit of work.
-    ``send_key`` is the idempotency key its next send carries, when it is not its id (a
-    new attempt's, see :func:`liaise.release.next_attempt_key`).
+    ``send_key`` is the idempotency key its last send carried, and the next one reuses;
+    None until one was tried, when the key is its id (see
+    :func:`liaise.release.next_attempt_key` for a new attempt's).
     """
 
     id: str

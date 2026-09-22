@@ -127,8 +127,8 @@ ALREADY_POSTED = "an earlier attempt had already posted it, so it was not posted
 #: What the confirmation adds when an earlier attempt at the message may have gone out.
 READ_BACK_NOTE = (
     "an earlier attempt at this message may have gone out: sending reads the "
-    "conversation back first, records the message if it is there, and posts nothing if "
-    "it is not (then check it, and use --new-attempt)"
+    "conversation back first, where the channel can be read, records the message if it "
+    "is there, and posts nothing otherwise (then check it, and use --new-attempt)"
 )
 #: Why ``send-draft`` sends nothing without a terminal to ask at.
 NO_TERMINAL = (
@@ -676,7 +676,13 @@ def _not_sent(held: _Held, release: Any, *, dry_run: bool) -> cw.CommandError:
         if dry_run
         else f". It stays {held.stays} with that reason; edit it with {held.command} --edit"
     )
-    if attempt.unconfirmed:
+    if attempt.unconfirmed and dry_run:
+        why = (
+            f"an earlier attempt may have gone out ({attempt.failure}). Without "
+            f"--dry-run it reads {attempt.outbound.ref} back first, where the channel can "
+            f"be read, and posts nothing it cannot confirm"
+        )
+    elif attempt.unconfirmed:
         why = (
             f"an earlier attempt may have gone out ({attempt.failure}). Check "
             f"{attempt.outbound.ref}; if it is not there, send it with {held.command} "
