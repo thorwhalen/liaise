@@ -39,6 +39,9 @@ goes to the operator.
 
 Every transition is a ``gate`` entry on the case whose ``decision`` is one of
 :data:`OUTBOX_DECISIONS`, and no operator notification carries anything the message says.
+Each records the item's ``held_id`` (a release's ``send`` entry, in ``released_from``),
+which is what joins the entries about one message; their ``outbox`` is only the item's
+position at that moment.
 """
 
 from __future__ import annotations
@@ -102,7 +105,9 @@ def held_id(item: Mapping[str, Any]) -> str:
     """The id that names ``item`` for as long as it is held, whatever its position.
 
     The one :func:`make_held` gave it; an item held before items had ids gets one derived
-    from when it was held, where it goes and what it says, which is as stable.
+    from when it was held, where it goes and what it says. That is as stable, but two such
+    items held at the same moment with the same text to the same place share it, and
+    :func:`pick_held` then names the first.
     """
     kept = item.get("id")
     if kept:
@@ -291,10 +296,10 @@ def parse_which(text: Union[int, str]) -> Which:
 
     Raises ``ValueError`` for anything that is neither.
     """
-    if isinstance(text, int):
+    if isinstance(text, int) and not isinstance(text, bool):
         return text
     text = str(text).strip()
-    if text.isdigit():
+    if re.fullmatch(r"[0-9]+", text):
         return int(text)
     if HELD_ID_PATTERN.fullmatch(text.lower()):
         return text.lower()
@@ -341,7 +346,9 @@ def pick_held(
     index = 0 if index is None else index
     if not 0 <= index <= last:
         held = "[0]" if last == 0 else f"[0] to [{last}]"
-        raise ValueError(f"case {case.id} holds no message [{index}]; its held messages are {held} ({listed})")
+        raise ValueError(
+            f"case {case.id} holds no message [{index}]; its held messages are {held} ({listed})"
+        )
     return index, items[index]
 
 

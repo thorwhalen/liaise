@@ -1893,11 +1893,17 @@ class _Tick:
             },
         )
         self.held.append(send)
-        self.say(
-            f"  gate {send.purpose} to {send.ref}: held in the outbox as {ident} until "
-            f"{item['release_at']} ({decision.flow}); liaise case cancel-send "
-            f"{case.id} {ident} takes it off"
-        )
+        if self.dry_run:  # nothing is kept, so there is no id to cancel it by
+            self.say(
+                f"  gate {send.purpose} to {send.ref}: would hold in the outbox until "
+                f"{item['release_at']} ({decision.flow})"
+            )
+        else:
+            self.say(
+                f"  gate {send.purpose} to {send.ref}: held in the outbox as {ident} "
+                f"until {item['release_at']} ({decision.flow}); liaise case cancel-send "
+                f"{case.id} {ident} takes it off"
+            )
         if minutes == 0:
             return self._release_one(subject, case.id, item)
         self._notice(

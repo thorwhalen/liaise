@@ -431,7 +431,7 @@ def test_an_id_that_is_no_longer_held_is_refused_with_the_ones_that_are(world):
 def test_parse_which_reads_an_index_or_an_id_and_refuses_anything_else():
     assert parse_which("2") == 2 and parse_which(2) == 2
     assert parse_which(" H3F9A0C12 ") == "h3f9a0c12"
-    for bad in ("h3f9", "x3f9a0c12", "", "-1"):
+    for bad in ("h3f9", "x3f9a0c12", "", "-1", "\u00b2", "\u0663", True):
         with pytest.raises(ValueError, match="names no held message"):
             parse_which(bad)
 
@@ -462,3 +462,12 @@ def test_the_cancel_send_command_takes_an_id_or_an_index(world):
     out = cli.case_cancel_send(CASE_1, "0", root=str(root), store=world.store, now=HELD_AT)
     assert out.startswith(f"cancelled held message [0] of {CASE_1} ({first},")
     assert len(world.case().outbox) == 1
+
+
+def test_a_dry_run_tick_prints_no_id_it_would_not_keep(public):
+    report = public.tick(HELD_AT, dry_run=True)
+
+    holds = [line for line in report.plan_lines if "outbox" in line and "gate" in line]
+    assert holds and all("would hold in the outbox until" in line for line in holds)
+    assert not any("cancel-send" in line for line in holds)
+    assert public.github.sent == [] and public.case().outbox == ()
