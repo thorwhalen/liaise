@@ -87,6 +87,7 @@ from liaise.detect import key_source
 from liaise.errors import ERROR_ACTIONS, classify_delivery_failure
 from liaise.errors import defer_until as defer_for_error
 from liaise.gate import (
+    DELAY,
     DFLT_OUTBOUND_FILTERS,
     GateContext,
     Outbound,
@@ -131,6 +132,7 @@ from liaise.notify import (
     NOTICE_ISSUE_UNREADABLE,
     NOTICE_RUN_CANCELLED,
     NOTICE_RUN_LOST,
+    NOTICE_SEND_DELAYED,
     NOTICE_SEND_FAILED,
     NOTICE_START_REFUSED,
     notice_body,
@@ -158,6 +160,16 @@ from liaise.prompt import compose_case_prompt
 from liaise.readiness import compute_readiness, last_partner_activity
 from liaise.release import error_text as _error_text
 from liaise.release import gate_and_send
+from liaise.outbox import (
+    HOLD,
+    INTERRUPTED,
+    ISSUE_CLOSED_EVENT,
+    held_message,
+    hold_of,
+    is_due,
+    make_held,
+    release_block,
+)
 from liaise.subjects import DELIVERY_KINDS, DELIVERY_PERS, Subject
 from liaise.workspace import (
     DFLT_LOCKS_SUBDIR,
@@ -237,7 +249,7 @@ RUN_COLLECTED = "collected"
 RUN_LOST = "lost"
 #: ...and the case's GitHub issue found closed, then open again, each once per change. A
 #: case whose issue is closed is neither started nor nudged.
-RUN_ISSUE_CLOSED = "issue_closed"
+RUN_ISSUE_CLOSED = ISSUE_CLOSED_EVENT
 RUN_ISSUE_REOPENED = "issue_reopened"
 #: ...and a deploy that failed, the tail of its output the entry's text, which ``liaise
 #: case show`` prints and no notification carries.
@@ -285,7 +297,8 @@ class TickReport:
 
     ``plan_lines`` has a line per step, event, case and decision, for ``--dry-run`` to
     print. ``dispatched`` and ``collected`` are run ids, ``sent`` the messages as they went
-    out (mention added), ``diverted`` those that stayed with the operator as drafts.
+    out (mention added), ``diverted`` those that stayed with the operator as drafts, and
+    ``held`` those the tick put in a case's outbox (liaise #38).
     """
 
     plan_lines: tuple[str, ...] = ()
@@ -295,6 +308,7 @@ class TickReport:
     diverted: tuple[Diversion, ...] = ()
     problems: tuple[str, ...] = ()
     dry_run: bool = False
+    held: tuple[Outbound, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -582,6 +596,7 @@ def run_once(
             elif only is None:
                 tick.say(f"subject {slug}: inactive (active = false), not ticked")
         tick.intake_all()
+        tick.release_all()
         tick.reconcile()
         tick.start_all()
         tick.nudge_all()
@@ -833,7 +848,8 @@ def status_lines(
     The run stamps (``running``, ``interrupted`` or ``finished``, the lock checked in
     ``state_dir``), the holds, the runs in flight with their heartbeat age, each subject's
     cases by state and dispatches today, the unrouted queue (its size and the ``recent``
-    latest), the drafts waiting for the operator, and the ``recent`` latest digest notes.
+    latest), the drafts waiting for the operator, the messages held in the outbox, and the
+    ``recent`` latest digest notes.
     """
     now = now if now is not None else datetime.now(timezone.utc)
     ledger = Ledger(store)
@@ -888,6 +904,16 @@ def status_lines(
         to = draft.get("ref") or draft.get("recipient")
         lines.append(
             f"  {case_id} {draft.get('outcome')} to {to}: {draft.get('reason')}"
+        )
+
+    outbox = [(case.id, item) for case in cases for item in case.outbox]
+    lines.append(f"held in the outbox: {len(outbox)}")
+    for case_id, item in sorted(
+        outbox, key=lambda pair: str(pair[1].get("release_at"))
+    ):
+        lines.append(
+            f"  {case_id} {item.get('outcome')} to {item.get('ref')}: sends at "
+            f"{item.get('release_at')} unless cancelled"
         )
 
     heading = "messages outside a case held for the operator"
@@ -979,6 +1005,11 @@ class _Tick:
         self.collected: list[str] = []
         self.sent: list[Outbound] = []
         self.diverted: list[Diversion] = []
+        self.held: list[Outbound] = []
+        #: Per case, how many entries it had when this tick planned a run's actions.
+        self.planned_at: dict[str, int] = {}
+        #: Subjects whose intake failed this tick: their outboxes wait for the next.
+        self.intake_failed: set[str] = set()
         #: Cases this tick changed, in the order it changed them: the label projection's.
         self.touched: dict[str, None] = {}
         #: Per subject slug, the deliveries waiting for its batch deploy.
@@ -1004,6 +1035,7 @@ class _Tick:
             diverted=tuple(self.diverted),
             problems=tuple(self.problems),
             dry_run=self.dry_run,
+            held=tuple(self.held),
         )
 
     def _case(self, case_id: str) -> Case:
@@ -1131,6 +1163,7 @@ class _Tick:
                 )
             except Exception as error:  # one subject's failure is not the tick's
                 self.problem(f"intake of {slug} failed: {_error_text(error)}")
+                self.intake_failed.add(slug)
                 continue
             self.lines += report.plan_lines()
             self.problems += report.problems
@@ -1557,6 +1590,7 @@ class _Tick:
     ) -> None:
         """Carry out a run's planned actions in order: the S5b tick rules."""
         case = self._case(case_id)
+        self.planned_at[case_id] = len(case.entries)
         planned_send = any(isinstance(action, Send) for action in actions)
         held: list[str] = []
         final: Union[None, tuple[str, str], _DeliveryGroup] = None
@@ -1655,15 +1689,23 @@ class _Tick:
         return replace(send, text=text)
 
     def _send(
-        self, subject: Subject, send: Send, *, provenance: Optional[Provenance] = None
+        self,
+        subject: Subject,
+        send: Send,
+        *,
+        provenance: Optional[Provenance] = None,
+        released: Optional[Mapping[str, Any]] = None,
     ) -> bool:
-        """Put ``send`` through the gate, then send it or keep it as a draft; True once sent.
+        """Put ``send`` through the gate, then send it, hold it or keep it as a draft; True once sent.
 
         ``provenance`` is what wrote the message: None for a run's, which is judged from the
-        case's messages (:func:`liaise.outbound.case_provenance`).
+        case's messages (:func:`liaise.outbound.case_provenance`). A ``delay`` goes into the
+        case's outbox (liaise #38). ``released`` is the outbox item ``send`` is released
+        from: its hold is the approval on the context, and it is never held again.
         """
         case = self._case(send.case_id)
         context = GateContext(
+            approval=None if released is None else hold_of(released),
             subject=subject,
             case=case,
             now=self.now,
@@ -1689,7 +1731,14 @@ class _Tick:
             "notes": list(decision.notes),
             **decision.record(),
         }
+        if released is not None:
+            detail["released_from"] = {
+                "at": released.get("at"),
+                "release_at": released.get("release_at"),
+            }
         notes = [f"    note: {note}" for note in decision.notes]
+        if decision.send is None and decision.flow == DELAY and released is None:
+            return self._hold(subject, case, send, decision, detail)
         if decision.send is None:
             draft = make_draft(
                 at=self.now,
@@ -1775,6 +1824,188 @@ class _Tick:
         self.say(f"{head}: {verb}: {_preview(outbound.text)}")
         self.lines += notes
         return True
+
+    # ---- the delay outbox (liaise #38) ----
+
+    def _hold(
+        self,
+        subject: Subject,
+        case: Case,
+        send: Send,
+        decision: Any,
+        detail: Mapping[str, Any],
+    ) -> bool:
+        """Hold ``send``, which the gate gave ``delay``, in its case's outbox; True once sent.
+
+        With ``policy.delay_minutes = 0`` it is released at once, through the same path.
+        """
+        minutes = subject.policy.delay_minutes
+        item = make_held(
+            send,
+            decision,
+            at=self.now,
+            delay=timedelta(minutes=minutes),
+            seen=self.planned_at.get(case.id, len(case.entries)),
+        )
+        index = len(case.outbox)
+        self._save(replace(case, outbox=(*case.outbox, item)))
+        self._entry(
+            case.id,
+            "gate",
+            text=send.text,
+            detail={
+                **detail,
+                "decision": HOLD,
+                "release_at": item["release_at"],
+                "outbox": index,
+            },
+        )
+        self.held.append(send)
+        self.say(
+            f"  gate {send.purpose} to {send.ref}: held in the outbox until "
+            f"{item['release_at']} ({decision.flow}); liaise case cancel-send "
+            f"{case.id} {index} takes it off"
+        )
+        if minutes == 0:
+            return self._release_one(subject, case.id, item)
+        self._notice(
+            NOTICE_SEND_DELAYED,
+            subject=subject.slug,
+            case_ids=(case.id,),
+            cause=f"sends in {minutes} minutes unless cancelled",
+        )
+        return False
+
+    def release_all(self) -> None:
+        """Step 2: release each case's held messages that are due, oldest case first.
+
+        Every item is checked on every tick, due or not (:func:`liaise.outbox.release_block`):
+        one the conversation moved past, one reached too late and one whose release was
+        interrupted go to the operator as drafts. A subject whose intake failed this tick is
+        skipped, since the conversation may have moved unheard. Within a case the items go
+        in order, and one that does not go out keeps the rest for the next tick.
+        """
+        cases = sorted(self.ledger.cases(), key=lambda case: (case.created_at, case.id))
+        for case in cases:
+            if not case.outbox or case.subject not in self.slugs:
+                continue
+            subject = self.subjects[case.subject]
+            if case.subject in self.intake_failed:
+                self.say(
+                    f"  outbox of {case.id}: waits, since intake of {case.subject} failed"
+                )
+                continue
+            releasing = True
+            for item in tuple(case.outbox):
+                done = self._release_one(subject, case.id, item, release=releasing)
+                releasing = releasing and done is not None
+
+    def _release_one(
+        self,
+        subject: Subject,
+        case_id: str,
+        item: Mapping[str, Any],
+        *,
+        release: bool = True,
+    ) -> Optional[bool]:
+        """Release ``item`` if it is due and nothing blocks it: True once sent.
+
+        False when it went to the operator instead, and None when it stays held (not due,
+        an effect hold, or ``release`` False: an earlier item of its case stayed) or its
+        release did not go out.
+        """
+        case = self._case(case_id)
+        if item not in case.outbox:
+            return False
+        stale = subject.policy.delay_stale_minutes
+        block = release_block(
+            case,
+            item,
+            now=self.now,
+            stale_after=timedelta(minutes=stale) if stale else None,
+        )
+        if block is not None:
+            self._held_to_draft(subject, case, item, *block)
+            return False
+        if not release or not is_due(item, self.now):
+            return None
+        hold = self._effect_hold(subject, case)
+        if hold is not None:
+            self.say(
+                f"  outbox of {case_id}: {item.get('outcome')} to {item.get('ref')} "
+                f"stays held by {hold.scope}"
+            )
+            return None
+        claimed = {**item, "claimed_at": self.now.isoformat()}
+        self._swap_item(
+            case_id, item, claimed
+        )  # at most once: claimed before it is sent
+        sent = self._send(
+            subject, held_message(item, case_id=case_id), released=claimed
+        )
+        self._swap_item(case_id, claimed, None)
+        return True if sent else None
+
+    def _swap_item(
+        self,
+        case_id: str,
+        item: Mapping[str, Any],
+        new: Optional[Mapping[str, Any]],
+    ) -> None:
+        """Put ``new`` in place of ``item`` in the case's outbox, or take ``item`` off for None."""
+        case = self._case(case_id)
+        items = list(case.outbox)
+        index = items.index(item)
+        items[index : index + 1] = [] if new is None else [dict(new)]
+        self._save(replace(case, outbox=tuple(items)))
+
+    def _held_to_draft(
+        self,
+        subject: Subject,
+        case: Case,
+        item: Mapping[str, Any],
+        decision: str,
+        reason: str,
+    ) -> None:
+        """Take ``item`` out of the outbox and keep it as a draft for the operator, with ``reason``."""
+        index = case.outbox.index(item)
+        draft = make_draft(
+            at=self.now,
+            outcome=item.get("outcome"),
+            recipient=item.get("recipient"),
+            ref=item.get("ref"),
+            text=item.get("text") or "",
+            reason=reason,
+            notes=item.get("notes") or (),
+            title=item.get("title"),
+            gate=item.get("gate"),
+        )
+        others = (*case.outbox[:index], *case.outbox[index + 1 :])
+        self._save(replace(case, outbox=others, drafts=(*case.drafts, draft)))
+        self._entry(
+            case.id,
+            "gate",
+            text=item.get("text"),
+            detail={
+                "decision": decision,
+                "reason": reason,
+                "purpose": item.get("outcome"),
+                "ref": item.get("ref"),
+                "outbox": index,
+                "release_at": item.get("release_at"),
+            },
+        )
+        self.diverted.append(Diversion(held_message(item, case_id=case.id), reason))
+        self.say(
+            f"  outbox of {case.id}: {item.get('outcome')} to {item.get('ref')}: "
+            f"{reason}, kept as a draft"
+        )
+        self._notice(
+            NOTICE_SEND_FAILED if decision == INTERRUPTED else NOTICE_DIVERTED,
+            subject=subject.slug,
+            case_ids=(case.id,),
+            cause="outbox",
+        )
 
     def _send_own(
         self, subject: Subject, case: Case, text: str, *, purpose: str

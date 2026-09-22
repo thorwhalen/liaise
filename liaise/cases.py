@@ -226,7 +226,9 @@ def case_show_lines(
     Its state and conversations; the reason of its last ``escalate`` or ``decline``; its
     last failed deploy, with the tail of the command's output; each draft waiting for the
     operator, with the gate's flow, the audience in words, its whole text with invisible
-    characters made visible and every link in full (:func:`held_lines`); and its
+    characters made visible and every link in full (:func:`held_lines`); each message held
+    in the outbox (liaise #38), with when it sends and how to cancel it, shown the same way;
+    and its
     ``entries`` latest ledger entries, oldest first, a line each with its detail and the
     start of its text. Reads only. Raises ``ValueError`` for a case the ledger ``store``
     does not hold.
@@ -273,6 +275,19 @@ def case_show_lines(
             f"{draft.get('reason')}"
         )
         lines += held_lines(draft.get("text"), gate=draft.get("gate"))
+    lines.append(f"held in the outbox: {len(case.outbox)}")
+    for index, item in enumerate(case.outbox):
+        claimed = (
+            f", release claimed at {item['claimed_at']}"
+            if item.get("claimed_at")
+            else ""
+        )
+        lines.append(
+            f"  [{index}] {item.get('outcome')} to {item.get('ref')}: sends at "
+            f"{item.get('release_at')} unless cancelled (liaise case cancel-send "
+            f"{case.id} {index}){claimed}"
+        )
+        lines += held_lines(item.get("text"), gate=item.get("gate"))
     shown = case.entries[-entries:] if entries > 0 else ()
     lines.append(f"latest entries: {len(shown)} of {len(case.entries)}")
     lines += [f"  {entry_line(entry)}" for entry in shown]

@@ -40,7 +40,7 @@ from correspond.channels.webinbox import WebInbox
 
 from liaise import cli
 from liaise import tick as tick_module
-from liaise.gate import DELAY_HELD, DFLT_OUTBOUND_FILTERS
+from liaise.gate import DFLT_OUTBOUND_FILTERS
 from liaise.github import FakeGitHub, Issue
 from liaise.ledger import Ledger
 from liaise.model import LedgerEntry, Outcome, RunRecord, RunResult
@@ -372,10 +372,8 @@ def test_on_a_public_repository_the_heron_draft_is_revise_and_the_export_draft_w
 
     revise = lines[_starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: diverted (revise: 'project:heron' is amber")]
     assert f"the least-cleared reader of {SEEDED_ISSUE} is anyone (world-readable" in revise
-    delay = lines[
-        _starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: diverted (delay: a send to {SEEDED_ISSUE} cannot be withdrawn")
-    ]
-    assert delay.endswith(f"{DELAY_HELD}), kept as a draft")
+    held = lines[_starting_with(lines, f"  gate reply to {SEEDED_ISSUE}: held in the outbox until")]
+    assert "(delay)" in held and "liaise case cancel-send" in held
     notices = [line for line in lines if line.startswith("  would notify the operator:")]
     assert notices and not any("heron" in line.lower() or "export" in line for line in notices)
     assert heron.github.sent == [] and heron.store == store_before and _files(tmp_path) == files_before

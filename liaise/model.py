@@ -195,7 +195,9 @@ class Case(_Record):
     (``github:example/app#12``) whose messages belong to it; ``reporter`` is the
     person who opened it; ``state`` is one of :data:`CASE_STATES`. ``entries`` is the
     append-only history and ``drafts`` the outbound messages diverted to the operator.
-    ``defer_until``, when set, is the earliest time the case may be dispatched again
+    ``outbox`` holds the messages the gate gave ``delay``: each waits, cancellable, until
+    its ``release_at``, when the tick judges it again and sends it (liaise #38; see
+    :mod:`liaise.outbox`). ``defer_until``, when set, is the earliest time the case may be dispatched again
     (after a quota reset, a rate limit, or a busy workspace).
     """
 
@@ -209,6 +211,7 @@ class Case(_Record):
     session_id: Optional[str] = None
     entries: tuple[LedgerEntry, ...] = ()
     drafts: tuple[Mapping[str, Any], ...] = ()
+    outbox: tuple[Mapping[str, Any], ...] = ()
     defer_until: Optional[datetime] = None
 
     def __post_init__(self) -> None:
