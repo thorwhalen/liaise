@@ -1326,9 +1326,9 @@ def _vet_lines(found: Mapping[str, Any]) -> list[str]:
 def vet(
     *,
     ref: str = "",
-    to: Sequence[str] = (),
-    cc: Sequence[str] = (),
-    bcc: Sequence[str] = (),
+    to: Optional[Sequence[str]] = None,
+    cc: Optional[Sequence[str]] = None,
+    bcc: Optional[Sequence[str]] = None,
     project: str = "",
     title: str = "",
     text: str = "",
@@ -1347,8 +1347,9 @@ def vet(
     the person (or people) it is for, ``--cc`` and ``--bcc`` further readers, and
     ``--project`` the project it is about. What its author read is unknown, which counts as
     tainted, unless ``--untainted`` (nothing untrusted) or ``--tainted`` says. ``--json``
-    prints the verdict record. The exit code is the route: 0 send, 2 draft-to-operator,
-    3 block (1: the draft could not be vetted). It records nothing.
+    prints the verdict record. ``--to``, ``--cc`` and ``--bcc`` may be repeated. The exit
+    code is the route of a write made at once: 0 send, 2 draft-to-operator (a ``delay``
+    too), 3 block (1: the draft could not be vetted). It records nothing.
     """
     import json as json_module
 
@@ -1372,9 +1373,9 @@ def vet(
     found = vetting.vet(
         body,
         ref=ref,
-        to=to,
-        cc=cc,
-        bcc=bcc,
+        to=to or (),
+        cc=cc or (),
+        bcc=bcc or (),
         title=title or None,
         project=project or None,
         tainted=True if tainted else (False if untainted else None),
@@ -1514,12 +1515,14 @@ def _hidden(seams: Mapping[str, Any]) -> dict[str, Any]:
 
 #: What a command's arguments need beyond their signature, nested as :data:`_SEAMS` is: a
 #: draft's INDEX is a number (see :func:`_one_index`).
+_READERS = {"action": "extend", "nargs": "+"}  # --to a --to b, or --to a b: both kept
 _ARGUMENTS = {
+    "vet": {"to": _READERS, "cc": _READERS, "bcc": _READERS},
     "case": {
         "send-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "reject-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "cancel-send": {"index": {"type": str, "metavar": "ID|INDEX"}},
-    }
+    },
 }
 
 

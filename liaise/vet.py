@@ -6,6 +6,8 @@ verdict as a JSON-ready record: the flow, the route, the reasons, the audience i
 the tiers consulted. It sends nothing and records nothing, so it is safe to run at any time
 and to expose over MCP later. ``liaise vet`` prints it, with the exit code
 :data:`EXIT_CODES` gives the route: 0 send, 2 draft-to-operator, 3 block.
+Whoever vets a draft then posts it themselves, at once, so the exit code is the route of
+an immediate write (:func:`immediate_route`): a ``delay`` exits 2.
 
 **The same gate, less what does not apply.** Discussion 32 rejects a separate gate for
 ``vet`` (§11). :data:`VET_FILTERS` are :data:`~liaise.gate.DFLT_OUTBOUND_FILTERS` in their
@@ -21,11 +23,12 @@ provenance of a vetted draft is unknown unless the caller says otherwise (decisi
 (:func:`liaise.subjects.subject_for_ref`); when none does, :func:`~liaise.subjects.unbound_subject`, whose
 policy has every default: nobody known, the taint rule in force, ``direct`` reply mode.
 
-**Where nothing can be held.** A ``delay`` routes to ``send`` (discussion §5.5), because
-liaise's outbox holds it. :func:`before_send` (correspond's check) and the Claude Code hook
-(:mod:`liaise.hook`) stand in front of a write that happens at once, with no outbox, so for
-them a ``delay`` degrades to draft-to-operator, as §5.5 degrades it where the outbox does
-not exist: :func:`immediate_route`.
+**Where nothing can be held.** A ``delay`` routes to ``send`` in liaise's own sending
+(discussion §5.5), because its outbox holds it. ``liaise vet``'s exit code,
+:func:`before_send` (correspond's check) and the Claude Code hook stand in front of a write
+that happens at once, with no outbox, so for them a ``delay`` degrades to
+draft-to-operator, as §5.5 degrades it where the outbox does not exist:
+:func:`immediate_route`.
 """
 
 from __future__ import annotations
@@ -132,8 +135,10 @@ def immediate_route(flow: str) -> str:
 def verdict_record(decision: GateDecision, *, subject: Subject, ref: str) -> dict:
     """What ``vet`` answers about ``decision``: JSON-ready, and never the text or a value found.
 
-    ``flow`` and ``route`` are the decision's, ``exit_code`` the route's
-    (:data:`EXIT_CODES`), ``reasons`` every standing concern's text, most restrictive first,
+    ``flow`` and ``route`` are the decision's (``route`` as liaise's own sending would
+    take it, where the outbox holds a ``delay``). ``exit_code`` is the route of a write
+    that happens at once (:func:`immediate_route`, :data:`EXIT_CODES`): whoever vets a
+    draft posts it themselves, so a ``delay`` exits 2. ``reasons`` every standing concern's text, most restrictive first,
     ``rules`` the rules they came from, ``audience`` the audience in words, ``readers`` the
     tier and clearance of each reader consulted, ``notes`` every filter's notes, and
     ``record`` what a ledger ``gate`` entry would keep (:meth:`GateDecision.record`).
@@ -145,7 +150,7 @@ def verdict_record(decision: GateDecision, *, subject: Subject, ref: str) -> dic
         "subject": subject.slug,
         "flow": decision.flow,
         "route": route,
-        "exit_code": EXIT_CODES[route],
+        "exit_code": EXIT_CODES[immediate_route(decision.flow)],
         "reasons": [concern.text for concern in decision.concerns],
         "rules": [concern.rule for concern in decision.concerns if concern.rule],
         "audience": (

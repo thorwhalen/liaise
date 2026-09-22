@@ -27,6 +27,11 @@ from liaise.tests.outbound import fixtures
 NOW = datetime(2026, 9, 15, 12, 0, tzinfo=timezone.utc)
 REF = fixtures.PUBLIC_ISSUE
 EXPORT = "The export fix is in."
+#: An issue of a private repository a user owns: its readers are named, so a post there is
+#: neither organisation-wide nor public.
+PRIVATE = "github:example/solo#3"
+#: An issue of a private repository an organisation owns.
+ORG = "github:example/app-internal#3"
 HERON = "The export fix is in. Heron slips to October."
 
 
@@ -44,12 +49,13 @@ def registry():
     github = FakeGitHubChannel(clock=lambda: NOW, visibility="public")
     github.add_issue("example/app", 12, author="ada-lorne", title="Export", body="The export drops a row.", created_at=NOW)
     github.set_visibility("example/app-internal", "private", owner_type="Organization")
+    github.set_visibility("example/solo", "private", owner_type="User")
     return demo_registry(github=github)
 
 
 #: The fixture subject: it binds example/app, answers Ada directly, and knows her handle.
 SUBJECT_TOML = """
-bindings = ["github:example/app?labels=partner:ada"]
+bindings = ["github:example/app?labels=partner:ada", "github:example/solo?labels=partner:ada"]
 
 [policy]
 default_reply_mode = "direct"
@@ -90,7 +96,7 @@ def vet_cli(text, *args, registry, root, monkeypatch, capsys, **kwargs):
 
 def direct_subject(**policy):
     """A subject binding example/app that answers directly: only the policy table holds a draft back."""
-    return Subject("app", ("github:example/app",), Policy(people={}, roles={}, default_reply_mode="direct", **policy))
+    return Subject("app", ("github:example/app", "github:example/solo", "github:example/app-internal"), Policy(people={}, roles={}, default_reply_mode="direct", **policy))
 
 
 def vet_record(text, *, registry, **kwargs):
@@ -115,12 +121,16 @@ def test_the_acceptance_line(registry, root, monkeypatch, capsys):
     code, shown = vet_cli(HERON, registry=registry, root=root, monkeypatch=monkeypatch, capsys=capsys)
     assert code == 3 and "never released as written" in shown
 
-    code, shown = vet_cli(EXPORT, registry=registry, root=root, monkeypatch=monkeypatch, capsys=capsys, untainted=True)
+    # The export sentence alone: 0 where a post can be withdrawn; on a public issue, which
+    # cannot, a delay, which is 2, since whoever vets it posts it at once.
+    code, shown = vet_cli(EXPORT, registry=registry, root=root, monkeypatch=monkeypatch, capsys=capsys, untainted=True, ref=PRIVATE)
     assert code == 0, shown
+    code, shown = vet_cli(EXPORT, registry=registry, root=root, monkeypatch=monkeypatch, capsys=capsys, untainted=True)
+    assert code == 2 and shown.startswith("send (delay)") and "cannot be withdrawn" in shown
 
     code, shown = vet_cli(EXPORT, registry=registry, root=root, monkeypatch=monkeypatch, capsys=capsys)
     assert code == 2
-    assert "taint" in shown.lower() or "read" in shown
+    assert "provenance is unknown, which counts as tainted" in shown
 
     code, shown = vet_cli(
         f"Use {fixtures.TOKEN} to log in.", registry=registry, root=root, monkeypatch=monkeypatch, capsys=capsys
@@ -143,9 +153,9 @@ def test_the_verdict_never_holds_the_text_or_the_value_found(registry):
 # ---- the record ----
 
 
-def test_a_clean_draft_to_a_public_issue_is_a_delay_which_routes_to_send(registry):
+def test_a_clean_draft_to_a_public_issue_is_a_delay_which_exits_2(registry):
     found = vet_record(EXPORT, registry=registry, tainted=False)
-    assert found["flow"] == "delay" and found["route"] == "send" and found["exit_code"] == 0
+    assert found["flow"] == "delay" and found["route"] == "send" and found["exit_code"] == 2
     assert vetting.immediate_route(found["flow"]) == "draft"
 
 
@@ -157,9 +167,14 @@ def test_unknown_provenance_counts_as_tainted_and_tainted_says_so(registry):
         assert "taint" in found["rules"]
 
 
-def test_a_private_org_repository_is_judged_by_its_own_audience(registry):
-    found = vet_record(EXPORT, registry=registry, ref="github:example/app-internal#3", tainted=False)
-    assert "public" not in found["audience"]
+def test_a_private_repository_is_judged_by_its_own_audience(registry):
+    org = vet_record(EXPORT, registry=registry, ref=ORG, tainted=False)
+    assert org["record"]["verdict"]["audience"]["scope"] == "org"
+    assert org["audience"].startswith("organisation-wide")
+    assert org["flow"] == "delay" and org["exit_code"] == 2
+    solo = vet_record(EXPORT, registry=registry, ref=PRIVATE, tainted=False)
+    assert solo["record"]["verdict"]["audience"]["scope"] not in ("org", "public")
+    assert solo["flow"] == "send" and solo["exit_code"] == 0
 
 
 def test_a_second_person_in_to_counts_as_a_reader(registry):
@@ -187,6 +202,16 @@ def test_an_audience_nobody_can_compute_is_public(registry):
 
 
 # ---- the command line ----
+
+
+def test_repeated_readers_are_all_kept(root, monkeypatch, capsys):
+    import liaise.release
+
+    monkeypatch.setattr(liaise.release.correspond, "audience", lambda *a, **k: 1 / 0)
+    code, out, _ = run_cli(
+        ["vet", "--ref", REF, "--to", "ada", "--to", "bram", "--cc", "cy", "--root", root, "--json"], EXPORT, monkeypatch, capsys
+    )
+    assert set(json.loads(out)["readers"]) >= {"ada", "bram", "cy"}
 
 
 def test_the_console_script_reads_stdin_and_exits_with_the_route(root, monkeypatch, capsys):
