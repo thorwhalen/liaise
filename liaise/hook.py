@@ -23,11 +23,19 @@ the operator's prompt, which is new outbound behaviour, so the hook never gives 
 comment|create|edit``, ``gh pr comment|create|edit|review``, ``gh api`` writes to issues,
 comments, pulls, discussions and GraphQL mutations, ``correspond send|edit``, and the
 correspond MCP tools ``send`` and ``edit``. Bodies come from ``--body``/``-b``,
-``--body-file``/``-F`` (``-`` is a heredoc on the same command, or ``cat <<EOF |`` before
-it), ``-f body=…``, ``-F body=@file`` and ``--input`` (JSON with a ``body``). A command is
-split at ``&&``, ``||``, ``;``, ``|`` and newlines, heredocs taken out first, and every
-segment is judged; the answer is the most restrictive. A ``gh`` segment not in the table
-that carries a body-like flag is ``ask``.
+``--body-file``/``-F`` (a regular file; ``-`` is the command's one heredoc, or
+``cat <<'EOF' |`` before it), ``-f body=…``, ``-F body=@file`` and ``--input``.
+
+**Only plain commands are read** (:func:`writes_in`). A command that names ``gh`` or
+``correspond`` is read when it is a list of ``gh``/``correspond`` commands, a
+``cat <<'EOF' |`` feeding one, or a gh read piped into a filter. Anything else in it
+(another program, ``cd``, a ``$`` or a backtick, an assignment such as ``GH_REPO=…``, a
+subshell or compound command, a redirection but ``2>&1`` and ``>/dev/null``, a second
+heredoc, a cluster of short flags, a ``gh`` alias or extension, a ``gh`` command outside
+the table that changes something) is ``ask``: an independent review showed that each
+shell construct the hook tries to see through is one more way around it. A ``GH_REPO``
+already exported in the session's shell is not visible to the hook, which then judges
+the checkout's repository.
 """
 
 from __future__ import annotations
@@ -68,6 +76,8 @@ PENDING_TTL = timedelta(hours=24)
 #: The ref a write goes to when the command does not say and the checkout cannot tell:
 #: its audience is unknown, which resolves to public.
 UNKNOWN_REF = "unknown:destination"
+#: The largest body file the hook reads; a larger one is ask.
+MAX_BODY_FILE_BYTES = 1_000_000
 #: What the hook answers when it cannot read a write's body.
 NO_BODY = "could not read the body"
 #: The flags of a ``gh`` command that carry text to someone.
@@ -104,6 +114,7 @@ GH_READ_VERBS = frozenset(
         "download",
         "browse",
         "search",
+        "get",
     }
 )
 #: ``gh`` verbs that change nothing anyone reads (a local checkout, a rerun, a login).
@@ -262,52 +273,33 @@ _KEYWORDS = frozenset(
     {"if", "then", "else", "elif", "do", "while", "until", "!", "{", "}", "fi", "done"}
 )
 _ASSIGNMENT_RE = re.compile(r"^[A-Za-z_]\w*(\[[^]]*\])?\+?=")
-#: Programs that never run a word they are given as a command, so ``gh`` in their
-#: arguments is text (``git commit -m "fix the gh hook"``, ``grep gh``).
-INERT_PROGRAMS = frozenset(
+_HEREDOC_TOKEN = "\x00liaise-heredoc-{}\x00"
+#: Redirections that move no text the hook would need: ``2>&1``, ``>/dev/null``.
+_HARMLESS_REDIRECT_RE = re.compile(r"\d?>>?[ \t]*(?:&[12]\b|/dev/null\b)")
+#: Short flags whose value may be attached (``-bTEXT``, ``-Rowner/repo``): read as such.
+_ATTACHED_VALUE_FLAGS = frozenset("bFtR")
+#: ``gh api``'s short flags whose value may be attached.
+_API_ATTACHED_VALUE_FLAGS = frozenset("fFXHq")
+#: Programs a gh read may be piped into: they print, and run nothing.
+INERT_FILTERS = frozenset(
     {
-        "echo",
-        "printf",
+        "jq",
+        "head",
+        "tail",
         "grep",
         "egrep",
         "fgrep",
-        "cat",
-        "head",
-        "tail",
         "wc",
         "sort",
         "uniq",
-        "jq",
-        "ls",
-        "cd",
-        "mkdir",
-        "touch",
-        "rm",
-        "cp",
-        "mv",
         "cut",
         "tr",
-        "diff",
-        "test",
-        "[",
-        "which",
-        "type",
-        "true",
-        "false",
-        "export",
-        "unset",
-        "read",
+        "cat",
+        "less",
+        "column",
         "tee",
-        "stat",
-        "file",
-        "basename",
-        "dirname",
-        "realpath",
     }
 )
-_HEREDOC_TOKEN = "\x00liaise-heredoc-{}\x00"
-#: Short flags whose value may be attached (``-bTEXT``, ``-Rowner/repo``): read as such.
-_ATTACHED_VALUE_FLAGS = frozenset("bFtRfXHqlamprBTnc")
 
 
 @dataclass(frozen=True)
@@ -345,16 +337,20 @@ class Answer:
 # ---- reading a shell command ----
 
 
-def _heredocs(command: str) -> tuple[str, dict[str, tuple[str, bool]]]:
+def _heredocs(command: str) -> tuple[str, dict[str, tuple[str, bool]], list[str]]:
     """``command`` with comments dropped, each heredoc body replaced by a token, and the bodies.
 
     A quote-aware scan: ``<<WORD`` counts only outside quotes (and ``<<<`` never), a
     ``#`` starts a comment only at the start of a word outside quotes, and a
     backslash-newline joins two lines, as the shell reads them. A body is
     ``(text, expands)``: ``expands`` when the delimiter is unquoted, so the shell
-    substitutes ``$…`` and backticks in it. Raises ``ValueError`` for an unterminated quote.
+    substitutes ``$…`` and backticks in it. The third value lists every redirection
+    outside quotes but ``2>&1``, ``>/dev/null`` and their kin: each is a place a body or a
+    file can come from, or be written to, that the hook does not follow. Raises
+    ``ValueError`` for an unterminated quote.
     """
     bodies: dict[str, tuple[str, bool]] = {}
+    redirects: list[str] = []
     out: list[str] = []
     pending: list[tuple[str, str, bool, bool]] = []  # token, word, dash, expands
     quote: Optional[str] = None
@@ -401,9 +397,18 @@ def _heredocs(command: str) -> tuple[str, dict[str, tuple[str, bool]]]:
             index = match.end()
             continue
         if command.startswith("<<<", index):
+            redirects.append("a here-string (<<<)")
             out.append("<<<")
             index += 3
             continue
+        if char in "<>":
+            harmless = _HARMLESS_REDIRECT_RE.match(command, index)
+            if char == ">" and harmless is not None:
+                if out and out[-1].isdigit():  # the 2 of 2>&1
+                    out.pop()
+                index = harmless.end()  # dropped: it moves no text the hook needs
+                continue
+            redirects.append(f"a redirection ({command[index : index + 12].strip()}…)")
         if char == "\n" and pending:
             out.append(char)
             index += 1
@@ -427,7 +432,7 @@ def _heredocs(command: str) -> tuple[str, dict[str, tuple[str, bool]]]:
         raise ValueError("an unterminated quote")
     for token, _, _, _ in pending:  # a heredoc on the last line has no body
         bodies[token] = ("", False)
-    return "".join(out), bodies
+    return "".join(out), bodies, redirects
 
 
 def _tokens(command: str) -> list[str]:
@@ -529,7 +534,14 @@ def _read_file(path: str, *, cwd: Optional[str]) -> Optional[str]:
         full = Path(path).expanduser()
         if not full.is_absolute() and cwd:
             full = Path(cwd) / full
-        return full.read_text(encoding="utf-8")
+        resolved = full.resolve()
+        if (
+            not resolved.is_file()
+            or resolved.parts[1:2] in (("dev",), ("proc",))
+            or resolved.stat().st_size > MAX_BODY_FILE_BYTES
+        ):
+            return None  # stdin, a pipe or a device the hook cannot read as the shell would
+        return resolved.read_text(encoding="utf-8")
     except (OSError, UnicodeDecodeError, ValueError):
         return None
 
@@ -895,79 +907,82 @@ def writes_in(
 ) -> list[Write]:
     """Every ``gh`` or ``correspond`` write in the shell ``command``, each with its text or its problem.
 
-    A command the hook cannot parse that names ``gh`` or ``correspond`` is one problem
-    write; a command that names neither is no write at all.
+    A command that names neither is no write at all. One that names either is read only
+    when it is plain: a list of ``gh`` and ``correspond`` commands (joined by ``&&``,
+    ``||``, ``;``, ``|`` or newlines), a ``cat <<EOF |`` feeding one of them, and a gh read
+    piped into a filter (:data:`INERT_FILTERS`). Anything else in such a command (another
+    program, a ``$``, a backtick, a subshell or a compound command, an assignment, a
+    redirection, more than one heredoc) is one problem write, since the hook cannot tell
+    what the shell will run, where, or with what text: ``ask``. The shell is not parsed
+    beyond that, on purpose.
     """
     if not _mentions_a_writer(command):
         return []
+
+    def unplain(why: str) -> list[Write]:
+        return [Write("a shell command", problem=f"{why}: the operator judges it")]
+
     try:
-        stripped, bodies = _heredocs(command)
+        stripped, bodies, redirects = _heredocs(command)
         tokens = _tokens(stripped)
     except ValueError as error:
-        return [
-            Write(
-                "a shell command",
-                problem=f"the hook could not parse the command ({error})",
-            )
-        ]
-    if "$(" in stripped or "`" in stripped:
-        return [
-            Write(
-                "a shell command",
-                problem=(
-                    "a command substitution in a command that runs gh or correspond: "
-                    "the operator judges it"
-                ),
-            )
-        ]
+        return unplain(f"the hook could not parse the command ({error})")
+    if "$" in stripped or "`" in stripped:
+        return unplain(
+            "the shell substitutes part of a command that names gh or correspond"
+        )
+    if redirects:
+        return unplain(f"{redirects[0]} in a command that names gh or correspond")
+    if len(bodies) > 1:
+        return unplain("more than one heredoc in a command that names gh or correspond")
+    punctuation = set(";&|\n()")
+    if any(set(t) & set("()") for t in tokens if t and set(t) <= punctuation):
+        return unplain("a subshell or a group in a command that names gh or correspond")
     writes: list[Write] = []
     piped: Optional[str] = (
         None  # the heredoc token ``cat <<EOF |`` hands the next command
     )
     read_by_a_writer: set[str] = set()
+    previous: Optional[str] = None  # "read": a gh command that writes nothing
     for words, before in _segments(tokens):
-        from_pipe = piped if before and "|" in before and "||" not in before else None
+        piping = bool(before) and "|" in before and "||" not in before
+        from_pipe = piped if piping else None
         piped = None
-        words = _command_words(words)
         if not words:
             continue
+        if words[0] in _KEYWORDS or _ASSIGNMENT_RE.match(words[0]):
+            return unplain(f"a compound command or an assignment ({words[0][:12]})")
         program = _program(words[0])
         rest = words[1:]
         if program == "cat" and rest and all(w.startswith("<<") for w in rest):
             piped = next((w[2:] for w in rest if w[2:] in bodies), None)
+            previous = "cat"
             continue
+        if program not in ("gh", "correspond"):
+            if piping and previous == "read" and program in INERT_FILTERS:
+                continue  # ``gh issue list | jq …``
+            return unplain(f"{program} runs beside gh or correspond")
+        if previous == "cat" and not piping:
+            return unplain("a heredoc that feeds nothing the hook reads")
         own = next(
             (w[2:] for w in rest if w.startswith("<<") and w[2:] in bodies), None
         )
         token = own or from_pipe
         own_stdin = bodies.get(token) if token else None
-        if program in ("gh", "correspond"):
-            if token:
-                read_by_a_writer.add(token)
-            problem = _unreadable_words(rest)
-            if problem:
-                writes.append(Write(f"{program} …", problem=problem))
-                continue
+        if token:
+            read_by_a_writer.add(token)
+        problem = _unreadable_words(rest, api="api" in _positionals(rest)[:1])
+        if problem:
+            writes.append(Write(f"{program} …", problem=problem))
+            previous = "write"
+            continue
         if program == "gh":
             write = _gh(rest, cwd=cwd, stdin=own_stdin, repo_of=repo_of)
-        elif program == "correspond":
-            write = _correspond(rest, stdin=own_stdin)
-        elif program not in INERT_PROGRAMS and any(map(_mentions_a_writer, rest)):
-            # ``sudo gh``, ``ssh host gh``, ``python -c "…gh…"``: the hook does not look
-            # through another program, so the operator judges it.
-            write = Write(
-                f"{program} …",
-                problem=(
-                    f"gh or correspond run through {program}: the hook does not look "
-                    f"through it"
-                ),
-            )
         else:
-            continue
+            write = _correspond(rest, stdin=own_stdin)
+        previous = "read" if write is None else "write"
         if write is not None:
             writes.append(write)
-    # A heredoc that mentions gh or correspond and is not a gh or correspond body is a
-    # script some other program runs (``bash <<EOF``, ``cat <<EOF | sh``).
     for token, (text, _) in bodies.items():
         if token not in read_by_a_writer and _mentions_a_writer(text):
             writes.append(
@@ -982,37 +997,22 @@ def writes_in(
     return writes
 
 
-def _unreadable_words(words: Sequence[str]) -> Optional[str]:
+def _unreadable_words(words: Sequence[str], *, api: bool = False) -> Optional[str]:
     """Why the words of a ``gh`` or ``correspond`` command cannot be read as written, or None.
 
-    A ``$`` means the shell substitutes something (``$ARGS``, ``"$@"``, ``$'\\x53'``)
-    that the hook never sees, except in a GraphQL ``query=``, whose ``$name`` are its
-    own variables. A cluster of short flags (``-sb``) can hide a body flag.
+    A cluster of short flags (``-sb``, ``-ab``) can hide a body flag, so only a flag that
+    takes a value may carry one attached (``-bTEXT``).
     """
+    attached = _API_ATTACHED_VALUE_FLAGS if api else _ATTACHED_VALUE_FLAGS
     for word in words:
-        if "$" in word and not word.startswith("query="):
-            return (
-                f"{NO_BODY}: the shell substitutes part of the command ({word[:20]!r}…)"
-            )
         if (
             word.startswith("-")
             and not word.startswith("--")
             and len(word) > 2
-            and word[1] not in _ATTACHED_VALUE_FLAGS
+            and word[1] not in attached
         ):
             return f"a cluster of short flags ({word[:6]}…) the hook does not unpack"
     return None
-
-
-def _command_words(words: Sequence[str]) -> list[str]:
-    """``words`` from the program on: leading keywords (``then``, ``do``, ``!``, ``{``) and
-    variable assignments (``FOO=1``) dropped, as the shell runs what follows them."""
-    index = 0
-    while index < len(words) and (
-        words[index] in _KEYWORDS or _ASSIGNMENT_RE.match(words[index])
-    ):
-        index += 1
-    return list(words[index:])
 
 
 def _gh(
@@ -1050,7 +1050,7 @@ def _gh(
                 f"operator judges it"
             ),
         )
-    if not verb and group in GH_SINGLE_COMMANDS:
+    if (not verb and group in GH_SINGLE_COMMANDS) or group == "search":
         return None
     if (group, verb) in GH_PUBLISHES:
         return Write(

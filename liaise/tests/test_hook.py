@@ -147,7 +147,8 @@ def test_a_body_file_is_read_from_the_sessions_directory(run_hook, tmp_path):
         "gh api repos/example/app/issues",
         "git commit -m 'Heron'",
         "ls -la",
-        "echo gh",
+        "gh issue list | jq '.[]' | head -3",
+        "gh search issues heron",
     ],
 )
 def test_a_command_that_writes_nothing_gets_no_answer(run_hook, command):
@@ -179,11 +180,11 @@ def test_a_body_the_shell_computes_is_ask(run_hook):
     ):
         answer = run_hook.bash(command)
         assert decision(answer) == "ask", command
-        assert "could not read the body" in reason(answer) or "command substitution" in reason(answer)
+        assert any(why in reason(answer) for why in ("could not read the body", "substitutes"))
 
 
 def test_every_write_of_a_compound_command_is_judged_and_the_strictest_wins(run_hook):
-    command = f"cd /work && gh issue list && gh issue comment 12 --body '{EXPORT}' ; gh pr comment 3 --body 'key {fixtures.TOKEN}'"
+    command = f"gh issue list && gh issue comment 12 --body '{EXPORT}' ; gh pr comment 3 --body 'key {fixtures.TOKEN}'"
     answer = run_hook.bash(command)
     assert decision(answer) == "deny"
     assert "gh issue comment" in reason(answer) and "gh pr comment" in reason(answer)
@@ -221,9 +222,12 @@ def test_gh_api_writes_are_vetted(run_hook, tmp_path):
 
 
 def test_gh_api_graphql_mutations_are_vetted_and_queries_are_not(run_hook):
-    mutation = f"gh api graphql -f query='mutation($b: String!) {{ addComment(input: {{subjectId: \"X\", body: $b}}) {{ clientMutationId }} }}' -f b='{HERON}'"
-    answer = run_hook.bash(mutation)
+    literal = f"gh api graphql -f query='mutation {{ addComment(input: {{subjectId: \"X\", body: \"{HERON}\"}}) {{ clientMutationId }} }}'"
+    answer = run_hook.bash(literal)
     assert decision(answer) == "deny" and "project:heron" in reason(answer)
+    # A GraphQL variable is a $ the hook cannot tell from the shell's: ask.
+    variable = f"gh api graphql -f query='mutation($b: String!) {{ addComment(input: {{subjectId: \"X\", body: $b}}) {{ clientMutationId }} }}' -f b='{HERON}'"
+    assert decision(run_hook.bash(variable)) == "ask"
     assert run_hook.bash("gh api graphql -f query='{ viewer { login } }'") is None
 
 
@@ -394,8 +398,8 @@ T = fixtures.TOKEN
         f"echo '{{\"variables\": {{\"b\": \"{T}\"}}}}' > /dev/null; gh api -X POST repos/example/app/issues -f title=ok -f body={T}",
     ],
 )
-def test_a_token_written_any_which_way_is_denied(run_hook, command):
-    assert decision(run_hook.bash(command)) == "deny", command
+def test_a_token_written_any_which_way_is_held(run_hook, command):
+    assert decision(run_hook.bash(command)) in ("ask", "deny"), command
 
 
 @pytest.mark.parametrize(
@@ -485,3 +489,41 @@ def test_install_writes_liaises_absolute_path_and_keeps_one_the_user_set(tmp_pat
     monkeypatch.setattr(hook.shutil, "which", lambda name: None)
     assert "already installed" in cli.hook_install(settings=str(settings))
     assert json.loads(settings.read_text()) == data
+
+
+# ---- what the third review found; the hook now reads only plain commands ----
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        f"gh pr review 12 -R example/app -ab {T}",
+        f"gh pr review 12 -R example/app -cb{T}",
+        f"gh pr review 12 -R example/app -rb {T}",
+        f"gh pr create -R example/app -t ok -fb{T}",
+        f"gh issue comment 12 -R example/app -F - <<'A' <<'B'\nok\nA\n{T}\nB",
+        "gh issue comment 12 -R example/app -F - < body.md",
+        f"gh issue comment 12 -R example/app -F - <<<'{T}'",
+        f"printf '{T}' > body.md; gh issue comment 12 -F body.md",
+        f"gh issue comment 12 -R example/app -F /dev/stdin <<'A'\n{T}\nA",
+        f"echo 'gh issue comment 12 -b {T}' | bash",
+        f"G=gh; $G issue comment 12 -b {T}",
+        "gh api graphql -f query=$'mutation{x}'",
+        "cd /pub && gh issue comment 12 -b hi",
+        "GH_REPO=pub/repo gh issue comment 12 -b hi",
+        "echo gh",
+    ],
+)
+def test_anything_but_a_plain_gh_command_is_held(run_hook, command):
+    assert decision(run_hook.bash(command)) in ("ask", "deny"), command
+
+
+def test_a_body_file_must_be_a_regular_file(run_hook, tmp_path):
+    for path in ("/dev/stdin", "/dev/zero", str(tmp_path)):
+        answer = run_hook.bash(f"gh issue comment 12 -R example/app -F {path}")
+        assert decision(answer) == "ask" and "could not read the body" in reason(answer), path
+
+
+def test_harmless_redirections_are_fine(run_hook):
+    assert run_hook.bash("gh issue list 2>&1 | head") is None
+    assert run_hook.bash("gh pr view 3 > /dev/null") is None
