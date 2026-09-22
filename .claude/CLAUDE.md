@@ -33,8 +33,8 @@ filter gathers), `messages.py` (agent-initiated messages, also through the gate)
 window), `release.py` (send: through the gate, then through `correspond`).
 
 **Operator surface:** `cli.py` / `__main__.py` (the `liaise` command), `cases.py`
-(`liaise case list/show/set-state/send-draft/reject-draft`), `report.py` (`liaise
-gate report` — counts, whether to enforce), `notify.py` (ntfy owner notification),
+(`liaise case list`, `show`, `set-state`, `send-draft`, `reject-draft`), `report.py`
+(`liaise gate report` — counts, whether to enforce), `notify.py` (ntfy owner notification),
 `schedule.py` (launchd/systemd periodic run), `config.py` + `migrate.py` (global
 config; `liaise migrate-config` from 0.0.x partner files), `testing.py` (fakes for
 tests and the one-command smoke test).
