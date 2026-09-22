@@ -6,14 +6,20 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
 
 - **judged**: messages the gate judged on their own, with no approval on the context
   (a first judgement: the tick's send, divert or hold, and ``liaise message send``);
-- **released**: an operator's approval that bound and let a held message go out (the
-  outbox's own approvals, by :data:`~liaise.gate.OUTBOX_ACTOR`, are not the operator's and
-  are left out); a release that did not edit the message is a **false divert**: the operator
-  judged it fine as written;
+- **sent as judged**: judged messages that went out, and delays the outbox released when
+  their window passed (a ``hold`` is not counted as **held**: no person releases it);
+- **released**: an operator's approval that bound, settled a rule's concern and let the
+  message go out (the outbox's own approvals, by :data:`~liaise.gate.OUTBOX_ACTOR`, and
+  the release of a draft no rule held back, such as a failed send's, are left out); a
+  release that did not edit the message is a **false divert**: the operator judged it fine
+  as written;
 - **rejected**: a draft the operator declined, joined to the judgement that held it (the
-  latest earlier judged entry of the same case or message with the same text);
+  latest earlier judged entry of the same case or message with the same text, held for
+  approval or refusal). A draft edited before it was rejected, or a text that recurs, can
+  miss or mis-join: a draft id on both entries is the fix, not in this version;
 - **per rule**: how often it fired, how often its findings were released as false positives
-  (an operator approval settled it), and how often they were confirmed (a draft it held was
+  (an operator approval settled it and the message went out unedited), and how often they
+  were confirmed (a draft it held was
   rejected), with the precision ``confirmed / (confirmed + released)``;
 - **rates**: the override rate (releases over judged messages) and the false-divert rate
   (false diverts over the messages that should have gone as written: those sent as judged
@@ -31,6 +37,7 @@ least :data:`MIN_SHADOW_MESSAGES` messages, with no missed finding of severity
 
 from __future__ import annotations
 
+import re
 from collections import Counter
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping
 from datetime import datetime, timezone
@@ -39,7 +46,8 @@ from typing import Any, Optional, Union
 from liaise.gate import OUTBOX_ACTOR
 from liaise.ledger import Ledger
 from liaise.model import LedgerEntry
-from liaise.policy import SEND, SHADOW
+from liaise.outbox import HOLD
+from liaise.policy import DELAY, SEND, SHADOW
 
 #: Decision 11: the fewest messages shadow mode must have seen before enforcing.
 MIN_SHADOW_MESSAGES = 30
@@ -47,6 +55,8 @@ MIN_SHADOW_MESSAGES = 30
 MISSED_SEVERITY = 4
 #: Decision 11: the highest false-divert rate at which enforcing is recommended (one in ten).
 MAX_FALSE_DIVERT_RATE = 0.1
+#: The longest rule name the report prints.
+MAX_RULE_NAME = 40
 #: The entry kind the gate's decisions are recorded as.
 GATE_KIND = "gate"
 #: Why shadow agreement and missed findings cannot be counted yet.
@@ -70,25 +80,56 @@ def _moment(value: Union[str, datetime, None]) -> Optional[datetime]:
     return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
 
 
+#: What a rule name printed in the report may contain; anything else prints as ``?``.
+_RULE_NAME_RE = re.compile(r"[^A-Za-z0-9 _.:-]")
+
+
+def _rule_name(rule: str) -> str:
+    return _RULE_NAME_RE.sub("?", str(rule))[:MAX_RULE_NAME]
+
+
 def _rules(concerns: Iterable[Mapping[str, Any]]) -> set[str]:
     return {
-        c["rule"] for c in concerns or () if isinstance(c, Mapping) and c.get("rule")
+        _rule_name(c["rule"])
+        for c in concerns or ()
+        if isinstance(c, Mapping) and c.get("rule")
     }
 
 
 def _is_judgement(detail: Mapping[str, Any]) -> bool:
-    """A first judgement: the gate ran with no approval on the context."""
-    return "flow" in detail and detail.get("approval") is None
+    """A first judgement: the gate ran with no approval on the context, on no draft."""
+    return (
+        "flow" in detail
+        and detail.get("approval") is None
+        and "held_for" not in detail  # a draft released through the gate again
+    )
 
 
-def _is_operator_release(detail: Mapping[str, Any]) -> bool:
+def _bound_send(detail: Mapping[str, Any]) -> bool:
     approval = detail.get("approval")
     return (
         isinstance(approval, Mapping)
-        and approval.get("by") != OUTBOX_ACTOR
         and detail.get("approval_bound") is True
         and detail.get("decision") == "send"
         and not detail.get("error")
+    )
+
+
+def _is_outbox_release(detail: Mapping[str, Any]) -> bool:
+    return _bound_send(detail) and detail["approval"].get("by") == OUTBOX_ACTOR
+
+
+def _is_operator_release(detail: Mapping[str, Any]) -> bool:
+    """An operator's approval that let a message the gate held back go out.
+
+    Only one that settled a concern counts: a draft kept because its channel failed, or
+    because the conversation moved on while it was held, was never held back by a rule,
+    and releasing it overrides nothing.
+    """
+    return (
+        _bound_send(detail)
+        and detail["approval"].get("by") != OUTBOX_ACTOR
+        and bool(detail.get("settled"))
     )
 
 
@@ -142,23 +183,28 @@ def gate_report(
                 counts["judged"] += 1
                 sent = detail.get("decision") == "send" and not detail.get("error")
                 counts["sent as judged"] += sent
-                counts["held"] += not sent and detail.get("flow") != SEND
-                verdict = detail.get("verdict") or {}
-                if verdict.get("mode") == SHADOW or owner in shadow_now:
+                held = not sent and detail.get("flow") != SEND
+                counts["held"] += held and detail.get("decision") != HOLD
+                verdict = detail.get("verdict")
+                mode = verdict.get("mode") if isinstance(verdict, Mapping) else None
+                if mode == SHADOW or (mode is None and owner in shadow_now):
                     counts["shadow"] += 1
                 for rule in fired:
                     rules.setdefault(rule, _empty_rule())["fired"] += 1
+            elif counted and _is_outbox_release(detail):
+                counts["sent as judged"] += 1  # a delay the window let through
             elif counted and _is_operator_release(detail):
                 counts["released"] += 1
-                counts["false diverts"] += not detail.get("edited")
-                for rule in _rules(detail.get("settled")):
-                    rules.setdefault(rule, _empty_rule())["released"] += 1
+                if not detail.get("edited"):  # as written: the rules were wrong
+                    counts["false diverts"] += 1
+                    for rule in _rules(detail.get("settled")):
+                        rules.setdefault(rule, _empty_rule())["released"] += 1
             elif counted and detail.get("decision") == "reject":
                 counts["rejected"] += 1
                 held = [
                     fired
                     for text, fired, flow in judged_texts
-                    if text == (entry.text or "") and flow != SEND
+                    if text == (entry.text or "") and flow not in (SEND, DELAY)
                 ]
                 for rule in held[-1] if held else ():
                     rules.setdefault(rule, _empty_rule())["confirmed"] += 1

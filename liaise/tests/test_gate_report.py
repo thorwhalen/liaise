@@ -115,23 +115,24 @@ def test_the_report_counts_judgements_releases_and_rejections(ledger):
 
     assert report["counts"] == {
         "judged": 5,
-        "sent as judged": 1,
-        "held": 4,
+        "sent as judged": 2,  # one as judged, one delay the outbox let through
+        "held": 3,
         "released": 2,
         "false diverts": 1,
         "rejected": 1,
         "shadow": 0,
     }
     assert report["override_rate"] == pytest.approx(2 / 5)
-    assert report["false_divert_rate"] == pytest.approx(1 / 2)  # 1 false divert of 2 that should send
+    assert report["false_divert_rate"] == pytest.approx(1 / 3)  # 1 false divert of 3 that should send
 
 
 def test_per_rule_precision_is_confirmed_over_confirmed_plus_released(ledger):
     rules = gate_report(ledger)["rules"]
 
     assert rules["secret"] == {"fired": 1, "released": 0, "confirmed": 1, "precision": 1.0}
-    assert rules["exfiltration"] == {"fired": 2, "released": 2, "confirmed": 0, "precision": 0.0}
-    assert rules["reply mode"]["released"] == 1
+    # the edited release is not a false positive: the operator fixed what the rule found
+    assert rules["exfiltration"] == {"fired": 2, "released": 1, "confirmed": 0, "precision": 0.0}
+    assert rules["reply mode"]["released"] == 0
     assert rules["irreversibility"] == {"fired": 1, "released": 0, "confirmed": 0, "precision": None}
 
 
@@ -145,6 +146,47 @@ def test_since_takes_a_date_and_refuses_what_is_not_a_time(ledger):
     assert gate_report(ledger, since="2026-09-21")["counts"]["judged"] == 0
     with pytest.raises(ValueError, match="not a time"):
         gate_report(ledger, since="last week")
+
+
+def test_releasing_a_draft_no_rule_held_back_is_not_an_override():
+    failed_then_released = _released(1, text="x", rules=())  # a failed send's draft, sent
+    failed_then_released.detail["held_for"] = "send failed: GitHub answered 502"
+    ledger = _ledger([_judged(0, text="x", error="GitHub answered 502"), failed_then_released])
+
+    report = gate_report(ledger)
+
+    assert report["counts"]["released"] == 0 and report["counts"]["false diverts"] == 0
+    assert report["counts"]["judged"] == 1 and report["false_divert_rate"] is None
+
+
+def test_a_draft_released_through_the_gate_again_is_not_a_second_judgement():
+    again = _judged(1, text="x")
+    again.detail["held_for"] = "the operator released it"
+    report = gate_report(_ledger([_judged(0, text="x", rules=("secret",)), again]))
+
+    assert report["counts"]["judged"] == 1
+
+
+def test_shadow_counts_the_recorded_mode_and_the_subject_only_without_one():
+    enforce_era = _judged(0, text="a")
+    no_verdict = _judged(1, text="b")
+    no_verdict.detail["verdict"] = None
+    ledger = _ledger([enforce_era, no_verdict])
+
+    assert gate_report(ledger, shadow_subjects=[SUBJECT])["counts"]["shadow"] == 1
+
+
+def test_a_rejected_lapsed_delay_confirms_no_rule():
+    held = _judged(0, text="Public reply.", rules=("irreversibility",), decision="hold")
+    held.detail["flow"] = "delay"
+    ledger = _ledger([held, _rejected(1, text="Public reply.")])
+    assert gate_report(ledger)["rules"]["irreversibility"]["confirmed"] == 0
+
+
+def test_rule_names_print_only_plain_characters():
+    ledger = _ledger([_judged(0, text="x", rules=("odd\nname<script>",))])
+
+    assert list(gate_report(ledger)["rules"]) == ["odd?name?script?"]
 
 
 def test_an_approval_that_did_not_bind_or_a_failed_send_is_not_a_release():
@@ -204,9 +246,11 @@ def test_the_gate_report_command_prints_the_report(tmp_path, ledger):
     root.mkdir()
     (root / "config.toml").write_text(f'owner_login = "owner"\nstate_dir = "{(tmp_path / "state").as_posix()}"\n')
 
-    out = cli.gate_report(subject=SUBJECT, root=str(root), store=ledger.store)
+    out = cli.gate_report(root=str(root), store=ledger.store)
 
-    assert out.startswith(f"gate report for {SUBJECT}") and "judged: 5" in out
+    assert out.startswith("gate report for every subject") and "judged: 5" in out
+    with pytest.raises(Exception, match="no subject 'typo'"):
+        cli.gate_report(subject="typo", root=str(root), store=ledger.store)
     assert "enforce recommended: no" in out and SECRET_TEXT not in out
 
 
