@@ -276,3 +276,46 @@ def test_a_real_tick_and_outbox_release_are_counted_without_the_outbox_as_an_ove
 
 
 from liaise.tests.test_tick import fixed_run_suffix, no_real_acquaint, world  # noqa: E402,F401
+
+
+# ---- hook overrides (liaise #37) ----
+
+
+def test_hook_overrides_are_counted_apart_and_filtered_by_subject_and_time():
+    from liaise import report
+    from liaise.ledger import Ledger
+
+    ledger = Ledger({})
+    write = {"ref": "github:example/app#12", "subject": "example-studio", "flow": "approve", "rules": ["taint"]}
+    ledger.add_override("t1", {"ran_at": "2026-09-20T10:00:00+00:00", "writes": [write], "unread": 0})
+    ledger.add_override("t2", {"ran_at": "2026-09-21T10:00:00+00:00", "writes": [write, {**write, "rules": ["taint", "irreversibility"]}], "unread": 1})
+    ledger.add_override("t3", {"ran_at": "not a time", "writes": [{**write, "subject": "other"}], "unread": 0})
+    found = report.gate_report(ledger)
+    assert found["hook"] == {"overrides": 3, "unread": 1, "rules": {"irreversibility": 1, "taint": 3}}
+    assert found["counts"]["released"] == 0 and found["override_rate"] is None
+    scoped = report.gate_report(ledger, subject="example-studio", since="2026-09-21")
+    assert scoped["hook"] == {"overrides": 1, "unread": 0, "rules": {"irreversibility": 1, "taint": 1}}
+    lines = report.report_lines(found)
+    assert any(line.startswith("hook overrides") and "taint 3" in line for line in lines)
+
+
+def test_hook_overrides_of_odd_shape_never_crash_the_report():
+    from datetime import datetime
+
+    from liaise import report
+    from liaise.ledger import Ledger
+
+    store = {}
+    ledger = Ledger(store)
+    for key, record in {
+        "a": ["x"], "b": "junk", "c": {"writes": 5}, "d": {"writes": [{"rules": 3}]},
+        "e": {"unread": "n/a"}, "f": {"unread": [1]}, "g": {"unread": -5},
+        "h": {"writes": [{"rules": "taint", "subject": "s"}]},
+        "i": {"writes": [{"subject": "a", "rules": ["taint"]}, {"subject": "b", "rules": ["irrev"]}], "unread": 2},
+    }.items():
+        store["override__" + key] = record
+    found = report.gate_report(ledger)["hook"]
+    assert found["unread"] == 2 and "a" not in found["rules"]
+    assert report.gate_report(ledger, subject="a")["hook"] == {"overrides": 1, "unread": 0, "rules": {"taint": 1}}
+    assert report.hook_overrides(ledger, since="2026-09-20")["overrides"] == 0
+    assert report.hook_overrides(ledger, since=datetime(2026, 9, 20))["overrides"] == 0

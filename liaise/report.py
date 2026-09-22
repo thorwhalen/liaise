@@ -29,6 +29,10 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   would-be verdict differs from the decision yet, and shadow agreement and missed findings
   are not observable: the report says so rather than printing a number that means nothing.
 
+- **hook overrides**: writes the Claude Code hook (:mod:`liaise.hook`) asked the operator
+  about and the operator let run, how many of them it could not read, and the rules among
+  their reasons; apart from the counts above, since liaise neither held nor sent them.
+
 **The rollout rule** (discussion 32, decision 11): enforce when shadow mode has seen at
 least :data:`MIN_SHADOW_MESSAGES` messages, with no missed finding of severity
 :data:`MISSED_SEVERITY` or above and a false-divert rate of at most
@@ -240,12 +244,75 @@ def gate_report(
         "missed_high_severity": None,
         "shadow_note": SHADOW_PENDING,
     }
+    report["hook"] = hook_overrides(ledger, subject=subject, since=start)
     report["enforce"] = enforce_recommended(
         shadow_messages=counts["shadow"],
         missed_high_severity=None,
         false_divert_rate=false_divert_rate,
     )
     return report
+
+
+def hook_overrides(
+    ledger: Ledger,
+    *,
+    subject: Optional[str] = None,
+    since: Optional[datetime] = None,
+) -> dict[str, Any]:
+    """What the Claude Code hook asked about and the operator let run (:mod:`liaise.hook`).
+
+    ``overrides`` counts them, ``unread`` the writes among them the hook could not read and
+    so never vetted (with ``subject``, 0: an unread write names no subject), and ``rules``
+    how often each rule was among the reasons of the writes to ``subject``. Records of an
+    unexpected shape are skipped. They are kept
+    apart from the gate's own counts and rates: liaise neither held nor sent these writes,
+    and on the hook's path every write is tainted, so folding them into a rule's precision
+    would measure the hook's path, not the rule.
+    """
+    start = _moment(since)
+    rules: Counter = Counter()
+    overrides = unread = 0
+    for record in ledger.overrides():
+        if not isinstance(record, Mapping):
+            continue  # an odd entry is skipped, never a crash
+        given = record.get("writes")
+        writes = [
+            w
+            for w in (given if isinstance(given, (list, tuple)) else ())
+            if isinstance(w, Mapping)
+        ]
+        if subject is not None:
+            writes = [w for w in writes if w.get("subject") == subject]
+            if not writes:
+                continue
+        try:
+            at = _moment(record.get("ran_at") or record.get("at"))
+        except (
+            ValueError,
+            TypeError,
+        ):  # no readable time: counted only without --since
+            at = None
+        if start is not None and (at is None or at < start):
+            continue
+        overrides += 1
+        count = record.get("unread")
+        if subject is None and isinstance(count, int) and not isinstance(count, bool):
+            unread += max(0, count)  # an unread write names no subject
+        names = set()
+        for write in writes:
+            listed = write.get("rules")
+            if isinstance(listed, (list, tuple)):
+                names.update(
+                    _rule_name(rule)
+                    for rule in listed
+                    if isinstance(rule, str) and rule
+                )
+        rules.update(names)
+    return {
+        "overrides": overrides,
+        "unread": unread,
+        "rules": dict(sorted(rules.items())),
+    }
 
 
 def enforce_recommended(
@@ -322,6 +389,14 @@ def report_lines(report: Mapping[str, Any]) -> list[str]:
         lines.append(
             f"  {rule:<{width}}  {entry['fired']:>4}  {entry['released']:>4}  "
             f"{entry['confirmed']:>4}  {precision}"
+        )
+    hook = report.get("hook")
+    if hook:
+        per_rule = ", ".join(f"{rule} {count}" for rule, count in hook["rules"].items())
+        lines.append(
+            f"hook overrides (writes the Claude Code hook asked about, let run): "
+            f"{hook['overrides']}, {hook['unread']} unvetted"
+            + (f"; per rule: {per_rule}" if per_rule else "")
         )
     enforce = report["enforce"]
     verdict = "yes" if enforce["recommended"] else "no"
