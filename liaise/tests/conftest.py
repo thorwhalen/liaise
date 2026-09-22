@@ -10,6 +10,17 @@ from pathlib import Path
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _correspond_data_root(tmp_path_factory, monkeypatch):
+    """Point correspond's data root at a temporary folder, so no test writes the real one.
+
+    liaise keeps its idempotency records under its own ``state_dir``, and a send with no
+    store sends unkeyed; this is the guard for anything that slips past both.
+    """
+    folder = tmp_path_factory.mktemp("correspond-data")
+    monkeypatch.setenv("CORRESPOND_DATA_DIR", str(folder))
+
+
 def write_executable_script(path: Path, body: str) -> Path:
     """Write `body` (Python source) as a script runnable via
     `subprocess.run([returned_path, *args])` — no shell, no `sys.executable`

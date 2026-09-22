@@ -159,7 +159,13 @@ from liaise.projection import github_issue, project_labels, waiting_label
 from liaise.prompt import compose_case_prompt
 from liaise.readiness import compute_readiness, last_partner_activity
 from liaise.release import error_text as _error_text
-from liaise.release import gate_and_send
+from liaise.release import (
+    default_send_store,
+    failure_reason,
+    gate_and_send,
+    outbox_key,
+    tick_send_key,
+)
 from liaise.outbox import (
     HOLD,
     INTERRUPTED,
@@ -538,6 +544,7 @@ def run_once(
     triage: Optional[Triage] = None,
     lost_run_deadline: timedelta = LOST_RUN_DEADLINE,
     closed_recheck_interval: timedelta = CLOSED_RECHECK_INTERVAL,
+    sends: Optional[MutableMapping[str, Any]] = None,
 ) -> TickReport:
     """One tick over ``subjects`` (slug to :class:`~liaise.subjects.Subject`), on the ledger ``store``.
 
@@ -554,7 +561,10 @@ def run_once(
     - ``notify_fn``: ``(title, body, *, priority)``, by default :func:`liaise.notify.notify`
       on ``global_config.notify.ntfy_topic_env``;
     - ``triage``: a :data:`Triage` that groups and orders each subject's ready cases
-      before they start; None keeps the tick's own order, oldest first.
+      before they start; None keeps the tick's own order, oldest first;
+    - ``sends``: the idempotency records every send's key is kept in, by default
+      :func:`liaise.release.default_send_store` (``<state_dir>/sends``), so a message
+      that may have gone out is never posted again.
 
     ``only`` is a slug or slugs to run alone; an unknown one raises
     :class:`~liaise.config.ConfigError`. An inactive subject (``active = false``) is not
@@ -598,6 +608,7 @@ def run_once(
         triage=triage,
         lost_run_deadline=lost_run_deadline,
         closed_recheck_interval=closed_recheck_interval,
+        sends=sends if sends is not None else default_send_store(state_dir),
     )
     lock = nullcontext() if dry_run else run_lock(run_lock_path(state_dir))
     stamps = nullcontext() if dry_run else _stamp_run(store, now=now)
@@ -995,6 +1006,7 @@ class _Tick:
         lost_run_deadline: timedelta,
         closed_recheck_interval: timedelta,
         fingerprint_key: Optional[Callable[[], bytes]] = None,
+        sends: Optional[MutableMapping[str, Any]] = None,
     ):
         self.subjects = subjects
         self.ledger = ledger
@@ -1014,6 +1026,7 @@ class _Tick:
         self.lost_run_deadline = lost_run_deadline
         self.closed_recheck_interval = closed_recheck_interval
         self.fingerprint_key = fingerprint_key
+        self.sends = sends
         #: Per case, whether its GitHub issue was read closed this tick (None: unreadable).
         self.issue_closed: dict[str, Optional[bool]] = {}
         self.lines: list[str] = []
@@ -1685,6 +1698,16 @@ class _Tick:
         if immediate:
             self._deliver(subject, immediate)  # a deploy per issue: a batch of one, now
 
+    def _send_key(self, send: Send) -> str:
+        """The idempotency key of ``send`` now (:func:`liaise.release.tick_send_key`).
+
+        The serial is the case's entry count and draft count: a held send adds a draft and
+        no entry, so two held sends of one text in a tick still differ.
+        """
+        case = self._case(send.case_id)
+        serial = f"{len(case.entries)}.{len(case.drafts)}"
+        return tick_send_key(send.case_id, send.ref, send.text, send.title, serial)
+
     def _hold_send(self, send: Send, hold: Hold) -> None:
         reason = f"{HELD_REASON_PREFIX}{hold.scope}"
         draft = make_draft(
@@ -1694,6 +1717,7 @@ class _Tick:
             ref=send.ref,
             text=send.text,
             reason=reason,
+            send_key=self._send_key(send),
         )
         self._add_draft(send.case_id, draft)
         self.diverted.append(Diversion(send, reason))
@@ -1721,8 +1745,18 @@ class _Tick:
         case's messages (:func:`liaise.outbound.case_provenance`). A ``delay`` goes into the
         case's outbox (liaise #38). ``released`` is the outbox item ``send`` is released
         from: its hold is the approval on the context, and it is never held again.
+
+        The send carries an idempotency key: ``<case>/<held id>`` for a release, else
+        ``<case>/<payload hash>/<entry serial>``. A failure keeps the message as a draft
+        with that key, so its release never posts it twice; one that may have gone out
+        (``unconfirmed``) says to check the conversation first.
         """
         case = self._case(send.case_id)
+        key = (
+            self._send_key(send)
+            if released is None
+            else outbox_key(case.id, held_id(released))
+        )
         context = GateContext(
             approval=None if released is None else hold_of(released),
             subject=subject,
@@ -1741,6 +1775,8 @@ class _Tick:
             registry=self.registry,
             dry_run=self.dry_run,
             outbound_filters=self.outbound_filters,
+            idempotency_key=key,
+            sends=self.sends,
         )
         decision = attempt.decision
         head = f"  gate {send.purpose} to {send.ref}"
@@ -1773,6 +1809,7 @@ class _Tick:
                 reason=decision.diverted,
                 notes=decision.notes,
                 gate=decision.summary(),
+                send_key=key,
             )
             self._add_draft(case.id, draft)
             self._entry(
@@ -1796,12 +1833,19 @@ class _Tick:
         outbound = decision.send
         failure = attempt.failure
         if failure is not None:
-            reason = f"send failed: {failure}"
+            reason = failure_reason(attempt, outbound.ref)
+            unconfirmed = {"unconfirmed": True} if attempt.unconfirmed else {}
             self._entry(
                 case.id,
                 "gate",
                 text=outbound.text,
-                detail={**detail, "decision": "send", "error": failure},
+                detail={
+                    **detail,
+                    "decision": "send",
+                    "error": failure,
+                    "send_key": key,
+                    **unconfirmed,
+                },
             )
             self._add_draft(
                 case.id,
@@ -1813,6 +1857,8 @@ class _Tick:
                     text=outbound.text,
                     reason=reason,
                     notes=decision.notes,
+                    title=outbound.title,
+                    send_key=key,
                 ),
             )
             self.problem(f"{case.id}: {outbound.purpose} to {outbound.ref}: {reason}")
@@ -1831,6 +1877,8 @@ class _Tick:
                 **detail,
                 "decision": "send",
                 "url": attempt.result.url,
+                "send_key": key,
+                **({"replayed": True} if attempt.replayed else {}),
                 **(
                     {"disclosure_failure": attempt.disclosure_failure}
                     if attempt.disclosure_failure
@@ -2034,6 +2082,7 @@ class _Tick:
             notes=item.get("notes") or (),
             title=item.get("title"),
             gate=item.get("gate"),
+            send_key=outbox_key(case.id, held_id(item)),
         )
         others = (*case.outbox[:index], *case.outbox[index + 1 :])
         self._save(replace(case, outbox=others, drafts=(*case.drafts, draft)))

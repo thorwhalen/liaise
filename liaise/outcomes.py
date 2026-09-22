@@ -216,6 +216,7 @@ def make_draft(
     notes: Iterable[str] = (),
     title: Optional[str] = None,
     gate: Optional[Mapping[str, Any]] = None,
+    send_key: Optional[str] = None,
 ) -> dict[str, Any]:
     """One item of a case's ``drafts``: a message held for the operator.
 
@@ -231,7 +232,10 @@ def make_draft(
     - ``notes``: the gate's notes on it, in order;
     - ``title``: the title of the issue it would open, present only when it opens one;
     - ``gate``: what the gate decided, present only when the gate held it: its flow, the
-      audience in words and the reasons (:meth:`liaise.gate.GateDecision.summary`).
+      audience in words and the reasons (:meth:`liaise.gate.GateDecision.summary`);
+    - ``send_key``: the idempotency key its release sends with, present only when it has
+      one: the key of the send it failed as, so a release never posts it twice
+      (:func:`liaise.release.draft_send_key`).
 
     >>> from datetime import datetime, timezone
     >>> make_draft(at=datetime(2026, 9, 11, tzinfo=timezone.utc), outcome="reply",
@@ -254,6 +258,8 @@ def make_draft(
         draft["title"] = title
     if gate is not None:
         draft["gate"] = dict(gate)
+    if send_key is not None:
+        draft["send_key"] = send_key
     return draft
 
 

@@ -38,7 +38,7 @@ The policy gives an irreversible send to an `org` or `public` audience the flow 
 
 **Why:** it is the shape drafts already have, and it fails towards the operator. A message whose fate is unknown goes to a person, and never goes out twice by liaise's hand.
 
-**Wrong if:** a channel posts and then raises (a timeout after GitHub accepted the comment). That becomes a failed send and a draft, and the operator's release duplicates it. `send-draft` has the same hole. The fix is an idempotency key in correspond, not ledger design.
+**Wrong if:** a channel posts and then raises (a timeout after GitHub accepted the comment). That becomes a failed send and a draft, and the operator's release duplicates it. `send-draft` has the same hole. The fix is an idempotency key in correspond, not ledger design. *(Amended after #52: fixed. Every send carries correspond's `idempotency_key`, kept in liaise's own store under `state_dir/sends`: an outbox release `<case>/<held id>`, a tick's send `<case>/<payload hash>/<entry serial>`, a message outside a case its id. A draft made from a failed or interrupted send keeps that key (`send_key`), so its release reads the conversation back and records the message found, or fails `unconfirmed` and stays a draft saying to check the conversation; `send-draft --new-attempt` then sends under the next key.)*
 
 ## Decision 4: a held message goes out only into the conversation it was written for
 
