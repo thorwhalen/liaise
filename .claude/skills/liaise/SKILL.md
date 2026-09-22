@@ -205,6 +205,18 @@ liaise vet --ref github:example/app#12 --to ada --text-file reply.md --untainted
 - A 2 or a 3 is the answer for this draft: show the reason to the operator; never reword a draft just to get past it.
 - For Python and MCP callers of correspond, `before_send = "liaise.vet:before_send"` in correspond's config runs the same check on every write (a block is `refused`, anything for the operator `needs_approval`). Setting it is the operator's decision.
 
+## The Claude Code hook
+
+`liaise hook install` adds a PreToolUse and a PostToolUse hook to `~/.claude/settings.json` (`--settings FILE` for another), each running `liaise vet --hook` on Bash and on correspond's MCP `send`/`edit`. `liaise hook status` says whether they are there (`installed`, `outdated`, `missing`); `liaise hook uninstall` removes them. Installing is the operator's choice, per machine; never install it for them.
+
+- Every `gh issue comment|create|edit`, `gh pr comment|create|edit|review`, `gh api` write to issues, comments, pulls or discussions, GraphQL mutation, and `correspond send|edit` is vetted before it runs. A block is **deny**, anything for the operator (a `delay` too) is **ask**, with the reasons and the audience in words.
+- The hook never answers allow: a write the gate would send, and every command that writes nothing, gets no answer, and your permission rules decide as before.
+- Its provenance is always unknown, so every post wider than the operator is at least ask. That is intended: in a coding session the model chose the destination.
+- What it cannot read is ask, never let through: a `--body-file` that is not there, a body the shell computes (`"$(cat f)"`, `$VAR`, an unquoted heredoc with `$`), `gh` behind `eval`, `bash -c`, `xargs` or `$(…)`, a `gh` command that carries text and is not in its table. To be vetted, give the body literally, in a file, or in a quoted heredoc (`--body-file - <<'EOF'`).
+- It reads only plain commands: `gh` and `correspond` commands joined by `&&`, `;`, `|` or newlines, a `cat <<'EOF' |` feeding one, a gh read piped into `jq`/`head`/`grep`. Anything else in a command that names `gh` or `correspond` is ask: `cd … && gh …`, `git commit -m "… gh …"`, a `$` or backtick, `GH_REPO=… gh`, subshells, redirections (other than `2>&1`, `>/dev/null`), two heredocs, flag clusters (`-sb`), gh aliases, and gh commands outside its table that change something (`gh pr merge`, `gh label create`). To be vetted rather than asked, run the write on its own, with a literal body, a body file, or one quoted heredoc.
+- It watches correspond's MCP tools under a server name holding `correspond`; a server registered under another name is not watched (correspond's own `before_send` still is).
+- When you answer yes to an ask, the PostToolUse hook records an override in liaise's ledger (the rules and hashes, never the text).
+
 ## Migrating from 0.0.x
 
 ```
