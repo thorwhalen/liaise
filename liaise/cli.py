@@ -80,6 +80,7 @@ from liaise.schedule import (
     schedule_status,
     uninstall_schedule,
 )
+from liaise.policy import SHADOW
 from liaise.subjects import DFLT_SUBJECTS_SUBDIR, Subject, check_bindings, load_subjects
 from liaise.tick import (
     DFLT_RUNS_SUBDIR,
@@ -1233,6 +1234,41 @@ def message_reject_draft(
     )
 
 
+# ---- the gate ----
+
+
+@_expected_errors(ConfigError, ValueError)
+def gate_report(
+    *,
+    subject: Optional[str] = None,
+    since: Optional[str] = None,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """What the outbound gate did, in counts: judged, released, rejected, per rule, and whether to enforce.
+
+    ``--subject`` keeps one subject's messages and ``--since`` (ISO 8601; a date or a time
+    without an offset is UTC) the entries at or after it. Counts only: it never prints a message's text, a value or a fingerprint. The
+    last line applies the rollout rule of discussion 32 (liaise #39). It changes nothing.
+    """
+    from liaise import report
+
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    subjects = load_subjects(config_root)
+    if subject is not None and subject not in subjects:
+        known = ", ".join(sorted(subjects)) or "none"
+        raise ValueError(f"no subject {subject!r} (subjects: {known})")
+    shadow = [slug for slug, s in subjects.items() if s.policy.mode == SHADOW]
+    found = report.gate_report(
+        _ledger_store(global_config, store, create=False),
+        subject=subject,
+        since=since,
+        shadow_subjects=shadow,
+    )
+    return "\n".join(report.report_lines(found))
+
+
 #: SSOT command tree consumed by ``__main__.py`` and any later surface (MCP, HTTP). Named
 #: explicitly, so the commands read ``liaise subject show`` and ``liaise migrate-config``.
 _dispatch_funcs = {
@@ -1256,6 +1292,7 @@ _dispatch_funcs = {
         "reject-draft": message_reject_draft,
     },
     "subject": {"list": subject_list, "show": subject_show},
+    "gate": {"report": gate_report},
     "setup": setup,
     "migrate-config": migrate_config,
     "schedule": {
@@ -1298,6 +1335,7 @@ _SEAMS = {
         "send-draft": ("registry", "store", "now", "editor", "confirm"),
         "reject-draft": ("store", "now"),
     },
+    "gate": {"report": ("store",)},
     "setup": ("labeler",),
 }
 

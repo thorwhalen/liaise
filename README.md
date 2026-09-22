@@ -74,7 +74,7 @@ public_channels = ["github"]                  # kept for one release; the audien
 tainted_runs = "approve"                      # or "send": a run that read untrusted input may still send
 link_allowlist = []                           # hosts a link may point at, besides the channel's own
 canary_terms = []                             # terms planted in private context: never sent, always refused
-mode = "enforce"                              # or "shadow" (recorded, and enforcing until issue #39 lands)
+mode = "enforce"                              # or "shadow" (recorded and counted by `liaise gate report`; it enforces like "enforce" until #51 is decided)
 # delay_minutes = 10                          # turns the outbox on: a public or org-wide send waits this long, cancellable, then goes; unset: it waits for you
 delay_stale_minutes = 1440                    # a held message reached later than this past its release goes to you; 0 never
 deployed_nudge_days = 3
@@ -261,6 +261,7 @@ A subject's runs share its checkout (`workspace.path`, behind the `workspace=` s
 - `liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE] [--purpose ask|reply|propose] [--dry-run]`: a message outside any case, to a GitHub issue a subject binds, or to a repository with `--title`, which opens an issue. It is judged by the gate and, in 0.1, held for you to release, exiting 2. `--text-file -` reads standard input. `--dry-run` records and tells nothing.
 - `liaise message list [--state held|sent|rejected]` and `liaise message show MESSAGE_ID`: the messages sent or held outside a case, and one with its text and history. They change nothing.
 - `liaise message send-draft MESSAGE_ID [--edit] [--dry-run]` and `liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]`: send a held message after confirming it at a terminal, or decline it; as `case send-draft` and `case reject-draft` do for a case's drafts.
+- `liaise gate report [--subject SLUG] [--since TIME]`: what the outbound gate did, in counts. It lists the messages judged, sent as judged, held, released by you (a release you did not edit is a false divert) and rejected. For each rule it shows how often the rule fired, how often you released its findings as false positives, how often you confirmed them by rejecting the draft, and its precision. It also gives the override and false-divert rates, and ends with the rollout rule of discussion 32 (enforce after 30 shadow messages with no missed finding of severity 4 or above and at most one false divert in ten). The outbox's own releases are not counted as your overrides. It never prints a message's text, a value or a fingerprint, and it changes nothing.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
 - `liaise setup SUBJECT`: create the subject's claim labels and every state label in each repository it binds. Safe to run again.
 - `liaise migrate-config [--apply]`: derive subject files from a 0.0.x configuration; a dry run unless `--apply`.
