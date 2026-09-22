@@ -9,14 +9,14 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise case list [--state STATE]
     liaise case show CASE_ID
     liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
-    liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
+    liaise case send-draft CASE_ID [INDEX] [--edit] [--new-attempt] [--dry-run]
     liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
     liaise case cancel-send CASE_ID [ID|INDEX] [--reason TEXT] [--dry-run]
     liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
         [--purpose PURPOSE] [--dry-run]
     liaise message list [--state STATE]
     liaise message show MESSAGE_ID
-    liaise message send-draft MESSAGE_ID [--edit] [--dry-run]
+    liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]
     liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
     liaise subject list
     liaise subject show SLUG
@@ -26,7 +26,7 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
 
 Every command takes ``--root``, the config root (``~/.config/liaise`` by default), and
 returns the text it prints. The seams (the channel registry, the processor, the labeler,
-the ledger store, the notifier, the sessions directory, the clock and the editor) are keyword
+the ledger store, the store of sends, the notifier, the sessions directory, the clock and the editor) are keyword
 arguments with working defaults, hidden from the command line by ``_dispatch_config``:
 tests fill them with fakes, and the command line never shows them.
 
@@ -73,7 +73,7 @@ from liaise.model import HOLD_MODES, require_one_of
 from liaise.notify import notify
 from liaise.processor import ClaudeHeadless
 from liaise.projection import setup_labels
-from liaise.release import DraftSentNotRecorded
+from liaise.release import UNCONFIRMED_KIND, DraftSentNotRecorded, default_send_store
 from liaise.schedule import (
     DFLT_INTERVAL_MINUTES,
     install_schedule,
@@ -122,6 +122,14 @@ CONFIRM_ANSWERS = ("y", "yes")
 #: The exit code of a draft command whose message the gate diverted: the message is held
 #: for the operator, as ``liaise vet`` is planned to say (discussion 32, §5.8).
 DIVERTED_EXIT_CODE = 2
+#: What a release says when an earlier attempt had already posted the message.
+ALREADY_POSTED = "an earlier attempt had already posted it, so it was not posted again"
+#: What the confirmation adds when an earlier attempt at the message may have gone out.
+READ_BACK_NOTE = (
+    "an earlier attempt at this message may have gone out: sending reads the "
+    "conversation back first, records the message if it is there, and posts nothing if "
+    "it is not (then check it, and use --new-attempt)"
+)
 #: Why ``send-draft`` sends nothing without a terminal to ask at.
 NO_TERMINAL = (
     "a held message is sent only once you confirm it at a terminal, and there is no "
@@ -166,6 +174,16 @@ def _ledger_store(
     if not create and not ledger_dir.is_dir():
         return {}
     return default_ledger_store(global_config.state_dir)
+
+
+def _send_store(
+    global_config: GlobalConfig, sends: Optional[MutableMapping[str, Any]]
+) -> MutableMapping[str, Any]:
+    """``sends`` when given, else liaise's idempotency records under ``state_dir``.
+
+    A dry run reads them and writes nothing, so it creates nothing either.
+    """
+    return sends if sends is not None else default_send_store(global_config.state_dir)
 
 
 def _subject_named(
@@ -272,6 +290,7 @@ def run(
     resolver: Optional[Resolver] = None,
     workspace: Optional[WorkspaceFactory] = None,
     triage: Optional[Triage] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
 ) -> str:
     """One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.
 
@@ -324,6 +343,7 @@ def run(
             dry_run=dry_run,
             only=subject,
             triage=triage,
+            sends=_send_store(global_config, sends),
             **seams,
         )
         return "\n".join((*hint, *report.plan_lines))
@@ -656,6 +676,13 @@ def _not_sent(held: _Held, release: Any, *, dry_run: bool) -> cw.CommandError:
         if dry_run
         else f". It stays {held.stays} with that reason; edit it with {held.command} --edit"
     )
+    if attempt.unconfirmed:
+        why = (
+            f"an earlier attempt may have gone out ({attempt.failure}). Check "
+            f"{attempt.outbound.ref}; if it is not there, send it with {held.command} "
+            f"--new-attempt"
+        )
+        kept = "" if dry_run else f". It stays {held.stays}"
     verb = "would not be sent" if dry_run else "was not sent"
     notes = [f"  note: {note}" for note in decision.notes]
     message = "\n".join([f"{held.label} {verb}: {why}{kept}", *notes])
@@ -734,14 +761,24 @@ def _release_after_confirmation(
     diverts, or its channel refuses, is never shown: outside a dry run its reason is
     recorded, sending nothing, and the command fails. One the gate passes is shown to
     ``confirm`` and, once confirmed, sent under the run lock, bound by ``bind`` to what the
-    operator was shown. This is the one path both ``send-draft`` commands take.
+    operator was shown. This is the one path both ``send-draft`` commands take. A message
+    whose earlier attempt may have gone out (``unconfirmed`` in the dry run) is shown too:
+    the real send reads the conversation back, records the message it finds as sent, and
+    posts nothing when it finds none.
 
     Returns ``(release, True)`` for the release made, or the judgement in a dry run, and
     ``(judgement, False)`` when the operator declined.
     """
     judged = release(Ledger(ChainMap({}, ledger_store)), dry_run=True, **first)
     names = held(judged)
-    if not judged.attempt.sent:
+    # An earlier attempt whose outcome is unknown: only a real send reads the conversation
+    # back, and it posts nothing either way, so the operator may confirm it.
+    reads_back = (
+        judged.attempt.failure_kind == UNCONFIRMED_KIND
+        and judged.attempt.outbound is not None
+        and not dry_run
+    )
+    if not judged.attempt.sent and not reads_back:
         if dry_run:
             raise _not_sent(names, judged, dry_run=True)
         with ExitStack() as between_ticks:  # record why, sending nothing
@@ -755,7 +792,10 @@ def _release_after_confirmation(
         raise _not_sent(names, recorded, dry_run=False)
     if dry_run:
         return judged, True
-    if not confirm(_preview(names, judged, edit=edit, then=then(judged))):
+    preview = _preview(names, judged, edit=edit, then=then(judged))
+    if reads_back:
+        preview += "\n" + READ_BACK_NOTE
+    if not confirm(preview):
         return judged, False
     with ExitStack() as between_ticks:
         _hold_run_lock(between_ticks, global_config, names.owner, done="sent")
@@ -770,6 +810,7 @@ def case_send_draft(
     case_id: str,
     *index: int,
     edit: bool = False,
+    new_attempt: bool = False,
     justification: str = "",
     dry_run: bool = False,
     root: Optional[str] = None,
@@ -778,6 +819,7 @@ def case_send_draft(
     now: Optional[datetime] = None,
     editor: Optional[Callable[[str], str]] = None,
     confirm: Optional[Callable[[str], bool]] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
 ) -> str:
     """Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.
 
@@ -803,6 +845,11 @@ def case_send_draft(
     It holds the run lock, as ``set-state`` does, and refuses while a tick runs. It also
     refuses while a hold keeps the case's messages waiting, while a run of the case is in
     flight, and for a delivery message whose delivery a hold kept from running.
+
+    A message is never posted twice: a draft whose earlier attempt may have gone out is
+    looked for in the conversation, recorded as sent when it is there, and not posted when
+    it is not. Check the conversation yourself then, and if it is not there, send it with
+    ``--new-attempt``.
     """
     config_root = _root(root)
     global_config = load_global_config(config_root)
@@ -829,6 +876,8 @@ def case_send_draft(
             registry=registry,
             justification=justification,
             fingerprint_key=_key_for(global_config, dry_run=dry_run),
+            sends=_send_store(global_config, sends),
+            new_attempt=new_attempt,
         ),
         first=dict(index=draft_index, seen=opened, approve_shown=True),
         bind=lambda judged: dict(
@@ -856,6 +905,8 @@ def case_send_draft(
         f"(gate: passed, {done.filters} filters)"
     )
     notes = [f"  note: {note}" for note in done.attempt.decision.notes]
+    if done.attempt.replayed and not dry_run:
+        notes.append(f"  note: {ALREADY_POSTED}")
     lines = [head + (f": {url}" if url and not dry_run else ""), *notes]
     if done.moved:
         before, after = done.moved
@@ -1025,6 +1076,7 @@ def message_send(
     store: Optional[MutableMapping[str, Any]] = None,
     now: Optional[datetime] = None,
     notify_fn: Optional[Callable[..., Any]] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
 ) -> str:
     """Send a message to PERSON outside any case, through the gate, or hold it for the operator.
 
@@ -1067,6 +1119,7 @@ def message_send(
         notify_fn=notify_fn or functools.partial(notify, topic_env=topic_env),
         dry_run=dry_run,
         fingerprint_key=_key_for(global_config, dry_run=dry_run),
+        sends=_send_store(global_config, sends),
     )
     message, attempt = result.message, result.attempt
     notes = [f"  note: {note}" for note in (attempt.decision.notes if attempt else ())]
@@ -1135,6 +1188,7 @@ def message_send_draft(
     message_id: str,
     *,
     edit: bool = False,
+    new_attempt: bool = False,
     justification: str = "",
     dry_run: bool = False,
     root: Optional[str] = None,
@@ -1143,6 +1197,7 @@ def message_send_draft(
     now: Optional[datetime] = None,
     editor: Optional[Callable[[str], str]] = None,
     confirm: Optional[Callable[[str], bool]] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
 ) -> str:
     """Send a held message you approved, through the gate, as ``liaise case send-draft`` does.
 
@@ -1152,7 +1207,8 @@ def message_send_draft(
     once you answer ``y`` at a terminal. A message the gate diverts stays held with the
     reason and exits 2; one its channel refuses exits 1. ``--dry-run`` judges and plans,
     asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps
-    the message waiting.
+    the message waiting. ``--new-attempt``, after checking that an earlier attempt did not
+    go out, sends it under a new idempotency key.
     """
     config_root = _root(root)
     global_config = load_global_config(config_root)
@@ -1180,6 +1236,8 @@ def message_send_draft(
             registry=registry,
             justification=justification,
             fingerprint_key=_key_for(global_config, dry_run=dry_run),
+            sends=_send_store(global_config, sends),
+            new_attempt=new_attempt,
         ),
         first=dict(seen=opened, approve_shown=True),
         bind=lambda judged: dict(seen=judged.draft, approval=judged.approval),
@@ -1200,6 +1258,8 @@ def message_send_draft(
         f"{outbound.recipient} on {outbound.ref} (gate: passed, {done.filters} filters)"
     )
     notes = [f"  note: {note}" for note in done.attempt.decision.notes]
+    if done.attempt.replayed and not dry_run:
+        notes.append(f"  note: {ALREADY_POSTED}")
     return "\n".join([head + (f": {url}" if url and not dry_run else ""), *notes])
 
 
@@ -1316,6 +1376,7 @@ _SEAMS = {
         "resolver",
         "workspace",
         "triage",
+        "sends",
     ),
     "status": ("store", "now"),
     "hold": ("store",),
@@ -1324,15 +1385,15 @@ _SEAMS = {
         "list": ("store",),
         "show": ("store",),
         "set-state": ("store", "now"),
-        "send-draft": ("registry", "store", "now", "editor", "confirm"),
+        "send-draft": ("registry", "store", "now", "editor", "confirm", "sends"),
         "reject-draft": ("store", "now"),
         "cancel-send": ("store", "now"),
     },
     "message": {
-        "send": ("registry", "store", "now", "notify_fn"),
+        "send": ("registry", "store", "now", "notify_fn", "sends"),
         "list": ("store",),
         "show": ("store",),
-        "send-draft": ("registry", "store", "now", "editor", "confirm"),
+        "send-draft": ("registry", "store", "now", "editor", "confirm", "sends"),
         "reject-draft": ("store", "now"),
     },
     "gate": {"report": ("store",)},

@@ -313,6 +313,8 @@ class OutboundMessage(_Record):
     :data:`MESSAGE_STATES`, and while it is ``held``, ``reason`` and ``notes`` say why.
     ``entries`` is its append-only history of gate decisions, as a case keeps its own. A
     message has no reporter, no run and no label: it is not a unit of work.
+    ``send_key`` is the idempotency key its next send carries, when it is not its id (a
+    new attempt's, see :func:`liaise.release.next_attempt_key`).
     """
 
     id: str
@@ -328,6 +330,7 @@ class OutboundMessage(_Record):
     reason: Optional[str] = None
     notes: tuple[str, ...] = ()
     entries: tuple[LedgerEntry, ...] = ()
+    send_key: Optional[str] = None
 
     def __post_init__(self) -> None:
         require_one_of(self.state, MESSAGE_STATES, what="message state")

@@ -19,21 +19,39 @@ decision the operator was shown, so a text, a title or a readership that changed
 voids it, and the operator sees the new verdict instead of a send (liaise ADR 0002). It
 hands back the ledger entry and the draft to keep, for the caller to record.
 
+**Never twice.** Every real send carries an idempotency key (correspond's
+``idempotency_key``), kept in liaise's own store of sends (:func:`default_send_store`,
+under ``state_dir``). A channel that posts and then reports an error leaves its key
+claimed, so the release of the draft it became, which reuses the key, either finds the
+message already out (read back, or a replay of the stored result) and posts nothing, or
+fails ``unconfirmed``. An ``unconfirmed`` draft stays with the operator, whose release
+with ``new_attempt`` (``send-draft --new-attempt``, after checking the conversation) moves
+it to the next key (:func:`next_attempt_key`). The keys: a tick's send
+``<case>/<payload hash>/<entry serial>`` (:func:`tick_send_key`), an outbox release
+``<case>/<held id>`` (:func:`outbox_key`), a message outside a case its id, and a draft the
+key it carries (``send_key``), or one derived from it (:func:`draft_send_key`).
+
 One path for every sender is what makes the gate a gate. A filter added to it applies to
 all of them at once, and none of them has a way to send around it.
 """
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from dataclasses import dataclass, replace
 from datetime import datetime
 from types import MappingProxyType
+from hashlib import sha256
+import os
+from pathlib import Path
+import re
 from typing import Any, Optional, Union
 
 import correspond
 from correspond.channels.github import REF_RE
+from correspond.idempotency import FAILED
 from correspond.model import Audience, ConversationRef, Draft
+from correspond.stores import SendStore
 
 from liaise.gate import (
     DFLT_OUTBOUND_FILTERS,
@@ -49,7 +67,7 @@ from liaise.ledger import Ledger
 from liaise.model import Approval, Case, LedgerEntry
 from liaise.outbound import case_provenance, record_disclosure
 from liaise.outcomes import HELD_REASON_PREFIX, make_draft
-from liaise.policy import Provenance
+from liaise.policy import Provenance, canonical_json
 from liaise.subjects import Subject
 
 #: Why a send failed when the channel said no without saying why.
@@ -69,6 +87,22 @@ NO_ATTACHMENTS = (
 )
 #: The failure kind of a message liaise refused to hand to its channel as it stands.
 VALIDATION_KIND = "validation"
+#: correspond's failure kind for a send whose key an earlier attempt claimed, which may
+#: have gone out: nothing was sent, and the operator checks the conversation.
+UNCONFIRMED_KIND = "unconfirmed"
+#: The directory of liaise's idempotency records under ``state_dir``.
+DFLT_SENDS_SUBDIR = "sends"
+#: How many hex digits of a digest a key keeps: enough to tell messages apart.
+KEY_DIGEST_DIGITS = 16
+#: What ends a key that is not its message's first attempt: ``~2``, ``~3``, ...
+ATTEMPT_SUFFIX_RE = re.compile(r"~(\d+)$")
+#: The first attempt suffix :func:`next_attempt_key` adds.
+FIRST_RETRY = 2
+#: Why a send whose earlier attempt may have gone out is kept for the operator.
+UNCONFIRMED_REASON = (
+    "send unconfirmed: an earlier attempt at this message may have gone out ({failure}). "
+    "Check {ref}; if it is not there, release it with send-draft --new-attempt"
+)
 
 
 def error_text(error: BaseException) -> str:
@@ -78,6 +112,91 @@ def error_text(error: BaseException) -> str:
     'ValueError: no such channel'
     """
     return f"{type(error).__name__}: {error}"
+
+
+def default_send_store(state_dir: Union[str, os.PathLike]) -> SendStore:
+    """liaise's idempotency records: correspond's ``SendStore`` in ``<state_dir>/sends``.
+
+    Nothing is created until a real send claims a key, so a dry run leaves no directory.
+    """
+    return SendStore(Path(state_dir).expanduser() / DFLT_SENDS_SUBDIR)
+
+
+def _digest(*parts: Any) -> str:
+    return sha256(canonical_json(list(parts)).encode("utf-8")).hexdigest()[
+        :KEY_DIGEST_DIGITS
+    ]
+
+
+def tick_send_key(
+    case_id: str, ref: Optional[str], text: str, title: Optional[str], serial: int
+) -> str:
+    """The key of a message a tick sends: ``<case>/<payload digest>/<entry serial>``.
+
+    ``serial`` is how many entries the case had when the message was judged, so two sends
+    of the same text on one case differ, while a tick that runs again over the same
+    entries (after a crash) reuses the key and never posts twice.
+
+    >>> key = tick_send_key("app3", "github:example/app#3", "Fixed.", None, 7)
+    >>> key.startswith("app3/") and key.endswith("/7")
+    True
+    """
+    return f"{case_id}/{_digest(ref, text, title)}/{serial}"
+
+
+def outbox_key(case_id: str, held: str) -> str:
+    """The key of an outbox item's release: ``<case>/<held id>``, the same on every try.
+
+    >>> print(outbox_key("example", "h3f9a0c12"))
+    example/h3f9a0c12
+    """
+    return f"{case_id}/{held}"
+
+
+def draft_send_key(owner: str, draft: Mapping[str, Any]) -> str:
+    """The key ``draft`` is released under: the one it carries (``send_key``), else one from its content.
+
+    ``owner`` is the case or message id it belongs to. A draft kept before keys existed
+    gets ``<owner>/d<digest of its time, destination, text and title>``, and its release
+    stores that key on whatever draft stays, so a second release reuses it.
+    """
+    if draft.get("send_key"):
+        return str(draft["send_key"])
+    digest = _digest(
+        draft.get("at"), draft.get("ref"), draft.get("text"), draft.get("title")
+    )
+    return f"{owner}/d{digest}"
+
+
+def next_attempt_key(key: str) -> str:
+    """``key`` for the message's next attempt: ``~2`` added, or its attempt number raised.
+
+    >>> print(next_attempt_key("example/h3f9a0c12"), next_attempt_key("example/h3f9a0c12~2"))
+    example/h3f9a0c12~2 example/h3f9a0c12~3
+    """
+    found = ATTEMPT_SUFFIX_RE.search(key)
+    if found is None:
+        return f"{key}~{FIRST_RETRY}"
+    return f"{key[: found.start()]}~{int(found.group(1)) + 1}"
+
+
+def usable_key(key: str, sends: Optional[Mapping[str, Any]]) -> str:
+    """``key``, or a later attempt's when the platform refused every try with it so far.
+
+    A key whose record says ``failed`` posted nothing, so a new attempt is safe, and a
+    fresh key lets the message change (an operator's edit) without being refused as a key
+    used for another message. A key with no record, or one that sent or may have, is kept.
+    """
+    if sends is None:
+        return key
+    while True:
+        try:
+            record = sends.get(key)
+        except (KeyError, OSError, ValueError):
+            return key
+        if not record or record.get("state") != FAILED:
+            return key
+        key = next_attempt_key(key)
 
 
 def github_repo(ref: Optional[str]) -> Optional[str]:
@@ -124,6 +243,7 @@ class SendAttempt:
     failure: correspond's ``error_kind``, or the class of what was raised. A message the
     gate diverted has none of the three. ``disclosure_failure`` says why a sent message's
     disclosure could not be written to its recipients' acquaint records; None otherwise.
+    ``key`` is the idempotency key the send carried, if any.
     """
 
     decision: GateDecision
@@ -131,6 +251,7 @@ class SendAttempt:
     failure: Optional[str] = None
     failure_kind: Optional[str] = None
     disclosure_failure: Optional[str] = None
+    key: Optional[str] = None
 
     @property
     def outbound(self) -> Optional[Outbound]:
@@ -141,6 +262,29 @@ class SendAttempt:
     def sent(self) -> bool:
         """Whether the channel took the message; in a dry run, whether it would have."""
         return self.decision.send is not None and self.failure is None
+
+    @property
+    def unconfirmed(self) -> bool:
+        """Whether nothing was sent because an earlier attempt with the key may have gone out.
+
+        That is correspond's ``unconfirmed``, and its refusal of a key an earlier attempt
+        used for a different text (a message edited since): either way the operator checks
+        the conversation before a new attempt.
+        """
+        if self.failure_kind == UNCONFIRMED_KIND:
+            return True
+        plan = getattr(self.result, "plan", None) or {}
+        return (
+            self.key is not None
+            and self.failure_kind == VALIDATION_KIND
+            and plan.get("idempotency_key") == self.key
+        )
+
+    @property
+    def replayed(self) -> bool:
+        """Whether the message went out on an earlier attempt, and this one posted nothing."""
+        plan = getattr(self.result, "plan", None) or {}
+        return self.sent and "idempotency" in plan
 
 
 def audience_of(
@@ -170,6 +314,8 @@ def gate_and_send(
     registry: Optional[Mapping[str, Any]] = None,
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
+    idempotency_key: Optional[str] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
 ) -> SendAttempt:
     """Put ``outbound`` through the gate and, only when it passes, send it through correspond.
 
@@ -182,6 +328,12 @@ def gate_and_send(
     ``failure`` on the attempt rather than an exception, so the caller still has the
     message to keep. Once a real send succeeds, the recipients' acquaint records are told
     what it identified, and a failure there is ``disclosure_failure``, never a raise.
+
+    ``idempotency_key`` and ``sends`` go to ``correspond.send``: the same key never posts
+    twice, and an attempt that may have gone out fails ``unconfirmed``
+    (:attr:`SendAttempt.unconfirmed`). The key is used only with a ``sends`` store
+    (:func:`default_send_store` for the tick and the CLI): without one the message is sent
+    unkeyed, as before, and liaise never writes correspond's own data root.
     """
     if ctx.audience is None:
         ctx = replace(ctx, audience=audience_of(outbound, registry=registry))
@@ -189,9 +341,10 @@ def gate_and_send(
     passed = decision.send
     if passed is None:
         return SendAttempt(decision)
+    key = idempotency_key if sends is not None else None
     if passed.attachments:
         return SendAttempt(
-            decision, failure=NO_ATTACHMENTS, failure_kind=VALIDATION_KIND
+            decision, failure=NO_ATTACHMENTS, failure_kind=VALIDATION_KIND, key=key
         )
     try:
         result = correspond.send(
@@ -202,10 +355,15 @@ def gate_and_send(
             bcc=passed.bcc,
             dry_run=dry_run,
             registry=registry,
+            idempotency_key=key,
+            sends=sends,
         )
     except Exception as error:  # an unknown channel, an adapter that raised
         return SendAttempt(
-            decision, failure=error_text(error), failure_kind=type(error).__name__
+            decision,
+            failure=error_text(error),
+            failure_kind=type(error).__name__,
+            key=key,
         )
     if result.ok:
         failure = None
@@ -216,13 +374,26 @@ def gate_and_send(
                 )
             except Exception as error:  # the message went out: report, never raise
                 failure = error_text(error)
-        return SendAttempt(decision, result=result, disclosure_failure=failure)
+        return SendAttempt(
+            decision, result=result, disclosure_failure=failure, key=key
+        )
     return SendAttempt(
         decision,
         result=result,
         failure=result.error or DFLT_REFUSAL,
         failure_kind=result.error_kind,
+        key=key,
     )
+
+
+def failure_reason(attempt: SendAttempt, ref: Optional[str]) -> str:
+    """Why a message the gate passed, and its channel did not take, is kept for the operator.
+
+    An :attr:`~SendAttempt.unconfirmed` one says to check ``ref`` before a new attempt.
+    """
+    if attempt.unconfirmed:
+        return UNCONFIRMED_REASON.format(failure=attempt.failure, ref=ref)
+    return f"send failed: {attempt.failure}"
 
 
 # ---- releasing a held message ----
@@ -299,6 +470,8 @@ def release_draft(
     approve_shown: bool = False,
     justification: str = "",
     fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
+    new_attempt: bool = False,
 ) -> DraftOutcome:
     """Release ``draft`` (a :func:`liaise.outcomes.make_draft` item) as ``by``, through the gate.
 
@@ -409,12 +582,16 @@ def release_draft(
     if approval is None and approve_shown:
         shown = run_gate(outbound, context, outbound_filters=filters)
         approval = approval_for(shown, by=by, at=now, justification=justification)
+    key = draft_send_key(case.id if case is not None else label, draft)
+    key = usable_key(next_attempt_key(key) if new_attempt else key, sends)
     attempt = gate_and_send(
         outbound,
         replace(context, approval=approval),
         registry=registry,
         dry_run=dry_run or not send,
         outbound_filters=filters,
+        idempotency_key=key,
+        sends=sends,
     )
     decision = attempt.decision
     edited = body != (draft.get("text") or "") or headline != draft.get("title")
@@ -429,9 +606,12 @@ def release_draft(
         "edited": edited,
         **decision.record(),
     }
+    recorded["send_key"] = key
     if attempt.sent:
         url = getattr(attempt.result, "url", None)
         verdict = {"decision": "send", "url": url}
+        if attempt.replayed:
+            verdict["replayed"] = True
         if attempt.disclosure_failure:
             verdict["disclosure_failure"] = attempt.disclosure_failure
         entry = LedgerEntry(
@@ -448,8 +628,10 @@ def release_draft(
         reason = decision.diverted
         verdict = {"decision": "divert", "reason": reason}
     else:
-        reason = f"send failed: {attempt.failure}"
+        reason = failure_reason(attempt, ref)
         verdict = {"decision": "send", "error": attempt.failure}
+        if attempt.unconfirmed:
+            verdict["unconfirmed"] = True
     entry = LedgerEntry(
         at=now,
         kind=DRAFT_ENTRY_KIND,
@@ -467,6 +649,7 @@ def release_draft(
         notes=decision.notes,
         title=headline,
         gate=decision.summary() if decision.send is None else None,
+        send_key=key,
     )
     return DraftOutcome(
         attempt, len(filters), edited, entry=entry, kept=kept, approval=approval

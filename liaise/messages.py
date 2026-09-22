@@ -64,6 +64,7 @@ from liaise.release import (
     GITHUB_CHANNEL,
     DraftSentNotRecorded,
     SendAttempt,
+    failure_reason,
     gate_and_send,
     github_repo,
     release_draft,
@@ -143,6 +144,7 @@ def message_draft(message: OutboundMessage) -> dict[str, Any]:
         reason=message.reason or "",
         notes=message.notes,
         title=message.title,
+        send_key=message.send_key or message.id,
     )
 
 
@@ -185,6 +187,7 @@ def send_message(
     dry_run: bool = False,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
     fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
 ) -> MessageSent:
     """Send ``text`` to ``recipient`` (a person id) at ``ref`` outside any case, or hold it.
 
@@ -208,7 +211,9 @@ def send_message(
     Each record's one entry is by ``by``, at ``now``, with the gate's audit record. The gate
     judges it with its provenance unknown (nobody can say what its sender read), and
     ``fingerprint_key`` is as :class:`~liaise.gate.GateContext` has it. A dry run judges
-    and plans the same, and records and tells nothing.
+    and plans the same, and records and tells nothing. The send's idempotency key is the
+    message's id, kept in ``sends`` (correspond's own store when None), and a held
+    message keeps it, so its release never posts it twice.
 
     Raises ``ValueError``, sending and recording nothing, for any of these:
 
@@ -236,6 +241,7 @@ def send_message(
             f"{ref} is a repository: a message there opens an issue, which needs a title"
         )
     subject = subject_for_ref(subjects, ref)
+    message_id = ledger.new_message_id(subject.slug)
     channel = GITHUB_CHANNEL
     at = _utc_now(now)
     filters = tuple(outbound_filters)
@@ -274,6 +280,8 @@ def send_message(
             registry=registry,
             dry_run=dry_run,
             outbound_filters=filters,
+            idempotency_key=message_id,
+            sends=sends,
         )
         decision, notes = attempt.decision, attempt.decision.notes
         detail["notes"] = list(notes)
@@ -286,7 +294,7 @@ def send_message(
             reason, cause = decision.diverted, decision.diverted_by
             detail.update(decision="divert", reason=reason)
         else:
-            reason = f"send failed: {attempt.failure}"
+            reason = failure_reason(attempt, ref)
             known = attempt.failure_kind in ERROR_KINDS  # never an adapter's own words
             cause = attempt.failure_kind if known else SEND_REFUSED_CAUSE
             detail.update(decision="send", error=attempt.failure)
@@ -299,7 +307,7 @@ def send_message(
         detail=detail,
     )
     message = OutboundMessage(
-        id=ledger.new_message_id(subject.slug),
+        id=message_id,
         subject=subject.slug,
         recipient=recipient,
         ref=ref,
@@ -365,6 +373,8 @@ def send_held_message(
     approve_shown: bool = False,
     justification: str = "",
     fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
+    new_attempt: bool = False,
 ) -> MessageRelease:
     """Send the held message ``message_id`` as ``by``, through the gate again.
 
@@ -377,9 +387,10 @@ def send_held_message(
     by ``by`` records the attempt. ``seen`` is the message as the operator saw it
     (:func:`message_draft`): one that changed since is not sent. ``send=False``,
     ``dry_run``, ``approval`` (the dry run's, bound to what the operator was shown),
-    ``approve_shown``, ``justification`` and ``fingerprint_key`` are as
-    :func:`~liaise.release.release_draft` has them: with neither an approval nor
-    ``approve_shown``, nothing is settled and a held message stays held.
+    ``approve_shown``, ``justification``, ``fingerprint_key``, ``sends`` and
+    ``new_attempt`` are as :func:`~liaise.release.release_draft` has them: with neither an
+    approval nor ``approve_shown``, nothing is settled and a held message stays held. The
+    message keeps the idempotency key its release used.
 
     Raises ``ValueError``, sending and writing nothing, for a message the ledger does not
     hold, one that is not held, one whose subject is not in ``subjects``, one that changed
@@ -417,6 +428,8 @@ def send_held_message(
         approve_shown=approve_shown,
         justification=justification,
         fingerprint_key=fingerprint_key,
+        sends=sends,
+        new_attempt=new_attempt,
     )
     release = functools.partial(
         MessageRelease,
@@ -437,6 +450,7 @@ def send_held_message(
             title=went.title,
             reason=None,
             notes=tuple(outcome.attempt.decision.notes),
+            send_key=outcome.entry.detail.get("send_key"),
         )
     else:
         kept = outcome.kept
@@ -446,6 +460,7 @@ def send_held_message(
             title=kept.get("title"),
             reason=kept["reason"],
             notes=tuple(kept["notes"]),
+            send_key=kept.get("send_key"),
         )
     after = after.with_entry(outcome.entry)
     if not dry_run:

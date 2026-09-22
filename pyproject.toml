@@ -16,7 +16,7 @@ authors = [
 ]
 license = "MIT"
 dependencies = [
-    "correspond>=0.0.5",
+    "correspond>=0.0.6",
     "cw",
     "dol",
 ]

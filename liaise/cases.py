@@ -444,6 +444,8 @@ def send_draft(
     approve_shown: bool = False,
     justification: str = "",
     fingerprint_key: Union[bytes, Callable[[], bytes], None] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
+    new_attempt: bool = False,
 ) -> DraftRelease:
     """Send the case ``case_id``'s draft at ``index`` as ``by``, through the gate again.
 
@@ -471,7 +473,10 @@ def send_draft(
     ``seen`` is the draft as the operator read it: a draft that has changed since is not
     sent. ``send=False`` asks the channel for its plan and sends nothing. A divert or a
     refusal is then recorded as above, and a message the gate would pass changes nothing.
-    A dry run judges and plans as a send would, and writes nothing.
+    A dry run judges and plans as a send would, and writes nothing. ``sends`` and
+    ``new_attempt`` are as :func:`liaise.release.release_draft` has them: the draft's
+    idempotency key keeps a message an earlier attempt may have posted from going out
+    twice, and ``new_attempt`` is the operator's word that they checked it did not.
 
     Raises ``ValueError``, sending and writing nothing, for any of these:
 
@@ -526,6 +531,8 @@ def send_draft(
         approve_shown=approve_shown,
         justification=justification,
         fingerprint_key=fingerprint_key,
+        sends=sends,
+        new_attempt=new_attempt,
     )
     release = functools.partial(
         DraftRelease,
