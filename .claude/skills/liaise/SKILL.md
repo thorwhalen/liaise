@@ -188,6 +188,23 @@ liaise message show example-app-m1f3a9c2e
 - **Never release a held message yourself.** `liaise message send-draft` asks the owner at their own terminal and refuses without one, just as `case send-draft` does. Declining is `liaise message reject-draft <id> --reason ...`, also the owner's call.
 - A message opens no case and sets no label. Use `--dry-run` to see what the gate would say without recording or notifying anything.
 
+## Vetting a draft before it goes anywhere
+
+Before you hand a draft over, or post one yourself with `gh` or `correspond`, run it through the gate. `liaise vet` sends nothing and records nothing:
+
+```
+printf '%s' "$DRAFT" | liaise vet --ref github:example/app#12 --to ada
+liaise vet --ref github:example/app#12 --to ada --text-file reply.md --untainted --json
+```
+
+- The exit code is the route: **0** send, **2** draft for the operator, **3** block (never send it as written); 1 means it could not be vetted (a bad `--ref`, an empty draft). It prints the verdict, the audience in words, each reader's tier and clearance, and every reason, most restrictive first.
+- `--to` names who it is for (several count as readers too); `--cc`, `--bcc` and `--project` add readers and the project it is about. The subject is the one binding the reference, else a default policy with nobody known.
+- What the author read is **unknown unless you say**, and unknown counts as tainted: a draft for anyone wider than the operator is at least a draft for the operator, and one naming something private is blocked. Pass `--untainted` only when the draft was written from nothing untrusted (no issue text, no web page, no inbound message).
+- Flow `delay` (a post that cannot be withdrawn, to an organisation-wide or public place) exits 2: liaise's own outbox would hold it for a cancellable window, but a post you make is immediate.
+- `--to`, `--cc` and `--bcc` can be repeated. A malformed command line also exits 2 (argparse); the output says which.
+- A 2 or a 3 is the answer for this draft: show the reason to the operator; never reword a draft just to get past it.
+- For Python and MCP callers of correspond, `before_send = "liaise.vet:before_send"` in correspond's config runs the same check on every write (a block is `refused`, anything for the operator `needs_approval`). Setting it is the operator's decision.
+
 ## Migrating from 0.0.x
 
 ```

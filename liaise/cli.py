@@ -18,6 +18,8 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise message show MESSAGE_ID
     liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]
     liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
+    liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]
+        [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
     liaise subject list
     liaise subject show SLUG
     liaise setup SUBJECT
@@ -1303,6 +1305,96 @@ def message_reject_draft(
 # ---- the gate ----
 
 
+def _vet_lines(found: Mapping[str, Any]) -> list[str]:
+    """``liaise vet``'s answer in words: the verdict, the audience, the readers, the reasons."""
+    lines = [
+        f"{found['route']} ({found['flow']}) for {found['ref']} "
+        f"(subject {found['subject']})",
+        f"  audience: {found['audience']}",
+    ]
+    for person, entry in found["readers"].items():
+        tier, clearance = entry.get("tier") or NONE_SHOWN, entry.get("clearance")
+        lines.append(
+            f"  reader {person}: tier {tier}, cleared to {clearance or NONE_SHOWN}"
+        )
+    lines += [f"  reason: {visible(reason)}" for reason in found["reasons"]]
+    lines += [f"  note: {visible(note)}" for note in found["notes"]]
+    return lines
+
+
+@_expected_errors(ConfigError, ValueError)
+def vet(
+    *,
+    ref: str = "",
+    to: Optional[Sequence[str]] = None,
+    cc: Optional[Sequence[str]] = None,
+    bcc: Optional[Sequence[str]] = None,
+    project: str = "",
+    title: str = "",
+    text: str = "",
+    text_file: str = STDIN_FILE_NAME,
+    tainted: bool = False,
+    untainted: bool = False,
+    json: bool = False,
+    root: Optional[str] = None,
+    registry: Optional[Mapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+    disclosure: Optional[Callable[..., Mapping[str, Any]]] = None,
+) -> str:
+    """Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers. Sends nothing.
+
+    The draft is ``--text``, or ``--text-file`` (standard input by default). ``--to`` names
+    the person (or people) it is for, ``--cc`` and ``--bcc`` further readers, and
+    ``--project`` the project it is about. What its author read is unknown, which counts as
+    tainted, unless ``--untainted`` (nothing untrusted) or ``--tainted`` says. ``--json``
+    prints the verdict record. ``--to``, ``--cc`` and ``--bcc`` may be repeated. The exit
+    code is the route of a write made at once: 0 send, 2 draft-to-operator (a ``delay``
+    too), 3 block (1: the draft could not be vetted). It records nothing.
+    """
+    import json as json_module
+
+    from liaise import vet as vetting
+    from liaise.gate import outbound_policy
+
+    if tainted and untainted:
+        raise ValueError("give at most one of --tainted and --untainted")
+    if not ref:
+        raise ValueError(
+            "vet needs --ref, the conversation the draft goes to, such as "
+            "github:example/app#12"
+        )
+    body = _message_text(text, "" if text else text_file)
+    if not body.strip():
+        raise ValueError("there is no draft to vet: the text is empty")
+    filters = vetting.VET_FILTERS
+    if disclosure is not None:
+        policy = functools.partial(outbound_policy, disclosure=disclosure)
+        filters = tuple(policy if f is outbound_policy else f for f in filters)
+    found = vetting.vet(
+        body,
+        ref=ref,
+        to=to or (),
+        cc=cc or (),
+        bcc=bcc or (),
+        title=title or None,
+        project=project or None,
+        tainted=True if tainted else (False if untainted else None),
+        root=_root(root),
+        registry=registry,
+        now=now,
+        outbound_filters=filters,
+    )
+    shown = (
+        json_module.dumps(found, indent=2, sort_keys=True, default=str)
+        if json
+        else "\n".join(_vet_lines(found))
+    )
+    if found["exit_code"]:
+        print(shown)
+        raise SystemExit(found["exit_code"])
+    return shown
+
+
 @_expected_errors(ConfigError, ValueError)
 def gate_report(
     *,
@@ -1359,6 +1451,7 @@ _dispatch_funcs = {
     },
     "subject": {"list": subject_list, "show": subject_show},
     "gate": {"report": gate_report},
+    "vet": vet,
     "setup": setup,
     "migrate-config": migrate_config,
     "schedule": {
@@ -1403,6 +1496,7 @@ _SEAMS = {
         "reject-draft": ("store", "now"),
     },
     "gate": {"report": ("store",)},
+    "vet": ("registry", "now", "disclosure"),
     "setup": ("labeler",),
 }
 
@@ -1421,12 +1515,14 @@ def _hidden(seams: Mapping[str, Any]) -> dict[str, Any]:
 
 #: What a command's arguments need beyond their signature, nested as :data:`_SEAMS` is: a
 #: draft's INDEX is a number (see :func:`_one_index`).
+_READERS = {"action": "extend", "nargs": "+"}  # --to a --to b, or --to a b: both kept
 _ARGUMENTS = {
+    "vet": {"to": _READERS, "cc": _READERS, "bcc": _READERS},
     "case": {
         "send-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "reject-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "cancel-send": {"index": {"type": str, "metavar": "ID|INDEX"}},
-    }
+    },
 }
 
 
