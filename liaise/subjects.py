@@ -65,8 +65,12 @@ from liaise.policy import ENFORCE, MODES, TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEN
 TAINTED_RUNS = (TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEND)
 
 #: Minutes a ``delay`` verdict holds a message in the outbox before the tick sends it
-#: (``policy.delay_minutes``; liaise #38). 0 sends it at once.
-DFLT_DELAY_MINUTES = 10
+#: (``policy.delay_minutes``; liaise #38); 0 sends it at once. Unset by default: the outbox
+#: sends without a person, so a subject turns it on explicitly, and until then a ``delay``
+#: waits for the operator as a draft, as it did before the outbox existed.
+DFLT_DELAY_MINUTES = None
+#: The window a subject that turns the outbox on is advised to use (liaise ADR 0003).
+RECOMMENDED_DELAY_MINUTES = 10
 #: Minutes past its release after which a held message goes to the operator instead of out
 #: (``policy.delay_stale_minutes``): nobody watched the window it relied on. 0 never lapses.
 DFLT_DELAY_STALE_MINUTES = 24 * 60
@@ -183,9 +187,10 @@ class Policy:
         (``approve``, or ``send`` to waive the taint rule), ``link_allowlist`` (hosts a link
         may point at besides the channel's own), ``canary_terms`` (terms planted in private
         context, never to be sent) and ``mode`` (``enforce``, or ``shadow``, recorded on every
-        verdict and enforced alike until shadow mode lands). ``delay_minutes`` is how long a
-    ``delay`` verdict (an irreversible send to an organisation-wide or public place) waits in
-    the outbox, cancellable, before the tick sends it (liaise #38); 0 sends it at once. A held
+        verdict and enforced alike until shadow mode lands). ``delay_minutes`` turns the delay
+    outbox on (liaise #38): how long a ``delay`` verdict (an irreversible send to an
+    organisation-wide or public place) waits, cancellable, before the tick sends it; 0 sends
+    it at once, and None (the default) keeps it for the operator as a draft. A held
     message the tick reaches more than ``delay_stale_minutes`` after its release goes to the
     operator as a draft instead (0: never).
     ``leak_terms`` are scanned for as
@@ -221,7 +226,7 @@ class Policy:
     link_allowlist: tuple[str, ...] = ()
     canary_terms: tuple[str, ...] = ()
     mode: str = ENFORCE
-    delay_minutes: int = DFLT_DELAY_MINUTES
+    delay_minutes: Optional[int] = DFLT_DELAY_MINUTES
     delay_stale_minutes: int = DFLT_DELAY_STALE_MINUTES
 
 
@@ -732,17 +737,23 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
             f"got {deployed_nudge_days!r}."
         )
 
-    def minutes(key: str, default: int) -> int:
+    def minutes(key: str, default: Optional[int], example: int) -> Optional[int]:
         value = raw.get(key, default)
+        if value is None:
+            return None
         if isinstance(value, bool) or not isinstance(value, int) or value < 0:
             raise ConfigError(
                 f"{path}: policy.{key} must be a whole number of minutes, 0 or more, "
-                f"as in {key} = {default}; got {value!r}."
+                f"as in {key} = {example}; got {value!r}."
             )
         return value
 
-    delay_minutes = minutes("delay_minutes", DFLT_DELAY_MINUTES)
-    delay_stale_minutes = minutes("delay_stale_minutes", DFLT_DELAY_STALE_MINUTES)
+    delay_minutes = minutes(
+        "delay_minutes", DFLT_DELAY_MINUTES, RECOMMENDED_DELAY_MINUTES
+    )
+    delay_stale_minutes = minutes(
+        "delay_stale_minutes", DFLT_DELAY_STALE_MINUTES, DFLT_DELAY_STALE_MINUTES
+    )
 
     return Policy(
         people=people,

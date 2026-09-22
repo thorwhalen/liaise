@@ -92,9 +92,11 @@ OUTSIDE_A_CASE = "a message outside a case"
 CASELESS_REASON = f"{OUTSIDE_A_CASE} waits for the operator"
 #: The channel whose messages must @mention their recipient to reach them.
 MENTION_CHANNEL = "github"
-#: What a decision held back as ``delay`` says: only the tick's outbox sends it (liaise #38).
+#: What a decision held back as ``delay`` says: only the tick's outbox sends it, and only on
+#: a subject that turned it on (``policy.delay_minutes``, liaise #38).
 DELAY_HELD = (
-    "an irreversible send waits in the outbox for its window, or for the operator"
+    "an irreversible send waits for the operator, or in the outbox where the subject "
+    "sets policy.delay_minutes (liaise #38)"
 )
 #: Who a message held in the outbox is released by: the outbox, never a person.
 OUTBOX_ACTOR = "liaise-outbox"

@@ -1756,7 +1756,8 @@ class _Tick:
             }
         notes = [f"    note: {note}" for note in decision.notes]
         holdable = decision.send is None and decision.flow == DELAY
-        if holdable and released is None and decision.overridable:
+        outbox_on = subject.policy.delay_minutes is not None
+        if holdable and outbox_on and released is None and decision.overridable:
             return self._hold(
                 subject, case, send, decision, detail, provenance=provenance
             )

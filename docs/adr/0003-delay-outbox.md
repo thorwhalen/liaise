@@ -10,15 +10,15 @@
 
 The policy gives an irreversible send to an `org` or `public` audience the flow `delay` (discussion §5.4, the `irreversibility` row). Until now `delay` degraded to a draft for the operator, so on a public repository every reply waited for a person, whatever the reply mode. Discussion §12 left open whether the outbox was wanted at all. Four decisions were open.
 
-## Decision 1: build the outbox, on by default
+## Decision 1: build the outbox; ship it off until a subject turns it on
 
-**Chose:** build it. Subject policy `delay_minutes` (default 10, `0` sends at once) sets the window. There is no separate switch to keep the old degradation: a subject that wants every public reply to wait for a person sets its reply mode to `draft`, which already does that.
+**Chose:** build it. Subject policy `delay_minutes` turns it on and sets the window (10 is the advised value, `RECOMMENDED_DELAY_MINUTES`; `0` sends at once). Unset, the default, keeps today's behaviour: a `delay` waits for the operator as a draft. No other switch.
 
-**Alternatives:** keep draft-by-default on public channels (§12's other option); add an `outbox = false` switch beside `delay_minutes`.
+**Alternatives:** keep draft-by-default on public channels and build nothing (§12's other option); build it on by default with a window of 10 (as issue #38 first proposed); add a separate `outbox = false` switch beside `delay_minutes`.
 
-**Why:** a draft for every public reply makes direct mode meaningless on the channel most partners use, and the operator's attention is then spent on messages nothing flagged. The window keeps the one thing the degradation bought — a person can stop an irreversible post — at the cost of a notification instead of a release. A second switch would be a second way to say what reply mode already says.
+**Why:** a draft for every public reply makes direct mode meaningless on the channel most partners use, so the outbox is worth having. The window keeps the one thing the degradation bought — a person can stop an irreversible post — at the cost of a notification instead of a release. But turning it on makes liaise post to real people's public threads with no person releasing each message. That is an outward-facing act, and it is the owner's to take, subject by subject. A default of 10 would take it for him on the next release, on every installation that ticks a public repository in direct mode. Off-until-set costs nothing to reverse: setting one value turns it on. One value, rather than a switch and a window, because the window is the only thing a subject has to decide.
 
-**Wrong if:** operators do not act on the notification within the window in practice (the ping arrives while nobody is watching), so the window protects nothing and a draft would have been the only real check. Then the default should become draft on public channels, which is additive.
+**Wrong if:** operators do not act on the notification within the window in practice (the ping arrives while nobody is watching), so the window protects nothing and turning it on would remove the only real check. Or, the other way, the owner turns it on everywhere at once, and the default should then flip to 10, which is additive.
 
 ## Decision 2: the hold is an approval by the outbox, bound like an operator's, that settles only the delay
 
@@ -60,7 +60,7 @@ A later item of the same case is judged by the same rule, so it goes the same wa
 
 ## Consequences
 
-- On a public repository, direct mode sends again, `delay_minutes` after the gate held the message and after a fresh check. The degradation note in ADR 0002 no longer applies.
+- On a subject that sets `delay_minutes`, direct mode on a public repository sends again, that many minutes after the gate held the message and after a fresh check. On a subject that does not, nothing changes: ADR 0002's degradation to a draft still applies.
 - `liaise case show` and `liaise status` list held messages and their release times; the operator notification says only that a message is held and for how long.
 - An operator's release of a draft (`send-draft`) is not held again: the operator's approval settles the delay, since the person the window protects has seen the message.
 - A message outside a case never reaches the outbox: it waits for the operator whatever its audience (ADR 0002).

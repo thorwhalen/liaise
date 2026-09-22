@@ -12,11 +12,11 @@ from datetime import timedelta
 import pytest
 
 from liaise.cases import case_show_lines, set_case_state
-from liaise.gate import OUTBOX_ACTOR, hold_for
+from liaise.gate import DELAY_HELD, OUTBOX_ACTOR, hold_for
 from liaise.holds import hold
 from liaise.notify import NOTICE_SEND_DELAYED, notice_title
 from liaise.outbox import cancel_send, pick_held
-from liaise.subjects import Policy
+from liaise.subjects import RECOMMENDED_DELAY_MINUTES, Policy
 from liaise.tests.test_tick import (  # noqa: F401  (the fixtures, used by name)
     CASE_1,
     ISSUE_12,
@@ -35,17 +35,18 @@ DUE = LATER + timedelta(minutes=11)
 QUESTION = "Thanks for the report."
 
 
+def _policy(world, **changes):
+    world.subject = replace(world.subject, policy=replace(world.subject.policy, **changes))
+
+
 @pytest.fixture
 def public(world):
-    """The tick's world on a public repository, with the partner's issue open."""
+    """The tick's world on a public repository, its outbox on, with the partner's issue open."""
+    _policy(world, delay_minutes=RECOMMENDED_DELAY_MINUTES)
     world.github.set_visibility(REPO, "public")
     world.issue()
     world.tick()
     return world
-
-
-def _policy(world, **changes):
-    world.subject = replace(world.subject, policy=replace(world.subject.policy, **changes))
 
 
 def _gate_decisions(case):
@@ -112,6 +113,7 @@ def test_cancel_send_refuses_what_it_cannot_pick(public):
 
 
 def test_an_audience_that_widens_between_hold_and_release_sends_nothing_and_drafts(world):
+    _policy(world, delay_minutes=RECOMMENDED_DELAY_MINUTES)
     world.github.set_visibility(REPO, "public", owner_type="Organization")
     world.github.set_visibility(REPO, "internal")  # org-wide: still a delay
     world.issue()
@@ -219,8 +221,38 @@ def test_hold_for_names_only_the_delay_and_refuses_anything_else(public):
         hold_for(GateDecision(send=None, diverted="x", flow="approve"), at=HELD_AT, release_at=DUE)
 
 
-def test_delay_minutes_is_a_whole_number_of_minutes():
-    assert Policy(people={}, roles={}).delay_minutes == 10
+def test_the_outbox_is_off_until_a_subject_sets_delay_minutes(world):
+    assert Policy(people={}, roles={}).delay_minutes is None
+    world.github.set_visibility(REPO, "public")
+    world.issue()
+    world.tick()
+
+    world.tick(HELD_AT)
+    world.tick(DUE)
+
+    assert world.github.sent == []
+    case = world.case()
+    (draft,) = case.drafts
+    assert case.outbox == () and draft["gate"]["flow"] == "delay"
+    assert draft["reason"].endswith(DELAY_HELD)
+
+
+def test_delay_minutes_is_read_from_a_subject_file(tmp_path):
+    from liaise.config import ConfigError
+    from liaise.subjects import load_subject
+
+    def subject_file(policy_lines):
+        path = tmp_path / "example-app.toml"
+        path.write_text(
+            'bindings = ["github:example/app?labels=partner:pat"]\n[policy]\n'
+            'people = { "github:pat" = "pat" }\nroles = { pat = "partner" }\n' + policy_lines
+        )
+        return path
+
+    assert load_subject(subject_file("")).policy.delay_minutes is None
+    assert load_subject(subject_file("delay_minutes = 10\n")).policy.delay_minutes == 10
+    with pytest.raises(ConfigError, match="delay_minutes must be a whole number"):
+        load_subject(subject_file("delay_minutes = -1\n"))
 
 
 def test_a_strangers_comment_during_the_window_taints_the_case_and_voids_the_hold(public):
@@ -254,6 +286,7 @@ def test_two_held_messages_on_a_case_go_out_in_order_and_one_can_be_cancelled(wo
     from liaise.processor import EchoProcessor
 
     replies = (Outcome(kind="reply", text="First note."), Outcome(kind="reply", text="Second note."))
+    _policy(world, delay_minutes=RECOMMENDED_DELAY_MINUTES)
     world.processor = EchoProcessor(results={CASE_1: RunResult(run_id="", outcomes=replies, summary="two")})
     world.github.set_visibility(REPO, "public")
     world.issue()
@@ -296,6 +329,7 @@ def test_an_issue_closed_during_the_window_turns_the_held_message_into_a_draft(p
 
 
 def test_a_message_heard_while_the_run_ran_is_one_the_reply_never_answered(world):
+    _policy(world, delay_minutes=RECOMMENDED_DELAY_MINUTES)
     world.github.set_visibility(REPO, "public")
     world.issue()
     world.tick()  # the run starts
