@@ -18,6 +18,13 @@ Use when running liaise as its owner, such as onboarding a partner or a subject,
 Source: [`.claude/skills/liaise`](https://github.com/thorwhalen/liaise/tree/HEAD/.claude/skills/liaise).
 
 
+## Instruction files
+
+Files agents read before working in this repository.
+
+- [`.claude/CLAUDE.md`](https://github.com/thorwhalen/liaise/tree/HEAD/.claude/CLAUDE.md): read by Claude Code
+
+
 ## Machine-readable documentation
 
 This site publishes the same documentation in forms that fit an agent's context window:
