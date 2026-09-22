@@ -571,3 +571,23 @@ def test_a_users_hook_that_ends_like_ours_is_not_ours(tmp_path):
     assert settings.stat().st_mode & 0o777 == 0o600
     cli.hook_uninstall(settings=str(settings))
     assert json.loads(settings.read_text())["hooks"]["PreToolUse"] == [theirs]
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        f"correspond send github:example/app#1 {T} --idempotency-key github:example/app#1",
+        f"correspond send github:example/app#1 {T} --priority github:example/app#1",
+        f"correspond edit github:example/app#1 m1 {T} --idempotency-key m1",
+        "gh issue comment 12 -R example/app -b SEC*",
+        "gh issue comment 12 -R example/app -b SEC?????",
+        "gh issue comment 12 -R example/app -b SEC[R]ET",
+    ],
+)
+def test_fifth_review_writes_are_held(run_hook, command):
+    assert decision(run_hook.bash(command)) in ("ask", "deny"), command
+
+
+def test_a_flag_value_equal_to_the_ref_does_not_hide_the_text(run_hook):
+    answer = run_hook.bash(f"correspond send github:example/app#1 'key {T}' --idempotency-key github:example/app#1")
+    assert decision(answer) == "deny"

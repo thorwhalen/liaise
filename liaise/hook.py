@@ -395,7 +395,7 @@ def _heredocs(command: str) -> tuple[str, dict[str, tuple[str, bool]], list[str]
                 redirects.append("a comment that names gh or correspond")
             index = end
             continue
-        if char in "{}~":
+        if char in "{}~*?[":
             redirects.append(f"an unquoted {char!r}, which the shell expands")
         if command.startswith("<<", index) and not command.startswith("<<<", index):
             match = _HEREDOC_RE.match(command, index)
@@ -880,18 +880,17 @@ def _correspond(
         )
     if "--dry-run" in rest:
         return None  # a dry run writes nothing, and correspond runs its own check on it
-    positionals = [a for a in _positionals(rest) if not a.startswith("<<")]
-    for flag in (
-        "--title",
-        "--reply-to",
-        "--priority",
-        "--cc",
-        "--bcc",
-        "--idempotency-key",
-    ):
-        for value in _flag_values(rest, (flag,)):
-            if value in positionals:
-                positionals.remove(value)
+    value_flags = known - {"--dry-run"}
+    positionals = []
+    index = 0
+    while index < len(rest):  # by position: a flag's value is never taken for the ref
+        word = rest[index]
+        if word in value_flags:
+            index += 2
+            continue
+        if not (word.startswith("-") and word != "-") and not word.startswith("<<"):
+            positionals.append(word)
+        index += 1
     what = f"correspond {verb}"
     if not positionals:
         return Write(what, problem=f"{NO_BODY}: {what} with no reference")
