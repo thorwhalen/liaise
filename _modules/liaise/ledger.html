@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=297ad043"></script>
+    <script src="../../_static/documentation_options.js?v=8d02545a"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.12" />
+  <meta name="docsearch:version" content="0.1.13" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -729,6 +729,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    budget_notified__&lt;subject&gt;__&lt;day&gt;   when the operator heard that day's cap was reached</span>
 <span class="sd">    issue_check__&lt;case_id&gt;              an IssueCheck: the tick's reads of the case's issue state</span>
 <span class="sd">    message__&lt;message_id&gt;               an OutboundMessage: one sent or held outside any case</span>
+<span class="sd">    hook_pending__&lt;key&gt;                 what the Claude Code hook asked about, until the tool ran</span>
+<span class="sd">    override__&lt;key&gt;                     a write the hook asked about that the operator let run</span>
 
 <span class="sd">The variable parts (ids, refs, scopes) are percent-encoded, so the scope</span>
 <span class="sd">``repo:example/app`` is stored under ``hold__repo%3Aexample%2Fapp``. The result has</span>
@@ -745,7 +747,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">hashlib</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">MutableMapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterator</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">MutableMapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">cached_property</span>
@@ -1118,6 +1120,58 @@ window.runMermaid = runMermaid;</script>
     <span class="k">def</span><span class="w"> </span><span class="nf">unrouted</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">"""Every queued unrouted message, as a fresh dict, in no set order."""</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="s2">"unrouted"</span><span class="p">))</span></div>
+
+
+    <span class="c1"># ---- the Claude Code hook: pending asks and the overrides they became ----</span>
+
+<div class="viewcode-block" id="Ledger.set_hook_pending">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.set_hook_pending">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">set_hook_pending</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Keep what the hook asked the operator about, under ``key``, until the tool runs.</span>
+
+<span class="sd">        ``record`` never holds a message's text: the flow, the rules, the hashes, the ref.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"hook_pending"</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">to_jsonable</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">record</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Ledger.pop_hook_pending">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.pop_hook_pending">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">pop_hook_pending</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""The pending ask under ``key``, removed; None when there is none."""</span>
+        <span class="n">stored</span> <span class="o">=</span> <span class="n">_key</span><span class="p">(</span><span class="s2">"hook_pending"</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">stored</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">_delete</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="n">stored</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">record</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.hook_pending">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.hook_pending">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hook_pending</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]:</span>
+<span class="w">        </span><span class="sd">"""Every pending ask, as ``(key, record)``, in no set order."""</span>
+        <span class="n">head</span> <span class="o">=</span> <span class="s2">"hook_pending"</span> <span class="o">+</span> <span class="n">_SEP</span>
+        <span class="k">for</span> <span class="n">stored</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">stored</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">head</span><span class="p">):</span>
+                <span class="n">record</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">stored</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">record</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">yield</span> <span class="n">unquote</span><span class="p">(</span><span class="n">stored</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">head</span><span class="p">)</span> <span class="p">:]),</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Ledger.add_override">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.add_override">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_override</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Record that the operator let a write the hook asked about go ahead (discussion §5.8).</span>
+
+<span class="sd">        Kept apart from cases and messages: liaise neither held nor sent it.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">_key</span><span class="p">(</span><span class="s2">"override"</span><span class="p">,</span> <span class="n">key</span><span class="p">)]</span> <span class="o">=</span> <span class="n">to_jsonable</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">record</span><span class="p">))</span></div>
+
+
+<div class="viewcode-block" id="Ledger.overrides">
+<a class="viewcode-back" href="../../_autosummary/liaise.ledger.html#liaise.Ledger.overrides">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">overrides</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">        </span><span class="sd">"""Every recorded hook override, as a fresh dict, in no set order."""</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">(</span><span class="s2">"override"</span><span class="p">))</span></div>
 
 
     <span class="c1"># ---- daily dispatch counters ----</span>

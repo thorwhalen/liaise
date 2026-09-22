@@ -19,6 +19,8 @@ daily__<subject>__<YYYY-MM-DD>      that day's dispatches, as 0.0.x kept them
 budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
 issue_check__<case_id>              an IssueCheck: the tick's reads of the case's issue state
 message__<message_id>               an OutboundMessage: one sent or held outside any case
+hook_pending__<key>                 what the Claude Code hook asked about, until the tool ran
+override__<key>                     a write the hook asked about that the operator let run
 ```
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
@@ -72,6 +74,15 @@ Attach `encoded_ref` to the case, indexing it. Idempotent.
 
 * **Return type:**
   [`Case`](liaise.model.html.md#liaise.model.Case)
+
+#### add_override(key, record)
+
+Record that the operator let a write the hook asked about go ahead (discussion §5.8).
+
+Kept apart from cases and messages: liaise neither held nor sent it.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 #### add_unrouted(\*\*fields)
 
@@ -184,6 +195,13 @@ Every hold, in no set order.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Hold`](liaise.model.html.md#liaise.model.Hold)]
 
+#### hook_pending()
+
+Every pending ask, as `(key, record)`, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]]
+
 #### increment_daily(subject, day)
 
 Count one more dispatch for `subject` on `day`, returning the new count.
@@ -235,6 +253,20 @@ The hex part is random, not counted, so two agents sending at once need no lock.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### overrides()
+
+Every recorded hook override, as a fresh dict, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
+#### pop_hook_pending(key)
+
+The pending ask under `key`, removed; None when there is none.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
 #### runs(, status=None)
 
 Every run record, or those with `status`, in no set order.
@@ -283,6 +315,15 @@ Whether the event with `delivery_id` has already been taken in.
 #### set_hold(hold)
 
 Put `hold` on its scope, replacing any hold already there.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### set_hook_pending(key, record)
+
+Keep what the hook asked the operator about, under `key`, until the tool runs.
+
+`record` never holds a message’s text: the flow, the rules, the hashes, the ref.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)

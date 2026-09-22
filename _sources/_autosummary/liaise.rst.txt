@@ -78,6 +78,7 @@
    gate
    github
    holds
+   hook
    ledger
    messages
    migrate

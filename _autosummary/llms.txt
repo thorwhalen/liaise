@@ -15,6 +15,7 @@
 - [liaise.gate](liaise.gate.html.md): The outbound gate: the checks every message passes before liaise sends it, and the verdict they reac...
 - [liaise.github](liaise.github.html.md): The GitHub seam: one protocol, two implementations.
 - [liaise.holds](liaise.holds.html.md): Holds: stops on work, by scope, set by the operator or by the tick itself.
+- [liaise.hook](liaise.hook.html.md): The Claude Code hook: every &#96;gh&#96; or &#96;correspond&#96; write from any session is vetted first (discussion ...
 - [liaise.ledger](liaise.ledger.html.md): The ledger: liaise’s own record of what it has seen, opened, decided and started.
 - [liaise.messages](liaise.messages.html.md): Messages outside a case: what an agent says to a person on its own initiative, through the gate.
 - [liaise.migrate](liaise.migrate.html.md): Derive 0.1 subject files from a 0.0.x configuration: &#96;liaise migrate-config&#96;.

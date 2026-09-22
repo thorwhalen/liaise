@@ -500,6 +500,15 @@ Attach `encoded_ref` to the case, indexing it. Idempotent.
 * **Return type:**
   [`Case`](liaise.model.html.md#liaise.model.Case)
 
+#### add_override(key, record)
+
+Record that the operator let a write the hook asked about go ahead (discussion §5.8).
+
+Kept apart from cases and messages: liaise neither held nor sent it.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
 #### add_unrouted(\*\*fields)
 
 Queue a message that matched a binding but failed resolution, grade or permission.
@@ -611,6 +620,13 @@ Every hold, in no set order.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Hold`](liaise.model.html.md#liaise.model.Hold)]
 
+#### hook_pending()
+
+Every pending ask, as `(key, record)`, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]]
+
 #### increment_daily(subject, day)
 
 Count one more dispatch for `subject` on `day`, returning the new count.
@@ -662,6 +678,20 @@ The hex part is random, not counted, so two agents sending at once need no lock.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### overrides()
+
+Every recorded hook override, as a fresh dict, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
+#### pop_hook_pending(key)
+
+The pending ask under `key`, removed; None when there is none.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
 #### runs(, status=None)
 
 Every run record, or those with `status`, in no set order.
@@ -710,6 +740,15 @@ Whether the event with `delivery_id` has already been taken in.
 #### set_hold(hold)
 
 Put `hold` on its scope, replacing any hold already there.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### set_hook_pending(key, record)
+
+Keep what the hook asked the operator about, under `key`, until the tool runs.
+
+`record` never holds a message’s text: the flow, the rules, the hashes, the ref.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -1297,6 +1336,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`gate`](liaise.gate.html.md#module-liaise.gate)             | The outbound gate: the checks every message passes before liaise sends it, and the verdict they reach.               |
 | [`github`](liaise.github.html.md#module-liaise.github)         | The GitHub seam: one protocol, two implementations.                                                                  |
 | [`holds`](liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
+| [`hook`](liaise.hook.html.md#module-liaise.hook)             | The Claude Code hook: every `gh` or `correspond` write from any session is vetted first (discussion 32, §5.8).       |
 | [`ledger`](liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
 | [`messages`](liaise.messages.html.md#module-liaise.messages)     | Messages outside a case: what an agent says to a person on its own initiative, through the gate.                     |
 | [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |

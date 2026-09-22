@@ -17,6 +17,7 @@
 - [liaise.gate](_autosummary/liaise.gate.html.md): The outbound gate: the checks every message passes before liaise sends it, and the verdict they reac...
 - [liaise.github](_autosummary/liaise.github.html.md): The GitHub seam: one protocol, two implementations.
 - [liaise.holds](_autosummary/liaise.holds.html.md): Holds: stops on work, by scope, set by the operator or by the tick itself.
+- [liaise.hook](_autosummary/liaise.hook.html.md): The Claude Code hook: every &#96;gh&#96; or &#96;correspond&#96; write from any session is vetted first (discussion ...
 - [liaise.ledger](_autosummary/liaise.ledger.html.md): The ledger: liaise’s own record of what it has seen, opened, decided and started.
 - [liaise.messages](_autosummary/liaise.messages.html.md): Messages outside a case: what an agent says to a person on its own initiative, through the gate.
 - [liaise.migrate](_autosummary/liaise.migrate.html.md): Derive 0.1 subject files from a 0.0.x configuration: &#96;liaise migrate-config&#96;.
@@ -38,7 +39,7 @@
 - [liaise.vet](_autosummary/liaise.vet.html.md): Vetting a draft outside any case: the gate’s verdict, and nothing sent (discussion 32, §5.8).
 - [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 - [For AI agents](ai-agents.html.md): &#96;liaise&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-09-22 16:45 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-09-22 17:23 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

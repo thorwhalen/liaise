@@ -23,6 +23,8 @@ liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]
 liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
 liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]
     [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
+liaise vet --hook
+liaise hook install | uninstall | status [--settings FILE]
 liaise subject list
 liaise subject show SLUG
 liaise setup SUBJECT
@@ -75,6 +77,9 @@ traceback.
 | [`edit_in_editor`](#liaise.cli.edit_in_editor)(text)                                | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.                             |
 | [`gate_report`](#liaise.cli.gate_report)(\*[, subject, since, root, store])      | What the outbound gate did, in counts: judged, released, rejected, per rule, and whether to enforce.         |
 | [`hold`](#liaise.cli.hold)(scope, \*[, mode, reason, root, store])        | Stop work in SCOPE until `liaise unhold`.                                                                    |
+| [`hook_install`](#liaise.cli.hook_install)(\*[, settings])                        | Add liaise's PreToolUse and PostToolUse hooks to Claude Code's settings (`~/.claude/settings.json`).         |
+| [`hook_status`](#liaise.cli.hook_status)(\*[, settings])                         | Whether liaise's hooks are in Claude Code's settings: installed, outdated or missing, per event.             |
+| [`hook_uninstall`](#liaise.cli.hook_uninstall)(\*[, settings])                      | Remove liaise's hooks from Claude Code's settings, keeping everything else.                                  |
 | [`message_list`](#liaise.cli.message_list)(\*[, state, root, store])              | Every message sent or held outside a case, a line each: id, state, and where it goes.                        |
 | [`message_reject_draft`](#liaise.cli.message_reject_draft)(message_id, \*[, ...])         | Decline a held message, recording `--reason`.                                                                |
 | [`message_send`](#liaise.cli.message_send)(recipient, \*[, ref, text, ...])       | Send a message to PERSON outside any case, through the gate, or hold it for the operator.                    |
@@ -310,6 +315,32 @@ stops running runs, which stay resumable.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### liaise.cli.hook_install(, settings='')
+
+Add liaise’s PreToolUse and PostToolUse hooks to Claude Code’s settings (`~/.claude/settings.json`).
+
+Both run `liaise vet --hook` on Bash and correspond’s MCP write tools. Every other
+hook and setting is kept, and running it again changes nothing. The hook can only hold
+a write back (`ask`, `deny`), never let one through that the operator’s own
+permission rules would not. `--settings` names another settings file.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.hook_status(, settings='')
+
+Whether liaise’s hooks are in Claude Code’s settings: installed, outdated or missing, per event.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.hook_uninstall(, settings='')
+
+Remove liaise’s hooks from Claude Code’s settings, keeping everything else.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.cli.message_list(, state=None, root=None, store=None)
 
 Every message sent or held outside a case, a line each: id, state, and where it goes.
@@ -474,7 +505,7 @@ Lift the hold on SCOPE, whoever set it.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.vet(, ref='', to=None, cc=None, bcc=None, project='', title='', text='', text_file='-', tainted=False, untainted=False, json=False, root=None, registry=None, now=None, disclosure=None)
+### liaise.cli.vet(, ref='', to=None, cc=None, bcc=None, project='', title='', text='', text_file='-', tainted=False, untainted=False, json=False, hook=False, root=None, registry=None, now=None, disclosure=None, store=None, repo_of=None)
 
 Vet a draft for REF outside any case: the gate’s verdict, the audience in words, the readers. Sends nothing.
 
@@ -486,5 +517,11 @@ prints the verdict record. `--to`, `--cc` and `--bcc` may be repeated. The exit
 code is the route of a write made at once: 0 send, 2 draft-to-operator (a `delay`
 too), 3 block (1: the draft could not be vetted). It records nothing.
 
+`--hook` reads a Claude Code hook’s JSON on standard input instead (`liaise hook
+install` sets it up; see [`liaise.hook`](liaise.hook.md#module-liaise.hook)): on PreToolUse it prints `deny` or
+`ask` with the reasons for a `gh` or `correspond` write the gate holds back, and
+nothing otherwise; on PostToolUse it records the override when a command it asked
+about ran. It always exits 0, and fails closed (`ask`).
+
 * **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]

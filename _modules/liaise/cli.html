@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=297ad043"></script>
+    <script src="../../_static/documentation_options.js?v=8d02545a"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.12" />
+  <meta name="docsearch:version" content="0.1.13" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -733,6 +733,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]</span>
 <span class="sd">    liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]</span>
 <span class="sd">        [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]</span>
+<span class="sd">    liaise vet --hook</span>
+<span class="sd">    liaise hook install | uninstall | status [--settings FILE]</span>
 <span class="sd">    liaise subject list</span>
 <span class="sd">    liaise subject show SLUG</span>
 <span class="sd">    liaise setup SUBJECT</span>
@@ -2107,6 +2109,114 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">lines</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_readers</span><span class="p">(</span><span class="n">given</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The readers of ``--to``, ``--cc`` or ``--bcc``: a ``-`` among them is standard input, not a reader.</span>
+
+<span class="sd">    ``liaise vet --to ada -`` (the form acquaint-write runs) reads the draft on stdin, as</span>
+<span class="sd">    the default does.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">reader</span> <span class="k">for</span> <span class="n">reader</span> <span class="ow">in</span> <span class="n">given</span> <span class="ow">or</span> <span class="p">()</span> <span class="k">if</span> <span class="n">reader</span> <span class="o">!=</span> <span class="n">STDIN_FILE_NAME</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_vet_hook</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">refused</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">],</span>
+    <span class="n">disclosure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]],</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="n">repo_of</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``liaise vet --hook``: the hook's answer for the JSON on standard input, or None."""</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">json_module</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">hook</span> <span class="k">as</span> <span class="n">hooks</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">vet</span> <span class="k">as</span> <span class="n">vetting</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">outbound_policy</span>
+
+    <span class="n">raw</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">refused</span><span class="p">:</span>
+        <span class="c1"># The hook judges with the provenance unknown and the destination the command</span>
+        <span class="c1"># names; a flag that would change either is refused, and the write goes to the</span>
+        <span class="c1"># operator.</span>
+        <span class="k">return</span> <span class="n">json_module</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"hookSpecificOutput"</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">"hookEventName"</span><span class="p">:</span> <span class="n">hooks</span><span class="o">.</span><span class="n">PRE_TOOL_USE</span><span class="p">,</span>
+                    <span class="s2">"permissionDecision"</span><span class="p">:</span> <span class="n">hooks</span><span class="o">.</span><span class="n">ASK</span><span class="p">,</span>
+                    <span class="s2">"permissionDecisionReason"</span><span class="p">:</span> <span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"liaise: vet --hook takes no </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">refused</span><span class="p">)</span><span class="si">}</span><span class="s2">; fix the hook "</span>
+                        <span class="sa">f</span><span class="s2">"command (liaise hook install)"</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+    <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+    <span class="n">filters</span> <span class="o">=</span> <span class="n">vetting</span><span class="o">.</span><span class="n">VET_FILTERS</span>
+    <span class="k">if</span> <span class="n">disclosure</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">policy</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">outbound_policy</span><span class="p">,</span> <span class="n">disclosure</span><span class="o">=</span><span class="n">disclosure</span><span class="p">)</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">policy</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="n">outbound_policy</span> <span class="k">else</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filters</span><span class="p">)</span>
+    <span class="n">vet_fn</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
+        <span class="n">vetting</span><span class="o">.</span><span class="n">vet</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">outbound_filters</span><span class="o">=</span><span class="n">filters</span>
+    <span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">ledger_store</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">store</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">store</span>
+        <span class="k">return</span> <span class="n">_ledger_store</span><span class="p">(</span><span class="n">load_global_config</span><span class="p">(</span><span class="n">config_root</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">answer</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">run_hook</span><span class="p">(</span>
+        <span class="n">raw</span><span class="p">,</span>
+        <span class="n">ledger_store</span><span class="o">=</span><span class="n">ledger_store</span><span class="p">,</span>
+        <span class="n">vet_fn</span><span class="o">=</span><span class="n">vet_fn</span><span class="p">,</span>
+        <span class="n">root</span><span class="o">=</span><span class="n">config_root</span><span class="p">,</span>
+        <span class="n">repo_of</span><span class="o">=</span><span class="n">repo_of</span> <span class="ow">or</span> <span class="n">hooks</span><span class="o">.</span><span class="n">repo_of_checkout</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">answer</span> <span class="ow">or</span> <span class="kc">None</span>
+
+
+<div class="viewcode-block" id="hook_install">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.hook_install">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">hook_install</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">settings</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Add liaise's PreToolUse and PostToolUse hooks to Claude Code's settings (``~/.claude/settings.json``).</span>
+
+<span class="sd">    Both run ``liaise vet --hook`` on Bash and correspond's MCP write tools. Every other</span>
+<span class="sd">    hook and setting is kept, and running it again changes nothing. The hook can only hold</span>
+<span class="sd">    a write back (``ask``, ``deny``), never let one through that the operator's own</span>
+<span class="sd">    permission rules would not. ``--settings`` names another settings file.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">hook</span> <span class="k">as</span> <span class="n">hooks</span>
+
+    <span class="k">return</span> <span class="n">hooks</span><span class="o">.</span><span class="n">install_hooks</span><span class="p">(</span><span class="n">settings</span> <span class="ow">or</span> <span class="n">hooks</span><span class="o">.</span><span class="n">DFLT_SETTINGS</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="hook_uninstall">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.hook_uninstall">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">hook_uninstall</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">settings</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Remove liaise's hooks from Claude Code's settings, keeping everything else."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">hook</span> <span class="k">as</span> <span class="n">hooks</span>
+
+    <span class="k">return</span> <span class="n">hooks</span><span class="o">.</span><span class="n">uninstall_hooks</span><span class="p">(</span><span class="n">settings</span> <span class="ow">or</span> <span class="n">hooks</span><span class="o">.</span><span class="n">DFLT_SETTINGS</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="hook_status">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.hook_status">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">hook_status</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">settings</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether liaise's hooks are in Claude Code's settings: installed, outdated or missing, per event."""</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">hook</span> <span class="k">as</span> <span class="n">hooks</span>
+
+    <span class="n">states</span> <span class="o">=</span> <span class="n">hooks</span><span class="o">.</span><span class="n">hook_status</span><span class="p">(</span><span class="n">settings</span> <span class="ow">or</span> <span class="n">hooks</span><span class="o">.</span><span class="n">DFLT_SETTINGS</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">event</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">event</span><span class="p">,</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">states</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
+
+
+
 <div class="viewcode-block" id="vet">
 <a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.vet">[docs]</a>
 <span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
@@ -2123,11 +2233,14 @@ window.runMermaid = runMermaid;</script>
     <span class="n">tainted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">untainted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">json</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">hook</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">disclosure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">repo_of</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]],</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers. Sends nothing.</span>
 
 <span class="sd">    The draft is ``--text``, or ``--text-file`` (standard input by default). ``--to`` names</span>
@@ -2137,12 +2250,41 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    prints the verdict record. ``--to``, ``--cc`` and ``--bcc`` may be repeated. The exit</span>
 <span class="sd">    code is the route of a write made at once: 0 send, 2 draft-to-operator (a ``delay``</span>
 <span class="sd">    too), 3 block (1: the draft could not be vetted). It records nothing.</span>
+
+<span class="sd">    ``--hook`` reads a Claude Code hook's JSON on standard input instead (``liaise hook</span>
+<span class="sd">    install`` sets it up; see :mod:`liaise.hook`): on PreToolUse it prints ``deny`` or</span>
+<span class="sd">    ``ask`` with the reasons for a ``gh`` or ``correspond`` write the gate holds back, and</span>
+<span class="sd">    nothing otherwise; on PostToolUse it records the override when a command it asked</span>
+<span class="sd">    about ran. It always exits 0, and fails closed (``ask``).</span>
 <span class="sd">    """</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">json_module</span>
 
     <span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">vet</span> <span class="k">as</span> <span class="n">vetting</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">outbound_policy</span>
 
+    <span class="k">if</span> <span class="n">hook</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_vet_hook</span><span class="p">(</span>
+            <span class="n">refused</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">flag</span>
+                <span class="k">for</span> <span class="n">flag</span><span class="p">,</span> <span class="n">given</span> <span class="ow">in</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="s2">"--untainted"</span><span class="p">,</span> <span class="n">untainted</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">"--tainted"</span><span class="p">,</span> <span class="n">tainted</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">"--ref"</span><span class="p">,</span> <span class="n">ref</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">"--text"</span><span class="p">,</span> <span class="n">text</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">"--to"</span><span class="p">,</span> <span class="n">to</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">"--cc"</span><span class="p">,</span> <span class="n">cc</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">"--bcc"</span><span class="p">,</span> <span class="n">bcc</span><span class="p">),</span>
+                    <span class="p">(</span><span class="s2">"--json"</span><span class="p">,</span> <span class="n">json</span><span class="p">),</span>
+                <span class="p">)</span>
+                <span class="k">if</span> <span class="n">given</span>
+            <span class="p">],</span>
+            <span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span>
+            <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+            <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">disclosure</span><span class="o">=</span><span class="n">disclosure</span><span class="p">,</span>
+            <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span>
+            <span class="n">repo_of</span><span class="o">=</span><span class="n">repo_of</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="n">tainted</span> <span class="ow">and</span> <span class="n">untainted</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"give at most one of --tainted and --untainted"</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">ref</span><span class="p">:</span>
@@ -2160,9 +2302,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">found</span> <span class="o">=</span> <span class="n">vetting</span><span class="o">.</span><span class="n">vet</span><span class="p">(</span>
         <span class="n">body</span><span class="p">,</span>
         <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
-        <span class="n">to</span><span class="o">=</span><span class="n">to</span> <span class="ow">or</span> <span class="p">(),</span>
-        <span class="n">cc</span><span class="o">=</span><span class="n">cc</span> <span class="ow">or</span> <span class="p">(),</span>
-        <span class="n">bcc</span><span class="o">=</span><span class="n">bcc</span> <span class="ow">or</span> <span class="p">(),</span>
+        <span class="n">to</span><span class="o">=</span><span class="n">_readers</span><span class="p">(</span><span class="n">to</span><span class="p">),</span>
+        <span class="n">cc</span><span class="o">=</span><span class="n">_readers</span><span class="p">(</span><span class="n">cc</span><span class="p">),</span>
+        <span class="n">bcc</span><span class="o">=</span><span class="n">_readers</span><span class="p">(</span><span class="n">bcc</span><span class="p">),</span>
         <span class="n">title</span><span class="o">=</span><span class="n">title</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">project</span><span class="o">=</span><span class="n">project</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">tainted</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">tainted</span> <span class="k">else</span> <span class="p">(</span><span class="kc">False</span> <span class="k">if</span> <span class="n">untainted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">),</span>
@@ -2243,6 +2385,11 @@ window.runMermaid = runMermaid;</script>
     <span class="s2">"subject"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"list"</span><span class="p">:</span> <span class="n">subject_list</span><span class="p">,</span> <span class="s2">"show"</span><span class="p">:</span> <span class="n">subject_show</span><span class="p">},</span>
     <span class="s2">"gate"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"report"</span><span class="p">:</span> <span class="n">gate_report</span><span class="p">},</span>
     <span class="s2">"vet"</span><span class="p">:</span> <span class="n">vet</span><span class="p">,</span>
+    <span class="s2">"hook"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"install"</span><span class="p">:</span> <span class="n">hook_install</span><span class="p">,</span>
+        <span class="s2">"uninstall"</span><span class="p">:</span> <span class="n">hook_uninstall</span><span class="p">,</span>
+        <span class="s2">"status"</span><span class="p">:</span> <span class="n">hook_status</span><span class="p">,</span>
+    <span class="p">},</span>
     <span class="s2">"setup"</span><span class="p">:</span> <span class="n">setup</span><span class="p">,</span>
     <span class="s2">"migrate-config"</span><span class="p">:</span> <span class="n">migrate_config</span><span class="p">,</span>
     <span class="s2">"schedule"</span><span class="p">:</span> <span class="p">{</span>
@@ -2287,7 +2434,7 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
     <span class="p">},</span>
     <span class="s2">"gate"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"report"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,)},</span>
-    <span class="s2">"vet"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"disclosure"</span><span class="p">),</span>
+    <span class="s2">"vet"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"disclosure"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"repo_of"</span><span class="p">),</span>
     <span class="s2">"setup"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"labeler"</span><span class="p">,),</span>
 <span class="p">}</span>
 

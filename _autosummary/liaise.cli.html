@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=297ad043"></script>
+    <script src="../_static/documentation_options.js?v=8d02545a"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.cases" href="liaise.cases.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.12" />
+  <meta name="docsearch:version" content="0.1.13" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -328,6 +328,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.gate.html">liaise.gate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.github.html">liaise.github</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.hook.html">liaise.hook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
@@ -435,6 +436,8 @@
 <span class="n">liaise</span> <span class="n">message</span> <span class="n">reject</span><span class="o">-</span><span class="n">draft</span> <span class="n">MESSAGE_ID</span> <span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">vet</span> <span class="o">--</span><span class="n">ref</span> <span class="n">REF</span> <span class="p">[</span><span class="o">--</span><span class="n">to</span> <span class="n">PERSON</span><span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">cc</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bcc</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">project</span> <span class="n">P</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">T</span><span class="p">]</span>
     <span class="p">[</span><span class="o">--</span><span class="n">text</span> <span class="n">TEXT</span> <span class="o">|</span> <span class="o">--</span><span class="n">text</span><span class="o">-</span><span class="n">file</span> <span class="n">FILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tainted</span> <span class="o">|</span> <span class="o">--</span><span class="n">untainted</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">json</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">vet</span> <span class="o">--</span><span class="n">hook</span>
+<span class="n">liaise</span> <span class="n">hook</span> <span class="n">install</span> <span class="o">|</span> <span class="n">uninstall</span> <span class="o">|</span> <span class="n">status</span> <span class="p">[</span><span class="o">--</span><span class="n">settings</span> <span class="n">FILE</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="nb">list</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="n">show</span> <span class="n">SLUG</span>
 <span class="n">liaise</span> <span class="n">setup</span> <span class="n">SUBJECT</span>
@@ -534,52 +537,61 @@ traceback.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.hold" title="liaise.cli.hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hold</span></code></a>(scope, *[, mode, reason, root, store])</p></td>
 <td><p>Stop work in SCOPE until <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">unhold</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_list" title="liaise.cli.message_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_list</span></code></a>(*[, state, root, store])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.hook_install" title="liaise.cli.hook_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_install</span></code></a>(*[, settings])</p></td>
+<td><p>Add liaise's PreToolUse and PostToolUse hooks to Claude Code's settings (<code class="docutils literal notranslate"><span class="pre">~/.claude/settings.json</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.hook_status" title="liaise.cli.hook_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_status</span></code></a>(*[, settings])</p></td>
+<td><p>Whether liaise's hooks are in Claude Code's settings: installed, outdated or missing, per event.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.hook_uninstall" title="liaise.cli.hook_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_uninstall</span></code></a>(*[, settings])</p></td>
+<td><p>Remove liaise's hooks from Claude Code's settings, keeping everything else.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_list" title="liaise.cli.message_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_list</span></code></a>(*[, state, root, store])</p></td>
 <td><p>Every message sent or held outside a case, a line each: id, state, and where it goes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_reject_draft" title="liaise.cli.message_reject_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_reject_draft</span></code></a>(message_id, *[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_reject_draft" title="liaise.cli.message_reject_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_reject_draft</span></code></a>(message_id, *[, ...])</p></td>
 <td><p>Decline a held message, recording <code class="docutils literal notranslate"><span class="pre">--reason</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_send" title="liaise.cli.message_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send</span></code></a>(recipient, *[, ref, text, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_send" title="liaise.cli.message_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send</span></code></a>(recipient, *[, ref, text, ...])</p></td>
 <td><p>Send a message to PERSON outside any case, through the gate, or hold it for the operator.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_send_draft" title="liaise.cli.message_send_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send_draft</span></code></a>(message_id, *[, edit, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_send_draft" title="liaise.cli.message_send_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send_draft</span></code></a>(message_id, *[, edit, ...])</p></td>
 <td><p>Send a held message you approved, through the gate, as <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code> does.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_show" title="liaise.cli.message_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_show</span></code></a>(message_id, *[, root, store])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_show" title="liaise.cli.message_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_show</span></code></a>(message_id, *[, root, store])</p></td>
 <td><p>MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.migrate_config" title="liaise.cli.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>(*[, root, apply])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.migrate_config" title="liaise.cli.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>(*[, root, apply])</p></td>
 <td><p>Derive 0.1 subject files from a 0.0.x configuration, and print the plan.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.run" title="liaise.cli.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(*[, root, once, dry_run, subject, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.run" title="liaise.cli.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(*[, root, once, dry_run, subject, ...])</p></td>
 <td><p>One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_install" title="liaise.cli.schedule_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_install</span></code></a>(*[, root, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_install" title="liaise.cli.schedule_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_install</span></code></a>(*[, root, ...])</p></td>
 <td><p>Install the scheduled <code class="code docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">run</span> <span class="pre">--once</span></code> job (launchd on macOS, systemd on Linux).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_status_cmd" title="liaise.cli.schedule_status_cmd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_status_cmd</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_status_cmd" title="liaise.cli.schedule_status_cmd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_status_cmd</span></code></a>()</p></td>
 <td><p>Whether the scheduled job is installed.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_uninstall" title="liaise.cli.schedule_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_uninstall</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_uninstall" title="liaise.cli.schedule_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_uninstall</span></code></a>()</p></td>
 <td><p>Remove the scheduled job.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.setup" title="liaise.cli.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>(subject, *[, root, labeler])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.setup" title="liaise.cli.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>(subject, *[, root, labeler])</p></td>
 <td><p>Create SUBJECT's labels in each GitHub repository it binds.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.status" title="liaise.cli.status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status</span></code></a>(*[, root, store, now])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.status" title="liaise.cli.status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status</span></code></a>(*[, root, store, now])</p></td>
 <td><p>What the ledger says, changing nothing: the last run, holds, runs, cases, what waits on you.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.subject_list" title="liaise.cli.subject_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_list</span></code></a>(*[, root])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.subject_list" title="liaise.cli.subject_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_list</span></code></a>(*[, root])</p></td>
 <td><p>Every configured subject with its bindings, flagging an inactive one and any binding that could never match.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.subject_show" title="liaise.cli.subject_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_show</span></code></a>(slug, *[, root])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.subject_show" title="liaise.cli.subject_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_show</span></code></a>(slug, *[, root])</p></td>
 <td><p>The subject SLUG as liaise reads it, every default applied, and its binding problems.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.unhold" title="liaise.cli.unhold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unhold</span></code></a>(scope, *[, root, store])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.unhold" title="liaise.cli.unhold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unhold</span></code></a>(scope, *[, root, store])</p></td>
 <td><p>Lift the hold on SCOPE, whoever set it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.vet" title="liaise.cli.vet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vet</span></code></a>(*[, ref, to, cc, bcc, project, title, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.vet" title="liaise.cli.vet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vet</span></code></a>(*[, ref, to, cc, bcc, project, title, ...])</p></td>
 <td><p>Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers.</p></td>
 </tr>
 </tbody>
@@ -860,6 +872,43 @@ stops running runs, which stay resumable.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.hook_install">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">hook_install</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#hook_install"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.hook_install" title="Link to this definition">#</a></dt>
+<dd><p>Add liaise’s PreToolUse and PostToolUse hooks to Claude Code’s settings (<code class="docutils literal notranslate"><span class="pre">~/.claude/settings.json</span></code>).</p>
+<p>Both run <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">vet</span> <span class="pre">--hook</span></code> on Bash and correspond’s MCP write tools. Every other
+hook and setting is kept, and running it again changes nothing. The hook can only hold
+a write back (<code class="docutils literal notranslate"><span class="pre">ask</span></code>, <code class="docutils literal notranslate"><span class="pre">deny</span></code>), never let one through that the operator’s own
+permission rules would not. <code class="docutils literal notranslate"><span class="pre">--settings</span></code> names another settings file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.hook_status">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">hook_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#hook_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.hook_status" title="Link to this definition">#</a></dt>
+<dd><p>Whether liaise’s hooks are in Claude Code’s settings: installed, outdated or missing, per event.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.hook_uninstall">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">hook_uninstall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#hook_uninstall"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.hook_uninstall" title="Link to this definition">#</a></dt>
+<dd><p>Remove liaise’s hooks from Claude Code’s settings, keeping everything else.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="liaise.cli.message_list">
 <span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">message_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#message_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.message_list" title="Link to this definition">#</a></dt>
 <dd><p>Every message sent or held outside a case, a line each: id, state, and where it goes.</p>
@@ -1073,7 +1122,7 @@ queue, the drafts waiting for the operator, and the latest digest notes.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.cli.vet">
-<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">vet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">untainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#vet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.vet" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">vet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">untainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hook</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">repo_of</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#vet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.vet" title="Link to this definition">#</a></dt>
 <dd><p>Vet a draft for REF outside any case: the gate’s verdict, the audience in words, the readers. Sends nothing.</p>
 <p>The draft is <code class="docutils literal notranslate"><span class="pre">--text</span></code>, or <code class="docutils literal notranslate"><span class="pre">--text-file</span></code> (standard input by default). <code class="docutils literal notranslate"><span class="pre">--to</span></code> names
 the person (or people) it is for, <code class="docutils literal notranslate"><span class="pre">--cc</span></code> and <code class="docutils literal notranslate"><span class="pre">--bcc</span></code> further readers, and
@@ -1082,9 +1131,14 @@ tainted, unless <code class="docutils literal notranslate"><span class="pre">--u
 prints the verdict record. <code class="docutils literal notranslate"><span class="pre">--to</span></code>, <code class="docutils literal notranslate"><span class="pre">--cc</span></code> and <code class="docutils literal notranslate"><span class="pre">--bcc</span></code> may be repeated. The exit
 code is the route of a write made at once: 0 send, 2 draft-to-operator (a <code class="docutils literal notranslate"><span class="pre">delay</span></code>
 too), 3 block (1: the draft could not be vetted). It records nothing.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--hook</span></code> reads a Claude Code hook’s JSON on standard input instead (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">hook</span>
+<span class="pre">install</span></code> sets it up; see <a class="reference internal" href="liaise.hook.html#module-liaise.hook" title="liaise.hook"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.hook</span></code></a>): on PreToolUse it prints <code class="docutils literal notranslate"><span class="pre">deny</span></code> or
+<code class="docutils literal notranslate"><span class="pre">ask</span></code> with the reasons for a <code class="docutils literal notranslate"><span class="pre">gh</span></code> or <code class="docutils literal notranslate"><span class="pre">correspond</span></code> write the gate holds back, and
+nothing otherwise; on PostToolUse it records the override when a command it asked
+about ran. It always exits 0, and fails closed (<code class="docutils literal notranslate"><span class="pre">ask</span></code>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1162,6 +1216,9 @@ too), 3 block (1: the draft could not be vetted). It records nothing.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.edit_in_editor"><code class="docutils literal notranslate"><span class="pre">edit_in_editor()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.gate_report"><code class="docutils literal notranslate"><span class="pre">gate_report()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.hold"><code class="docutils literal notranslate"><span class="pre">hold()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.hook_install"><code class="docutils literal notranslate"><span class="pre">hook_install()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.hook_status"><code class="docutils literal notranslate"><span class="pre">hook_status()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.hook_uninstall"><code class="docutils literal notranslate"><span class="pre">hook_uninstall()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_list"><code class="docutils literal notranslate"><span class="pre">message_list()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_reject_draft"><code class="docutils literal notranslate"><span class="pre">message_reject_draft()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.message_send"><code class="docutils literal notranslate"><span class="pre">message_send()</span></code></a></li>

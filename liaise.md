@@ -1,4 +1,4 @@
-> built 2026-09-22 16:45 UTC from 6fd028b (main) · liaise 0.1.12. Details: build_info.json
+> built 2026-09-22 17:23 UTC from 2e4bee7 (main) · liaise 0.1.13. Details: build_info.json
 
 # index.html.md
 
@@ -267,6 +267,8 @@ A subject’s runs share its checkout (`workspace.path`, behind the `workspace=`
 - `liaise message list [--state held|sent|rejected]` and `liaise message show MESSAGE_ID`: the messages sent or held outside a case, and one with its text and history. They change nothing.
 - `liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]` and `liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]`: send a held message after confirming it at a terminal, or decline it; as `case send-draft` and `case reject-draft` do for a case’s drafts.
 - `liaise gate report [--subject SLUG] [--since TIME]`: what the outbound gate did, in counts. It lists the messages judged, sent as judged, held, released by you (a release you did not edit is a false divert) and rejected. For each rule it shows how often the rule fired, how often you released its findings as false positives, how often you confirmed them by rejecting the draft, and its precision. It also gives the override and false-divert rates, and ends with the rollout rule of discussion 32 (enforce after 30 shadow messages with no missed finding of severity 4 or above and at most one false divert in ten). The outbox’s own releases are not counted as your overrides. It never prints a message’s text, a value or a fingerprint, and it changes nothing.
+- `liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T] [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]`: put a draft through the gate outside any case, sending and recording nothing. It prints the verdict, the audience in words, each reader’s tier and clearance, and the reasons. The exit code is the route of a post made at once: 0 send, 2 draft for you (a `delay` too), 3 block, 1 cannot vet. The draft is read from standard input by default. What its author read counts as tainted unless `--untainted` says otherwise. For correspond, `before_send = "liaise.vet:before_send"` in its config runs the same check on every write.
+- `liaise hook install | uninstall | status [--settings FILE]`: add or remove a Claude Code PreToolUse hook and a PostToolUse hook (`liaise vet --hook`) in `~/.claude/settings.json`. They vet every `gh` or `correspond` write a session makes: a block is denied and anything for you is asked, with the reasons. The hook never answers allow, so your own permission rules still decide the rest. What it cannot read is asked, and a yes to an ask is recorded as an override. Installing is your choice, per machine.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
 - `liaise setup SUBJECT`: create the subject’s claim labels and every state label in each repository it binds. Safe to run again.
 - `liaise migrate-config [--apply]`: derive subject files from a 0.0.x configuration; a dry run unless `--apply`.
@@ -758,6 +760,8 @@ liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]
 liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
 liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]
     [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
+liaise vet --hook
+liaise hook install | uninstall | status [--settings FILE]
 liaise subject list
 liaise subject show SLUG
 liaise setup SUBJECT
@@ -810,6 +814,9 @@ traceback.
 | [`edit_in_editor`](_autosummary/liaise.cli.html.md#liaise.cli.edit_in_editor)(text)                                | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.                             |
 | [`gate_report`](_autosummary/liaise.cli.html.md#liaise.cli.gate_report)(\*[, subject, since, root, store])      | What the outbound gate did, in counts: judged, released, rejected, per rule, and whether to enforce.         |
 | [`hold`](_autosummary/liaise.cli.html.md#liaise.cli.hold)(scope, \*[, mode, reason, root, store])        | Stop work in SCOPE until `liaise unhold`.                                                                    |
+| [`hook_install`](_autosummary/liaise.cli.html.md#liaise.cli.hook_install)(\*[, settings])                        | Add liaise's PreToolUse and PostToolUse hooks to Claude Code's settings (`~/.claude/settings.json`).         |
+| [`hook_status`](_autosummary/liaise.cli.html.md#liaise.cli.hook_status)(\*[, settings])                         | Whether liaise's hooks are in Claude Code's settings: installed, outdated or missing, per event.             |
+| [`hook_uninstall`](_autosummary/liaise.cli.html.md#liaise.cli.hook_uninstall)(\*[, settings])                      | Remove liaise's hooks from Claude Code's settings, keeping everything else.                                  |
 | [`message_list`](_autosummary/liaise.cli.html.md#liaise.cli.message_list)(\*[, state, root, store])              | Every message sent or held outside a case, a line each: id, state, and where it goes.                        |
 | [`message_reject_draft`](_autosummary/liaise.cli.html.md#liaise.cli.message_reject_draft)(message_id, \*[, ...])         | Decline a held message, recording `--reason`.                                                                |
 | [`message_send`](_autosummary/liaise.cli.html.md#liaise.cli.message_send)(recipient, \*[, ref, text, ...])       | Send a message to PERSON outside any case, through the gate, or hold it for the operator.                    |
@@ -1045,6 +1052,32 @@ stops running runs, which stay resumable.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### liaise.cli.hook_install(, settings='')
+
+Add liaise’s PreToolUse and PostToolUse hooks to Claude Code’s settings (`~/.claude/settings.json`).
+
+Both run `liaise vet --hook` on Bash and correspond’s MCP write tools. Every other
+hook and setting is kept, and running it again changes nothing. The hook can only hold
+a write back (`ask`, `deny`), never let one through that the operator’s own
+permission rules would not. `--settings` names another settings file.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.hook_status(, settings='')
+
+Whether liaise’s hooks are in Claude Code’s settings: installed, outdated or missing, per event.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.hook_uninstall(, settings='')
+
+Remove liaise’s hooks from Claude Code’s settings, keeping everything else.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.cli.message_list(, state=None, root=None, store=None)
 
 Every message sent or held outside a case, a line each: id, state, and where it goes.
@@ -1209,7 +1242,7 @@ Lift the hold on SCOPE, whoever set it.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.vet(, ref='', to=None, cc=None, bcc=None, project='', title='', text='', text_file='-', tainted=False, untainted=False, json=False, root=None, registry=None, now=None, disclosure=None)
+### liaise.cli.vet(, ref='', to=None, cc=None, bcc=None, project='', title='', text='', text_file='-', tainted=False, untainted=False, json=False, hook=False, root=None, registry=None, now=None, disclosure=None, store=None, repo_of=None)
 
 Vet a draft for REF outside any case: the gate’s verdict, the audience in words, the readers. Sends nothing.
 
@@ -1221,8 +1254,14 @@ prints the verdict record. `--to`, `--cc` and `--bcc` may be repeated. The exit
 code is the route of a write made at once: 0 send, 2 draft-to-operator (a `delay`
 too), 3 block (1: the draft could not be vetted). It records nothing.
 
+`--hook` reads a Claude Code hook’s JSON on standard input instead (`liaise hook
+install` sets it up; see [`liaise.hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)): on PreToolUse it prints `deny` or
+`ask` with the reasons for a `gh` or `correspond` write the gate holds back, and
+nothing otherwise; on PostToolUse it records the override when a command it asked
+about ran. It always exits 0, and fails closed (`ask`).
+
 * **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
 # _autosummary/liaise.config.html.md
@@ -3045,6 +3084,313 @@ Raises `ValueError` for a scope outside the accepted forms.
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 
+# _autosummary/liaise.hook.html.md
+
+# liaise.hook
+
+The Claude Code hook: every `gh` or `correspond` write from any session is vetted first (discussion 32, §5.8).
+
+`liaise hook install` adds two hooks to the user’s Claude Code settings, each running
+`liaise vet --hook`:
+
+- **PreToolUse**, on `Bash` and on correspond’s MCP write tools. [`pre_tool_use()`](_autosummary/liaise.hook.html.md#liaise.hook.pre_tool_use)
+  reads the hook’s JSON, finds each write in it ([`writes_in()`](_autosummary/liaise.hook.html.md#liaise.hook.writes_in)), vets it
+  ([`liaise.vet.vet()`](_autosummary/liaise.vet.html.md#liaise.vet.vet), with the provenance unknown) and answers `deny` with the
+  reasons for a block and `ask` with the reasons for anything for the operator. A write
+  it cannot read (a body in a file that is not there, a body the shell computes, a `gh`
+  command behind `eval` or `xargs`) is `ask` with the reason, never let through.
+- **PostToolUse**, on the same tools. When a command the hook answered `ask` ran, the
+  operator said yes: [`post_tool_use()`](_autosummary/liaise.hook.html.md#liaise.hook.post_tool_use) records that in the ledger as an override
+  ([`liaise.ledger.Ledger.add_override()`](_autosummary/liaise.ledger.html.md#liaise.ledger.Ledger.add_override)), never the text.
+
+**The hook only tightens.** A write the gate would send, and every command that is not a
+write, gets no answer at all: the hook prints nothing and exits 0, so the operator’s own
+permission rules decide, as they did before the hook. Claude Code’s `allow` would skip
+the operator’s prompt, which is new outbound behaviour, so the hook never gives it. A
+`delay` is `ask`, since the write happens at once and nothing can hold it.
+
+**The grammar is a fixed table** ([`GH_WRITES`](_autosummary/liaise.hook.html.md#liaise.hook.GH_WRITES), not a seam): `gh issue
+comment|create|edit`, `gh pr comment|create|edit|review`, `gh api` writes to issues,
+comments, pulls, discussions and GraphQL mutations, `correspond send|edit`, and the
+correspond MCP tools `send` and `edit`. Bodies come from `--body`/`-b`,
+`--body-file`/`-F` (a regular file; `-` is the command’s one heredoc, or
+`cat <<'EOF' |` before it), `-f body=…`, `-F body=@file` and `--input`.
+
+**Only plain commands are read** ([`writes_in()`](_autosummary/liaise.hook.html.md#liaise.hook.writes_in)). A command that names `gh` or
+`correspond` is read when it is a list of `gh`/`correspond` commands, a
+`cat <<'EOF' |` feeding one, or a gh read piped into a filter. Anything else in it
+(another program, `cd`, a `$` or a backtick, an assignment such as `GH_REPO=…`, a
+subshell or compound command, a redirection but `2>&1` and `>/dev/null`, a second
+heredoc, a cluster of short flags, a `gh` alias or extension, a `gh` command outside
+the table that changes something) is `ask`: an independent review showed that each
+shell construct the hook tries to see through is one more way around it. A `GH_REPO`
+already exported in the session’s shell is not visible to the hook, which then judges
+the checkout’s repository.
+
+### Module Attributes
+
+| [`ALLOW`](_autosummary/liaise.hook.html.md#liaise.hook.ALLOW)               | What the hook answers, least restrictive first.                                                                                                              |
+|----------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ASK`](_autosummary/liaise.hook.html.md#liaise.hook.ASK)                 | What the hook answers, least restrictive first.                                                                                                              |
+| [`DENY`](_autosummary/liaise.hook.html.md#liaise.hook.DENY)                | What the hook answers, least restrictive first.                                                                                                              |
+| [`HOOK_COMMAND`](_autosummary/liaise.hook.html.md#liaise.hook.HOOK_COMMAND)        | The command both hooks run.                                                                                                                                  |
+| [`HOOK_MATCHER`](_autosummary/liaise.hook.html.md#liaise.hook.HOOK_MATCHER)        | Bash, and correspond's MCP write tools under any server name that holds "correspond".                                                                        |
+| [`DFLT_SETTINGS`](_autosummary/liaise.hook.html.md#liaise.hook.DFLT_SETTINGS)       | The user's Claude Code settings, where `liaise hook install` writes.                                                                                         |
+| [`PENDING_TTL`](_autosummary/liaise.hook.html.md#liaise.hook.PENDING_TTL)         | How long a pending ask waits for its tool to run before it is pruned (an answer of no leaves one behind).                                                    |
+| [`UNKNOWN_REF`](_autosummary/liaise.hook.html.md#liaise.hook.UNKNOWN_REF)         | The ref a write goes to when the command does not say and the checkout cannot tell: its audience is unknown, which resolves to public.                       |
+| [`MAX_BODY_FILE_BYTES`](_autosummary/liaise.hook.html.md#liaise.hook.MAX_BODY_FILE_BYTES) | The largest body file the hook reads; a larger one is ask.                                                                                                   |
+| [`NO_BODY`](_autosummary/liaise.hook.html.md#liaise.hook.NO_BODY)             | What the hook answers when it cannot read a write's body.                                                                                                    |
+| [`GH_BODY_FLAGS`](_autosummary/liaise.hook.html.md#liaise.hook.GH_BODY_FLAGS)       | The flags of a `gh` command that carry text to someone.                                                                                                      |
+| [`GH_READ_VERBS`](_autosummary/liaise.hook.html.md#liaise.hook.GH_READ_VERBS)       | `gh` verbs that only read, whatever flags they take (`gh run list -b main`).                                                                                 |
+| [`GH_QUIET_VERBS`](_autosummary/liaise.hook.html.md#liaise.hook.GH_QUIET_VERBS)      | `gh` verbs that change nothing anyone reads (a local checkout, a rerun, a login).                                                                            |
+| [`GH_GROUPS`](_autosummary/liaise.hook.html.md#liaise.hook.GH_GROUPS)           | `gh`'s own command groups; anything else is an alias or an extension.                                                                                        |
+| [`GH_SINGLE_COMMANDS`](_autosummary/liaise.hook.html.md#liaise.hook.GH_SINGLE_COMMANDS)  | `gh` commands that are one word and read.                                                                                                                    |
+| [`GH_PUBLISHES`](_autosummary/liaise.hook.html.md#liaise.hook.GH_PUBLISHES)        | `gh <group> <verb>` commands that publish files or text the hook does not read.                                                                              |
+| [`GH_WRITES`](_autosummary/liaise.hook.html.md#liaise.hook.GH_WRITES)           | The `gh <group> <verb>` commands that write text, and whether the first positional is the issue or pull request (`True`) or nothing (`False`: it opens one). |
+| [`INERT_FILTERS`](_autosummary/liaise.hook.html.md#liaise.hook.INERT_FILTERS)       | they print, and run nothing.                                                                                                                                 |
+
+### Functions
+
+| [`hook_command`](_autosummary/liaise.hook.html.md#liaise.hook.hook_command)()                                   | `liaise vet --hook` with liaise's absolute path when it is on `PATH`.                             |
+|---------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------|
+| [`hook_status`](_autosummary/liaise.hook.html.md#liaise.hook.hook_status)([settings])                          | Each hook event's state in `settings`: `installed`, `outdated` or `missing`.                      |
+| [`install_hooks`](_autosummary/liaise.hook.html.md#liaise.hook.install_hooks)([settings, command])               | Write the PreToolUse and PostToolUse hooks into `settings`, keeping every other hook and setting. |
+| [`judge_writes`](_autosummary/liaise.hook.html.md#liaise.hook.judge_writes)(writes, \*[, vet_fn, root])         | The hook's answer for `writes`: the most restrictive of each one's, with every reason.            |
+| [`pending_key`](_autosummary/liaise.hook.html.md#liaise.hook.pending_key)(payload)                             | The key a pending ask is kept under: the tool-use id, else a hash of the call.                    |
+| [`post_tool_use`](_autosummary/liaise.hook.html.md#liaise.hook.post_tool_use)(payload, \*, ledger[, now])        | Record the override when a tool call the hook answered `ask` ran; return what was recorded.       |
+| [`pre_tool_use`](_autosummary/liaise.hook.html.md#liaise.hook.pre_tool_use)(payload, \*[, ledger, vet_fn, ...]) | The PreToolUse answer for `payload`: Claude Code's JSON for `ask` or `deny`, else None.           |
+| [`repo_of_checkout`](_autosummary/liaise.hook.html.md#liaise.hook.repo_of_checkout)(cwd)                            | `owner/repo` of the GitHub remote `origin` of the checkout at `cwd`, or None.                     |
+| [`run_hook`](_autosummary/liaise.hook.html.md#liaise.hook.run_hook)(raw, \*[, ledger_store, vet_fn, ...])   | What `liaise vet --hook` prints for the hook JSON `raw`: an answer, or nothing.                   |
+| [`uninstall_hooks`](_autosummary/liaise.hook.html.md#liaise.hook.uninstall_hooks)([settings])                      | Remove liaise's hooks from `settings`, keeping everything else.                                   |
+| [`writes_in`](_autosummary/liaise.hook.html.md#liaise.hook.writes_in)(command, \*[, cwd, repo_of])           | Every `gh` or `correspond` write in the shell `command`, each with its text or its problem.       |
+| [`writes_of`](_autosummary/liaise.hook.html.md#liaise.hook.writes_of)(payload, \*[, repo_of])                | The writes a hook payload's tool call makes: a Bash command's, or a correspond MCP tool's.        |
+
+### Classes
+
+| [`Answer`](_autosummary/liaise.hook.html.md#liaise.hook.Answer)(decision[, reasons, records, unread])      | The hook's answer: `decision` (one of `DECISIONS`) and the reasons for it.       |
+|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| [`Write`](_autosummary/liaise.hook.html.md#liaise.hook.Write)(what[, ref, text, title, cc, bcc, problem]) | One write the hook found: where it goes, and its text, or why it cannot be read. |
+
+### liaise.hook.ALLOW *= 'allow'*
+
+What the hook answers, least restrictive first. `allow` is never printed.
+
+### liaise.hook.ASK *= 'ask'*
+
+What the hook answers, least restrictive first. `allow` is never printed.
+
+### *class* liaise.hook.Answer(decision, reasons=(), records=(), unread=0)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+The hook’s answer: `decision` (one of `DECISIONS`) and the reasons for it.
+
+#### unread *: [int](https://docs.python.org/3/builtins/functions.html#int)* *= 0*
+
+How many writes could not be read or vetted, and so went to the operator unvetted.
+
+### liaise.hook.DENY *= 'deny'*
+
+What the hook answers, least restrictive first. `allow` is never printed.
+
+### liaise.hook.DFLT_SETTINGS *= PosixPath('~/.claude/settings.json')*
+
+The user’s Claude Code settings, where `liaise hook install` writes.
+
+### liaise.hook.GH_BODY_FLAGS *= frozenset({'--body', '--body-file', '--comment', '--field', '--input', '--message', '--notes', '--notes-file', '--raw-field', '--title', '-F', '-b', '-c', '-f', '-m', '-n', '-t'})*
+
+The flags of a `gh` command that carry text to someone.
+
+### liaise.hook.GH_GROUPS *= frozenset({'alias', 'api', 'attestation', 'auth', 'browse', 'cache', 'codespace', 'completion', 'config', 'extension', 'gist', 'gpg-key', 'help', 'issue', 'label', 'org', 'pr', 'project', 'release', 'repo', 'ruleset', 'run', 'search', 'secret', 'ssh-key', 'status', 'variable', 'version', 'workflow'})*
+
+`gh`’s own command groups; anything else is an alias or an extension.
+
+### liaise.hook.GH_PUBLISHES *= frozenset({('gist', 'create'), ('gist', 'edit'), ('release', 'create'), ('release', 'edit'), ('release', 'upload')})*
+
+`gh <group> <verb>` commands that publish files or text the hook does not read.
+
+### liaise.hook.GH_QUIET_VERBS *= frozenset({'cancel', 'checkout', 'clone', 'login', 'logout', 'refresh', 'rerun', 'setup-git', 'switch', 'token'})*
+
+`gh` verbs that change nothing anyone reads (a local checkout, a rerun, a login).
+
+### liaise.hook.GH_READ_VERBS *= frozenset({'browse', 'checks', 'diff', 'download', 'get', 'list', 'search', 'status', 'view', 'watch'})*
+
+`gh` verbs that only read, whatever flags they take (`gh run list -b main`).
+
+### liaise.hook.GH_SINGLE_COMMANDS *= frozenset({'browse', 'completion', 'help', 'status', 'version'})*
+
+`gh` commands that are one word and read.
+
+### liaise.hook.GH_WRITES *: [Mapping](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping)[[tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)], [bool](https://docs.python.org/3/builtins/functions.html#bool)]* *= {('issue', 'comment'): True, ('issue', 'create'): False, ('issue', 'edit'): True, ('pr', 'comment'): True, ('pr', 'create'): False, ('pr', 'edit'): True, ('pr', 'review'): True}*
+
+The `gh <group> <verb>` commands that write text, and whether the first positional is
+the issue or pull request (`True`) or nothing (`False`: it opens one).
+
+### liaise.hook.HOOK_COMMAND *= 'liaise vet --hook'*
+
+The command both hooks run.
+
+### liaise.hook.HOOK_MATCHER *= 'Bash|mcp_\_.\*correspond.\*_\_(send|edit)'*
+
+Bash, and correspond’s MCP write tools under any server name
+that holds “correspond”.
+
+* **Type:**
+  The tools the hooks watch
+
+### liaise.hook.INERT_FILTERS *= frozenset({'cat', 'column', 'cut', 'egrep', 'fgrep', 'grep', 'head', 'jq', 'less', 'sort', 'tail', 'tee', 'tr', 'uniq', 'wc'})*
+
+they print, and run nothing.
+
+* **Type:**
+  Programs a gh read may be piped into
+
+### liaise.hook.MAX_BODY_FILE_BYTES *= 1000000*
+
+The largest body file the hook reads; a larger one is ask.
+
+### liaise.hook.NO_BODY *= 'could not read the body'*
+
+What the hook answers when it cannot read a write’s body.
+
+### liaise.hook.PENDING_TTL *= datetime.timedelta(days=1)*
+
+How long a pending ask waits for its tool to run before it is pruned (an answer of no
+leaves one behind).
+
+### liaise.hook.UNKNOWN_REF *= 'unknown:destination'*
+
+The ref a write goes to when the command does not say and the checkout cannot tell:
+its audience is unknown, which resolves to public.
+
+### *class* liaise.hook.Write(what, ref='unknown:destination', text=None, title=None, cc=(), bcc=(), problem=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One write the hook found: where it goes, and its text, or why it cannot be read.
+
+`what` names the command in words (`gh issue comment`). `problem` set means the
+hook answers `ask` with it, without vetting.
+
+### liaise.hook.hook_command()
+
+`liaise vet --hook` with liaise’s absolute path when it is on `PATH`.
+
+The hook runs in a shell whose `PATH` may not hold liaise; a hook command that is not
+found fails without blocking, so every write would go through unvetted.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.hook.hook_status(settings=PosixPath('~/.claude/settings.json'))
+
+Each hook event’s state in `settings`: `installed`, `outdated` or `missing`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### liaise.hook.install_hooks(settings=PosixPath('~/.claude/settings.json'), , command=None)
+
+Write the PreToolUse and PostToolUse hooks into `settings`, keeping every other hook and setting.
+
+Idempotent: liaise’s own hook commands are replaced, never doubled, and a hook someone
+else put in the same entry stays. Returns what it did.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.hook.judge_writes(writes, \*, vet_fn=<function vet>, root=None)
+
+The hook’s answer for `writes`: the most restrictive of each one’s, with every reason.
+
+A write with a problem is `ask`. Each other is vetted with the provenance unknown; a
+route of `send` is `allow`, `draft` (a `delay` included) `ask`, `block`
+`deny`. Vetting that raises is `ask` with the error.
+
+* **Return type:**
+  [`Answer`](_autosummary/liaise.hook.html.md#liaise.hook.Answer)
+
+### liaise.hook.pending_key(payload)
+
+The key a pending ask is kept under: the tool-use id, else a hash of the call.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> pending_key({"tool_use_id": "toolu_1"})
+'toolu_1'
+```
+
+### liaise.hook.post_tool_use(payload, , ledger, now=None)
+
+Record the override when a tool call the hook answered `ask` ran; return what was recorded.
+
+The tool ran, so the operator said yes. The entry holds what the pending ask held (the
+refs, flows, rules and hashes), who and when, never the text.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### liaise.hook.pre_tool_use(payload, \*, ledger=None, vet_fn=<function vet>, root=None, repo_of=<function repo_of_checkout>, now=None)
+
+The PreToolUse answer for `payload`: Claude Code’s JSON for `ask` or `deny`, else None.
+
+An `ask` is kept as pending in `ledger` (when there is one), so the PostToolUse hook
+can tell the operator said yes. Nothing is printed for `allow`.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### liaise.hook.repo_of_checkout(cwd)
+
+`owner/repo` of the GitHub remote `origin` of the checkout at `cwd`, or None.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### liaise.hook.run_hook(raw, \*, ledger_store=None, vet_fn=<function vet>, root=None, repo_of=<function repo_of_checkout>, now=None)
+
+What `liaise vet --hook` prints for the hook JSON `raw`: an answer, or nothing.
+
+Fails closed: input that is not a hook payload, or anything that goes wrong on the way,
+is `ask` with the reason on a PreToolUse event (and on any event the hook cannot
+name). A PostToolUse event never answers; its failure to record is silent.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.hook.uninstall_hooks(settings=PosixPath('~/.claude/settings.json'))
+
+Remove liaise’s hooks from `settings`, keeping everything else.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.hook.writes_in(command, \*, cwd=None, repo_of=<function repo_of_checkout>)
+
+Every `gh` or `correspond` write in the shell `command`, each with its text or its problem.
+
+A command that names neither is no write at all. One that names either is read only
+when it is plain: a list of `gh` and `correspond` commands (joined by `&&`,
+`||`, `;`, `|` or newlines), a `cat <<EOF |` feeding one of them, and a gh read
+piped into a filter ([`INERT_FILTERS`](_autosummary/liaise.hook.html.md#liaise.hook.INERT_FILTERS)). Anything else in such a command (another
+program, a `$`, a backtick, a subshell or a compound command, an assignment, a
+redirection, more than one heredoc) is one problem write, since the hook cannot tell
+what the shell will run, where, or with what text: `ask`. The shell is not parsed
+beyond that, on purpose.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Write`](_autosummary/liaise.hook.html.md#liaise.hook.Write)]
+
+### liaise.hook.writes_of(payload, \*, repo_of=<function repo_of_checkout>)
+
+The writes a hook payload’s tool call makes: a Bash command’s, or a correspond MCP tool’s.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Write`](_autosummary/liaise.hook.html.md#liaise.hook.Write)]
+
+
 # _autosummary/liaise.html.md
 
 # liaise
@@ -3549,6 +3895,15 @@ Attach `encoded_ref` to the case, indexing it. Idempotent.
 * **Return type:**
   [`Case`](_autosummary/liaise.model.html.md#liaise.model.Case)
 
+#### add_override(key, record)
+
+Record that the operator let a write the hook asked about go ahead (discussion §5.8).
+
+Kept apart from cases and messages: liaise neither held nor sent it.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
 #### add_unrouted(\*\*fields)
 
 Queue a message that matched a binding but failed resolution, grade or permission.
@@ -3660,6 +4015,13 @@ Every hold, in no set order.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Hold`](_autosummary/liaise.model.html.md#liaise.model.Hold)]
 
+#### hook_pending()
+
+Every pending ask, as `(key, record)`, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]]
+
 #### increment_daily(subject, day)
 
 Count one more dispatch for `subject` on `day`, returning the new count.
@@ -3711,6 +4073,20 @@ The hex part is random, not counted, so two agents sending at once need no lock.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### overrides()
+
+Every recorded hook override, as a fresh dict, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
+#### pop_hook_pending(key)
+
+The pending ask under `key`, removed; None when there is none.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
 #### runs(, status=None)
 
 Every run record, or those with `status`, in no set order.
@@ -3759,6 +4135,15 @@ Whether the event with `delivery_id` has already been taken in.
 #### set_hold(hold)
 
 Put `hold` on its scope, replacing any hold already there.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### set_hook_pending(key, record)
+
+Keep what the hook asked the operator about, under `key`, until the tool runs.
+
+`record` never holds a message’s text: the flow, the rules, the hashes, the ref.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -4346,6 +4731,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`gate`](_autosummary/liaise.gate.html.md#module-liaise.gate)             | The outbound gate: the checks every message passes before liaise sends it, and the verdict they reach.               |
 | [`github`](_autosummary/liaise.github.html.md#module-liaise.github)         | The GitHub seam: one protocol, two implementations.                                                                  |
 | [`holds`](_autosummary/liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
+| [`hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)             | The Claude Code hook: every `gh` or `correspond` write from any session is vetted first (discussion 32, §5.8).       |
 | [`ledger`](_autosummary/liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
 | [`messages`](_autosummary/liaise.messages.html.md#module-liaise.messages)     | Messages outside a case: what an agent says to a person on its own initiative, through the gate.                     |
 | [`migrate`](_autosummary/liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
@@ -4391,6 +4777,8 @@ daily__<subject>__<YYYY-MM-DD>      that day's dispatches, as 0.0.x kept them
 budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
 issue_check__<case_id>              an IssueCheck: the tick's reads of the case's issue state
 message__<message_id>               an OutboundMessage: one sent or held outside any case
+hook_pending__<key>                 what the Claude Code hook asked about, until the tool ran
+override__<key>                     a write the hook asked about that the operator let run
 ```
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
@@ -4444,6 +4832,15 @@ Attach `encoded_ref` to the case, indexing it. Idempotent.
 
 * **Return type:**
   [`Case`](_autosummary/liaise.model.html.md#liaise.model.Case)
+
+#### add_override(key, record)
+
+Record that the operator let a write the hook asked about go ahead (discussion §5.8).
+
+Kept apart from cases and messages: liaise neither held nor sent it.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 #### add_unrouted(\*\*fields)
 
@@ -4556,6 +4953,13 @@ Every hold, in no set order.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Hold`](_autosummary/liaise.model.html.md#liaise.model.Hold)]
 
+#### hook_pending()
+
+Every pending ask, as `(key, record)`, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]]
+
 #### increment_daily(subject, day)
 
 Count one more dispatch for `subject` on `day`, returning the new count.
@@ -4607,6 +5011,20 @@ The hex part is random, not counted, so two agents sending at once need no lock.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### overrides()
+
+Every recorded hook override, as a fresh dict, in no set order.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
+#### pop_hook_pending(key)
+
+The pending ask under `key`, removed; None when there is none.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
+
 #### runs(, status=None)
 
 Every run record, or those with `status`, in no set order.
@@ -4655,6 +5073,15 @@ Whether the event with `delivery_id` has already been taken in.
 #### set_hold(hold)
 
 Put `hold` on its scope, replacing any hold already there.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### set_hook_pending(key, record)
+
+Keep what the hook asked the operator about, under `key`, until the tool runs.
+
+`record` never holds a message’s text: the flow, the rules, the hashes, the ref.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -9446,16 +9873,18 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-22 16:45 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/6fd028b537ef693dfc34b15a2b46719852091dcb"><code>6fd028b</code></a> on branch <code>main</code>, for **liaise 0.1.12** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-22 17:23 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/2e4bee7d5ac0d9e112c262e4026da1b5b7674878"><code>2e4bee7</code></a> on branch <code>main</code>, for **liaise 0.1.13** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.1.13) is behind the latest release on PyPI (0.1.14): `pip install liaise` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/6fd028b537ef693dfc34b15a2b46719852091dcb"><code>6fd028b537ef693dfc34b15a2b46719852091dcb</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/2e4bee7d5ac0d9e112c262e4026da1b5b7674878"><code>2e4bee7d5ac0d9e112c262e4026da1b5b7674878</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -9466,9 +9895,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35755924010">35755924010</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35760134736">35760134736</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>6fd028b537ef693dfc34b15a2b46719852091dcb</code> (in the history of the built commit) |
+| Event commit | <code>2e4bee7d5ac0d9e112c262e4026da1b5b7674878</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -9493,13 +9922,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.12/">0.1.12</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/liaise/0.1.14/">0.1.14</a>, newer than the documented version (0.1.13).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 6fd028b537ef693dfc34b15a2b46719852091dcb
+git checkout 2e4bee7d5ac0d9e112c262e4026da1b5b7674878
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -1,0 +1,53 @@
+liaise.hook
+===========
+
+.. automodule:: liaise.hook
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ALLOW
+      ASK
+      DENY
+      HOOK_COMMAND
+      HOOK_MATCHER
+      DFLT_SETTINGS
+      PENDING_TTL
+      UNKNOWN_REF
+      MAX_BODY_FILE_BYTES
+      NO_BODY
+      GH_BODY_FLAGS
+      GH_READ_VERBS
+      GH_QUIET_VERBS
+      GH_GROUPS
+      GH_SINGLE_COMMANDS
+      GH_PUBLISHES
+      GH_WRITES
+      INERT_FILTERS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      hook_command
+      hook_status
+      install_hooks
+      judge_writes
+      pending_key
+      post_tool_use
+      pre_tool_use
+      repo_of_checkout
+      run_hook
+      uninstall_hooks
+      writes_in
+      writes_of
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Answer
+      Write
+   
