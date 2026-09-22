@@ -33,6 +33,12 @@ def no_real_acquaint(monkeypatch):
     monkeypatch.setitem(sys.modules, "acquaint", None)
 
 
+@pytest.fixture(autouse=True)
+def liaise_not_on_path(monkeypatch):
+    """The installer writes liaise's absolute path when it finds one; here it finds none."""
+    monkeypatch.setattr(hook.shutil, "which", lambda name: None)
+
+
 def fixture_disclosure(people, *, projects=(), audience=None, today=None):
     return fixtures.disclosure_for(people, audience=audience)
 
@@ -568,7 +574,8 @@ def test_a_users_hook_that_ends_like_ours_is_not_ours(tmp_path):
     settings.chmod(0o600)
     cli.hook_install(settings=str(settings))
     assert json.loads(settings.read_text())["hooks"]["PreToolUse"][0] == theirs
-    assert settings.stat().st_mode & 0o777 == 0o600
+    if sys.platform != "win32":  # Windows keeps no such mode
+        assert settings.stat().st_mode & 0o777 == 0o600
     cli.hook_uninstall(settings=str(settings))
     assert json.loads(settings.read_text())["hooks"]["PreToolUse"] == [theirs]
 
@@ -591,3 +598,25 @@ def test_fifth_review_writes_are_held(run_hook, command):
 def test_a_flag_value_equal_to_the_ref_does_not_hide_the_text(run_hook):
     answer = run_hook.bash(f"correspond send github:example/app#1 'key {T}' --idempotency-key github:example/app#1")
     assert decision(answer) == "deny"
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "liaise vet --hook",
+        "/opt/venv/bin/liaise vet --hook",
+        '"/opt/a b/bin/liaise" vet --hook',
+        "C:\\venv\\Scripts\\liaise.EXE vet --hook",
+        '"C:\\Program Files\\liaise.exe" vet --hook',
+    ],
+)
+def test_liaises_own_command_is_recognised_on_every_platform(command):
+    assert hook._is_ours({"type": "command", "command": command})
+    assert not hook._is_ours({"type": "command", "command": "echo x && " + command})
+
+
+def test_windows_path_install_is_idempotent(tmp_path, monkeypatch):
+    settings = tmp_path / "settings.json"
+    monkeypatch.setattr(hook.shutil, "which", lambda name: "C:\\venv\\Scripts\\liaise.EXE")
+    cli.hook_install(settings=str(settings))
+    assert "already installed" in cli.hook_install(settings=str(settings))

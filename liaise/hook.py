@@ -1393,7 +1393,10 @@ def _read_settings(path: Path) -> dict:
 
 
 #: liaise's hook command, bare or with liaise's path (quoted when it has spaces).
-_OUR_COMMAND_RE = re.compile(r"(?:[^\s'\"]*/|'[^']*/)?liaise'? vet --hook")
+_OUR_COMMAND_RE = re.compile(
+    r"""(?:'[^']*[\\/]|"[^"]*[\\/]|[^\s'"]*[\\/])?liaise(?:\.exe)?['"]? vet --hook""",
+    re.IGNORECASE,
+)
 
 
 def _is_ours(hook_entry: Any) -> bool:
@@ -1461,7 +1464,9 @@ def hook_command() -> str:
     found fails without blocking, so every write would go through unvetted.
     """
     found = shutil.which("liaise")
-    return f"{shlex.quote(found)} vet --hook" if found else HOOK_COMMAND
+    if not found:
+        return HOOK_COMMAND
+    return f'"{found}" vet --hook' if " " in found else f"{found} vet --hook"
 
 
 def install_hooks(
