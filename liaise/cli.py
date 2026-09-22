@@ -11,7 +11,7 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
     liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
     liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
-    liaise case cancel-send CASE_ID [INDEX] [--reason TEXT] [--dry-run]
+    liaise case cancel-send CASE_ID [ID|INDEX] [--reason TEXT] [--dry-run]
     liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
         [--purpose PURPOSE] [--dry-run]
     liaise message list [--state STATE]
@@ -610,15 +610,17 @@ def case_set_state(
     )
 
 
-def _one_index(case_id: str, index: Sequence[int]) -> Optional[int]:
-    """The one INDEX a draft command was given, or None without one. Raises ``ValueError`` for more.
+def _one_index(
+    case_id: str, index: Sequence[Any], *, what: str = "draft"
+) -> Optional[Any]:
+    """The one INDEX (or id) a command was given, or None without one. Raises ``ValueError`` for more.
 
     INDEX is ``*index`` in the signature, since cw makes a parameter with a default an
-    option, and the command line spells it ``[INDEX]``.
+    option, and the command line spells it ``[INDEX]``. ``what`` is what it names.
     """
     if len(index) > 1:
         given = ", ".join(map(str, index))
-        raise ValueError(f"name one draft of {case_id} at a time, not {given}")
+        raise ValueError(f"name one {what} of {case_id} at a time, not {given}")
     return index[0] if index else None
 
 
@@ -912,14 +914,17 @@ def case_reject_draft(
 @_expected_errors(ConfigError, ValueError)
 def case_cancel_send(
     case_id: str,
-    *index: int,
+    *index: str,
     reason: str = "",
     dry_run: bool = False,
     root: Optional[str] = None,
     store: Optional[MutableMapping[str, Any]] = None,
     now: Optional[datetime] = None,
 ) -> str:
-    """Take CASE_ID's message INDEX, or its only one, out of the delay outbox, unsent.
+    """Take CASE_ID's held message ID (or INDEX), or its only one, out of the delay outbox, unsent.
+
+    ID is what ``liaise case show`` and the tick's hold line print (like ``h3f9a0c12``) and
+    always names the same message; INDEX, its position, shifts as earlier ones leave.
 
     A send to a public or organisation-wide place waits in the outbox for
     ``policy.delay_minutes`` before the tick sends it (liaise #38); this is how you stop it.
@@ -936,7 +941,7 @@ def case_cancel_send(
         cancelled = outbox.cancel_send(
             ledger,
             case_id,
-            index=_one_index(case_id, index),
+            index=_one_index(case_id, index, what="held message"),
             reason=reason,
             now=now,
             dry_run=dry_run,
@@ -951,8 +956,9 @@ def case_cancel_send(
         else "nothing was sent"
     )
     return (
-        f"{verb} held message [{cancelled.index}] of {case_id} ({item.get('outcome')} "
-        f"to {item.get('ref')}, due at {item.get('release_at')}): {fate}\n"
+        f"{verb} held message [{cancelled.index}] of {case_id} ({outbox.held_id(item)}, "
+        f"{item.get('outcome')} to {item.get('ref')}, due at {item.get('release_at')}): "
+        f"{fate}\n"
         f"{case_id} stays {cancelled.case.state}"
     )
 
@@ -1314,7 +1320,7 @@ _ARGUMENTS = {
     "case": {
         "send-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "reject-draft": {"index": {"type": int, "metavar": "INDEX"}},
-        "cancel-send": {"index": {"type": int, "metavar": "INDEX"}},
+        "cancel-send": {"index": {"type": str, "metavar": "ID|INDEX"}},
     }
 }
 

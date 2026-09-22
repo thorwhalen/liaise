@@ -6,7 +6,13 @@ tick does not send it at once, and does not hand it to the operator as a draft e
 keeps it on the case's :attr:`~liaise.model.Case.outbox` until ``release_at``
 (``policy.delay_minutes`` later), tells the operator only that a message is held and for
 how long, and sends it on the first tick at or after that time. Until then the operator
-takes it off with ``liaise case cancel-send CASE [INDEX]`` (:func:`cancel_send`).
+takes it off with ``liaise case cancel-send CASE [ID | INDEX]`` (:func:`cancel_send`).
+
+**Naming a held message.** Each item has an ``id`` (:func:`held_id`, e.g. ``h3f9a0c12``)
+that never changes and is never reused on its case, printed wherever the item is: the
+tick's hold line, ``liaise case show`` and ``liaise status``. Its INDEX, its position in
+the outbox, is also accepted, but shifts as earlier items go out or are cancelled, so an
+index printed at hold time can later name another message; the id cannot.
 
 **What a release re-checks.** Each item carries the outbox's own
 :class:`~liaise.model.Approval` (:func:`liaise.gate.hold_for`), bound to the message, its
@@ -33,21 +39,26 @@ goes to the operator.
 
 Every transition is a ``gate`` entry on the case whose ``decision`` is one of
 :data:`OUTBOX_DECISIONS`, and no operator notification carries anything the message says.
+Each records the item's ``held_id`` (a release's ``send`` entry, in ``released_from``),
+which is what joins the entries about one message; their ``outbox`` is only the item's
+position at that moment.
 """
 
 from __future__ import annotations
 
 from collections.abc import Mapping
+import re
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from hashlib import sha256
+from typing import Any, Optional, Union
 
 from liaise.gate import GateDecision, hold_for
 from liaise.intake import LIAISE_ACTOR, SELF_ROLE
 from liaise.ledger import Ledger
 from liaise.model import Approval, Case, LedgerEntry
 from liaise.outcomes import Send
-from liaise.policy import Provenance
+from liaise.policy import Provenance, canonical_json
 
 #: The ``decision`` of a ``gate`` entry about the outbox: held, cancelled by the operator,
 #: made a draft (``divert``), or made a draft for being reached too late (``lapse``). A
@@ -76,6 +87,39 @@ INTERRUPTED_REASON = (
 )
 
 
+#: What starts a held message's id, so an id can never be read as an INDEX.
+HELD_ID_PREFIX = "h"
+#: How many hex digits of the digest follow :data:`HELD_ID_PREFIX`: 32 bits, among the
+#: handful of items a case ever holds.
+HELD_ID_DIGITS = 8
+#: What a held message's id looks like (:func:`held_id`).
+HELD_ID_PATTERN = re.compile(rf"{HELD_ID_PREFIX}[0-9a-f]{{{HELD_ID_DIGITS}}}")
+
+
+def _short_digest(data: Any) -> str:
+    digest = sha256(canonical_json(data).encode("utf-8")).hexdigest()
+    return HELD_ID_PREFIX + digest[:HELD_ID_DIGITS]
+
+
+def held_id(item: Mapping[str, Any]) -> str:
+    """The id that names ``item`` for as long as it is held, whatever its position.
+
+    The one :func:`make_held` gave it; an item held before items had ids gets one derived
+    from when it was held, where it goes and what it says. That is as stable, but two such
+    items held at the same moment with the same text to the same place share it, and
+    :func:`pick_held` then names the first.
+    """
+    kept = item.get("id")
+    if kept:
+        return str(kept)
+    return _short_digest(
+        {
+            key: item.get(key)
+            for key in ("at", "release_at", "channel", "ref", "recipient", "text")
+        }
+    )
+
+
 def _stamp(moment: datetime) -> str:
     return moment.astimezone(timezone.utc).isoformat()
 
@@ -92,6 +136,7 @@ def make_held(
     delay: timedelta,
     seen: int,
     provenance: Optional[Provenance] = None,
+    serial: Optional[int] = None,
 ) -> dict[str, Any]:
     """One item of a case's ``outbox``: ``outbound``, which ``decision`` gave ``delay``, JSON-ready.
 
@@ -103,9 +148,24 @@ def make_held(
     ``provenance`` it was judged with when the tick wrote it itself (None: a run's, read
     from the ledger again at release), and ``claimed_at``, None until the tick starts
     releasing it.
+
+    Its ``id`` (:func:`held_id`) is a digest of the case, ``at``, the message's
+    ``payload_hash`` and ``serial``: the position the hold's own ``gate`` entry takes on the
+    case (its entry count before the hold), which no other hold on the case shares, since
+    entries are only ever appended. None leaves the id to the rest, as unique unless the
+    same message is held twice at the same moment.
     """
     release_at = at + delay
+    ident = _short_digest(
+        {
+            "case": outbound.case_id,
+            "at": _stamp(at),
+            "payload_hash": decision.payload_hash,
+            "serial": serial,
+        }
+    )
     return {
+        "id": ident,
         "at": _stamp(at),
         "release_at": _stamp(release_at),
         "outcome": outbound.purpose,
@@ -227,21 +287,61 @@ def release_block(
     return None
 
 
-def pick_held(case: Case, index: Optional[int] = None) -> tuple[int, Mapping[str, Any]]:
-    """``(index, item)``: ``case``'s held message at ``index``, or its only one when ``index`` is None.
+#: What names a held message: its INDEX (a position) or its id (:func:`held_id`).
+Which = Union[int, str]
 
-    Raises ``ValueError``, saying which there are, for a case with none, an index it holds
-    nothing at, and no index on a case holding several.
+
+def parse_which(text: Union[int, str]) -> Which:
+    """``text`` as a held message is named: an int for an INDEX (all digits), else an id.
+
+    Raises ``ValueError`` for anything that is neither.
+    """
+    if isinstance(text, int) and not isinstance(text, bool):
+        return text
+    text = str(text).strip()
+    if re.fullmatch(r"[0-9]+", text):
+        return int(text)
+    if HELD_ID_PATTERN.fullmatch(text.lower()):
+        return text.lower()
+    raise ValueError(
+        f"{text!r} names no held message: give its id (like {HELD_ID_PREFIX}"
+        f"{'0' * HELD_ID_DIGITS}) or its INDEX"
+    )
+
+
+def pick_held(
+    case: Case, index: Optional[Which] = None
+) -> tuple[int, Mapping[str, Any]]:
+    """``(index, item)``: ``case``'s held message named by ``index``, or its only one for None.
+
+    ``index`` is an item's id (:func:`held_id`), which always names the same message, or
+    its position, which shifts as earlier items leave. Raises ``ValueError``, saying which
+    there are, for a case with none, an id or index it holds nothing at, and no name on a
+    case holding several.
     """
     items = case.outbox
     listed = f"liaise case show {case.id} lists them"
     if not items:
         raise ValueError(f"case {case.id} has no message held in the outbox")
+    if isinstance(index, str):
+        wanted = parse_which(index)
+        if isinstance(wanted, str):
+            ids = [held_id(item) for item in items]
+            if wanted not in ids:
+                raise ValueError(
+                    f"case {case.id} holds no message {wanted}: it has gone out, been "
+                    f"cancelled or become a draft, or it is another case's; held now: "
+                    f"{', '.join(ids)} ({listed})"
+                )
+            at = ids.index(wanted)
+            return at, items[at]
+        index = wanted
     last = len(items) - 1
     if index is None and last > 0:
         raise ValueError(
-            f"case {case.id} holds {len(items)} messages, [0] to [{last}]: name the one "
-            f"to cancel ({listed})"
+            f"case {case.id} holds {len(items)} messages, "
+            f"{', '.join(held_id(item) for item in items)}: name the one to cancel "
+            f"({listed})"
         )
     index = 0 if index is None else index
     if not 0 <= index <= last:
@@ -265,13 +365,15 @@ def cancel_send(
     ledger: Ledger,
     case_id: str,
     *,
-    index: Optional[int] = None,
+    index: Optional[Which] = None,
     reason: str = "",
     by: str = DFLT_CANCELLED_BY,
     now: Optional[datetime] = None,
     dry_run: bool = False,
 ) -> Cancellation:
-    """Take the case ``case_id``'s held message at ``index`` out of the outbox, unsent.
+    """Take the case ``case_id``'s held message ``index`` out of the outbox, unsent.
+
+    ``index`` is the item's id (:func:`held_id`) or its position (:func:`pick_held`).
 
     A ``gate`` entry by ``by``, stamped ``now``, keeps its text, where it would have gone,
     when it would have, and ``reason`` (:data:`DFLT_CANCEL_REASON` when blank). The case's
@@ -295,6 +397,7 @@ def cancel_send(
             "purpose": item.get("outcome"),
             "ref": item.get("ref"),
             "outbox": index,
+            "held_id": held_id(item),
             "release_at": item.get("release_at"),
         },
     )

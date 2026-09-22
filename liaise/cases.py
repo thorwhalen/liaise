@@ -37,6 +37,7 @@ from liaise.gate import DFLT_OUTBOUND_FILTERS, OutboundFilter
 from liaise.holds import DFLT_SET_BY
 from liaise.ledger import Ledger
 from liaise.model import CASE_STATES, Approval, Case, LedgerEntry, require_one_of
+from liaise.outbox import held_id
 from liaise.policy import audience_in_words
 from liaise.processor import RUNNING
 from liaise.release import (
@@ -282,10 +283,11 @@ def case_show_lines(
             if item.get("claimed_at")
             else ""
         )
+        ident = held_id(item)
         lines.append(
-            f"  [{index}] {item.get('outcome')} to {item.get('ref')}: sends at "
+            f"  [{index}] {ident} {item.get('outcome')} to {item.get('ref')}: sends at "
             f"{item.get('release_at')} unless cancelled (liaise case cancel-send "
-            f"{case.id} {index}){claimed}"
+            f"{case.id} {ident}){claimed}"
         )
         lines += held_lines(item.get("text"), gate=item.get("gate"))
     shown = case.entries[-entries:] if entries > 0 else ()

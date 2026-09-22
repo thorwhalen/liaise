@@ -15,7 +15,7 @@ from liaise.cases import case_show_lines, set_case_state
 from liaise.gate import DELAY_HELD, OUTBOX_ACTOR, hold_for
 from liaise.holds import hold
 from liaise.notify import NOTICE_SEND_DELAYED, notice_title
-from liaise.outbox import cancel_send, pick_held
+from liaise.outbox import HELD_ID_PATTERN, cancel_send, held_id, parse_which, pick_held
 from liaise.subjects import RECOMMENDED_DELAY_MINUTES, Policy
 from liaise.tests.test_tick import (  # noqa: F401  (the fixtures, used by name)
     CASE_1,
@@ -68,7 +68,8 @@ def test_a_delay_is_held_with_its_release_time_and_a_content_free_notice(public)
     assert "10 minutes" in body and QUESTION not in body and QUESTION not in title
     shown = "\n".join(case_show_lines(public.store, CASE_1))
     assert "held in the outbox: 1" in shown and item["release_at"] in shown
-    assert f"liaise case cancel-send {CASE_1} 0" in shown
+    assert f"[0] {held_id(item)} " in shown
+    assert f"liaise case cancel-send {CASE_1} {held_id(item)}" in shown
     status = status_lines({SLUG: public.subject}, public.store, global_config=public.config, now=HELD_AT)
     assert "held in the outbox: 1" in status
 
@@ -354,3 +355,119 @@ def test_a_comment_the_operator_writes_on_liaises_account_stops_the_release(publ
     assert public.github.sent == []
     (draft,) = public.case().drafts
     assert "moved on" in draft["reason"]
+
+
+# ---- stable ids for held messages (liaise #38 follow-up) ----
+
+
+def _hold_three(world, texts=("First note.", "Second note.", "Third note.")):
+    """``world``'s case, public and its outbox on, holding one reply per text."""
+    from liaise.model import Outcome, RunResult
+    from liaise.processor import EchoProcessor
+
+    replies = tuple(Outcome(kind="reply", text=text) for text in texts)
+    _policy(world, delay_minutes=RECOMMENDED_DELAY_MINUTES)
+    world.processor = EchoProcessor(results={CASE_1: RunResult(run_id="", outcomes=replies, summary="n")})
+    world.github.set_visibility(REPO, "public")
+    world.issue()
+    world.tick()
+    return world.tick(HELD_AT)
+
+
+def test_each_held_message_gets_an_id_printed_where_it_is_and_recorded_on_its_entries(world):
+    report = _hold_three(world)
+
+    items = world.case().outbox
+    ids = [held_id(item) for item in items]
+    assert len(set(ids)) == 3 and all(HELD_ID_PATTERN.fullmatch(i) for i in ids)
+    assert [item["id"] for item in items] == ids
+    for ident in ids:
+        assert any(f"cancel-send {CASE_1} {ident} takes it off" in line for line in report.plan_lines)
+    holds = [e for e in world.case().entries if e.detail.get("decision") == "hold"]
+    assert [e.detail["held_id"] for e in holds] == ids
+    status = status_lines({SLUG: world.subject}, world.store, global_config=world.config, now=HELD_AT)
+    assert all(any(ident in line for line in status) for ident in ids)
+
+
+def test_the_same_message_held_twice_at_once_gets_two_ids(world):
+    _hold_three(world, texts=("Same note.", "Same note."))
+
+    first, second = world.case().outbox
+    assert first["text"] == second["text"] and held_id(first) != held_id(second)
+
+
+def test_an_id_keeps_naming_its_message_after_the_ones_before_it_leave(world):
+    _hold_three(world)
+    first, second, third = (held_id(item) for item in world.case().outbox)
+
+    done = cancel_send(world.ledger, CASE_1, index=first, now=HELD_AT)
+    assert done.index == 0 and held_id(done.item) == first
+    # The index [2] printed at hold time for the third now names nothing; its id still names it.
+    with pytest.raises(ValueError, match="holds no message \\[2\\]"):
+        cancel_send(world.ledger, CASE_1, index=2, now=HELD_AT)
+    done = cancel_send(world.ledger, CASE_1, index=third, reason="late", now=HELD_AT)
+
+    assert done.index == 1 and done.item["text"] == "Third note."
+    assert [held_id(item) for item in world.case().outbox] == [second]
+    cancels = [e for e in world.case().entries if e.detail.get("decision") == "cancel"]
+    assert [e.detail["held_id"] for e in cancels] == [first, third]
+    world.tick(DUE)
+    assert [draft.text for _, draft in world.github.sent] == ["@pat Second note."]
+    sent = [e for e in world.case().entries if e.detail.get("decision") == "send"][-1]
+    assert sent.detail["released_from"]["held_id"] == second
+
+
+def test_an_id_that_is_no_longer_held_is_refused_with_the_ones_that_are(world):
+    _hold_three(world)
+    first, second, third = (held_id(item) for item in world.case().outbox)
+    cancel_send(world.ledger, CASE_1, index=first, now=HELD_AT)
+
+    with pytest.raises(ValueError, match=f"holds no message {first}.*{second}, {third}"):
+        cancel_send(world.ledger, CASE_1, index=first, now=HELD_AT)
+    with pytest.raises(ValueError, match=f"holds 2 messages, {second}, {third}"):
+        cancel_send(world.ledger, CASE_1, now=HELD_AT)
+
+
+def test_parse_which_reads_an_index_or_an_id_and_refuses_anything_else():
+    assert parse_which("2") == 2 and parse_which(2) == 2
+    assert parse_which(" H3F9A0C12 ") == "h3f9a0c12"
+    for bad in ("h3f9", "x3f9a0c12", "", "-1", "\u00b2", "\u0663", True):
+        with pytest.raises(ValueError, match="names no held message"):
+            parse_which(bad)
+
+
+def test_an_item_held_before_ids_gets_a_stable_one_that_its_claim_does_not_change(public):
+    public.tick(HELD_AT)
+    (item,) = public.case().outbox
+    legacy = {key: value for key, value in item.items() if key != "id"}
+
+    ident = held_id(legacy)
+    assert HELD_ID_PATTERN.fullmatch(ident) and ident == held_id(dict(legacy))
+    assert held_id({**legacy, "claimed_at": DUE.isoformat()}) == ident
+    public.ledger.save_case(replace(public.case(), outbox=(legacy,)))
+    assert pick_held(public.case(), ident) == (0, legacy)
+
+
+def test_the_cancel_send_command_takes_an_id_or_an_index(world):
+    from liaise import cli
+
+    _hold_three(world)
+    first, second, _ = (held_id(item) for item in world.case().outbox)
+    root = world.tmp_path / "config"
+    root.mkdir()
+    (root / "config.toml").write_text(f'owner_login = "owner"\nstate_dir = "{(world.tmp_path / "state").as_posix()}"\n')
+
+    out = cli.case_cancel_send(CASE_1, second, root=str(root), store=world.store, now=HELD_AT)
+    assert out.startswith(f"cancelled held message [1] of {CASE_1} ({second},")
+    out = cli.case_cancel_send(CASE_1, "0", root=str(root), store=world.store, now=HELD_AT)
+    assert out.startswith(f"cancelled held message [0] of {CASE_1} ({first},")
+    assert len(world.case().outbox) == 1
+
+
+def test_a_dry_run_tick_prints_no_id_it_would_not_keep(public):
+    report = public.tick(HELD_AT, dry_run=True)
+
+    holds = [line for line in report.plan_lines if "outbox" in line and "gate" in line]
+    assert holds and all("would hold in the outbox until" in line for line in holds)
+    assert not any("cancel-send" in line for line in holds)
+    assert public.github.sent == [] and public.case().outbox == ()
