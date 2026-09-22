@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=8d02545a"></script>
+    <script src="../../_static/documentation_options.js?v=468bc497"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.13" />
+  <meta name="docsearch:version" content="0.1.14" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -742,6 +742,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">  would-be verdict differs from the decision yet, and shadow agreement and missed findings</span>
 <span class="sd">  are not observable: the report says so rather than printing a number that means nothing.</span>
 
+<span class="sd">- **hook overrides**: writes the Claude Code hook (:mod:`liaise.hook`) asked the operator</span>
+<span class="sd">  about and the operator let run, how many of them it could not read, and the rules among</span>
+<span class="sd">  their reasons; apart from the counts above, since liaise neither held nor sent them.</span>
+
 <span class="sd">**The rollout rule** (discussion 32, decision 11): enforce when shadow mode has seen at</span>
 <span class="sd">least :data:`MIN_SHADOW_MESSAGES` messages, with no missed finding of severity</span>
 <span class="sd">:data:`MISSED_SEVERITY` or above and a false-divert rate of at most</span>
@@ -955,12 +959,78 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"missed_high_severity"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
         <span class="s2">"shadow_note"</span><span class="p">:</span> <span class="n">SHADOW_PENDING</span><span class="p">,</span>
     <span class="p">}</span>
+    <span class="n">report</span><span class="p">[</span><span class="s2">"hook"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hook_overrides</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">since</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
     <span class="n">report</span><span class="p">[</span><span class="s2">"enforce"</span><span class="p">]</span> <span class="o">=</span> <span class="n">enforce_recommended</span><span class="p">(</span>
         <span class="n">shadow_messages</span><span class="o">=</span><span class="n">counts</span><span class="p">[</span><span class="s2">"shadow"</span><span class="p">],</span>
         <span class="n">missed_high_severity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
         <span class="n">false_divert_rate</span><span class="o">=</span><span class="n">false_divert_rate</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">report</span></div>
+
+
+
+<div class="viewcode-block" id="hook_overrides">
+<a class="viewcode-back" href="../../_autosummary/liaise.report.html#liaise.report.hook_overrides">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hook_overrides</span><span class="p">(</span>
+    <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">subject</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">since</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""What the Claude Code hook asked about and the operator let run (:mod:`liaise.hook`).</span>
+
+<span class="sd">    ``overrides`` counts them, ``unread`` the writes among them the hook could not read and</span>
+<span class="sd">    so never vetted (with ``subject``, 0: an unread write names no subject), and ``rules``</span>
+<span class="sd">    how often each rule was among the reasons of the writes to ``subject``. Records of an</span>
+<span class="sd">    unexpected shape are skipped. They are kept</span>
+<span class="sd">    apart from the gate's own counts and rates: liaise neither held nor sent these writes,</span>
+<span class="sd">    and on the hook's path every write is tainted, so folding them into a rule's precision</span>
+<span class="sd">    would measure the hook's path, not the rule.</span>
+<span class="sd">    """</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">_moment</span><span class="p">(</span><span class="n">since</span><span class="p">)</span>
+    <span class="n">rules</span><span class="p">:</span> <span class="n">Counter</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">()</span>
+    <span class="n">overrides</span> <span class="o">=</span> <span class="n">unread</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">ledger</span><span class="o">.</span><span class="n">overrides</span><span class="p">():</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+            <span class="k">continue</span>  <span class="c1"># an odd entry is skipped, never a crash</span>
+        <span class="n">given</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"writes"</span><span class="p">)</span>
+        <span class="n">writes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">w</span>
+            <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="p">(</span><span class="n">given</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">given</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="k">else</span> <span class="p">())</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="n">subject</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">writes</span> <span class="o">=</span> <span class="p">[</span><span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">writes</span> <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"subject"</span><span class="p">)</span> <span class="o">==</span> <span class="n">subject</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">writes</span><span class="p">:</span>
+                <span class="k">continue</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">at</span> <span class="o">=</span> <span class="n">_moment</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ran_at"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"at"</span><span class="p">))</span>
+        <span class="k">except</span> <span class="p">(</span>
+            <span class="ne">ValueError</span><span class="p">,</span>
+            <span class="ne">TypeError</span><span class="p">,</span>
+        <span class="p">):</span>  <span class="c1"># no readable time: counted only without --since</span>
+            <span class="n">at</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">at</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">at</span> <span class="o">&lt;</span> <span class="n">start</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="n">overrides</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"unread"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">subject</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+            <span class="n">unread</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span>  <span class="c1"># an unread write names no subject</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">write</span> <span class="ow">in</span> <span class="n">writes</span><span class="p">:</span>
+            <span class="n">listed</span> <span class="o">=</span> <span class="n">write</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rules"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">listed</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="n">names</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                    <span class="n">_rule_name</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">listed</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">rule</span>
+                <span class="p">)</span>
+        <span class="n">rules</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"overrides"</span><span class="p">:</span> <span class="n">overrides</span><span class="p">,</span>
+        <span class="s2">"unread"</span><span class="p">:</span> <span class="n">unread</span><span class="p">,</span>
+        <span class="s2">"rules"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">rules</span><span class="o">.</span><span class="n">items</span><span class="p">())),</span>
+    <span class="p">}</span></div>
 
 
 
@@ -1043,6 +1113,14 @@ window.runMermaid = runMermaid;</script>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">rule</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">width</span><span class="si">}}</span><span class="s2">  </span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">'fired'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;4</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">'released'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;4</span><span class="si">}</span><span class="s2">  "</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">entry</span><span class="p">[</span><span class="s1">'confirmed'</span><span class="p">]</span><span class="si">:</span><span class="s2">&gt;4</span><span class="si">}</span><span class="s2">  </span><span class="si">{</span><span class="n">precision</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="n">hook</span> <span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"hook"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hook</span><span class="p">:</span>
+        <span class="n">per_rule</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rule</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">rule</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">hook</span><span class="p">[</span><span class="s2">"rules"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"hook overrides (writes the Claude Code hook asked about, let run): "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">hook</span><span class="p">[</span><span class="s1">'overrides'</span><span class="p">]</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hook</span><span class="p">[</span><span class="s1">'unread'</span><span class="p">]</span><span class="si">}</span><span class="s2"> unvetted"</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"; per rule: </span><span class="si">{</span><span class="n">per_rule</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">per_rule</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
         <span class="p">)</span>
     <span class="n">enforce</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">"enforce"</span><span class="p">]</span>
     <span class="n">verdict</span> <span class="o">=</span> <span class="s2">"yes"</span> <span class="k">if</span> <span class="n">enforce</span><span class="p">[</span><span class="s2">"recommended"</span><span class="p">]</span> <span class="k">else</span> <span class="s2">"no"</span>

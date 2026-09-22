@@ -1,4 +1,4 @@
-> built 2026-09-22 17:23 UTC from 2e4bee7 (main) · liaise 0.1.13. Details: build_info.json
+> built 2026-09-22 17:33 UTC from 8450876 (main) · liaise 0.1.14. Details: build_info.json
 
 # index.html.md
 
@@ -8241,6 +8241,9 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   enforces like `enforce` until its sending semantics are decided (liaise #39), so no
   would-be verdict differs from the decision yet, and shadow agreement and missed findings
   are not observable: the report says so rather than printing a number that means nothing.
+- **hook overrides**: writes the Claude Code hook ([`liaise.hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)) asked the operator
+  about and the operator let run, how many of them it could not read, and the rules among
+  their reasons; apart from the counts above, since liaise neither held nor sent them.
 
 **The rollout rule** (discussion 32, decision 11): enforce when shadow mode has seen at
 least [`MIN_SHADOW_MESSAGES`](_autosummary/liaise.report.html.md#liaise.report.MIN_SHADOW_MESSAGES) messages, with no missed finding of severity
@@ -8259,10 +8262,11 @@ least [`MIN_SHADOW_MESSAGES`](_autosummary/liaise.report.html.md#liaise.report.M
 
 ### Functions
 
-| [`enforce_recommended`](_autosummary/liaise.report.html.md#liaise.report.enforce_recommended)(\*, shadow_messages, ...)   | Decision 11's rollout rule: `{"recommended": bool, "reason": str}`.                                                                   |
-|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| [`gate_report`](_autosummary/liaise.report.html.md#liaise.report.gate_report)(ledger, \*[, subject, since, ...])  | The counts of the gate's decisions in `ledger` (a `Ledger` or its store).                                                             |
-| [`report_lines`](_autosummary/liaise.report.html.md#liaise.report.report_lines)(report)                            | `report` ([`gate_report()`](_autosummary/liaise.report.html.md#liaise.report.gate_report)) for a terminal: counts, a per-rule table, the rollout line. |
+| [`enforce_recommended`](_autosummary/liaise.report.html.md#liaise.report.enforce_recommended)(\*, shadow_messages, ...)   | Decision 11's rollout rule: `{"recommended": bool, "reason": str}`.                                                                               |
+|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`gate_report`](_autosummary/liaise.report.html.md#liaise.report.gate_report)(ledger, \*[, subject, since, ...])  | The counts of the gate's decisions in `ledger` (a `Ledger` or its store).                                                                         |
+| [`hook_overrides`](_autosummary/liaise.report.html.md#liaise.report.hook_overrides)(ledger, \*[, subject, since])    | What the Claude Code hook asked about and the operator let run ([`liaise.hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)). |
+| [`report_lines`](_autosummary/liaise.report.html.md#liaise.report.report_lines)(report)                            | `report` ([`gate_report()`](_autosummary/liaise.report.html.md#liaise.report.gate_report)) for a terminal: counts, a per-rule table, the rollout line.             |
 
 ### liaise.report.GATE_KIND *= 'gate'*
 
@@ -8322,6 +8326,21 @@ The counts of the gate’s decisions in `ledger` (a `Ledger` or its store).
 `shadow_subjects` are the subjects whose policy is in shadow mode now; an entry whose
 verdict recorded `mode = "shadow"` counts as shadow whatever the subject says today.
 Counts only: nothing a message says is in it.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+### liaise.report.hook_overrides(ledger, , subject=None, since=None)
+
+What the Claude Code hook asked about and the operator let run ([`liaise.hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)).
+
+`overrides` counts them, `unread` the writes among them the hook could not read and
+so never vetted (with `subject`, 0: an unread write names no subject), and `rules`
+how often each rule was among the reasons of the writes to `subject`. Records of an
+unexpected shape are skipped. They are kept
+apart from the gate’s own counts and rates: liaise neither held nor sent these writes,
+and on the hook’s path every write is tainted, so folding them into a rule’s precision
+would measure the hook’s path, not the rule.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
@@ -9873,18 +9892,16 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-22 17:23 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/2e4bee7d5ac0d9e112c262e4026da1b5b7674878"><code>2e4bee7</code></a> on branch <code>main</code>, for **liaise 0.1.13** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-22 17:33 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/8450876ab3d7d5cad3007f032505b8013008d299"><code>8450876</code></a> on branch <code>main</code>, for **liaise 0.1.14** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.13) is behind the latest release on PyPI (0.1.14): `pip install liaise` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/2e4bee7d5ac0d9e112c262e4026da1b5b7674878"><code>2e4bee7d5ac0d9e112c262e4026da1b5b7674878</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/8450876ab3d7d5cad3007f032505b8013008d299"><code>8450876ab3d7d5cad3007f032505b8013008d299</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -9895,9 +9912,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35760134736">35760134736</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35761231918">35761231918</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>2e4bee7d5ac0d9e112c262e4026da1b5b7674878</code> (in the history of the built commit) |
+| Event commit | <code>8450876ab3d7d5cad3007f032505b8013008d299</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -9922,13 +9939,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.14/">0.1.14</a>, newer than the documented version (0.1.13).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.14/">0.1.14</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 2e4bee7d5ac0d9e112c262e4026da1b5b7674878
+git checkout 8450876ab3d7d5cad3007f032505b8013008d299
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

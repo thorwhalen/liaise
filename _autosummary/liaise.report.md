@@ -30,6 +30,9 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   enforces like `enforce` until its sending semantics are decided (liaise #39), so no
   would-be verdict differs from the decision yet, and shadow agreement and missed findings
   are not observable: the report says so rather than printing a number that means nothing.
+- **hook overrides**: writes the Claude Code hook ([`liaise.hook`](liaise.hook.md#module-liaise.hook)) asked the operator
+  about and the operator let run, how many of them it could not read, and the rules among
+  their reasons; apart from the counts above, since liaise neither held nor sent them.
 
 **The rollout rule** (discussion 32, decision 11): enforce when shadow mode has seen at
 least [`MIN_SHADOW_MESSAGES`](#liaise.report.MIN_SHADOW_MESSAGES) messages, with no missed finding of severity
@@ -48,10 +51,11 @@ least [`MIN_SHADOW_MESSAGES`](#liaise.report.MIN_SHADOW_MESSAGES) messages, with
 
 ### Functions
 
-| [`enforce_recommended`](#liaise.report.enforce_recommended)(\*, shadow_messages, ...)   | Decision 11's rollout rule: `{"recommended": bool, "reason": str}`.                                                                   |
-|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------|
-| [`gate_report`](#liaise.report.gate_report)(ledger, \*[, subject, since, ...])  | The counts of the gate's decisions in `ledger` (a `Ledger` or its store).                                                             |
-| [`report_lines`](#liaise.report.report_lines)(report)                            | `report` ([`gate_report()`](#liaise.report.gate_report)) for a terminal: counts, a per-rule table, the rollout line. |
+| [`enforce_recommended`](#liaise.report.enforce_recommended)(\*, shadow_messages, ...)   | Decision 11's rollout rule: `{"recommended": bool, "reason": str}`.                                                                               |
+|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`gate_report`](#liaise.report.gate_report)(ledger, \*[, subject, since, ...])  | The counts of the gate's decisions in `ledger` (a `Ledger` or its store).                                                                         |
+| [`hook_overrides`](#liaise.report.hook_overrides)(ledger, \*[, subject, since])    | What the Claude Code hook asked about and the operator let run ([`liaise.hook`](liaise.hook.md#module-liaise.hook)). |
+| [`report_lines`](#liaise.report.report_lines)(report)                            | `report` ([`gate_report()`](#liaise.report.gate_report)) for a terminal: counts, a per-rule table, the rollout line.             |
 
 ### liaise.report.GATE_KIND *= 'gate'*
 
@@ -111,6 +115,21 @@ The counts of the gate’s decisions in `ledger` (a `Ledger` or its store).
 `shadow_subjects` are the subjects whose policy is in shadow mode now; an entry whose
 verdict recorded `mode = "shadow"` counts as shadow whatever the subject says today.
 Counts only: nothing a message says is in it.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+### liaise.report.hook_overrides(ledger, , subject=None, since=None)
+
+What the Claude Code hook asked about and the operator let run ([`liaise.hook`](liaise.hook.md#module-liaise.hook)).
+
+`overrides` counts them, `unread` the writes among them the hook could not read and
+so never vetted (with `subject`, 0: an unread write names no subject), and `rules`
+how often each rule was among the reasons of the writes to `subject`. Records of an
+unexpected shape are skipped. They are kept
+apart from the gate’s own counts and rates: liaise neither held nor sent these writes,
+and on the hook’s path every write is tainted, so folding them into a rule’s precision
+would measure the hook’s path, not the rule.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]

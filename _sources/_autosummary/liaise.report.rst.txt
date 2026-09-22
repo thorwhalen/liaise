@@ -21,5 +21,6 @@ liaise.report
    
       enforce_recommended
       gate_report
+      hook_overrides
       report_lines
    

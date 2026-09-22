@@ -39,7 +39,7 @@
 - [liaise.vet](_autosummary/liaise.vet.html.md): Vetting a draft outside any case: the gate’s verdict, and nothing sent (discussion 32, §5.8).
 - [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 - [For AI agents](ai-agents.html.md): &#96;liaise&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-09-22 17:23 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-09-22 17:33 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 
