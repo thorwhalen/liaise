@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=8618f531"></script>
+    <script src="../_static/documentation_options.js?v=bafade30"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.readiness" href="liaise.readiness.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.9" />
+  <meta name="docsearch:version" content="0.1.10" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -432,6 +432,17 @@ on the context. That approval is bound to the payload hash and the audience hash
 decision the operator was shown, so a text, a title or a readership that changed since
 voids it, and the operator sees the new verdict instead of a send (liaise ADR 0002). It
 hands back the ledger entry and the draft to keep, for the caller to record.</p>
+<p><strong>Never twice.</strong> Every real send carries an idempotency key (correspond’s
+<code class="docutils literal notranslate"><span class="pre">idempotency_key</span></code>), kept in liaise’s own store of sends (<a class="reference internal" href="#liaise.release.default_send_store" title="liaise.release.default_send_store"><code class="xref py py-func docutils literal notranslate"><span class="pre">default_send_store()</span></code></a>,
+under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>). A channel that posts and then reports an error leaves its key
+claimed, so the release of the draft it became, which reuses the key, either finds the
+message already out (read back, or a replay of the stored result) and posts nothing, or
+fails <code class="docutils literal notranslate"><span class="pre">unconfirmed</span></code>. An <code class="docutils literal notranslate"><span class="pre">unconfirmed</span></code> draft stays with the operator, whose release
+with <code class="docutils literal notranslate"><span class="pre">new_attempt</span></code> (<code class="docutils literal notranslate"><span class="pre">send-draft</span> <span class="pre">--new-attempt</span></code>, after checking the conversation) moves
+it to the next key (<a class="reference internal" href="#liaise.release.next_attempt_key" title="liaise.release.next_attempt_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">next_attempt_key()</span></code></a>). The keys: a tick’s send
+<code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;payload</span> <span class="pre">hash&gt;/&lt;entry</span> <span class="pre">serial&gt;</span></code> (<a class="reference internal" href="#liaise.release.tick_send_key" title="liaise.release.tick_send_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">tick_send_key()</span></code></a>), an outbox release
+<code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;held</span> <span class="pre">id&gt;</span></code> (<a class="reference internal" href="#liaise.release.outbox_key" title="liaise.release.outbox_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">outbox_key()</span></code></a>), a message outside a case its id, and a draft the
+key it carries (<code class="docutils literal notranslate"><span class="pre">send_key</span></code>), or one derived from it (<a class="reference internal" href="#liaise.release.draft_send_key" title="liaise.release.draft_send_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">draft_send_key()</span></code></a>).</p>
 <p>One path for every sender is what makes the gate a gate. A filter added to it applies to
 all of them at once, and none of them has a way to send around it.</p>
 <p class="rubric">Module Attributes</p>
@@ -458,6 +469,30 @@ all of them at once, and none of them has a way to send around it.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.VALIDATION_KIND" title="liaise.release.VALIDATION_KIND"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VALIDATION_KIND</span></code></a></p></td>
 <td><p>The failure kind of a message liaise refused to hand to its channel as it stands.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.UNCONFIRMED_KIND" title="liaise.release.UNCONFIRMED_KIND"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UNCONFIRMED_KIND</span></code></a></p></td>
+<td><p>correspond's failure kind for a send whose key an earlier attempt claimed, which may have gone out: nothing was sent, and the operator checks the conversation.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.DFLT_SENDS_SUBDIR" title="liaise.release.DFLT_SENDS_SUBDIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_SENDS_SUBDIR</span></code></a></p></td>
+<td><p>The directory of liaise's idempotency records under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.KEY_DIGEST_DIGITS" title="liaise.release.KEY_DIGEST_DIGITS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KEY_DIGEST_DIGITS</span></code></a></p></td>
+<td><p>enough to tell messages apart.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.ATTEMPT_SUFFIX_RE" title="liaise.release.ATTEMPT_SUFFIX_RE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ATTEMPT_SUFFIX_RE</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">~2</span></code>, <code class="docutils literal notranslate"><span class="pre">~3</span></code>, ...</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.ATTEMPT_ROOM" title="liaise.release.ATTEMPT_ROOM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ATTEMPT_ROOM</span></code></a></p></td>
+<td><p>Room a key keeps for attempt suffixes (<code class="docutils literal notranslate"><span class="pre">~NN</span></code>) under correspond's length limit.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.KEY_HEAD_CHARS" title="liaise.release.KEY_HEAD_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KEY_HEAD_CHARS</span></code></a></p></td>
+<td><p>How many characters of a too-long key's head <a class="reference internal" href="#liaise.release.bounded_key" title="liaise.release.bounded_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">bounded_key()</span></code></a> keeps, for reading.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.FIRST_RETRY" title="liaise.release.FIRST_RETRY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FIRST_RETRY</span></code></a></p></td>
+<td><p>The first attempt suffix <a class="reference internal" href="#liaise.release.next_attempt_key" title="liaise.release.next_attempt_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">next_attempt_key()</span></code></a> adds.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.UNCONFIRMED_REASON" title="liaise.release.UNCONFIRMED_REASON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UNCONFIRMED_REASON</span></code></a></p></td>
+<td><p>Why a send whose earlier attempt may have gone out is kept for the operator.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -467,8 +502,20 @@ all of them at once, and none of them has a way to send around it.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.audience_of" title="liaise.release.audience_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">audience_of</span></code></a>(outbound, *[, registry])</p></td>
 <td><p>Who can read <code class="docutils literal notranslate"><span class="pre">outbound</span></code>'s destination, asked of its channel now through correspond.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.error_text" title="liaise.release.error_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_text</span></code></a>(error)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.bounded_key" title="liaise.release.bounded_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">bounded_key</span></code></a>(key)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">key</span></code>, or, when too long for correspond (a long subject slug), its head and a digest of it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.default_send_store" title="liaise.release.default_send_store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_send_store</span></code></a>(state_dir)</p></td>
+<td><p>liaise's idempotency records: correspond's <code class="docutils literal notranslate"><span class="pre">SendStore</span></code> in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/sends</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.draft_send_key" title="liaise.release.draft_send_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">draft_send_key</span></code></a>(owner, draft)</p></td>
+<td><p>The key <code class="docutils literal notranslate"><span class="pre">draft</span></code> is released under: the one it carries (<code class="docutils literal notranslate"><span class="pre">send_key</span></code>), else one from its content.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.error_text" title="liaise.release.error_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">error_text</span></code></a>(error)</p></td>
 <td><p>How liaise names an exception it recovered from: its class, then its message.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.failure_reason" title="liaise.release.failure_reason"><code class="xref py py-obj docutils literal notranslate"><span class="pre">failure_reason</span></code></a>(attempt, ref)</p></td>
+<td><p>Why a message the gate passed, and its channel did not take, is kept for the operator.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gate_and_send</span></code></a>(outbound, ctx, *[, registry, ...])</p></td>
 <td><p>Put <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through the gate and, only when it passes, send it through correspond.</p></td>
@@ -476,11 +523,23 @@ all of them at once, and none of them has a way to send around it.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.github_repo" title="liaise.release.github_repo"><code class="xref py py-obj docutils literal notranslate"><span class="pre">github_repo</span></code></a>(ref)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">owner/repo</span></code>, lower-cased, of the repository a GitHub reference names: itself or one of its issues.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.next_attempt_key" title="liaise.release.next_attempt_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">next_attempt_key</span></code></a>(key)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">key</span></code> for the message's next attempt: <code class="docutils literal notranslate"><span class="pre">~2</span></code> added, or its attempt number raised.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.outbox_key" title="liaise.release.outbox_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outbox_key</span></code></a>(case_id, held)</p></td>
+<td><p>The key of an outbox item's release: <code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;held</span> <span class="pre">id&gt;</span></code>, the same on every try.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.release_draft" title="liaise.release.release_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">release_draft</span></code></a>(draft, *, subject, ledger, ...)</p></td>
 <td><p>Release <code class="docutils literal notranslate"><span class="pre">draft</span></code> (a <a class="reference internal" href="liaise.outcomes.html#liaise.outcomes.make_draft" title="liaise.outcomes.make_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.outcomes.make_draft()</span></code></a> item) as <code class="docutils literal notranslate"><span class="pre">by</span></code>, through the gate.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.sendable_ref" title="liaise.release.sendable_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sendable_ref</span></code></a>(ref)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">ref</span></code> as a GitHub issue or repository reference, stripped and lower-cased.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.release.tick_send_key" title="liaise.release.tick_send_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tick_send_key</span></code></a>(case_id, ref, text, title, serial)</p></td>
+<td><p>The key of a message a tick sends: <code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;payload</span> <span class="pre">digest&gt;/&lt;entry</span> <span class="pre">serial&gt;</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.release.usable_key" title="liaise.release.usable_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">usable_key</span></code></a>(key, sends)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">key</span></code>, or a later attempt's when the platform refused every try with it so far.</p></td>
 </tr>
 </tbody>
 </table>
@@ -507,6 +566,23 @@ all of them at once, and none of them has a way to send around it.</p>
 </table>
 </div>
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.ATTEMPT_ROOM">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">ATTEMPT_ROOM</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></span><a class="headerlink" href="#liaise.release.ATTEMPT_ROOM" title="Link to this definition">#</a></dt>
+<dd><p>Room a key keeps for attempt suffixes (<code class="docutils literal notranslate"><span class="pre">~NN</span></code>) under correspond’s length limit.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.ATTEMPT_SUFFIX_RE">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">ATTEMPT_SUFFIX_RE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('~(\\d+)$')</span></span><a class="headerlink" href="#liaise.release.ATTEMPT_SUFFIX_RE" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">~2</span></code>, <code class="docutils literal notranslate"><span class="pre">~3</span></code>, …</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>What ends a key that is not its message’s first attempt</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.release.CASELESS_PROVENANCE">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">CASELESS_PROVENANCE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'a</span> <span class="pre">message</span> <span class="pre">outside</span> <span class="pre">a</span> <span class="pre">case:</span> <span class="pre">nobody</span> <span class="pre">can</span> <span class="pre">say</span> <span class="pre">what</span> <span class="pre">its</span> <span class="pre">sender</span> <span class="pre">read'</span></span><a class="headerlink" href="#liaise.release.CASELESS_PROVENANCE" title="Link to this definition">#</a></dt>
 <dd><p>its sender’s reading is nobody’s to vouch for.</p>
@@ -527,6 +603,12 @@ all of them at once, and none of them has a way to send around it.</p>
 <dt class="sig sig-object py" id="liaise.release.DFLT_REFUSAL">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">DFLT_REFUSAL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'the</span> <span class="pre">channel</span> <span class="pre">refused</span> <span class="pre">it'</span></span><a class="headerlink" href="#liaise.release.DFLT_REFUSAL" title="Link to this definition">#</a></dt>
 <dd><p>Why a send failed when the channel said no without saying why.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.DFLT_SENDS_SUBDIR">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">DFLT_SENDS_SUBDIR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'sends'</span></span><a class="headerlink" href="#liaise.release.DFLT_SENDS_SUBDIR" title="Link to this definition">#</a></dt>
+<dd><p>The directory of liaise’s idempotency records under <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -577,9 +659,32 @@ or None when there is no record to take it off.</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.FIRST_RETRY">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">FIRST_RETRY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#liaise.release.FIRST_RETRY" title="Link to this definition">#</a></dt>
+<dd><p>The first attempt suffix <a class="reference internal" href="#liaise.release.next_attempt_key" title="liaise.release.next_attempt_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">next_attempt_key()</span></code></a> adds.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.release.GITHUB_CHANNEL">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">GITHUB_CHANNEL</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'github'</span></span><a class="headerlink" href="#liaise.release.GITHUB_CHANNEL" title="Link to this definition">#</a></dt>
 <dd><p>The channel whose references name repositories.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.KEY_DIGEST_DIGITS">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">KEY_DIGEST_DIGITS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">16</span></span><a class="headerlink" href="#liaise.release.KEY_DIGEST_DIGITS" title="Link to this definition">#</a></dt>
+<dd><p>enough to tell messages apart.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>How many hex digits of a digest a key keeps</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.KEY_HEAD_CHARS">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">KEY_HEAD_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">60</span></span><a class="headerlink" href="#liaise.release.KEY_HEAD_CHARS" title="Link to this definition">#</a></dt>
+<dd><p>How many characters of a too-long key’s head <a class="reference internal" href="#liaise.release.bounded_key" title="liaise.release.bounded_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">bounded_key()</span></code></a> keeps, for reading.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -595,7 +700,7 @@ or None when there is no record to take it off.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">SendAttempt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure_failure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#SendAttempt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.SendAttempt" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">SendAttempt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure_failure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#SendAttempt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.SendAttempt" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What <a class="reference internal" href="#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-func docutils literal notranslate"><span class="pre">gate_and_send()</span></code></a> did with one message.</p>
 <p><code class="docutils literal notranslate"><span class="pre">decision</span></code> is the gate’s. Once the gate has passed the message, <code class="docutils literal notranslate"><span class="pre">result</span></code> is
@@ -603,7 +708,8 @@ correspond’s <code class="docutils literal notranslate"><span class="pre">Send
 channel did not take the message, and is None once it did. <code class="docutils literal notranslate"><span class="pre">failure_kind</span></code> names that
 failure: correspond’s <code class="docutils literal notranslate"><span class="pre">error_kind</span></code>, or the class of what was raised. A message the
 gate diverted has none of the three. <code class="docutils literal notranslate"><span class="pre">disclosure_failure</span></code> says why a sent message’s
-disclosure could not be written to its recipients’ acquaint records; None otherwise.</p>
+disclosure could not be written to its recipients’ acquaint records; None otherwise.
+<code class="docutils literal notranslate"><span class="pre">key</span></code> is the idempotency key the send carried, if any.</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py property">
@@ -613,11 +719,39 @@ disclosure could not be written to its recipients’ acquaint records; None othe
 </dd></dl>
 
 <dl class="py property">
+<dt class="sig sig-object py" id="liaise.release.SendAttempt.replayed">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">replayed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.replayed" title="Link to this definition">#</a></dt>
+<dd><p>Whether the message went out on an earlier attempt, and this one posted nothing.</p>
+</dd></dl>
+
+<dl class="py property">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt.sent">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sent</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.sent" title="Link to this definition">#</a></dt>
 <dd><p>Whether the channel took the message; in a dry run, whether it would have.</p>
 </dd></dl>
 
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.release.SendAttempt.unconfirmed">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">unconfirmed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.unconfirmed" title="Link to this definition">#</a></dt>
+<dd><p>Whether nothing was sent because an earlier attempt with the key may have gone out.</p>
+<p>That is correspond’s <code class="docutils literal notranslate"><span class="pre">unconfirmed</span></code>, and its refusal of a key an earlier attempt
+used for a different text (a message edited since): either way the operator checks
+the conversation before a new attempt.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.UNCONFIRMED_KIND">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">UNCONFIRMED_KIND</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'unconfirmed'</span></span><a class="headerlink" href="#liaise.release.UNCONFIRMED_KIND" title="Link to this definition">#</a></dt>
+<dd><p>correspond’s failure kind for a send whose key an earlier attempt claimed, which may
+have gone out: nothing was sent, and the operator checks the conversation.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.release.UNCONFIRMED_REASON">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">UNCONFIRMED_REASON</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'send</span> <span class="pre">unconfirmed:</span> <span class="pre">an</span> <span class="pre">earlier</span> <span class="pre">attempt</span> <span class="pre">at</span> <span class="pre">this</span> <span class="pre">message</span> <span class="pre">may</span> <span class="pre">have</span> <span class="pre">gone</span> <span class="pre">out</span> <span class="pre">({failure}).</span> <span class="pre">Check</span> <span class="pre">{ref};</span> <span class="pre">if</span> <span class="pre">it</span> <span class="pre">is</span> <span class="pre">not</span> <span class="pre">there,</span> <span class="pre">release</span> <span class="pre">it</span> <span class="pre">with</span> <span class="pre">send-draft</span> <span class="pre">--new-attempt'</span></span><a class="headerlink" href="#liaise.release.UNCONFIRMED_REASON" title="Link to this definition">#</a></dt>
+<dd><p>Why a send whose earlier attempt may have gone out is kept for the operator.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -641,6 +775,49 @@ fails before it can ask. Nothing is cached, so a release asks again at send time
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.bounded_key">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">bounded_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#bounded_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.bounded_key" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">key</span></code>, or, when too long for correspond (a long subject slug), its head and a digest of it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bounded_key</span><span class="p">(</span><span class="s2">"c/h1"</span><span class="p">)</span>
+<span class="go">'c/h1'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">bounded_key</span><span class="p">(</span><span class="s2">"s"</span> <span class="o">*</span> <span class="mi">200</span> <span class="o">+</span> <span class="s2">"-1/h1"</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">128</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.default_send_store">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">default_send_store</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#default_send_store"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.default_send_store" title="Link to this definition">#</a></dt>
+<dd><p>liaise’s idempotency records: correspond’s <code class="docutils literal notranslate"><span class="pre">SendStore</span></code> in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/sends</span></code>.</p>
+<p>Nothing is created until a real send claims a key, so a dry run leaves no directory.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-class docutils literal notranslate"><span class="pre">SendStore</span></code></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.draft_send_key">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">draft_send_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">owner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">draft</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#draft_send_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.draft_send_key" title="Link to this definition">#</a></dt>
+<dd><p>The key <code class="docutils literal notranslate"><span class="pre">draft</span></code> is released under: the one it carries (<code class="docutils literal notranslate"><span class="pre">send_key</span></code>), else one from its content.</p>
+<p><code class="docutils literal notranslate"><span class="pre">owner</span></code> is the case or message id it belongs to. A draft kept before keys existed
+gets <code class="docutils literal notranslate"><span class="pre">&lt;owner&gt;/d&lt;digest</span> <span class="pre">of</span> <span class="pre">its</span> <span class="pre">time,</span> <span class="pre">destination,</span> <span class="pre">text</span> <span class="pre">and</span> <span class="pre">title&gt;</span></code>, and its release
+stores that key on whatever draft stays, so a second release reuses it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="liaise.release.error_text">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">error_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#error_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.error_text" title="Link to this definition">#</a></dt>
 <dd><p>How liaise names an exception it recovered from: its class, then its message.</p>
@@ -656,8 +833,20 @@ fails before it can ask. Nothing is cached, so a release asks again at send time
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.failure_reason">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">failure_reason</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#failure_reason"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.failure_reason" title="Link to this definition">#</a></dt>
+<dd><p>Why a message the gate passed, and its channel did not take, is kept for the operator.</p>
+<p>An <a class="reference internal" href="#liaise.release.SendAttempt.unconfirmed" title="liaise.release.SendAttempt.unconfirmed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">unconfirmed</span></code></a> one says to check <code class="docutils literal notranslate"><span class="pre">ref</span></code> before a new attempt.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="liaise.release.gate_and_send">
-<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">gate_and_send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#gate_and_send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.gate_and_send" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">gate_and_send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outbound</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ctx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idempotency_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#gate_and_send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.gate_and_send" title="Link to this definition">#</a></dt>
 <dd><p>Put <code class="docutils literal notranslate"><span class="pre">outbound</span></code> through the gate and, only when it passes, send it through correspond.</p>
 <p>When the context carries no audience, it is computed now (<a class="reference internal" href="#liaise.release.audience_of" title="liaise.release.audience_of"><code class="xref py py-func docutils literal notranslate"><span class="pre">audience_of()</span></code></a>). The
 gate is <a class="reference internal" href="liaise.gate.html#liaise.gate.run_gate" title="liaise.gate.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.gate.run_gate()</span></code></a> with <code class="docutils literal notranslate"><span class="pre">outbound_filters</span></code>, and a message it holds
@@ -668,6 +857,11 @@ plan and sends nothing. A channel that refuses the message, or raises, becomes a
 <code class="docutils literal notranslate"><span class="pre">failure</span></code> on the attempt rather than an exception, so the caller still has the
 message to keep. Once a real send succeeds, the recipients’ acquaint records are told
 what it identified, and a failure there is <code class="docutils literal notranslate"><span class="pre">disclosure_failure</span></code>, never a raise.</p>
+<p><code class="docutils literal notranslate"><span class="pre">idempotency_key</span></code> and <code class="docutils literal notranslate"><span class="pre">sends</span></code> go to <code class="docutils literal notranslate"><span class="pre">correspond.send</span></code>: the same key never posts
+twice, and an attempt that may have gone out fails <code class="docutils literal notranslate"><span class="pre">unconfirmed</span></code>
+(<a class="reference internal" href="#liaise.release.SendAttempt.unconfirmed" title="liaise.release.SendAttempt.unconfirmed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">SendAttempt.unconfirmed</span></code></a>). The key is used only with a <code class="docutils literal notranslate"><span class="pre">sends</span></code> store
+(<a class="reference internal" href="#liaise.release.default_send_store" title="liaise.release.default_send_store"><code class="xref py py-func docutils literal notranslate"><span class="pre">default_send_store()</span></code></a> for the tick and the CLI): without one the message is sent
+unkeyed, as before, and liaise never writes correspond’s own data root.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.release.SendAttempt" title="liaise.release.SendAttempt"><code class="xref py py-class docutils literal notranslate"><span class="pre">SendAttempt</span></code></a></span></p>
@@ -693,8 +887,38 @@ what it identified, and a failure there is <code class="docutils literal notrans
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.next_attempt_key">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">next_attempt_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#next_attempt_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.next_attempt_key" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">key</span></code> for the message’s next attempt: <code class="docutils literal notranslate"><span class="pre">~2</span></code> added, or its attempt number raised.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12"</span><span class="p">),</span> <span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12~2"</span><span class="p">))</span>
+<span class="go">example/h3f9a0c12~2 example/h3f9a0c12~3</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.outbox_key">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">outbox_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">held</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#outbox_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.outbox_key" title="Link to this definition">#</a></dt>
+<dd><p>The key of an outbox item’s release: <code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;held</span> <span class="pre">id&gt;</span></code>, the same on every try.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">outbox_key</span><span class="p">(</span><span class="s2">"example"</span><span class="p">,</span> <span class="s2">"h3f9a0c12"</span><span class="p">))</span>
+<span class="go">example/h3f9a0c12</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="liaise.release.release_draft">
-<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">release_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">draft</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ledger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detail</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">mappingproxy({})</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">send</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approve_shown</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">justification</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fingerprint_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#release_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.release_draft" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">release_draft</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">draft</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ledger</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detail</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">mappingproxy({})</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">send</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approve_shown</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">justification</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fingerprint_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_attempt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#release_draft"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.release_draft" title="Link to this definition">#</a></dt>
 <dd><p>Release <code class="docutils literal notranslate"><span class="pre">draft</span></code> (a <a class="reference internal" href="liaise.outcomes.html#liaise.outcomes.make_draft" title="liaise.outcomes.make_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.outcomes.make_draft()</span></code></a> item) as <code class="docutils literal notranslate"><span class="pre">by</span></code>, through the gate.</p>
 <p>The message is the draft’s text and title, or <code class="docutils literal notranslate"><span class="pre">text</span></code> and <code class="docutils literal notranslate"><span class="pre">title</span></code> when the operator
 edited them. It goes to the draft’s <code class="docutils literal notranslate"><span class="pre">ref</span></code>, for its <code class="docutils literal notranslate"><span class="pre">recipient</span></code>, carrying out its
@@ -752,6 +976,39 @@ command that takes it off.</p>
 issue number that is not a positive whole number.</p>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.tick_send_key">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">tick_send_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">serial</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#tick_send_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.tick_send_key" title="Link to this definition">#</a></dt>
+<dd><p>The key of a message a tick sends: <code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;payload</span> <span class="pre">digest&gt;/&lt;entry</span> <span class="pre">serial&gt;</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">serial</span></code> is how many entries the case had when the message was judged, so two sends
+of the same text on one case differ, while a tick that runs again over the same
+entries (after a crash) reuses the key and never posts twice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">key</span> <span class="o">=</span> <span class="n">tick_send_key</span><span class="p">(</span><span class="s2">"app3"</span><span class="p">,</span> <span class="s2">"github:example/app#3"</span><span class="p">,</span> <span class="s2">"Fixed."</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"app3/"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"/7"</span><span class="p">)</span>
+<span class="go">True</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.release.usable_key">
+<span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">usable_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sends</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#usable_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.usable_key" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">key</span></code>, or a later attempt’s when the platform refused every try with it so far.</p>
+<p>A key whose record says <code class="docutils literal notranslate"><span class="pre">failed</span></code> posted nothing, so a new attempt is safe, and a
+fresh key lets the message change (an operator’s edit) without being refused as a key
+used for another message. A key with no record, or one that sent or may have, is kept.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -801,29 +1058,47 @@ issue number that is not a positive whole number.</p>
   </div>
   <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.ATTEMPT_ROOM"><code class="docutils literal notranslate"><span class="pre">ATTEMPT_ROOM</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.ATTEMPT_SUFFIX_RE"><code class="docutils literal notranslate"><span class="pre">ATTEMPT_SUFFIX_RE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.CASELESS_PROVENANCE"><code class="docutils literal notranslate"><span class="pre">CASELESS_PROVENANCE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DELIVER_PURPOSE"><code class="docutils literal notranslate"><span class="pre">DELIVER_PURPOSE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DFLT_REFUSAL"><code class="docutils literal notranslate"><span class="pre">DFLT_REFUSAL</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DFLT_SENDS_SUBDIR"><code class="docutils literal notranslate"><span class="pre">DFLT_SENDS_SUBDIR</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DRAFT_ENTRY_KIND"><code class="docutils literal notranslate"><span class="pre">DRAFT_ENTRY_KIND</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DraftOutcome"><code class="docutils literal notranslate"><span class="pre">DraftOutcome</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DraftSentNotRecorded"><code class="docutils literal notranslate"><span class="pre">DraftSentNotRecorded</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.DraftSentNotRecorded.after"><code class="docutils literal notranslate"><span class="pre">DraftSentNotRecorded.after()</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.FIRST_RETRY"><code class="docutils literal notranslate"><span class="pre">FIRST_RETRY</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.GITHUB_CHANNEL"><code class="docutils literal notranslate"><span class="pre">GITHUB_CHANNEL</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.KEY_DIGEST_DIGITS"><code class="docutils literal notranslate"><span class="pre">KEY_DIGEST_DIGITS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.KEY_HEAD_CHARS"><code class="docutils literal notranslate"><span class="pre">KEY_HEAD_CHARS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.NO_ATTACHMENTS"><code class="docutils literal notranslate"><span class="pre">NO_ATTACHMENTS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt"><code class="docutils literal notranslate"><span class="pre">SendAttempt</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt.outbound"><code class="docutils literal notranslate"><span class="pre">SendAttempt.outbound</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt.replayed"><code class="docutils literal notranslate"><span class="pre">SendAttempt.replayed</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt.sent"><code class="docutils literal notranslate"><span class="pre">SendAttempt.sent</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.SendAttempt.unconfirmed"><code class="docutils literal notranslate"><span class="pre">SendAttempt.unconfirmed</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.UNCONFIRMED_KIND"><code class="docutils literal notranslate"><span class="pre">UNCONFIRMED_KIND</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.UNCONFIRMED_REASON"><code class="docutils literal notranslate"><span class="pre">UNCONFIRMED_REASON</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.VALIDATION_KIND"><code class="docutils literal notranslate"><span class="pre">VALIDATION_KIND</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.audience_of"><code class="docutils literal notranslate"><span class="pre">audience_of()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.bounded_key"><code class="docutils literal notranslate"><span class="pre">bounded_key()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.default_send_store"><code class="docutils literal notranslate"><span class="pre">default_send_store()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.draft_send_key"><code class="docutils literal notranslate"><span class="pre">draft_send_key()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.error_text"><code class="docutils literal notranslate"><span class="pre">error_text()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.failure_reason"><code class="docutils literal notranslate"><span class="pre">failure_reason()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.gate_and_send"><code class="docutils literal notranslate"><span class="pre">gate_and_send()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.github_repo"><code class="docutils literal notranslate"><span class="pre">github_repo()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.next_attempt_key"><code class="docutils literal notranslate"><span class="pre">next_attempt_key()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.outbox_key"><code class="docutils literal notranslate"><span class="pre">outbox_key()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.release_draft"><code class="docutils literal notranslate"><span class="pre">release_draft()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.sendable_ref"><code class="docutils literal notranslate"><span class="pre">sendable_ref()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.tick_send_key"><code class="docutils literal notranslate"><span class="pre">tick_send_key()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.release.usable_key"><code class="docutils literal notranslate"><span class="pre">usable_key()</span></code></a></li>
 </ul>
   </nav></div>
 

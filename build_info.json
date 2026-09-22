@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-09-22T13:56:57Z",
+  "built_at": "2026-09-22T14:30:32Z",
   "package": {
     "name": "liaise",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "display_name": "liaise",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "7f67dce1cb2284c5b2b30a18917ad96fe3c67660",
-    "short_commit": "7f67dce",
+    "commit": "f9c3d1ed966e7257b2ae5c5ee856ee9ef6e1a414",
+    "short_commit": "f9c3d1e",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/liaise",
-    "commit_url": "https://github.com/thorwhalen/liaise/commit/7f67dce1cb2284c5b2b30a18917ad96fe3c67660",
+    "commit_url": "https://github.com/thorwhalen/liaise/commit/f9c3d1ed966e7257b2ae5c5ee856ee9ef6e1a414",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/liaise",
-    "sha": "7f67dce1cb2284c5b2b30a18917ad96fe3c67660",
+    "sha": "f9c3d1ed966e7257b2ae5c5ee856ee9ef6e1a414",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "35736639077",
-    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/35736639077",
+    "run_id": "35740413275",
+    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/35740413275",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -56,15 +56,15 @@
   },
   "site": {
     "modules_documented": 29,
-    "objects_documented": 772
+    "objects_documented": 792
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.9",
+    "latest": "0.1.10",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout 7f67dce1cb2284c5b2b30a18917ad96fe3c67660\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout f9c3d1ed966e7257b2ae5c5ee856ee9ef6e1a414\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

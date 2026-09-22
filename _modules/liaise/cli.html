@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=8618f531"></script>
+    <script src="../../_static/documentation_options.js?v=bafade30"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.9" />
+  <meta name="docsearch:version" content="0.1.10" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -722,14 +722,14 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    liaise case list [--state STATE]</span>
 <span class="sd">    liaise case show CASE_ID</span>
 <span class="sd">    liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]</span>
-<span class="sd">    liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]</span>
+<span class="sd">    liaise case send-draft CASE_ID [INDEX] [--edit] [--new-attempt] [--dry-run]</span>
 <span class="sd">    liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]</span>
 <span class="sd">    liaise case cancel-send CASE_ID [ID|INDEX] [--reason TEXT] [--dry-run]</span>
 <span class="sd">    liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]</span>
 <span class="sd">        [--purpose PURPOSE] [--dry-run]</span>
 <span class="sd">    liaise message list [--state STATE]</span>
 <span class="sd">    liaise message show MESSAGE_ID</span>
-<span class="sd">    liaise message send-draft MESSAGE_ID [--edit] [--dry-run]</span>
+<span class="sd">    liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]</span>
 <span class="sd">    liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]</span>
 <span class="sd">    liaise subject list</span>
 <span class="sd">    liaise subject show SLUG</span>
@@ -739,7 +739,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">Every command takes ``--root``, the config root (``~/.config/liaise`` by default), and</span>
 <span class="sd">returns the text it prints. The seams (the channel registry, the processor, the labeler,</span>
-<span class="sd">the ledger store, the notifier, the sessions directory, the clock and the editor) are keyword</span>
+<span class="sd">the ledger store, the store of sends, the notifier, the sessions directory, the clock and the editor) are keyword</span>
 <span class="sd">arguments with working defaults, hidden from the command line by ``_dispatch_config``:</span>
 <span class="sd">tests fill them with fakes, and the command line never shows them.</span>
 
@@ -786,7 +786,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.notify</span><span class="w"> </span><span class="kn">import</span> <span class="n">notify</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.processor</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClaudeHeadless</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.projection</span><span class="w"> </span><span class="kn">import</span> <span class="n">setup_labels</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="n">DraftSentNotRecorded</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="n">UNCONFIRMED_KIND</span><span class="p">,</span> <span class="n">DraftSentNotRecorded</span><span class="p">,</span> <span class="n">default_send_store</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.schedule</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DFLT_INTERVAL_MINUTES</span><span class="p">,</span>
     <span class="n">install_schedule</span><span class="p">,</span>
@@ -835,6 +835,14 @@ window.runMermaid = runMermaid;</script>
 <span class="c1">#: The exit code of a draft command whose message the gate diverted: the message is held</span>
 <span class="c1">#: for the operator, as ``liaise vet`` is planned to say (discussion 32, §5.8).</span>
 <span class="n">DIVERTED_EXIT_CODE</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="c1">#: What a release says when an earlier attempt had already posted the message.</span>
+<span class="n">ALREADY_POSTED</span> <span class="o">=</span> <span class="s2">"an earlier attempt had already posted it, so it was not posted again"</span>
+<span class="c1">#: What the confirmation adds when an earlier attempt at the message may have gone out.</span>
+<span class="n">READ_BACK_NOTE</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"an earlier attempt at this message may have gone out: sending reads the "</span>
+    <span class="s2">"conversation back first, where the channel can be read, records the message if it "</span>
+    <span class="s2">"is there, and posts nothing otherwise (then check it, and use --new-attempt)"</span>
+<span class="p">)</span>
 <span class="c1">#: Why ``send-draft`` sends nothing without a terminal to ask at.</span>
 <span class="n">NO_TERMINAL</span> <span class="o">=</span> <span class="p">(</span>
     <span class="s2">"a held message is sent only once you confirm it at a terminal, and there is no "</span>
@@ -879,6 +887,16 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">create</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">ledger_dir</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
         <span class="k">return</span> <span class="p">{}</span>
     <span class="k">return</span> <span class="n">default_ledger_store</span><span class="p">(</span><span class="n">global_config</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_send_store</span><span class="p">(</span>
+    <span class="n">global_config</span><span class="p">:</span> <span class="n">GlobalConfig</span><span class="p">,</span> <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``sends`` when given, else liaise's idempotency records under ``state_dir``.</span>
+
+<span class="sd">    A dry run reads them and writes nothing, so it creates nothing either.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">sends</span> <span class="k">if</span> <span class="n">sends</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">default_send_store</span><span class="p">(</span><span class="n">global_config</span><span class="o">.</span><span class="n">state_dir</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_subject_named</span><span class="p">(</span>
@@ -993,6 +1011,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">resolver</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Resolver</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">workspace</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">WorkspaceFactory</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">triage</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Triage</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.</span>
 
@@ -1045,6 +1064,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
             <span class="n">only</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
             <span class="n">triage</span><span class="o">=</span><span class="n">triage</span><span class="p">,</span>
+            <span class="n">sends</span><span class="o">=</span><span class="n">_send_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">sends</span><span class="p">),</span>
             <span class="o">**</span><span class="n">seams</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">((</span><span class="o">*</span><span class="n">hint</span><span class="p">,</span> <span class="o">*</span><span class="n">report</span><span class="o">.</span><span class="n">plan_lines</span><span class="p">))</span>
@@ -1417,6 +1437,19 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">dry_run</span>
         <span class="k">else</span> <span class="sa">f</span><span class="s2">". It stays </span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">stays</span><span class="si">}</span><span class="s2"> with that reason; edit it with </span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">command</span><span class="si">}</span><span class="s2"> --edit"</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">unconfirmed</span> <span class="ow">and</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="n">why</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"an earlier attempt may have gone out (</span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">). Without "</span>
+            <span class="sa">f</span><span class="s2">"--dry-run it reads </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2"> back first, where the channel can "</span>
+            <span class="sa">f</span><span class="s2">"be read, and posts nothing it cannot confirm"</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="n">attempt</span><span class="o">.</span><span class="n">unconfirmed</span><span class="p">:</span>
+        <span class="n">why</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"an earlier attempt may have gone out (</span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">). Check "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">; if it is not there, send it with </span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">command</span><span class="si">}</span><span class="s2"> "</span>
+            <span class="sa">f</span><span class="s2">"--new-attempt"</span>
+        <span class="p">)</span>
+        <span class="n">kept</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">". It stays </span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">stays</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would not be sent"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">"was not sent"</span>
     <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
     <span class="n">message</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">held</span><span class="o">.</span><span class="n">label</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">why</span><span class="si">}{</span><span class="n">kept</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span>
@@ -1495,14 +1528,24 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    diverts, or its channel refuses, is never shown: outside a dry run its reason is</span>
 <span class="sd">    recorded, sending nothing, and the command fails. One the gate passes is shown to</span>
 <span class="sd">    ``confirm`` and, once confirmed, sent under the run lock, bound by ``bind`` to what the</span>
-<span class="sd">    operator was shown. This is the one path both ``send-draft`` commands take.</span>
+<span class="sd">    operator was shown. This is the one path both ``send-draft`` commands take. A message</span>
+<span class="sd">    whose earlier attempt may have gone out (``unconfirmed`` in the dry run) is shown too:</span>
+<span class="sd">    the real send reads the conversation back, records the message it finds as sent, and</span>
+<span class="sd">    posts nothing when it finds none.</span>
 
 <span class="sd">    Returns ``(release, True)`` for the release made, or the judgement in a dry run, and</span>
 <span class="sd">    ``(judgement, False)`` when the operator declined.</span>
 <span class="sd">    """</span>
     <span class="n">judged</span> <span class="o">=</span> <span class="n">release</span><span class="p">(</span><span class="n">Ledger</span><span class="p">(</span><span class="n">ChainMap</span><span class="p">({},</span> <span class="n">ledger_store</span><span class="p">)),</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">first</span><span class="p">)</span>
     <span class="n">names</span> <span class="o">=</span> <span class="n">held</span><span class="p">(</span><span class="n">judged</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">judged</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
+    <span class="c1"># An earlier attempt whose outcome is unknown: only a real send reads the conversation</span>
+    <span class="c1"># back, and it posts nothing either way, so the operator may confirm it.</span>
+    <span class="n">reads_back</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">judged</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure_kind</span> <span class="o">==</span> <span class="n">UNCONFIRMED_KIND</span>
+        <span class="ow">and</span> <span class="n">judged</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">outbound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">judged</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">sent</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">reads_back</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">_not_sent</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">judged</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>  <span class="c1"># record why, sending nothing</span>
@@ -1516,7 +1559,10 @@ window.runMermaid = runMermaid;</script>
         <span class="k">raise</span> <span class="n">_not_sent</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">recorded</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">dry_run</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">judged</span><span class="p">,</span> <span class="kc">True</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">confirm</span><span class="p">(</span><span class="n">_preview</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">judged</span><span class="p">,</span> <span class="n">edit</span><span class="o">=</span><span class="n">edit</span><span class="p">,</span> <span class="n">then</span><span class="o">=</span><span class="n">then</span><span class="p">(</span><span class="n">judged</span><span class="p">))):</span>
+    <span class="n">preview</span> <span class="o">=</span> <span class="n">_preview</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">judged</span><span class="p">,</span> <span class="n">edit</span><span class="o">=</span><span class="n">edit</span><span class="p">,</span> <span class="n">then</span><span class="o">=</span><span class="n">then</span><span class="p">(</span><span class="n">judged</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">reads_back</span><span class="p">:</span>
+        <span class="n">preview</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="n">READ_BACK_NOTE</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">confirm</span><span class="p">(</span><span class="n">preview</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">judged</span><span class="p">,</span> <span class="kc">False</span>
     <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>
         <span class="n">_hold_run_lock</span><span class="p">(</span><span class="n">between_ticks</span><span class="p">,</span> <span class="n">global_config</span><span class="p">,</span> <span class="n">names</span><span class="o">.</span><span class="n">owner</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="s2">"sent"</span><span class="p">)</span>
@@ -1533,6 +1579,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">new_attempt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">justification</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1541,6 +1588,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">editor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">confirm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.</span>
 
@@ -1566,6 +1614,11 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    It holds the run lock, as ``set-state`` does, and refuses while a tick runs. It also</span>
 <span class="sd">    refuses while a hold keeps the case's messages waiting, while a run of the case is in</span>
 <span class="sd">    flight, and for a delivery message whose delivery a hold kept from running.</span>
+
+<span class="sd">    A message is never posted twice: a draft whose earlier attempt may have gone out is</span>
+<span class="sd">    looked for in the conversation, recorded as sent when it is there, and not posted when</span>
+<span class="sd">    it is not. Check the conversation yourself then, and if it is not there, send it with</span>
+<span class="sd">    ``--new-attempt``.</span>
 <span class="sd">    """</span>
     <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
     <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
@@ -1592,6 +1645,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
             <span class="n">justification</span><span class="o">=</span><span class="n">justification</span><span class="p">,</span>
             <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">_key_for</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">),</span>
+            <span class="n">sends</span><span class="o">=</span><span class="n">_send_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">sends</span><span class="p">),</span>
+            <span class="n">new_attempt</span><span class="o">=</span><span class="n">new_attempt</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="n">first</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">draft_index</span><span class="p">,</span> <span class="n">seen</span><span class="o">=</span><span class="n">opened</span><span class="p">,</span> <span class="n">approve_shown</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
         <span class="n">bind</span><span class="o">=</span><span class="k">lambda</span> <span class="n">judged</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
@@ -1619,6 +1674,8 @@ window.runMermaid = runMermaid;</script>
         <span class="sa">f</span><span class="s2">"(gate: passed, </span><span class="si">{</span><span class="n">done</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
     <span class="p">)</span>
     <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">replayed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">ALREADY_POSTED</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">head</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">": </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">url</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">),</span> <span class="o">*</span><span class="n">notes</span><span class="p">]</span>
     <span class="k">if</span> <span class="n">done</span><span class="o">.</span><span class="n">moved</span><span class="p">:</span>
         <span class="n">before</span><span class="p">,</span> <span class="n">after</span> <span class="o">=</span> <span class="n">done</span><span class="o">.</span><span class="n">moved</span>
@@ -1797,6 +1854,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">notify_fn</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Send a message to PERSON outside any case, through the gate, or hold it for the operator.</span>
 
@@ -1839,6 +1897,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">notify_fn</span><span class="o">=</span><span class="n">notify_fn</span> <span class="ow">or</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">notify</span><span class="p">,</span> <span class="n">topic_env</span><span class="o">=</span><span class="n">topic_env</span><span class="p">),</span>
         <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
         <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">_key_for</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">),</span>
+        <span class="n">sends</span><span class="o">=</span><span class="n">_send_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">sends</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">message</span><span class="p">,</span> <span class="n">attempt</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">message</span><span class="p">,</span> <span class="n">result</span><span class="o">.</span><span class="n">attempt</span>
     <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span> <span class="k">if</span> <span class="n">attempt</span> <span class="k">else</span> <span class="p">())]</span>
@@ -1916,6 +1975,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">edit</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">new_attempt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">justification</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1924,6 +1984,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">editor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">confirm</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Send a held message you approved, through the gate, as ``liaise case send-draft`` does.</span>
 
@@ -1933,7 +1994,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    once you answer ``y`` at a terminal. A message the gate diverts stays held with the</span>
 <span class="sd">    reason and exits 2; one its channel refuses exits 1. ``--dry-run`` judges and plans,</span>
 <span class="sd">    asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps</span>
-<span class="sd">    the message waiting.</span>
+<span class="sd">    the message waiting. ``--new-attempt``, after checking that an earlier attempt did not</span>
+<span class="sd">    go out, sends it under a new idempotency key.</span>
 <span class="sd">    """</span>
     <span class="n">config_root</span> <span class="o">=</span> <span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
     <span class="n">global_config</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
@@ -1961,6 +2023,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
             <span class="n">justification</span><span class="o">=</span><span class="n">justification</span><span class="p">,</span>
             <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">_key_for</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">),</span>
+            <span class="n">sends</span><span class="o">=</span><span class="n">_send_store</span><span class="p">(</span><span class="n">global_config</span><span class="p">,</span> <span class="n">sends</span><span class="p">),</span>
+            <span class="n">new_attempt</span><span class="o">=</span><span class="n">new_attempt</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="n">first</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">seen</span><span class="o">=</span><span class="n">opened</span><span class="p">,</span> <span class="n">approve_shown</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
         <span class="n">bind</span><span class="o">=</span><span class="k">lambda</span> <span class="n">judged</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">seen</span><span class="o">=</span><span class="n">judged</span><span class="o">.</span><span class="n">draft</span><span class="p">,</span> <span class="n">approval</span><span class="o">=</span><span class="n">judged</span><span class="o">.</span><span class="n">approval</span><span class="p">),</span>
@@ -1981,6 +2045,8 @@ window.runMermaid = runMermaid;</script>
         <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">recipient</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2"> (gate: passed, </span><span class="si">{</span><span class="n">done</span><span class="o">.</span><span class="n">filters</span><span class="si">}</span><span class="s2"> filters)"</span>
     <span class="p">)</span>
     <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">done</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">replayed</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">ALREADY_POSTED</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">head</span> <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">": </span><span class="si">{</span><span class="n">url</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">url</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">""</span><span class="p">),</span> <span class="o">*</span><span class="n">notes</span><span class="p">])</span></div>
 
 
@@ -2104,6 +2170,7 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"resolver"</span><span class="p">,</span>
         <span class="s2">"workspace"</span><span class="p">,</span>
         <span class="s2">"triage"</span><span class="p">,</span>
+        <span class="s2">"sends"</span><span class="p">,</span>
     <span class="p">),</span>
     <span class="s2">"status"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
     <span class="s2">"hold"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
@@ -2112,15 +2179,15 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"list"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
         <span class="s2">"show"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
         <span class="s2">"set-state"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
-        <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"editor"</span><span class="p">,</span> <span class="s2">"confirm"</span><span class="p">),</span>
+        <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"editor"</span><span class="p">,</span> <span class="s2">"confirm"</span><span class="p">,</span> <span class="s2">"sends"</span><span class="p">),</span>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
         <span class="s2">"cancel-send"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
     <span class="p">},</span>
     <span class="s2">"message"</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">"send"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"notify_fn"</span><span class="p">),</span>
+        <span class="s2">"send"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"notify_fn"</span><span class="p">,</span> <span class="s2">"sends"</span><span class="p">),</span>
         <span class="s2">"list"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
         <span class="s2">"show"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,),</span>
-        <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"editor"</span><span class="p">,</span> <span class="s2">"confirm"</span><span class="p">),</span>
+        <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"editor"</span><span class="p">,</span> <span class="s2">"confirm"</span><span class="p">,</span> <span class="s2">"sends"</span><span class="p">),</span>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
     <span class="p">},</span>
     <span class="s2">"gate"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"report"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,)},</span>

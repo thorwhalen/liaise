@@ -12,14 +12,14 @@ liaise unhold SCOPE
 liaise case list [--state STATE]
 liaise case show CASE_ID
 liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
-liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
+liaise case send-draft CASE_ID [INDEX] [--edit] [--new-attempt] [--dry-run]
 liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
 liaise case cancel-send CASE_ID [ID|INDEX] [--reason TEXT] [--dry-run]
 liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
     [--purpose PURPOSE] [--dry-run]
 liaise message list [--state STATE]
 liaise message show MESSAGE_ID
-liaise message send-draft MESSAGE_ID [--edit] [--dry-run]
+liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]
 liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
 liaise subject list
 liaise subject show SLUG
@@ -30,7 +30,7 @@ liaise schedule install | uninstall | status
 
 Every command takes `--root`, the config root (`~/.config/liaise` by default), and
 returns the text it prints. The seams (the channel registry, the processor, the labeler,
-the ledger store, the notifier, the sessions directory, the clock and the editor) are keyword
+the ledger store, the store of sends, the notifier, the sessions directory, the clock and the editor) are keyword
 arguments with working defaults, hidden from the command line by `_dispatch_config`:
 tests fill them with fakes, and the command line never shows them.
 
@@ -56,6 +56,8 @@ traceback.
 | [`DRAFT_FILE_NAME`](#liaise.cli.DRAFT_FILE_NAME)     | The file `--edit` puts the draft in, inside a temporary directory of its own.                           |
 | [`CONFIRM_PROMPT`](#liaise.cli.CONFIRM_PROMPT)      | What `liaise case send-draft` asks at the terminal, and the answers that send.                          |
 | [`DIVERTED_EXIT_CODE`](#liaise.cli.DIVERTED_EXIT_CODE)  | the message is held for the operator, as `liaise vet` is planned to say (discussion 32, §5.8).          |
+| [`ALREADY_POSTED`](#liaise.cli.ALREADY_POSTED)      | What a release says when an earlier attempt had already posted the message.                             |
+| [`READ_BACK_NOTE`](#liaise.cli.READ_BACK_NOTE)      | What the confirmation adds when an earlier attempt at the message may have gone out.                    |
 | [`NO_TERMINAL`](#liaise.cli.NO_TERMINAL)         | Why `send-draft` sends nothing without a terminal to ask at.                                            |
 
 ### Functions
@@ -86,6 +88,10 @@ traceback.
 | [`subject_list`](#liaise.cli.subject_list)(\*[, root])                            | Every configured subject with its bindings, flagging an inactive one and any binding that could never match. |
 | [`subject_show`](#liaise.cli.subject_show)(slug, \*[, root])                      | The subject SLUG as liaise reads it, every default applied, and its binding problems.                        |
 | [`unhold`](#liaise.cli.unhold)(scope, \*[, root, store])                    | Lift the hold on SCOPE, whoever set it.                                                                      |
+
+### liaise.cli.ALREADY_POSTED *= 'an earlier attempt had already posted it, so it was not posted again'*
+
+What a release says when an earlier attempt had already posted the message.
 
 ### liaise.cli.CONFIRM_PROMPT *= 'send it? [y/N] '*
 
@@ -123,6 +129,10 @@ How `liaise subject show` prints an empty or unset value.
 ### liaise.cli.NO_TERMINAL *= 'a held message is sent only once you confirm it at a terminal, and there is no terminal here, so nothing was sent: run it in your own shell (--dry-run asks nothing)'*
 
 Why `send-draft` sends nothing without a terminal to ask at.
+
+### liaise.cli.READ_BACK_NOTE *= 'an earlier attempt at this message may have gone out: sending reads the conversation back first, where the channel can be read, records the message if it is there, and posts nothing otherwise (then check it, and use --new-attempt)'*
+
+What the confirmation adds when an earlier attempt at the message may have gone out.
 
 ### liaise.cli.STDIN_FILE_NAME *= '-'*
 
@@ -182,7 +192,7 @@ changes nothing.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.case_send_draft(case_id, \*index, edit=False, justification='', dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
+### liaise.cli.case_send_draft(case_id, \*index, edit=False, new_attempt=False, justification='', dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None, sends=None)
 
 Send a draft you approved: CASE_ID’s draft INDEX, or its only one, through the gate.
 
@@ -208,6 +218,11 @@ records nothing.
 It holds the run lock, as `set-state` does, and refuses while a tick runs. It also
 refuses while a hold keeps the case’s messages waiting, while a run of the case is in
 flight, and for a delivery message whose delivery a hold kept from running.
+
+A message is never posted twice: a draft whose earlier attempt may have gone out is
+looked for in the conversation, recorded as sent when it is there, and not posted when
+it is not. Check the conversation yourself then, and if it is not there, send it with
+`--new-attempt`.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -311,7 +326,7 @@ holds the run lock. `--dry-run` changes nothing.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.message_send(recipient, , ref='', text='', text_file='', title='', purpose='ask', dry_run=False, root=None, registry=None, store=None, now=None, notify_fn=None)
+### liaise.cli.message_send(recipient, , ref='', text='', text_file='', title='', purpose='ask', dry_run=False, root=None, registry=None, store=None, now=None, notify_fn=None, sends=None)
 
 Send a message to PERSON outside any case, through the gate, or hold it for the operator.
 
@@ -334,7 +349,7 @@ plans, and records and tells nothing.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.message_send_draft(message_id, , edit=False, justification='', dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None)
+### liaise.cli.message_send_draft(message_id, , edit=False, new_attempt=False, justification='', dry_run=False, root=None, registry=None, store=None, now=None, editor=None, confirm=None, sends=None)
 
 Send a held message you approved, through the gate, as `liaise case send-draft` does.
 
@@ -344,7 +359,8 @@ editor first. It shows where the message goes, the verdict and the exact text, a
 once you answer `y` at a terminal. A message the gate diverts stays held with the
 reason and exits 2; one its channel refuses exits 1. `--dry-run` judges and plans,
 asks nothing, and records nothing. It holds the run lock, and refuses while a hold keeps
-the message waiting.
+the message waiting. `--new-attempt`, after checking that an earlier attempt did not
+go out, sends it under a new idempotency key.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -369,7 +385,7 @@ is touched.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### liaise.cli.run(, root=None, once=False, dry_run=False, subject=None, registry=None, processor=None, labeler=None, store=None, notify_fn=None, sessions_dir=None, now=None, resolver=None, workspace=None, triage=None)
+### liaise.cli.run(, root=None, once=False, dry_run=False, subject=None, registry=None, processor=None, labeler=None, store=None, notify_fn=None, sessions_dir=None, now=None, resolver=None, workspace=None, triage=None, sends=None)
 
 One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.
 

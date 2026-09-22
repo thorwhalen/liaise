@@ -159,7 +159,7 @@ does not hold, and one that is not held.
 * **Return type:**
   [`OutboundMessage`](liaise.model.md#liaise.model.OutboundMessage)
 
-### liaise.messages.send_held_message(ledger, subjects, message_id, \*, by, text=None, title=None, seen=None, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None)
+### liaise.messages.send_held_message(ledger, subjects, message_id, \*, by, text=None, title=None, seen=None, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None, sends=None, new_attempt=False)
 
 Send the held message `message_id` as `by`, through the gate again.
 
@@ -172,9 +172,10 @@ it stays held with the text that was judged and the new reason. Either way an en
 by `by` records the attempt. `seen` is the message as the operator saw it
 ([`message_draft()`](#liaise.messages.message_draft)): one that changed since is not sent. `send=False`,
 `dry_run`, `approval` (the dry run’s, bound to what the operator was shown),
-`approve_shown`, `justification` and `fingerprint_key` are as
-[`release_draft()`](liaise.release.md#liaise.release.release_draft) has them: with neither an approval nor
-`approve_shown`, nothing is settled and a held message stays held.
+`approve_shown`, `justification`, `fingerprint_key`, `sends` and
+`new_attempt` are as [`release_draft()`](liaise.release.md#liaise.release.release_draft) has them: with neither an
+approval nor `approve_shown`, nothing is settled and a held message stays held. The
+message keeps the idempotency key its release used.
 
 Raises `ValueError`, sending and writing nothing, for a message the ledger does not
 hold, one that is not held, one whose subject is not in `subjects`, one that changed
@@ -183,7 +184,7 @@ since `seen`, and anything [`release_draft()`](liaise.release.md#liaise.release.
 * **Return type:**
   [`MessageRelease`](#liaise.messages.MessageRelease)
 
-### liaise.messages.send_message(ledger, subjects, recipient, \*, ref, text, title=None, purpose='ask', by='agent', now=None, registry=None, notify_fn=None, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), fingerprint_key=None)
+### liaise.messages.send_message(ledger, subjects, recipient, \*, ref, text, title=None, purpose='ask', by='agent', now=None, registry=None, notify_fn=None, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), fingerprint_key=None, sends=None)
 
 Send `text` to `recipient` (a person id) at `ref` outside any case, or hold it.
 
@@ -207,7 +208,9 @@ it binds with a `title`, to open an issue there; it is kept as
 Each record’s one entry is by `by`, at `now`, with the gate’s audit record. The gate
 judges it with its provenance unknown (nobody can say what its sender read), and
 `fingerprint_key` is as [`GateContext`](liaise.gate.md#liaise.gate.GateContext) has it. A dry run judges
-and plans the same, and records and tells nothing.
+and plans the same, and records and tells nothing. The send’s idempotency key is the
+message’s id, kept in `sends` (correspond’s own store when None), and a held
+message keeps it, so its release never posts it twice.
 
 Raises `ValueError`, sending and recording nothing, for any of these:
 

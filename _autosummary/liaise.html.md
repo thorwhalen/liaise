@@ -1227,7 +1227,7 @@ returns anything but a `Pass` (of an [`Outbound`](#liaise.Outbound)) or a `Diver
 * **Return type:**
   [`GateDecision`](liaise.gate.html.md#liaise.gate.GateDecision)
 
-### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600))
+### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
 
 One tick over `subjects` (slug to [`Subject`](liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`.
 
@@ -1244,7 +1244,10 @@ See the module docstring for the steps. The seams, each with a working default:
 - `notify_fn`: `(title, body, *, priority)`, by default `liaise.notify.notify()`
   on `global_config.notify.ntfy_topic_env`;
 - `triage`: a `Triage` that groups and orders each subject’s ready cases
-  before they start; None keeps the tick’s own order, oldest first.
+  before they start; None keeps the tick’s own order, oldest first;
+- `sends`: the idempotency records every send’s key is kept in, by default
+  [`liaise.release.default_send_store()`](liaise.release.html.md#liaise.release.default_send_store) (`<state_dir>/sends`), so a message
+  > that may have gone out is never posted again.
 
 `only` is a slug or slugs to run alone; an unknown one raises
 [`ConfigError`](liaise.config.html.md#liaise.config.ConfigError). An inactive subject (`active = false`) is not

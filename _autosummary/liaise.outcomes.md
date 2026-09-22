@@ -142,7 +142,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Move the case to `state`, recording `reason`.
 
-### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=(), title=None, gate=None)
+### liaise.outcomes.make_draft(, at, outcome, recipient, ref, text, reason, notes=(), title=None, gate=None, send_key=None)
 
 One item of a case’s `drafts`: a message held for the operator.
 
@@ -158,7 +158,10 @@ This is the one shape every draft has, JSON-ready:
 - `notes`: the gate’s notes on it, in order;
 - `title`: the title of the issue it would open, present only when it opens one;
 - `gate`: what the gate decided, present only when the gate held it: its flow, the
-  audience in words and the reasons ([`liaise.gate.GateDecision.summary()`](liaise.gate.md#liaise.gate.GateDecision.summary)).
+  audience in words and the reasons ([`liaise.gate.GateDecision.summary()`](liaise.gate.md#liaise.gate.GateDecision.summary));
+- `send_key`: the idempotency key its release sends with, present only when it has
+  one: the key of the send it failed as, so a release never posts it twice
+  ([`liaise.release.draft_send_key()`](liaise.release.md#liaise.release.draft_send_key)).
 
 ```pycon
 >>> from datetime import datetime, timezone

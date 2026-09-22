@@ -222,7 +222,7 @@ not hold, and a draft [`pick_draft()`](#liaise.cases.pick_draft) cannot pick.
 * **Return type:**
   [`DraftRejection`](#liaise.cases.DraftRejection)
 
-### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None)
+### liaise.cases.send_draft(ledger, subjects, case_id, \*, index=None, text=None, seen=None, by, now=None, registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None, sends=None, new_attempt=False)
 
 Send the case `case_id`’s draft at `index` as `by`, through the gate again.
 
@@ -250,7 +250,10 @@ audience or a verdict that changed since the approval voids it, and nothing is s
 `seen` is the draft as the operator read it: a draft that has changed since is not
 sent. `send=False` asks the channel for its plan and sends nothing. A divert or a
 refusal is then recorded as above, and a message the gate would pass changes nothing.
-A dry run judges and plans as a send would, and writes nothing.
+A dry run judges and plans as a send would, and writes nothing. `sends` and
+`new_attempt` are as [`liaise.release.release_draft()`](liaise.release.html.md#liaise.release.release_draft) has them: the draft’s
+idempotency key keeps a message an earlier attempt may have posted from going out
+twice, and `new_attempt` is the operator’s word that they checked it did not.
 
 Raises `ValueError`, sending and writing nothing, for any of these:
 

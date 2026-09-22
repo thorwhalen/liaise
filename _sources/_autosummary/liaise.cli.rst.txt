@@ -19,6 +19,8 @@ liaise.cli
       DRAFT_FILE_NAME
       CONFIRM_PROMPT
       DIVERTED_EXIT_CODE
+      ALREADY_POSTED
+      READ_BACK_NOTE
       NO_TERMINAL
    
    .. rubric:: Functions

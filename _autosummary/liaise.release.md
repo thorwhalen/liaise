@@ -21,29 +21,57 @@ decision the operator was shown, so a text, a title or a readership that changed
 voids it, and the operator sees the new verdict instead of a send (liaise ADR 0002). It
 hands back the ledger entry and the draft to keep, for the caller to record.
 
+**Never twice.** Every real send carries an idempotency key (correspond’s
+`idempotency_key`), kept in liaise’s own store of sends ([`default_send_store()`](#liaise.release.default_send_store),
+under `state_dir`). A channel that posts and then reports an error leaves its key
+claimed, so the release of the draft it became, which reuses the key, either finds the
+message already out (read back, or a replay of the stored result) and posts nothing, or
+fails `unconfirmed`. An `unconfirmed` draft stays with the operator, whose release
+with `new_attempt` (`send-draft --new-attempt`, after checking the conversation) moves
+it to the next key ([`next_attempt_key()`](#liaise.release.next_attempt_key)). The keys: a tick’s send
+`<case>/<payload hash>/<entry serial>` ([`tick_send_key()`](#liaise.release.tick_send_key)), an outbox release
+`<case>/<held id>` ([`outbox_key()`](#liaise.release.outbox_key)), a message outside a case its id, and a draft the
+key it carries (`send_key`), or one derived from it ([`draft_send_key()`](#liaise.release.draft_send_key)).
+
 One path for every sender is what makes the gate a gate. A filter added to it applies to
 all of them at once, and none of them has a way to send around it.
 
 ### Module Attributes
 
-| [`DFLT_REFUSAL`](#liaise.release.DFLT_REFUSAL)        | Why a send failed when the channel said no without saying why.                    |
-|----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`DELIVER_PURPOSE`](#liaise.release.DELIVER_PURPOSE)     | The outcome whose message announces a delivery.                                   |
-| [`DRAFT_ENTRY_KIND`](#liaise.release.DRAFT_ENTRY_KIND)    | a gate decision, as the tick's are.                                               |
-| [`GITHUB_CHANNEL`](#liaise.release.GITHUB_CHANNEL)      | The channel whose references name repositories.                                   |
-| [`CASELESS_PROVENANCE`](#liaise.release.CASELESS_PROVENANCE) | its sender's reading is nobody's to vouch for.                                    |
-| [`NO_ATTACHMENTS`](#liaise.release.NO_ATTACHMENTS)      | correspond's send takes none yet.                                                 |
-| [`VALIDATION_KIND`](#liaise.release.VALIDATION_KIND)     | The failure kind of a message liaise refused to hand to its channel as it stands. |
+| [`DFLT_REFUSAL`](#liaise.release.DFLT_REFUSAL)        | Why a send failed when the channel said no without saying why.                                                                                                  |
+|----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DELIVER_PURPOSE`](#liaise.release.DELIVER_PURPOSE)     | The outcome whose message announces a delivery.                                                                                                                 |
+| [`DRAFT_ENTRY_KIND`](#liaise.release.DRAFT_ENTRY_KIND)    | a gate decision, as the tick's are.                                                                                                                             |
+| [`GITHUB_CHANNEL`](#liaise.release.GITHUB_CHANNEL)      | The channel whose references name repositories.                                                                                                                 |
+| [`CASELESS_PROVENANCE`](#liaise.release.CASELESS_PROVENANCE) | its sender's reading is nobody's to vouch for.                                                                                                                  |
+| [`NO_ATTACHMENTS`](#liaise.release.NO_ATTACHMENTS)      | correspond's send takes none yet.                                                                                                                               |
+| [`VALIDATION_KIND`](#liaise.release.VALIDATION_KIND)     | The failure kind of a message liaise refused to hand to its channel as it stands.                                                                               |
+| [`UNCONFIRMED_KIND`](#liaise.release.UNCONFIRMED_KIND)    | correspond's failure kind for a send whose key an earlier attempt claimed, which may have gone out: nothing was sent, and the operator checks the conversation. |
+| [`DFLT_SENDS_SUBDIR`](#liaise.release.DFLT_SENDS_SUBDIR)   | The directory of liaise's idempotency records under `state_dir`.                                                                                                |
+| [`KEY_DIGEST_DIGITS`](#liaise.release.KEY_DIGEST_DIGITS)   | enough to tell messages apart.                                                                                                                                  |
+| [`ATTEMPT_SUFFIX_RE`](#liaise.release.ATTEMPT_SUFFIX_RE)   | `~2`, `~3`, ...                                                                                                                                                 |
+| [`ATTEMPT_ROOM`](#liaise.release.ATTEMPT_ROOM)        | Room a key keeps for attempt suffixes (`~NN`) under correspond's length limit.                                                                                  |
+| [`KEY_HEAD_CHARS`](#liaise.release.KEY_HEAD_CHARS)      | How many characters of a too-long key's head [`bounded_key()`](#liaise.release.bounded_key) keeps, for reading.                                 |
+| [`FIRST_RETRY`](#liaise.release.FIRST_RETRY)         | The first attempt suffix [`next_attempt_key()`](#liaise.release.next_attempt_key) adds.                                                              |
+| [`UNCONFIRMED_REASON`](#liaise.release.UNCONFIRMED_REASON)  | Why a send whose earlier attempt may have gone out is kept for the operator.                                                                                    |
 
 ### Functions
 
 | [`audience_of`](#liaise.release.audience_of)(outbound, \*[, registry])             | Who can read `outbound`'s destination, asked of its channel now through correspond.                                                                          |
 |----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`bounded_key`](#liaise.release.bounded_key)(key)                                  | `key`, or, when too long for correspond (a long subject slug), its head and a digest of it.                                                                  |
+| [`default_send_store`](#liaise.release.default_send_store)(state_dir)                     | liaise's idempotency records: correspond's `SendStore` in `<state_dir>/sends`.                                                                               |
+| [`draft_send_key`](#liaise.release.draft_send_key)(owner, draft)                      | The key `draft` is released under: the one it carries (`send_key`), else one from its content.                                                               |
 | [`error_text`](#liaise.release.error_text)(error)                                 | How liaise names an exception it recovered from: its class, then its message.                                                                                |
+| [`failure_reason`](#liaise.release.failure_reason)(attempt, ref)                      | Why a message the gate passed, and its channel did not take, is kept for the operator.                                                                       |
 | [`gate_and_send`](#liaise.release.gate_and_send)(outbound, ctx, \*[, registry, ...]) | Put `outbound` through the gate and, only when it passes, send it through correspond.                                                                        |
 | [`github_repo`](#liaise.release.github_repo)(ref)                                  | `owner/repo`, lower-cased, of the repository a GitHub reference names: itself or one of its issues.                                                          |
+| [`next_attempt_key`](#liaise.release.next_attempt_key)(key)                             | `key` for the message's next attempt: `~2` added, or its attempt number raised.                                                                              |
+| [`outbox_key`](#liaise.release.outbox_key)(case_id, held)                         | The key of an outbox item's release: `<case>/<held id>`, the same on every try.                                                                              |
 | [`release_draft`](#liaise.release.release_draft)(draft, \*, subject, ledger, ...)    | Release `draft` (a [`liaise.outcomes.make_draft()`](liaise.outcomes.md#liaise.outcomes.make_draft) item) as `by`, through the gate. |
 | [`sendable_ref`](#liaise.release.sendable_ref)(ref)                                 | `ref` as a GitHub issue or repository reference, stripped and lower-cased.                                                                                   |
+| [`tick_send_key`](#liaise.release.tick_send_key)(case_id, ref, text, title, serial)  | The key of a message a tick sends: `<case>/<payload digest>/<entry serial>`.                                                                                 |
+| [`usable_key`](#liaise.release.usable_key)(key, sends)                            | `key`, or a later attempt's when the platform refused every try with it so far.                                                                              |
 
 ### Classes
 
@@ -55,6 +83,17 @@ all of them at once, and none of them has a way to send around it.
 
 | [`DraftSentNotRecorded`](#liaise.release.DraftSentNotRecorded)   | A released message went out, and the ledger then failed to record that it did.   |
 |-------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+
+### liaise.release.ATTEMPT_ROOM *= 8*
+
+Room a key keeps for attempt suffixes (`~NN`) under correspond’s length limit.
+
+### liaise.release.ATTEMPT_SUFFIX_RE *= re.compile('~(\\\\d+)$')*
+
+`~2`, `~3`, …
+
+* **Type:**
+  What ends a key that is not its message’s first attempt
 
 ### liaise.release.CASELESS_PROVENANCE *= 'a message outside a case: nobody can say what its sender read'*
 
@@ -70,6 +109,10 @@ The outcome whose message announces a delivery.
 ### liaise.release.DFLT_REFUSAL *= 'the channel refused it'*
 
 Why a send failed when the channel said no without saying why.
+
+### liaise.release.DFLT_SENDS_SUBDIR *= 'sends'*
+
+The directory of liaise’s idempotency records under `state_dir`.
 
 ### liaise.release.DRAFT_ENTRY_KIND *= 'gate'*
 
@@ -108,9 +151,24 @@ or None when there is no record to take it off.
 * **Return type:**
   [`DraftSentNotRecorded`](#liaise.release.DraftSentNotRecorded)
 
+### liaise.release.FIRST_RETRY *= 2*
+
+The first attempt suffix [`next_attempt_key()`](#liaise.release.next_attempt_key) adds.
+
 ### liaise.release.GITHUB_CHANNEL *= 'github'*
 
 The channel whose references name repositories.
+
+### liaise.release.KEY_DIGEST_DIGITS *= 16*
+
+enough to tell messages apart.
+
+* **Type:**
+  How many hex digits of a digest a key keeps
+
+### liaise.release.KEY_HEAD_CHARS *= 60*
+
+How many characters of a too-long key’s head [`bounded_key()`](#liaise.release.bounded_key) keeps, for reading.
 
 ### liaise.release.NO_ATTACHMENTS *= 'correspond.send takes no attachments, so a message with some is not sent'*
 
@@ -119,7 +177,7 @@ correspond’s send takes none yet.
 * **Type:**
   Why a passed message with attachments is not sent
 
-### *class* liaise.release.SendAttempt(decision, result=None, failure=None, failure_kind=None, disclosure_failure=None)
+### *class* liaise.release.SendAttempt(decision, result=None, failure=None, failure_kind=None, disclosure_failure=None, key=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -131,14 +189,36 @@ channel did not take the message, and is None once it did. `failure_kind` names 
 failure: correspond’s `error_kind`, or the class of what was raised. A message the
 gate diverted has none of the three. `disclosure_failure` says why a sent message’s
 disclosure could not be written to its recipients’ acquaint records; None otherwise.
+`key` is the idempotency key the send carried, if any.
 
 #### *property* outbound *: [Outbound](liaise.gate.md#liaise.gate.Outbound) | [None](https://docs.python.org/3/builtins/constants.html#None)*
 
 The message as the gate’s filters left it, or None when the gate diverted it.
 
+#### *property* replayed *: [bool](https://docs.python.org/3/builtins/functions.html#bool)*
+
+Whether the message went out on an earlier attempt, and this one posted nothing.
+
 #### *property* sent *: [bool](https://docs.python.org/3/builtins/functions.html#bool)*
 
 Whether the channel took the message; in a dry run, whether it would have.
+
+#### *property* unconfirmed *: [bool](https://docs.python.org/3/builtins/functions.html#bool)*
+
+Whether nothing was sent because an earlier attempt with the key may have gone out.
+
+That is correspond’s `unconfirmed`, and its refusal of a key an earlier attempt
+used for a different text (a message edited since): either way the operator checks
+the conversation before a new attempt.
+
+### liaise.release.UNCONFIRMED_KIND *= 'unconfirmed'*
+
+correspond’s failure kind for a send whose key an earlier attempt claimed, which may
+have gone out: nothing was sent, and the operator checks the conversation.
+
+### liaise.release.UNCONFIRMED_REASON *= 'send unconfirmed: an earlier attempt at this message may have gone out ({failure}). Check {ref}; if it is not there, release it with send-draft --new-attempt'*
+
+Why a send whose earlier attempt may have gone out is kept for the operator.
 
 ### liaise.release.VALIDATION_KIND *= 'validation'*
 
@@ -155,6 +235,40 @@ fails before it can ask. Nothing is cached, so a release asks again at send time
 * **Return type:**
   `Audience`
 
+### liaise.release.bounded_key(key)
+
+`key`, or, when too long for correspond (a long subject slug), its head and a digest of it.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> bounded_key("c/h1")
+'c/h1'
+>>> len(bounded_key("s" * 200 + "-1/h1")) <= 128
+True
+```
+
+### liaise.release.default_send_store(state_dir)
+
+liaise’s idempotency records: correspond’s `SendStore` in `<state_dir>/sends`.
+
+Nothing is created until a real send claims a key, so a dry run leaves no directory.
+
+* **Return type:**
+  `SendStore`
+
+### liaise.release.draft_send_key(owner, draft)
+
+The key `draft` is released under: the one it carries (`send_key`), else one from its content.
+
+`owner` is the case or message id it belongs to. A draft kept before keys existed
+gets `<owner>/d<digest of its time, destination, text and title>`, and its release
+stores that key on whatever draft stays, so a second release reuses it.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.release.error_text(error)
 
 How liaise names an exception it recovered from: its class, then its message.
@@ -167,7 +281,16 @@ How liaise names an exception it recovered from: its class, then its message.
 'ValueError: no such channel'
 ```
 
-### liaise.release.gate_and_send(outbound, ctx, \*, registry=None, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>))
+### liaise.release.failure_reason(attempt, ref)
+
+Why a message the gate passed, and its channel did not take, is kept for the operator.
+
+An [`unconfirmed`](#liaise.release.SendAttempt.unconfirmed) one says to check `ref` before a new attempt.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.release.gate_and_send(outbound, ctx, \*, registry=None, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), idempotency_key=None, sends=None)
 
 Put `outbound` through the gate and, only when it passes, send it through correspond.
 
@@ -180,6 +303,12 @@ plan and sends nothing. A channel that refuses the message, or raises, becomes a
 `failure` on the attempt rather than an exception, so the caller still has the
 message to keep. Once a real send succeeds, the recipients’ acquaint records are told
 what it identified, and a failure there is `disclosure_failure`, never a raise.
+
+`idempotency_key` and `sends` go to `correspond.send`: the same key never posts
+twice, and an attempt that may have gone out fails `unconfirmed`
+([`SendAttempt.unconfirmed`](#liaise.release.SendAttempt.unconfirmed)). The key is used only with a `sends` store
+([`default_send_store()`](#liaise.release.default_send_store) for the tick and the CLI): without one the message is sent
+unkeyed, as before, and liaise never writes correspond’s own data root.
 
 * **Return type:**
   [`SendAttempt`](#liaise.release.SendAttempt)
@@ -198,7 +327,31 @@ what it identified, and a failure there is `disclosure_failure`, never a raise.
 True
 ```
 
-### liaise.release.release_draft(draft, \*, subject, ledger, label, reject, by, now, case=None, text=None, title=None, detail=mappingproxy({}), registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None)
+### liaise.release.next_attempt_key(key)
+
+`key` for the message’s next attempt: `~2` added, or its attempt number raised.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> print(next_attempt_key("example/h3f9a0c12"), next_attempt_key("example/h3f9a0c12~2"))
+example/h3f9a0c12~2 example/h3f9a0c12~3
+```
+
+### liaise.release.outbox_key(case_id, held)
+
+The key of an outbox item’s release: `<case>/<held id>`, the same on every try.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> print(outbox_key("example", "h3f9a0c12"))
+example/h3f9a0c12
+```
+
+### liaise.release.release_draft(draft, \*, subject, ledger, label, reject, by, now, case=None, text=None, title=None, detail=mappingproxy({}), registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None, sends=None, new_attempt=False)
 
 Release `draft` (a [`liaise.outcomes.make_draft()`](liaise.outcomes.md#liaise.outcomes.make_draft) item) as `by`, through the gate.
 
@@ -255,3 +408,31 @@ Raises `ValueError`, sending nothing, for any of these:
 
 Raises `ValueError` for anything else: another channel, a malformed reference, or an
 issue number that is not a positive whole number.
+
+### liaise.release.tick_send_key(case_id, ref, text, title, serial)
+
+The key of a message a tick sends: `<case>/<payload digest>/<entry serial>`.
+
+`serial` is how many entries the case had when the message was judged, so two sends
+of the same text on one case differ, while a tick that runs again over the same
+entries (after a crash) reuses the key and never posts twice.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> key = tick_send_key("app3", "github:example/app#3", "Fixed.", None, 7)
+>>> key.startswith("app3/") and key.endswith("/7")
+True
+```
+
+### liaise.release.usable_key(key, sends)
+
+`key`, or a later attempt’s when the platform refused every try with it so far.
+
+A key whose record says `failed` posted nothing, so a new attempt is safe, and a
+fresh key lets the message change (an operator’s edit) without being refused as a key
+used for another message. A key with no record, or one that sent or may have, is kept.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

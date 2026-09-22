@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=8618f531"></script>
+    <script src="../../_static/documentation_options.js?v=bafade30"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.9" />
+  <meta name="docsearch:version" content="0.1.10" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -777,6 +777,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">GITHUB_CHANNEL</span><span class="p">,</span>
     <span class="n">DraftSentNotRecorded</span><span class="p">,</span>
     <span class="n">SendAttempt</span><span class="p">,</span>
+    <span class="n">failure_reason</span><span class="p">,</span>
     <span class="n">gate_and_send</span><span class="p">,</span>
     <span class="n">github_repo</span><span class="p">,</span>
     <span class="n">release_draft</span><span class="p">,</span>
@@ -864,6 +865,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">reason</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">reason</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
         <span class="n">notes</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">send_key</span><span class="o">=</span><span class="n">message</span><span class="o">.</span><span class="n">send_key</span> <span class="ow">or</span> <span class="n">message</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
@@ -915,6 +917,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
     <span class="n">fingerprint_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MessageSent</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Send ``text`` to ``recipient`` (a person id) at ``ref`` outside any case, or hold it.</span>
 
@@ -938,7 +941,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Each record's one entry is by ``by``, at ``now``, with the gate's audit record. The gate</span>
 <span class="sd">    judges it with its provenance unknown (nobody can say what its sender read), and</span>
 <span class="sd">    ``fingerprint_key`` is as :class:`~liaise.gate.GateContext` has it. A dry run judges</span>
-<span class="sd">    and plans the same, and records and tells nothing.</span>
+<span class="sd">    and plans the same, and records and tells nothing. The send's idempotency key is the</span>
+<span class="sd">    message's id, kept in ``sends`` (correspond's own store when None), and a held</span>
+<span class="sd">    message keeps it, so its release never posts it twice.</span>
 
 <span class="sd">    Raises ``ValueError``, sending and recording nothing, for any of these:</span>
 
@@ -966,6 +971,7 @@ window.runMermaid = runMermaid;</script>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> is a repository: a message there opens an issue, which needs a title"</span>
         <span class="p">)</span>
     <span class="n">subject</span> <span class="o">=</span> <span class="n">subject_for_ref</span><span class="p">(</span><span class="n">subjects</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="n">message_id</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">new_message_id</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">)</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="n">GITHUB_CHANNEL</span>
     <span class="n">at</span> <span class="o">=</span> <span class="n">_utc_now</span><span class="p">(</span><span class="n">now</span><span class="p">)</span>
     <span class="n">filters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">outbound_filters</span><span class="p">)</span>
@@ -1004,6 +1010,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
             <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
             <span class="n">outbound_filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+            <span class="n">idempotency_key</span><span class="o">=</span><span class="n">message_id</span><span class="p">,</span>
+            <span class="n">sends</span><span class="o">=</span><span class="n">sends</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">decision</span><span class="p">,</span> <span class="n">notes</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="p">,</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span>
         <span class="n">detail</span><span class="p">[</span><span class="s2">"notes"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">notes</span><span class="p">)</span>
@@ -1016,7 +1024,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">reason</span><span class="p">,</span> <span class="n">cause</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted</span><span class="p">,</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted_by</span>
             <span class="n">detail</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decision</span><span class="o">=</span><span class="s2">"divert"</span><span class="p">,</span> <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"send failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span>
+            <span class="n">reason</span> <span class="o">=</span> <span class="n">failure_reason</span><span class="p">(</span><span class="n">attempt</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
             <span class="n">known</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">failure_kind</span> <span class="ow">in</span> <span class="n">ERROR_KINDS</span>  <span class="c1"># never an adapter's own words</span>
             <span class="n">cause</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">failure_kind</span> <span class="k">if</span> <span class="n">known</span> <span class="k">else</span> <span class="n">SEND_REFUSED_CAUSE</span>
             <span class="n">detail</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decision</span><span class="o">=</span><span class="s2">"send"</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="p">)</span>
@@ -1029,7 +1037,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">detail</span><span class="o">=</span><span class="n">detail</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">message</span> <span class="o">=</span> <span class="n">OutboundMessage</span><span class="p">(</span>
-        <span class="nb">id</span><span class="o">=</span><span class="n">ledger</span><span class="o">.</span><span class="n">new_message_id</span><span class="p">(</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">),</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">message_id</span><span class="p">,</span>
         <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
         <span class="n">recipient</span><span class="o">=</span><span class="n">recipient</span><span class="p">,</span>
         <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
@@ -1098,6 +1106,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">approve_shown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">justification</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">fingerprint_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">new_attempt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MessageRelease</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Send the held message ``message_id`` as ``by``, through the gate again.</span>
 
@@ -1110,9 +1120,10 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    by ``by`` records the attempt. ``seen`` is the message as the operator saw it</span>
 <span class="sd">    (:func:`message_draft`): one that changed since is not sent. ``send=False``,</span>
 <span class="sd">    ``dry_run``, ``approval`` (the dry run's, bound to what the operator was shown),</span>
-<span class="sd">    ``approve_shown``, ``justification`` and ``fingerprint_key`` are as</span>
-<span class="sd">    :func:`~liaise.release.release_draft` has them: with neither an approval nor</span>
-<span class="sd">    ``approve_shown``, nothing is settled and a held message stays held.</span>
+<span class="sd">    ``approve_shown``, ``justification``, ``fingerprint_key``, ``sends`` and</span>
+<span class="sd">    ``new_attempt`` are as :func:`~liaise.release.release_draft` has them: with neither an</span>
+<span class="sd">    approval nor ``approve_shown``, nothing is settled and a held message stays held. The</span>
+<span class="sd">    message keeps the idempotency key its release used.</span>
 
 <span class="sd">    Raises ``ValueError``, sending and writing nothing, for a message the ledger does not</span>
 <span class="sd">    hold, one that is not held, one whose subject is not in ``subjects``, one that changed</span>
@@ -1150,6 +1161,8 @@ window.runMermaid = runMermaid;</script>
         <span class="n">approve_shown</span><span class="o">=</span><span class="n">approve_shown</span><span class="p">,</span>
         <span class="n">justification</span><span class="o">=</span><span class="n">justification</span><span class="p">,</span>
         <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">fingerprint_key</span><span class="p">,</span>
+        <span class="n">sends</span><span class="o">=</span><span class="n">sends</span><span class="p">,</span>
+        <span class="n">new_attempt</span><span class="o">=</span><span class="n">new_attempt</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">release</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span>
         <span class="n">MessageRelease</span><span class="p">,</span>
@@ -1170,6 +1183,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">title</span><span class="o">=</span><span class="n">went</span><span class="o">.</span><span class="n">title</span><span class="p">,</span>
             <span class="n">reason</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
             <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">outcome</span><span class="o">.</span><span class="n">attempt</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
+            <span class="n">send_key</span><span class="o">=</span><span class="n">outcome</span><span class="o">.</span><span class="n">entry</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"send_key"</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">kept</span> <span class="o">=</span> <span class="n">outcome</span><span class="o">.</span><span class="n">kept</span>
@@ -1179,6 +1193,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">title</span><span class="o">=</span><span class="n">kept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">),</span>
             <span class="n">reason</span><span class="o">=</span><span class="n">kept</span><span class="p">[</span><span class="s2">"reason"</span><span class="p">],</span>
             <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">kept</span><span class="p">[</span><span class="s2">"notes"</span><span class="p">]),</span>
+            <span class="n">send_key</span><span class="o">=</span><span class="n">kept</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"send_key"</span><span class="p">),</span>
         <span class="p">)</span>
     <span class="n">after</span> <span class="o">=</span> <span class="n">after</span><span class="o">.</span><span class="n">with_entry</span><span class="p">(</span><span class="n">outcome</span><span class="o">.</span><span class="n">entry</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>

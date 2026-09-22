@@ -186,7 +186,7 @@ held for the operator, sent, or declined.
 The closed vocabulary a processor run reports its outcomes in. Validating an
 [`Outcome`](#liaise.model.Outcome) (and treating `decline` as `escalate`) is `liaise.outcomes`’s job.
 
-### *class* liaise.model.OutboundMessage(id, subject, recipient, ref, purpose, text, state, created_at, updated_at, title=None, reason=None, notes=(), entries=())
+### *class* liaise.model.OutboundMessage(id, subject, recipient, ref, purpose, text, state, created_at, updated_at, title=None, reason=None, notes=(), entries=(), send_key=None)
 
 Bases: `_Record`
 
@@ -197,6 +197,9 @@ A message an agent sent, or asked to send, outside any case (`liaise message sen
 [`MESSAGE_STATES`](#liaise.model.MESSAGE_STATES), and while it is `held`, `reason` and `notes` say why.
 `entries` is its append-only history of gate decisions, as a case keeps its own. A
 message has no reporter, no run and no label: it is not a unit of work.
+`send_key` is the idempotency key its last send carried, and the next one reuses;
+None until one was tried, when the key is its id (see
+[`liaise.release.next_attempt_key()`](liaise.release.md#liaise.release.next_attempt_key) for a new attempt’s).
 
 #### with_entry(entry)
 

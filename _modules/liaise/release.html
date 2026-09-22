@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=8618f531"></script>
+    <script src="../../_static/documentation_options.js?v=bafade30"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.9" />
+  <meta name="docsearch:version" content="0.1.10" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -732,21 +732,40 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">voids it, and the operator sees the new verdict instead of a send (liaise ADR 0002). It</span>
 <span class="sd">hands back the ledger entry and the draft to keep, for the caller to record.</span>
 
+<span class="sd">**Never twice.** Every real send carries an idempotency key (correspond's</span>
+<span class="sd">``idempotency_key``), kept in liaise's own store of sends (:func:`default_send_store`,</span>
+<span class="sd">under ``state_dir``). A channel that posts and then reports an error leaves its key</span>
+<span class="sd">claimed, so the release of the draft it became, which reuses the key, either finds the</span>
+<span class="sd">message already out (read back, or a replay of the stored result) and posts nothing, or</span>
+<span class="sd">fails ``unconfirmed``. An ``unconfirmed`` draft stays with the operator, whose release</span>
+<span class="sd">with ``new_attempt`` (``send-draft --new-attempt``, after checking the conversation) moves</span>
+<span class="sd">it to the next key (:func:`next_attempt_key`). The keys: a tick's send</span>
+<span class="sd">``&lt;case&gt;/&lt;payload hash&gt;/&lt;entry serial&gt;`` (:func:`tick_send_key`), an outbox release</span>
+<span class="sd">``&lt;case&gt;/&lt;held id&gt;`` (:func:`outbox_key`), a message outside a case its id, and a draft the</span>
+<span class="sd">key it carries (``send_key``), or one derived from it (:func:`draft_send_key`).</span>
+
 <span class="sd">One path for every sender is what makes the gate a gate. A filter added to it applies to</span>
 <span class="sd">all of them at once, and none of them has a way to send around it.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
-<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">MutableMapping</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hashlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha256</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">correspond</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">correspond.channels.github</span><span class="w"> </span><span class="kn">import</span> <span class="n">REF_RE</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.idempotency</span><span class="w"> </span><span class="kn">import</span> <span class="n">FAILED</span><span class="p">,</span> <span class="n">MAX_KEY_LENGTH</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">correspond.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Audience</span><span class="p">,</span> <span class="n">ConversationRef</span><span class="p">,</span> <span class="n">Draft</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">correspond.stores</span><span class="w"> </span><span class="kn">import</span> <span class="n">SendStore</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
@@ -762,7 +781,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Approval</span><span class="p">,</span> <span class="n">Case</span><span class="p">,</span> <span class="n">LedgerEntry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outbound</span><span class="w"> </span><span class="kn">import</span> <span class="n">case_provenance</span><span class="p">,</span> <span class="n">record_disclosure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outcomes</span><span class="w"> </span><span class="kn">import</span> <span class="n">HELD_REASON_PREFIX</span><span class="p">,</span> <span class="n">make_draft</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provenance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provenance</span><span class="p">,</span> <span class="n">canonical_json</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Subject</span>
 
 <span class="c1">#: Why a send failed when the channel said no without saying why.</span>
@@ -782,6 +801,26 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span>
 <span class="c1">#: The failure kind of a message liaise refused to hand to its channel as it stands.</span>
 <span class="n">VALIDATION_KIND</span> <span class="o">=</span> <span class="s2">"validation"</span>
+<span class="c1">#: correspond's failure kind for a send whose key an earlier attempt claimed, which may</span>
+<span class="c1">#: have gone out: nothing was sent, and the operator checks the conversation.</span>
+<span class="n">UNCONFIRMED_KIND</span> <span class="o">=</span> <span class="s2">"unconfirmed"</span>
+<span class="c1">#: The directory of liaise's idempotency records under ``state_dir``.</span>
+<span class="n">DFLT_SENDS_SUBDIR</span> <span class="o">=</span> <span class="s2">"sends"</span>
+<span class="c1">#: How many hex digits of a digest a key keeps: enough to tell messages apart.</span>
+<span class="n">KEY_DIGEST_DIGITS</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="c1">#: What ends a key that is not its message's first attempt: ``~2``, ``~3``, ...</span>
+<span class="n">ATTEMPT_SUFFIX_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"~(\d+)$"</span><span class="p">)</span>
+<span class="c1">#: Room a key keeps for attempt suffixes (``~NN``) under correspond's length limit.</span>
+<span class="n">ATTEMPT_ROOM</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="c1">#: How many characters of a too-long key's head :func:`bounded_key` keeps, for reading.</span>
+<span class="n">KEY_HEAD_CHARS</span> <span class="o">=</span> <span class="mi">60</span>
+<span class="c1">#: The first attempt suffix :func:`next_attempt_key` adds.</span>
+<span class="n">FIRST_RETRY</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="c1">#: Why a send whose earlier attempt may have gone out is kept for the operator.</span>
+<span class="n">UNCONFIRMED_REASON</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"send unconfirmed: an earlier attempt at this message may have gone out (</span><span class="si">{failure}</span><span class="s2">). "</span>
+    <span class="s2">"Check </span><span class="si">{ref}</span><span class="s2">; if it is not there, release it with send-draft --new-attempt"</span>
+<span class="p">)</span>
 
 
 <div class="viewcode-block" id="error_text">
@@ -793,6 +832,129 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    'ValueError: no such channel'</span>
 <span class="sd">    """</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="default_send_store">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.default_send_store">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">default_send_store</span><span class="p">(</span><span class="n">state_dir</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">SendStore</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""liaise's idempotency records: correspond's ``SendStore`` in ``&lt;state_dir&gt;/sends``.</span>
+
+<span class="sd">    Nothing is created until a real send claims a key, so a dry run leaves no directory.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">SendStore</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">state_dir</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="o">/</span> <span class="n">DFLT_SENDS_SUBDIR</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_digest</span><span class="p">(</span><span class="o">*</span><span class="n">parts</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">sha256</span><span class="p">(</span><span class="n">canonical_json</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">parts</span><span class="p">))</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[</span>
+        <span class="p">:</span><span class="n">KEY_DIGEST_DIGITS</span>
+    <span class="p">]</span>
+
+
+<div class="viewcode-block" id="bounded_key">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.bounded_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">bounded_key</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``key``, or, when too long for correspond (a long subject slug), its head and a digest of it.</span>
+
+<span class="sd">    &gt;&gt;&gt; bounded_key("c/h1")</span>
+<span class="sd">    'c/h1'</span>
+<span class="sd">    &gt;&gt;&gt; len(bounded_key("s" * 200 + "-1/h1")) &lt;= 128</span>
+<span class="sd">    True</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">MAX_KEY_LENGTH</span> <span class="o">-</span> <span class="n">ATTEMPT_ROOM</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">key</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="p">[:</span><span class="n">KEY_HEAD_CHARS</span><span class="p">]</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">sha256</span><span class="p">(</span><span class="n">key</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">'utf-8'</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()[:</span><span class="mi">32</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="tick_send_key">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.tick_send_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">tick_send_key</span><span class="p">(</span>
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+    <span class="n">serial</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The key of a message a tick sends: ``&lt;case&gt;/&lt;payload digest&gt;/&lt;entry serial&gt;``.</span>
+
+<span class="sd">    ``serial`` is how many entries the case had when the message was judged, so two sends</span>
+<span class="sd">    of the same text on one case differ, while a tick that runs again over the same</span>
+<span class="sd">    entries (after a crash) reuses the key and never posts twice.</span>
+
+<span class="sd">    &gt;&gt;&gt; key = tick_send_key("app3", "github:example/app#3", "Fixed.", None, 7)</span>
+<span class="sd">    &gt;&gt;&gt; key.startswith("app3/") and key.endswith("/7")</span>
+<span class="sd">    True</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">bounded_key</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">_digest</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span><span class="w"> </span><span class="n">text</span><span class="p">,</span><span class="w"> </span><span class="n">title</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">serial</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="outbox_key">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.outbox_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">outbox_key</span><span class="p">(</span><span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">held</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The key of an outbox item's release: ``&lt;case&gt;/&lt;held id&gt;``, the same on every try.</span>
+
+<span class="sd">    &gt;&gt;&gt; print(outbox_key("example", "h3f9a0c12"))</span>
+<span class="sd">    example/h3f9a0c12</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">bounded_key</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">held</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="draft_send_key">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.draft_send_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">draft_send_key</span><span class="p">(</span><span class="n">owner</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">draft</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The key ``draft`` is released under: the one it carries (``send_key``), else one from its content.</span>
+
+<span class="sd">    ``owner`` is the case or message id it belongs to. A draft kept before keys existed</span>
+<span class="sd">    gets ``&lt;owner&gt;/d&lt;digest of its time, destination, text and title&gt;``, and its release</span>
+<span class="sd">    stores that key on whatever draft stays, so a second release reuses it.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"send_key"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">bounded_key</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">draft</span><span class="p">[</span><span class="s2">"send_key"</span><span class="p">]))</span>
+    <span class="n">digest</span> <span class="o">=</span> <span class="n">_digest</span><span class="p">(</span>
+        <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"at"</span><span class="p">),</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ref"</span><span class="p">),</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">),</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">bounded_key</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">owner</span><span class="si">}</span><span class="s2">/d</span><span class="si">{</span><span class="n">digest</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="next_attempt_key">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.next_attempt_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">next_attempt_key</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``key`` for the message's next attempt: ``~2`` added, or its attempt number raised.</span>
+
+<span class="sd">    &gt;&gt;&gt; print(next_attempt_key("example/h3f9a0c12"), next_attempt_key("example/h3f9a0c12~2"))</span>
+<span class="sd">    example/h3f9a0c12~2 example/h3f9a0c12~3</span>
+<span class="sd">    """</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="n">ATTEMPT_SUFFIX_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">found</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">~</span><span class="si">{</span><span class="n">FIRST_RETRY</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="p">[:</span><span class="w"> </span><span class="n">found</span><span class="o">.</span><span class="n">start</span><span class="p">()]</span><span class="si">}</span><span class="s2">~</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="usable_key">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.usable_key">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">usable_key</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``key``, or a later attempt's when the platform refused every try with it so far.</span>
+
+<span class="sd">    A key whose record says ``failed`` posted nothing, so a new attempt is safe, and a</span>
+<span class="sd">    fresh key lets the message change (an operator's edit) without being refused as a key</span>
+<span class="sd">    used for another message. A key with no record, or one that sent or may have, is kept.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">sends</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">key</span>
+    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">record</span> <span class="o">=</span> <span class="n">sends</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">key</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">record</span> <span class="ow">or</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">FAILED</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">key</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">next_attempt_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span></div>
 
 
 
@@ -848,6 +1010,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    failure: correspond's ``error_kind``, or the class of what was raised. A message the</span>
 <span class="sd">    gate diverted has none of the three. ``disclosure_failure`` says why a sent message's</span>
 <span class="sd">    disclosure could not be written to its recipients' acquaint records; None otherwise.</span>
+<span class="sd">    ``key`` is the idempotency key the send carried, if any.</span>
 <span class="sd">    """</span>
 
     <span class="n">decision</span><span class="p">:</span> <span class="n">GateDecision</span>
@@ -855,6 +1018,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">failure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">failure_kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">disclosure_failure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">outbound</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Outbound</span><span class="p">]:</span>
@@ -864,7 +1028,30 @@ window.runMermaid = runMermaid;</script>
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Whether the channel took the message; in a dry run, whether it would have."""</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">failure</span> <span class="ow">is</span> <span class="kc">None</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">failure</span> <span class="ow">is</span> <span class="kc">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">unconfirmed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether nothing was sent because an earlier attempt with the key may have gone out.</span>
+
+<span class="sd">        That is correspond's ``unconfirmed``, and its refusal of a key an earlier attempt</span>
+<span class="sd">        used for a different text (a message edited since): either way the operator checks</span>
+<span class="sd">        the conversation before a new attempt.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">failure_kind</span> <span class="o">==</span> <span class="n">UNCONFIRMED_KIND</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"plan"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">failure_kind</span> <span class="o">==</span> <span class="n">VALIDATION_KIND</span>
+            <span class="ow">and</span> <span class="n">plan</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"idempotency_key"</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span>
+        <span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">replayed</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Whether the message went out on an earlier attempt, and this one posted nothing."""</span>
+        <span class="n">plan</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"plan"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sent</span> <span class="ow">and</span> <span class="s2">"idempotency"</span> <span class="ow">in</span> <span class="n">plan</span></div>
 
 
 
@@ -900,6 +1087,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
+    <span class="n">idempotency_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SendAttempt</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Put ``outbound`` through the gate and, only when it passes, send it through correspond.</span>
 
@@ -912,6 +1101,12 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ``failure`` on the attempt rather than an exception, so the caller still has the</span>
 <span class="sd">    message to keep. Once a real send succeeds, the recipients' acquaint records are told</span>
 <span class="sd">    what it identified, and a failure there is ``disclosure_failure``, never a raise.</span>
+
+<span class="sd">    ``idempotency_key`` and ``sends`` go to ``correspond.send``: the same key never posts</span>
+<span class="sd">    twice, and an attempt that may have gone out fails ``unconfirmed``</span>
+<span class="sd">    (:attr:`SendAttempt.unconfirmed`). The key is used only with a ``sends`` store</span>
+<span class="sd">    (:func:`default_send_store` for the tick and the CLI): without one the message is sent</span>
+<span class="sd">    unkeyed, as before, and liaise never writes correspond's own data root.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">ctx</span><span class="o">.</span><span class="n">audience</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">ctx</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">ctx</span><span class="p">,</span> <span class="n">audience</span><span class="o">=</span><span class="n">audience_of</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">))</span>
@@ -919,9 +1114,10 @@ window.runMermaid = runMermaid;</script>
     <span class="n">passed</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span>
     <span class="k">if</span> <span class="n">passed</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span><span class="n">decision</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">idempotency_key</span> <span class="k">if</span> <span class="n">sends</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">passed</span><span class="o">.</span><span class="n">attachments</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span>
-            <span class="n">decision</span><span class="p">,</span> <span class="n">failure</span><span class="o">=</span><span class="n">NO_ATTACHMENTS</span><span class="p">,</span> <span class="n">failure_kind</span><span class="o">=</span><span class="n">VALIDATION_KIND</span>
+            <span class="n">decision</span><span class="p">,</span> <span class="n">failure</span><span class="o">=</span><span class="n">NO_ATTACHMENTS</span><span class="p">,</span> <span class="n">failure_kind</span><span class="o">=</span><span class="n">VALIDATION_KIND</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span>
         <span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">=</span> <span class="n">correspond</span><span class="o">.</span><span class="n">send</span><span class="p">(</span>
@@ -932,10 +1128,15 @@ window.runMermaid = runMermaid;</script>
             <span class="n">bcc</span><span class="o">=</span><span class="n">passed</span><span class="o">.</span><span class="n">bcc</span><span class="p">,</span>
             <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
             <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+            <span class="n">idempotency_key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+            <span class="n">sends</span><span class="o">=</span><span class="n">sends</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># an unknown channel, an adapter that raised</span>
         <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span>
-            <span class="n">decision</span><span class="p">,</span> <span class="n">failure</span><span class="o">=</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">),</span> <span class="n">failure_kind</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="n">decision</span><span class="p">,</span>
+            <span class="n">failure</span><span class="o">=</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">),</span>
+            <span class="n">failure_kind</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">result</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
         <span class="n">failure</span> <span class="o">=</span> <span class="kc">None</span>
@@ -946,13 +1147,27 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># the message went out: report, never raise</span>
                 <span class="n">failure</span> <span class="o">=</span> <span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span><span class="n">decision</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span> <span class="n">disclosure_failure</span><span class="o">=</span><span class="n">failure</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span><span class="n">decision</span><span class="p">,</span> <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span> <span class="n">disclosure_failure</span><span class="o">=</span><span class="n">failure</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">SendAttempt</span><span class="p">(</span>
         <span class="n">decision</span><span class="p">,</span>
         <span class="n">result</span><span class="o">=</span><span class="n">result</span><span class="p">,</span>
         <span class="n">failure</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">error</span> <span class="ow">or</span> <span class="n">DFLT_REFUSAL</span><span class="p">,</span>
         <span class="n">failure_kind</span><span class="o">=</span><span class="n">result</span><span class="o">.</span><span class="n">error_kind</span><span class="p">,</span>
+        <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
     <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="failure_reason">
+<a class="viewcode-back" href="../../_autosummary/liaise.release.html#liaise.release.failure_reason">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">failure_reason</span><span class="p">(</span><span class="n">attempt</span><span class="p">:</span> <span class="n">SendAttempt</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Why a message the gate passed, and its channel did not take, is kept for the operator.</span>
+
+<span class="sd">    An :attr:`~SendAttempt.unconfirmed` one says to check ``ref`` before a new attempt.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">unconfirmed</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">UNCONFIRMED_REASON</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">failure</span><span class="o">=</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"send failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span></div>
 
 
 
@@ -1041,6 +1256,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">approve_shown</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">justification</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">fingerprint_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">sends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">new_attempt</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DraftOutcome</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Release ``draft`` (a :func:`liaise.outcomes.make_draft` item) as ``by``, through the gate.</span>
 
@@ -1148,15 +1365,26 @@ window.runMermaid = runMermaid;</script>
         <span class="p">),</span>
         <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">fingerprint_key</span><span class="p">,</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="n">sends</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">send</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2"> is released without a store of sends, so it is sent unkeyed: an "</span>
+            <span class="sa">f</span><span class="s2">"earlier attempt that went out would be posted again. Pass sends="</span>
+            <span class="sa">f</span><span class="s2">"default_send_store(state_dir)."</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="n">approval</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">approve_shown</span><span class="p">:</span>
         <span class="n">shown</span> <span class="o">=</span> <span class="n">run_gate</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">outbound_filters</span><span class="o">=</span><span class="n">filters</span><span class="p">)</span>
         <span class="n">approval</span> <span class="o">=</span> <span class="n">approval_for</span><span class="p">(</span><span class="n">shown</span><span class="p">,</span> <span class="n">by</span><span class="o">=</span><span class="n">by</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span> <span class="n">justification</span><span class="o">=</span><span class="n">justification</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">draft_send_key</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span> <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">label</span><span class="p">,</span> <span class="n">draft</span><span class="p">)</span>
+    <span class="n">key</span> <span class="o">=</span> <span class="n">usable_key</span><span class="p">(</span><span class="n">next_attempt_key</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">if</span> <span class="n">new_attempt</span> <span class="k">else</span> <span class="n">key</span><span class="p">,</span> <span class="n">sends</span><span class="p">)</span>
     <span class="n">attempt</span> <span class="o">=</span> <span class="n">gate_and_send</span><span class="p">(</span>
         <span class="n">outbound</span><span class="p">,</span>
         <span class="n">replace</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="n">approval</span><span class="o">=</span><span class="n">approval</span><span class="p">),</span>
         <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
         <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">send</span><span class="p">,</span>
         <span class="n">outbound_filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+        <span class="n">idempotency_key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
+        <span class="n">sends</span><span class="o">=</span><span class="n">sends</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="n">decision</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">decision</span>
     <span class="n">edited</span> <span class="o">=</span> <span class="n">body</span> <span class="o">!=</span> <span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span> <span class="ow">or</span> <span class="n">headline</span> <span class="o">!=</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span>
@@ -1171,9 +1399,12 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"edited"</span><span class="p">:</span> <span class="n">edited</span><span class="p">,</span>
         <span class="o">**</span><span class="n">decision</span><span class="o">.</span><span class="n">record</span><span class="p">(),</span>
     <span class="p">}</span>
+    <span class="n">recorded</span><span class="p">[</span><span class="s2">"send_key"</span><span class="p">]</span> <span class="o">=</span> <span class="n">key</span>
     <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
         <span class="n">url</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">attempt</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="n">verdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">url</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">replayed</span><span class="p">:</span>
+            <span class="n">verdict</span><span class="p">[</span><span class="s2">"replayed"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
         <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">disclosure_failure</span><span class="p">:</span>
             <span class="n">verdict</span><span class="p">[</span><span class="s2">"disclosure_failure"</span><span class="p">]</span> <span class="o">=</span> <span class="n">attempt</span><span class="o">.</span><span class="n">disclosure_failure</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
@@ -1190,8 +1421,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">reason</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">diverted</span>
         <span class="n">verdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"divert"</span><span class="p">,</span> <span class="s2">"reason"</span><span class="p">:</span> <span class="n">reason</span><span class="p">}</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">reason</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"send failed: </span><span class="si">{</span><span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="si">}</span><span class="s2">"</span>
+        <span class="n">reason</span> <span class="o">=</span> <span class="n">failure_reason</span><span class="p">(</span><span class="n">attempt</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
         <span class="n">verdict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="n">attempt</span><span class="o">.</span><span class="n">failure</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">attempt</span><span class="o">.</span><span class="n">unconfirmed</span><span class="p">:</span>
+            <span class="n">verdict</span><span class="p">[</span><span class="s2">"unconfirmed"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">entry</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
         <span class="n">at</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
         <span class="n">kind</span><span class="o">=</span><span class="n">DRAFT_ENTRY_KIND</span><span class="p">,</span>
@@ -1209,6 +1442,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">notes</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
         <span class="n">title</span><span class="o">=</span><span class="n">headline</span><span class="p">,</span>
         <span class="n">gate</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">summary</span><span class="p">()</span> <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">send_key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">DraftOutcome</span><span class="p">(</span>
         <span class="n">attempt</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">filters</span><span class="p">),</span> <span class="n">edited</span><span class="p">,</span> <span class="n">entry</span><span class="o">=</span><span class="n">entry</span><span class="p">,</span> <span class="n">kept</span><span class="o">=</span><span class="n">kept</span><span class="p">,</span> <span class="n">approval</span><span class="o">=</span><span class="n">approval</span>

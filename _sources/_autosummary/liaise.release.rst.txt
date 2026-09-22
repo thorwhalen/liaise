@@ -15,17 +15,33 @@ liaise.release
       CASELESS_PROVENANCE
       NO_ATTACHMENTS
       VALIDATION_KIND
+      UNCONFIRMED_KIND
+      DFLT_SENDS_SUBDIR
+      KEY_DIGEST_DIGITS
+      ATTEMPT_SUFFIX_RE
+      ATTEMPT_ROOM
+      KEY_HEAD_CHARS
+      FIRST_RETRY
+      UNCONFIRMED_REASON
    
    .. rubric:: Functions
 
    .. autosummary::
    
       audience_of
+      bounded_key
+      default_send_store
+      draft_send_key
       error_text
+      failure_reason
       gate_and_send
       github_repo
+      next_attempt_key
+      outbox_key
       release_draft
       sendable_ref
+      tick_send_key
+      usable_key
    
    .. rubric:: Classes
 
