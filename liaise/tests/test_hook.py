@@ -330,7 +330,7 @@ def test_install_writes_both_hooks_keeps_the_rest_and_is_idempotent(tmp_path):
     assert data["hooks"]["PreToolUse"][0] == other
     for event in ("PreToolUse", "PostToolUse"):
         mine = [e for e in data["hooks"][event] if e.get("matcher") == hook.HOOK_MATCHER]
-        assert len(mine) == 1 and mine[0]["hooks"][0]["command"] == "liaise vet --hook"
+        assert len(mine) == 1 and mine[0]["hooks"][0]["command"].endswith("liaise vet --hook")
     assert cli.hook_status(settings=str(settings)) == "PreToolUse: installed\nPostToolUse: installed"
 
 
@@ -441,3 +441,47 @@ def test_a_symlinked_settings_file_is_written_through_its_link(tmp_path):
     cli.hook_install(settings=str(link))
     assert link.is_symlink()
     assert "PreToolUse" in json.loads(target.read_text())["hooks"]
+
+
+# ---- what the second review found ----
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "git -c alias.c='!gh issue comment 12 -b hi' c",
+        "git rebase -x 'gh issue comment 12 -b hi' HEAD~1",
+        "bash <<'EOF'\ngh issue comment 12 -b hi\nEOF",
+        "cat <<'EOF' | sh\ngh issue comment 12 -b hi\nEOF",
+        "python3 - <<'EOF'\nimport subprocess; subprocess.run(['gh', 'issue', 'comment'])\nEOF",
+        "gh pr review 12 -R example/app -ab hi",
+        "gh pr merge 12 -R example/app -sb hi",
+        "gh issue comment 12 -R example/app -b $'\\x53ECRET'",
+        "gh issue edit 12 -R example/app $ARGS",
+        'gh pr edit 12 -R example/app "$@"',
+        "gh api repos/example/app/issues/1/comments $F",
+        "gh cmt 12",
+        "gh label create x -d 'Heron'",
+        "gh repo edit --description 'Heron'",
+        "man -P 'gh issue comment 1 -b x' ls",
+        "rg --pre gh x",
+    ],
+)
+def test_second_review_writes_are_held(run_hook, command):
+    assert decision(run_hook.bash(command)) in ("ask", "deny"), command
+
+
+def test_a_comment_mentioning_gh_in_its_heredoc_body_is_still_vetted(run_hook):
+    command = f"gh issue comment 12 -R example/app -F - <<'EOF'\nUse gh to see it. {T}\nEOF"
+    assert decision(run_hook.bash(command)) == "deny"
+
+
+def test_install_writes_liaises_absolute_path_and_keeps_one_the_user_set(tmp_path, monkeypatch):
+    settings = tmp_path / "settings.json"
+    monkeypatch.setattr(hook.shutil, "which", lambda name: "/opt/venv/bin/liaise")
+    cli.hook_install(settings=str(settings))
+    data = json.loads(settings.read_text())
+    assert data["hooks"]["PreToolUse"][0]["hooks"][0]["command"] == "/opt/venv/bin/liaise vet --hook"
+    monkeypatch.setattr(hook.shutil, "which", lambda name: None)
+    assert "already installed" in cli.hook_install(settings=str(settings))
+    assert json.loads(settings.read_text()) == data

@@ -37,6 +37,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 from dataclasses import dataclass
@@ -105,6 +106,57 @@ GH_READ_VERBS = frozenset(
         "search",
     }
 )
+#: ``gh`` verbs that change nothing anyone reads (a local checkout, a rerun, a login).
+GH_QUIET_VERBS = frozenset(
+    {
+        "checkout",
+        "clone",
+        "rerun",
+        "cancel",
+        "login",
+        "logout",
+        "refresh",
+        "setup-git",
+        "token",
+        "switch",
+    }
+)
+#: ``gh``'s own command groups; anything else is an alias or an extension.
+GH_GROUPS = frozenset(
+    {
+        "issue",
+        "pr",
+        "api",
+        "repo",
+        "release",
+        "gist",
+        "auth",
+        "run",
+        "workflow",
+        "label",
+        "search",
+        "browse",
+        "status",
+        "cache",
+        "codespace",
+        "config",
+        "extension",
+        "gpg-key",
+        "secret",
+        "ssh-key",
+        "variable",
+        "project",
+        "ruleset",
+        "org",
+        "alias",
+        "completion",
+        "help",
+        "version",
+        "attestation",
+    }
+)
+#: ``gh`` commands that are one word and read.
+GH_SINGLE_COMMANDS = frozenset({"status", "help", "version", "browse", "completion"})
 #: ``gh <group> <verb>`` commands that publish files or text the hook does not read.
 GH_PUBLISHES = frozenset(
     {
@@ -216,16 +268,12 @@ INERT_PROGRAMS = frozenset(
     {
         "echo",
         "printf",
-        "git",
         "grep",
         "egrep",
         "fgrep",
-        "rg",
         "cat",
         "head",
         "tail",
-        "less",
-        "more",
         "wc",
         "sort",
         "uniq",
@@ -244,7 +292,6 @@ INERT_PROGRAMS = frozenset(
         "[",
         "which",
         "type",
-        "man",
         "true",
         "false",
         "export",
@@ -259,6 +306,8 @@ INERT_PROGRAMS = frozenset(
     }
 )
 _HEREDOC_TOKEN = "\x00liaise-heredoc-{}\x00"
+#: Short flags whose value may be attached (``-bTEXT``, ``-Rowner/repo``): read as such.
+_ATTACHED_VALUE_FLAGS = frozenset("bFtRfXHqlamprBTnc")
 
 
 @dataclass(frozen=True)
@@ -872,9 +921,12 @@ def writes_in(
             )
         ]
     writes: list[Write] = []
-    piped: Optional[tuple[str, bool]] = None
+    piped: Optional[str] = (
+        None  # the heredoc token ``cat <<EOF |`` hands the next command
+    )
+    read_by_a_writer: set[str] = set()
     for words, before in _segments(tokens):
-        stdin = piped if before and "|" in before and "||" not in before else None
+        from_pipe = piped if before and "|" in before and "||" not in before else None
         piped = None
         words = _command_words(words)
         if not words:
@@ -882,9 +934,20 @@ def writes_in(
         program = _program(words[0])
         rest = words[1:]
         if program == "cat" and rest and all(w.startswith("<<") for w in rest):
-            piped = _stdin_of(rest, bodies, None)
+            piped = next((w[2:] for w in rest if w[2:] in bodies), None)
             continue
-        own_stdin = _stdin_of(rest, bodies, stdin)
+        own = next(
+            (w[2:] for w in rest if w.startswith("<<") and w[2:] in bodies), None
+        )
+        token = own or from_pipe
+        own_stdin = bodies.get(token) if token else None
+        if program in ("gh", "correspond"):
+            if token:
+                read_by_a_writer.add(token)
+            problem = _unreadable_words(rest)
+            if problem:
+                writes.append(Write(f"{program} …", problem=problem))
+                continue
         if program == "gh":
             write = _gh(rest, cwd=cwd, stdin=own_stdin, repo_of=repo_of)
         elif program == "correspond":
@@ -903,7 +966,42 @@ def writes_in(
             continue
         if write is not None:
             writes.append(write)
+    # A heredoc that mentions gh or correspond and is not a gh or correspond body is a
+    # script some other program runs (``bash <<EOF``, ``cat <<EOF | sh``).
+    for token, (text, _) in bodies.items():
+        if token not in read_by_a_writer and _mentions_a_writer(text):
+            writes.append(
+                Write(
+                    "a heredoc",
+                    problem=(
+                        "a heredoc that names gh or correspond is run by another "
+                        "program: the hook does not look through it"
+                    ),
+                )
+            )
     return writes
+
+
+def _unreadable_words(words: Sequence[str]) -> Optional[str]:
+    """Why the words of a ``gh`` or ``correspond`` command cannot be read as written, or None.
+
+    A ``$`` means the shell substitutes something (``$ARGS``, ``"$@"``, ``$'\\x53'``)
+    that the hook never sees, except in a GraphQL ``query=``, whose ``$name`` are its
+    own variables. A cluster of short flags (``-sb``) can hide a body flag.
+    """
+    for word in words:
+        if "$" in word and not word.startswith("query="):
+            return (
+                f"{NO_BODY}: the shell substitutes part of the command ({word[:20]!r}…)"
+            )
+        if (
+            word.startswith("-")
+            and not word.startswith("--")
+            and len(word) > 2
+            and word[1] not in _ATTACHED_VALUE_FLAGS
+        ):
+            return f"a cluster of short flags ({word[:6]}…) the hook does not unpack"
+    return None
 
 
 def _command_words(words: Sequence[str]) -> list[str]:
@@ -944,6 +1042,16 @@ def _gh(
             stdin=stdin,
             repo_of=repo_of,
         )
+    if group not in GH_GROUPS:
+        return Write(
+            f"gh {group}",
+            problem=(
+                f"gh {group} is an alias or an extension the hook cannot read; the "
+                f"operator judges it"
+            ),
+        )
+    if not verb and group in GH_SINGLE_COMMANDS:
+        return None
     if (group, verb) in GH_PUBLISHES:
         return Write(
             f"gh {group} {verb}",
@@ -951,6 +1059,14 @@ def _gh(
         )
     if verb in GH_READ_VERBS:
         return None
+    if verb not in GH_QUIET_VERBS:
+        return Write(
+            f"gh {group} {verb}".strip(),
+            problem=(
+                f"gh {group} {verb} changes something and is not a command the hook "
+                f"knows; the operator judges it"
+            ).replace("  ", " "),
+        )
     carries = [
         w
         for w in words
@@ -1279,8 +1395,18 @@ def _events(data: Mapping[str, Any], path: Path) -> dict:
     return hooks
 
 
+def hook_command() -> str:
+    """``liaise vet --hook`` with liaise's absolute path when it is on ``PATH``.
+
+    The hook runs in a shell whose ``PATH`` may not hold liaise; a hook command that is not
+    found fails without blocking, so every write would go through unvetted.
+    """
+    found = shutil.which("liaise")
+    return f"{shlex.quote(found)} vet --hook" if found else HOOK_COMMAND
+
+
 def install_hooks(
-    settings: Union[str, os.PathLike] = DFLT_SETTINGS, *, command: str = HOOK_COMMAND
+    settings: Union[str, os.PathLike] = DFLT_SETTINGS, *, command: Optional[str] = None
 ) -> str:
     """Write the PreToolUse and PostToolUse hooks into ``settings``, keeping every other hook and setting.
 
@@ -1293,7 +1419,18 @@ def install_hooks(
     changed = False
     for event in HOOK_EVENTS:
         entries = list(hooks.get(event, []))
-        wanted = _our_entry(command)
+        mine = [
+            e
+            for e in entries
+            if isinstance(e, Mapping) and any(map(_is_ours, e.get("hooks") or []))
+        ]
+        if (
+            command is None
+            and len(mine) == 1
+            and _our_entry(mine[0]["hooks"][0].get("command", "")) == mine[0]
+        ):
+            continue  # installed, with the path the user has: keep it
+        wanted = _our_entry(command or hook_command())
         if wanted in entries and _without_ours(entries)[1] == 1:
             continue
         kept, _ = _without_ours(entries)
