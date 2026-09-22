@@ -1,0 +1,45 @@
+liaise.outbox
+=============
+
+.. automodule:: liaise.outbox
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      HOLD
+      CANCEL
+      LAPSE
+      INTERRUPTED
+      ISSUE_CLOSED_EVENT
+      OUTBOX_ENTRY_KIND
+      DFLT_CANCELLED_BY
+      DFLT_CANCEL_REASON
+      MOVED_ON_REASON
+      LAPSED_REASON
+      ISSUE_CLOSED_REASON
+      INTERRUPTED_REASON
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      cancel_send
+      held_at
+      held_message
+      held_provenance
+      hold_of
+      is_due
+      make_held
+      moved_on
+      pick_held
+      release_at
+      release_block
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Cancellation
+   

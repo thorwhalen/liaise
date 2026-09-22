@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -738,8 +738,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">(``approve`` when it does not say). Each divert is one or more :class:`Concern` records,</span>
 <span class="sd">the policy's one per rule that fired. The decision's flow is the most restrictive concern</span>
 <span class="sd">still standing, and its reasons are all of them, most restrictive first. A message goes out</span>
-<span class="sd">only when that flow is ``send``: ``delay`` waits for the operator until the delay outbox</span>
-<span class="sd">exists (liaise #38). A filter that raises, or answers anything but a ``Pass`` or a</span>
+<span class="sd">only when that flow is ``send``: the gate diverts a ``delay`` too, and the tick holds it in</span>
+<span class="sd">the case's outbox for a cancellable window (liaise #38, :mod:`liaise.outbox`), then judges</span>
+<span class="sd">it again with :func:`hold_for`'s approval on the context, which settles the delay alone. A filter that raises, or answers anything but a ``Pass`` or a</span>
 <span class="sd">``Divert``, contributes an ``approve`` concern with the error as its reason. The order stays</span>
 <span class="sd">fixed and is not a seam: the mention, the one rewrite, comes last, so every filter judges</span>
 <span class="sd">the text as it was written, and the rewrite reaches a send only when nothing held it back.</span>
@@ -804,10 +805,14 @@ window.runMermaid = runMermaid;</script>
 <span class="n">CASELESS_REASON</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">OUTSIDE_A_CASE</span><span class="si">}</span><span class="s2"> waits for the operator"</span>
 <span class="c1">#: The channel whose messages must @mention their recipient to reach them.</span>
 <span class="n">MENTION_CHANNEL</span> <span class="o">=</span> <span class="s2">"github"</span>
-<span class="c1">#: What a decision held back as ``delay`` says, until the outbox (liaise #38) exists.</span>
+<span class="c1">#: What a decision held back as ``delay`` says: only the tick's outbox sends it, and only on</span>
+<span class="c1">#: a subject that turned it on (``policy.delay_minutes``, liaise #38).</span>
 <span class="n">DELAY_HELD</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"a delay is held for the operator until the delay outbox exists (liaise #38)"</span>
+    <span class="s2">"an irreversible send waits for the operator, or in the outbox where the subject "</span>
+    <span class="s2">"sets policy.delay_minutes (liaise #38)"</span>
 <span class="p">)</span>
+<span class="c1">#: Who a message held in the outbox is released by: the outbox, never a person.</span>
+<span class="n">OUTBOX_ACTOR</span> <span class="o">=</span> <span class="s2">"liaise-outbox"</span>
 <span class="c1">#: The name the gate files its own concerns under: a void approval, a message it cannot hash.</span>
 <span class="n">GATE_CONCERN</span> <span class="o">=</span> <span class="s2">"gate"</span>
 <span class="c1">#: How far :func:`filter_name` unwraps a filter to find the name of the check it runs.</span>
@@ -1077,6 +1082,42 @@ window.runMermaid = runMermaid;</script>
         <span class="n">verdict_id</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">verdict_id</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">verdict</span><span class="p">),</span>
         <span class="n">justification</span><span class="o">=</span><span class="n">justification</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span>
         <span class="n">rules_overridden</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">overridable</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="hold_for">
+<a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.hold_for">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">hold_for</span><span class="p">(</span><span class="n">decision</span><span class="p">:</span> <span class="n">GateDecision</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">release_at</span><span class="p">:</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Approval</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The outbox's release of the message ``decision`` held back as ``delay`` (liaise #38).</span>
+
+<span class="sd">    An :class:`~liaise.model.Approval` by :data:`OUTBOX_ACTOR`, bound as an operator's is</span>
+<span class="sd">    to the decision's hashes and to what its verdict flagged, that overrides only the rules</span>
+<span class="sd">    of its ``delay`` concerns. At release the tick puts it on the context and the gate runs</span>
+<span class="sd">    again: while the message, its audience and its verdict are what they were, it settles</span>
+<span class="sd">    the delay and the message goes out; anything that changed voids it, and the message</span>
+<span class="sd">    becomes a draft with the new verdict. It never settles an ``approve`` concern, so a</span>
+<span class="sd">    held message cannot pass anything a person must see.</span>
+
+<span class="sd">    Raises ``ValueError`` for a decision whose flow is not ``delay``, or that has no hashes.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">flow</span> <span class="o">!=</span> <span class="n">DELAY</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"only a delay is held in the outbox; this decision is </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">flow</span><span class="si">!r}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">payload_hash</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">decision</span><span class="o">.</span><span class="n">audience_hash</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"a decision with no hashes cannot be held: it binds nothing"</span><span class="p">)</span>
+    <span class="n">rules</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">rule</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">concerns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">flow</span> <span class="o">==</span> <span class="n">DELAY</span> <span class="ow">and</span> <span class="n">c</span><span class="o">.</span><span class="n">rule</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">Approval</span><span class="p">(</span>
+        <span class="n">by</span><span class="o">=</span><span class="n">OUTBOX_ACTOR</span><span class="p">,</span>
+        <span class="n">at</span><span class="o">=</span><span class="n">at</span><span class="p">,</span>
+        <span class="n">payload_hash</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span>
+        <span class="n">audience_hash</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">audience_hash</span><span class="p">,</span>
+        <span class="n">verdict_id</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">verdict_id</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">verdict</span><span class="p">),</span>
+        <span class="n">justification</span><span class="o">=</span><span class="sa">f</span><span class="s2">"held until </span><span class="si">{</span><span class="n">release_at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span><span class="si">}</span><span class="s2">, not cancelled"</span><span class="p">,</span>
+        <span class="n">rules_overridden</span><span class="o">=</span><span class="n">rules</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 

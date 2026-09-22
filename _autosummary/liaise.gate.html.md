@@ -27,8 +27,9 @@ the message must be held back: its `flow`, one of [`liaise.policy.FLOWS`](liaise
 (`approve` when it does not say). Each divert is one or more [`Concern`](#liaise.gate.Concern) records,
 the policy’s one per rule that fired. The decision’s flow is the most restrictive concern
 still standing, and its reasons are all of them, most restrictive first. A message goes out
-only when that flow is `send`: `delay` waits for the operator until the delay outbox
-exists (liaise #38). A filter that raises, or answers anything but a `Pass` or a
+only when that flow is `send`: the gate diverts a `delay` too, and the tick holds it in
+the case’s outbox for a cancellable window (liaise #38, [`liaise.outbox`](liaise.outbox.html.md#module-liaise.outbox)), then judges
+it again with [`hold_for()`](#liaise.gate.hold_for)’s approval on the context, which settles the delay alone. A filter that raises, or answers anything but a `Pass` or a
 `Divert`, contributes an `approve` concern with the error as its reason. The order stays
 fixed and is not a seam: the mention, the one rewrite, comes last, so every filter judges
 the text as it was written, and the rewrite reaches a send only when nothing held it back.
@@ -57,7 +58,8 @@ add a note and let the message through.
 | [`OUTSIDE_A_CASE`](#liaise.gate.OUTSIDE_A_CASE)        | The rule [`outside_a_case()`](#liaise.gate.outside_a_case) holds a message for, which an approval names to release it.   |
 |------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
 | [`MENTION_CHANNEL`](#liaise.gate.MENTION_CHANNEL)       | The channel whose messages must @mention their recipient to reach them.                                                                  |
-| [`DELAY_HELD`](#liaise.gate.DELAY_HELD)            | What a decision held back as `delay` says, until the outbox (liaise #38) exists.                                                         |
+| [`DELAY_HELD`](#liaise.gate.DELAY_HELD)            | only the tick's outbox sends it, and only on a subject that turned it on (`policy.delay_minutes`, liaise #38).                           |
+| [`OUTBOX_ACTOR`](#liaise.gate.OUTBOX_ACTOR)          | the outbox, never a person.                                                                                                              |
 | [`GATE_CONCERN`](#liaise.gate.GATE_CONCERN)          | a void approval, a message it cannot hash.                                                                                               |
 | [`MAX_WRAPPED_FILTERS`](#liaise.gate.MAX_WRAPPED_FILTERS)   | How far [`filter_name()`](#liaise.gate.filter_name) unwraps a filter to find the name of the check it runs.           |
 | [`OutboundFilter`](#liaise.gate.OutboundFilter)        | one check of the gate.                                                                                                                   |
@@ -70,6 +72,7 @@ add a note and let the message through.
 | [`binds`](#liaise.gate.binds)(approval, hashes, verdict)                | Whether `approval` was given for this message, this audience and this verdict.               |
 | [`deslop`](#liaise.gate.deslop)(outbound, ctx)                           | Divert a message acquaint's style lint finds machine-sounding for its recipient.             |
 | [`filter_name`](#liaise.gate.filter_name)(outbound_filter)                    | How the gate names a filter: its name, the name of what a partial wraps, else its type.      |
+| [`hold_for`](#liaise.gate.hold_for)(decision, \*, at, release_at)          | The outbox's release of the message `decision` held back as `delay` (liaise #38).            |
 | [`notify_recipient`](#liaise.gate.notify_recipient)(outbound, ctx)                 | On GitHub, make the message start with an `@mention` of its recipient.                       |
 | [`outbound_policy`](#liaise.gate.outbound_policy)(outbound, ctx, \*[, ...])       | Hold back what the outbound policy (discussion §5.4) does not let go now.                    |
 | [`outside_a_case`](#liaise.gate.outside_a_case)(outbound, ctx)                   | Hold a message outside any case (`ctx.case` None) for the operator, whatever its reply mode. |
@@ -109,9 +112,13 @@ JSON-ready.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### liaise.gate.DELAY_HELD *= 'a delay is held for the operator until the delay outbox exists (liaise #38)'*
+### liaise.gate.DELAY_HELD *= 'an irreversible send waits for the operator, or in the outbox where the subject sets policy.delay_minutes (liaise #38)'*
 
-What a decision held back as `delay` says, until the outbox (liaise #38) exists.
+only the tick’s outbox sends it, and only on
+a subject that turned it on (`policy.delay_minutes`, liaise #38).
+
+* **Type:**
+  What a decision held back as `delay` says
 
 ### liaise.gate.DFLT_OUTBOUND_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](#liaise.gate.Outbound), [GateContext](#liaise.gate.GateContext)], [Pass](#liaise.gate.Pass) | [Divert](#liaise.gate.Divert)], ...]* *= (<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>)*
 
@@ -206,6 +213,13 @@ How far [`filter_name()`](#liaise.gate.filter_name) unwraps a filter to find the
 
 The channel whose messages must @mention their recipient to reach them.
 
+### liaise.gate.OUTBOX_ACTOR *= 'liaise-outbox'*
+
+the outbox, never a person.
+
+* **Type:**
+  Who a message held in the outbox is released by
+
 ### liaise.gate.OUTSIDE_A_CASE *= 'a message outside a case'*
 
 The rule [`outside_a_case()`](#liaise.gate.outside_a_case) holds a message for, which an approval names to release it.
@@ -288,6 +302,23 @@ tells the operator which check held their message back.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.gate.hold_for(decision, , at, release_at)
+
+The outbox’s release of the message `decision` held back as `delay` (liaise #38).
+
+An [`Approval`](liaise.model.html.md#liaise.model.Approval) by [`OUTBOX_ACTOR`](#liaise.gate.OUTBOX_ACTOR), bound as an operator’s is
+to the decision’s hashes and to what its verdict flagged, that overrides only the rules
+of its `delay` concerns. At release the tick puts it on the context and the gate runs
+again: while the message, its audience and its verdict are what they were, it settles
+the delay and the message goes out; anything that changed voids it, and the message
+becomes a draft with the new verdict. It never settles an `approve` concern, so a
+held message cannot pass anything a person must see.
+
+Raises `ValueError` for a decision whose flow is not `delay`, or that has no hashes.
+
+* **Return type:**
+  [`Approval`](liaise.model.html.md#liaise.model.Approval)
 
 ### liaise.gate.notify_recipient(outbound, ctx)
 

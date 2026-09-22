@@ -100,7 +100,7 @@ True
 False
 ```
 
-### *class* liaise.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), defer_until=None)
+### *class* liaise.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None)
 
 Bases: `_Record`
 
@@ -110,7 +110,9 @@ One piece of work on a subject, from its first message to its delivery.
 (`github:example/app#12`) whose messages belong to it; `reporter` is the
 person who opened it; `state` is one of `CASE_STATES`. `entries` is the
 append-only history and `drafts` the outbound messages diverted to the operator.
-`defer_until`, when set, is the earliest time the case may be dispatched again
+`outbox` holds the messages the gate gave `delay`: each waits, cancellable, until
+its `release_at`, when the tick judges it again and sends it (liaise #38; see
+[`liaise.outbox`](liaise.outbox.html.md#module-liaise.outbox)). `defer_until`, when set, is the earliest time the case may be dispatched again
 (after a quota reset, a rate limit, or a busy workspace).
 
 #### with_entry(entry)
@@ -947,7 +949,7 @@ The permissions `role` grants on this subject (none for an unknown role).
 
 The file this subject was loaded from, when it was.
 
-### *class* liaise.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False)
+### *class* liaise.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False, held=())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -955,7 +957,8 @@ What one [`run_once()`](#liaise.run_once) did or, in a dry run, would do.
 
 `plan_lines` has a line per step, event, case and decision, for `--dry-run` to
 print. `dispatched` and `collected` are run ids, `sent` the messages as they went
-out (mention added), `diverted` those that stayed with the operator as drafts.
+out (mention added), `diverted` those that stayed with the operator as drafts, and
+`held` those the tick put in a case’s outbox (liaise #38).
 
 ### *class* liaise.Verdict(, flow, route, reasons, axes, least_cleared, findings, payload_hash, audience_hash, audience, readers, as_of, mode)
 
@@ -1264,7 +1267,8 @@ What `liaise status` prints: what the ledger in `store` says, read only.
 The run stamps (`running`, `interrupted` or `finished`, the lock checked in
 `state_dir`), the holds, the runs in flight with their heartbeat age, each subject’s
 cases by state and dispatches today, the unrouted queue (its size and the `recent`
-latest), the drafts waiting for the operator, and the `recent` latest digest notes.
+latest), the drafts waiting for the operator, the messages held in the outbox, and the
+`recent` latest digest notes.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
@@ -1295,6 +1299,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
 | [`model`](liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |
 | [`outbound`](liaise.outbound.html.md#module-liaise.outbound)     | What the outbound gate's policy filter gathers before the policy decides.                                            |
+| [`outbox`](liaise.outbox.html.md#module-liaise.outbox)         | The delay outbox: messages the gate gave `delay`, held for a cancellable window (liaise #38).                        |
 | [`outcomes`](liaise.outcomes.html.md#module-liaise.outcomes)     | Outcomes: what a processor run reports, checked, then planned into actions.                                          |
 | [`policy`](liaise.policy.html.md#module-liaise.policy)         | Policy and verdict for outbound messages: from findings and an audience to a flow.                                   |
 | [`processor`](liaise.processor.html.md#module-liaise.processor)   | Processors (design §3.6): what runs a case's work, detached, and how that run ended.                                 |

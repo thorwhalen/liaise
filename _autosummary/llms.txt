@@ -1,0 +1,39 @@
+# liaise
+
+> Run the loop between a non-technical partner who tests an app and a coding agent that answers, fixes, builds and redeploys — over GitHub issues
+
+
+## Pages in this subsection
+
+- [liaise](liaise.html.md): liaise: the loop between a non-technical partner and a coding agent, over conversations.
+- [liaise.access](liaise.access.html.md): Identity and access: who a message is from, and whether they may do what it asks.
+- [liaise.cases](liaise.cases.html.md): Cases as the operator sees and moves them: &#96;liaise case list&#96;, &#96;show&#96;, &#96;set-state&#96;, &#96;send-draft&#96; and...
+- [liaise.cli](liaise.cli.html.md): The &#96;liaise&#96; command line (liaise 0.1).
+- [liaise.config](liaise.config.html.md): The global config, and the 0.0.x partner files &#96;liaise migrate-config&#96; reads.
+- [liaise.detect](liaise.detect.html.md): Detectors for outbound messages: what a message holds, reported without the value.
+- [liaise.errors](liaise.errors.html.md): Processor error taxonomy (design §3.6): classify how a run ended, and what the tick does.
+- [liaise.gate](liaise.gate.html.md): The outbound gate: the checks every message passes before liaise sends it, and the verdict they reac...
+- [liaise.github](liaise.github.html.md): The GitHub seam: one protocol, two implementations.
+- [liaise.holds](liaise.holds.html.md): Holds: stops on work, by scope, set by the operator or by the tick itself.
+- [liaise.ledger](liaise.ledger.html.md): The ledger: liaise’s own record of what it has seen, opened, decided and started.
+- [liaise.messages](liaise.messages.html.md): Messages outside a case: what an agent says to a person on its own initiative, through the gate.
+- [liaise.migrate](liaise.migrate.html.md): Derive 0.1 subject files from a 0.0.x configuration: &#96;liaise migrate-config&#96;.
+- [liaise.model](liaise.model.html.md): The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.
+- [liaise.outbound](liaise.outbound.html.md): What the outbound gate’s policy filter gathers before the policy decides.
+- [liaise.outbox](liaise.outbox.html.md): The delay outbox: messages the gate gave &#96;delay&#96;, held for a cancellable window (liaise #38).
+- [liaise.outcomes](liaise.outcomes.html.md): Outcomes: what a processor run reports, checked, then planned into actions.
+- [liaise.policy](liaise.policy.html.md): Policy and verdict for outbound messages: from findings and an audience to a flow.
+- [liaise.processor](liaise.processor.html.md): Processors (design §3.6): what runs a case’s work, detached, and how that run ended.
+- [liaise.projection](liaise.projection.html.md): Label projection: a case’s state, shown on each of its GitHub issues as one label.
+- [liaise.prompt](liaise.prompt.html.md): The prompt composer: the whole prompt a processor run on one case starts from.
+- [liaise.readiness](liaise.readiness.html.md): Readiness: whether a case is ready to dispatch, read off its own ledger entries.
+- [liaise.release](liaise.release.html.md): Releasing a message: through the gate, then through correspond, as one step.
+- [liaise.schedule](liaise.schedule.html.md): Scheduling &#96;liaise run --once&#96; (A.7): a launchd agent on macOS, a systemd
+- [liaise.subjects](liaise.subjects.html.md): Subjects: the bodies of work liaise runs, each loaded from &#96;subjects/&lt;slug&gt;.toml&#96;.
+- [liaise.testing](liaise.testing.html.md): Fakes shipped with liaise: for its tests, and for the one-command smoke test.
+- [liaise.tick](liaise.tick.html.md): The tick: one pass of liaise 0.1’s loop (design §3.1).
+- [liaise.workspace](liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
+
+## Optional
+
+- [Top-level llms.txt](../llms.txt): Complete documentation index.

@@ -149,7 +149,9 @@ What `liaise case show` prints: the case `case_id`, with all a notification leav
 Its state and conversations; the reason of its last `escalate` or `decline`; its
 last failed deploy, with the tail of the command’s output; each draft waiting for the
 operator, with the gate’s flow, the audience in words, its whole text with invisible
-characters made visible and every link in full ([`held_lines()`](#liaise.cases.held_lines)); and its
+characters made visible and every link in full ([`held_lines()`](#liaise.cases.held_lines)); each message held
+in the outbox (liaise #38), with when it sends and how to cancel it, shown the same way;
+and its
 `entries` latest ledger entries, oldest first, a line each with its detail and the
 start of its text. Reads only. Raises `ValueError` for a case the ledger `store`
 does not hold.

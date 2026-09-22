@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -762,6 +762,7 @@ window.runMermaid = runMermaid;</script>
 <span class="n">NOTICE_DAILY_CAP</span> <span class="o">=</span> <span class="s2">"daily cap reached"</span>
 <span class="n">NOTICE_ISSUE_UNREADABLE</span> <span class="o">=</span> <span class="s2">"issue state unreadable"</span>
 <span class="n">NOTICE_MESSAGE_HELD</span> <span class="o">=</span> <span class="s2">"message outside a case held"</span>
+<span class="n">NOTICE_SEND_DELAYED</span> <span class="o">=</span> <span class="s2">"message held in the outbox"</span>
 <span class="n">NOTICE_EVENTS</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">NOTICE_ESCALATION</span><span class="p">,</span>
     <span class="n">NOTICE_NO_CHANNEL</span><span class="p">,</span>
@@ -777,6 +778,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">NOTICE_DAILY_CAP</span><span class="p">,</span>
     <span class="n">NOTICE_ISSUE_UNREADABLE</span><span class="p">,</span>
     <span class="n">NOTICE_MESSAGE_HELD</span><span class="p">,</span>
+    <span class="n">NOTICE_SEND_DELAYED</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="c1">#: Each event's notification title, in :func:`notice_title`'s fields: ``{cases}`` (the case</span>
 <span class="c1">#: ids, else the subject's slug), ``{subject}`` (the slug) and, for an error alone,</span>
@@ -797,6 +799,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">NOTICE_DAILY_CAP</span><span class="p">:</span> <span class="s2">"liaise: </span><span class="si">{subject}</span><span class="s2"> reached its daily cap"</span><span class="p">,</span>
         <span class="n">NOTICE_ISSUE_UNREADABLE</span><span class="p">:</span> <span class="s2">"liaise: </span><span class="si">{cases}</span><span class="s2">'s issue cannot be read"</span><span class="p">,</span>
         <span class="n">NOTICE_MESSAGE_HELD</span><span class="p">:</span> <span class="s2">"liaise: a message on </span><span class="si">{subject}</span><span class="s2"> waits for you"</span><span class="p">,</span>
+        <span class="n">NOTICE_SEND_DELAYED</span><span class="p">:</span> <span class="s2">"liaise: a message for </span><span class="si">{cases}</span><span class="s2"> is held before it sends"</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">)</span>
 <span class="c1">#: Where a notification points the operator for what it leaves out: each case it names,</span>

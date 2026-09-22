@@ -36,6 +36,9 @@ roles = { pat = "partner" }
 
 | [`TAINTED_RUNS`](#liaise.subjects.TAINTED_RUNS)                  | `approve` (a run that read untrusted input needs the operator for any audience wider than them) or `send` (the subject waives that).                               |
 |--------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_DELAY_MINUTES`](#liaise.subjects.DFLT_DELAY_MINUTES)            | Minutes a `delay` verdict holds a message in the outbox before the tick sends it (`policy.delay_minutes`; liaise #38); 0 sends it at once.                         |
+| [`RECOMMENDED_DELAY_MINUTES`](#liaise.subjects.RECOMMENDED_DELAY_MINUTES)     | The window a subject that turns the outbox on is advised to use (liaise ADR 0003).                                                                                 |
+| [`DFLT_DELAY_STALE_MINUTES`](#liaise.subjects.DFLT_DELAY_STALE_MINUTES)      | Minutes past its release after which a held message goes to the operator instead of out (`policy.delay_stale_minutes`): nobody watched the window it relied on.    |
 | [`DFLT_SUBJECTS_SUBDIR`](#liaise.subjects.DFLT_SUBJECTS_SUBDIR)          | Subject files live in this directory under the config root.                                                                                                        |
 | [`REPLY_MODES`](#liaise.subjects.REPLY_MODES)                   | `direct` posts replies to the conversation; `draft` holds them for the operator.                                                                                   |
 | [`DELIVERY_KINDS`](#liaise.subjects.DELIVERY_KINDS)                | `deploy` runs the delivery command; `pr_only` stops at a pull request.                                                                                             |
@@ -92,6 +95,18 @@ it; `issue` for each case, right after that case’s outcomes.
 * **Type:**
   When a `deploy` runs its command
 
+### liaise.subjects.DFLT_DELAY_MINUTES *= None*
+
+Minutes a `delay` verdict holds a message in the outbox before the tick sends it
+(`policy.delay_minutes`; liaise #38); 0 sends it at once. Unset by default: the outbox
+sends without a person, so a subject turns it on explicitly, and until then a `delay`
+waits for the operator as a draft, as it did before the outbox existed.
+
+### liaise.subjects.DFLT_DELAY_STALE_MINUTES *= 1440*
+
+Minutes past its release after which a held message goes to the operator instead of out
+(`policy.delay_stale_minutes`): nobody watched the window it relied on. 0 never lapses.
+
 ### liaise.subjects.DFLT_SUBJECTS_SUBDIR *= 'subjects'*
 
 Subject files live in this directory under the config root.
@@ -115,27 +130,35 @@ succeeded. `pr_only` stops at a pull request and runs nothing.
 
 Authenticity grades, weakest first, as correspond names them.
 
-### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>, tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce')
+### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>, tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce', delay_minutes=None, delay_stale_minutes=1440)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Who is who on a subject, what each may do, and how liaise answers them.
 
-`people` maps a channel address (`github:pat`) to a person id and `roles` a
-person to a role. `permissions` maps a role to the permissions it grants, and
-`grades` a permission to the authenticity grades it accepts. `relays` are
-authors whose `claim_labels` (routing label to person) count as claims. See
-[`liaise.access`](liaise.access.html.md#module-liaise.access). `waiting_labels` (person to label) is the mirror of
-`claim_labels`: a label liaise writes on a case’s issues while the case waits on that
-person, where a claim label is one it reads (see [`liaise.projection`](liaise.projection.html.md#module-liaise.projection)).
+> `people` maps a channel address (`github:pat`) to a person id and `roles` a
+> person to a role. `permissions` maps a role to the permissions it grants, and
+> `grades` a permission to the authenticity grades it accepts. `relays` are
+> authors whose `claim_labels` (routing label to person) count as claims. See
+> [`liaise.access`](liaise.access.html.md#module-liaise.access). `waiting_labels` (person to label) is the mirror of
+> `claim_labels`: a label liaise writes on a case’s issues while the case waits on that
+> person, where a claim label is one it reads (see [`liaise.projection`](liaise.projection.html.md#module-liaise.projection)).
 
-The outbound gate’s policy (liaise ADR 0002) reads four more: `tainted_runs`
-(`approve`, or `send` to waive the taint rule), `link_allowlist` (hosts a link
-may point at besides the channel’s own), `canary_terms` (terms planted in private
-context, never to be sent) and `mode` (`enforce`, or `shadow`, recorded on every
-verdict and enforced alike until shadow mode lands). `leak_terms` are scanned for as
-a label no reader is cleared for; `public_channels` is still read, and decides
-nothing: the audience correspond computes does. Both go after one release.
+> The outbound gate’s policy (liaise ADR 0002) reads four more: `tainted_runs`
+> (`approve`, or `send` to waive the taint rule), `link_allowlist` (hosts a link
+> may point at besides the channel’s own), `canary_terms` (terms planted in private
+> context, never to be sent) and `mode` (`enforce`, or `shadow`, recorded on every
+> verdict and enforced alike until shadow mode lands). `delay_minutes` turns the delay
+
+outbox on (liaise #38): how long a `delay` verdict (an irreversible send to an
+organisation-wide or public place) waits, cancellable, before the tick sends it; 0 sends
+it at once, and None (the default) keeps it for the operator as a draft. A held
+message the tick reaches more than `delay_stale_minutes` after its release goes to the
+operator as a draft instead (0: never).
+`leak_terms` are scanned for as
+
+> a label no reader is cleared for; `public_channels` is still read, and decides
+> nothing: the audience correspond computes does. Both go after one release.
 
 #### briefs *: [Mapping](https://docs.python.org/3/library/typing.html#typing.Mapping)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
@@ -154,6 +177,10 @@ Person id to the label a case’s issues carry while the case waits on them.
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 How the subject’s processor runs.
+
+### liaise.subjects.RECOMMENDED_DELAY_MINUTES *= 10*
+
+The window a subject that turns the outbox on is advised to use (liaise ADR 0003).
 
 ### liaise.subjects.REF_WILDCARDS *= frozenset({'\*', '['})*
 

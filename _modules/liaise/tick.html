@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -800,6 +800,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">ERROR_ACTIONS</span><span class="p">,</span> <span class="n">classify_delivery_failure</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">defer_until</span> <span class="k">as</span> <span class="n">defer_for_error</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DELAY</span><span class="p">,</span>
     <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
     <span class="n">GateContext</span><span class="p">,</span>
     <span class="n">Outbound</span><span class="p">,</span>
@@ -844,6 +845,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">NOTICE_ISSUE_UNREADABLE</span><span class="p">,</span>
     <span class="n">NOTICE_RUN_CANCELLED</span><span class="p">,</span>
     <span class="n">NOTICE_RUN_LOST</span><span class="p">,</span>
+    <span class="n">NOTICE_SEND_DELAYED</span><span class="p">,</span>
     <span class="n">NOTICE_SEND_FAILED</span><span class="p">,</span>
     <span class="n">NOTICE_START_REFUSED</span><span class="p">,</span>
     <span class="n">notice_body</span><span class="p">,</span>
@@ -871,6 +873,18 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.readiness</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">last_partner_activity</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="n">error_text</span> <span class="k">as</span> <span class="n">_error_text</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="n">gate_and_send</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outbox</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">HOLD</span><span class="p">,</span>
+    <span class="n">INTERRUPTED</span><span class="p">,</span>
+    <span class="n">ISSUE_CLOSED_EVENT</span><span class="p">,</span>
+    <span class="n">ISSUE_CLOSED_REASON</span><span class="p">,</span>
+    <span class="n">held_message</span><span class="p">,</span>
+    <span class="n">held_provenance</span><span class="p">,</span>
+    <span class="n">hold_of</span><span class="p">,</span>
+    <span class="n">is_due</span><span class="p">,</span>
+    <span class="n">make_held</span><span class="p">,</span>
+    <span class="n">release_block</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">DELIVERY_KINDS</span><span class="p">,</span> <span class="n">DELIVERY_PERS</span><span class="p">,</span> <span class="n">Subject</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.workspace</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DFLT_LOCKS_SUBDIR</span><span class="p">,</span>
@@ -950,7 +964,7 @@ window.runMermaid = runMermaid;</script>
 <span class="n">RUN_LOST</span> <span class="o">=</span> <span class="s2">"lost"</span>
 <span class="c1">#: ...and the case's GitHub issue found closed, then open again, each once per change. A</span>
 <span class="c1">#: case whose issue is closed is neither started nor nudged.</span>
-<span class="n">RUN_ISSUE_CLOSED</span> <span class="o">=</span> <span class="s2">"issue_closed"</span>
+<span class="n">RUN_ISSUE_CLOSED</span> <span class="o">=</span> <span class="n">ISSUE_CLOSED_EVENT</span>
 <span class="n">RUN_ISSUE_REOPENED</span> <span class="o">=</span> <span class="s2">"issue_reopened"</span>
 <span class="c1">#: ...and a deploy that failed, the tail of its output the entry's text, which ``liaise</span>
 <span class="c1">#: case show`` prints and no notification carries.</span>
@@ -1003,7 +1017,8 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">    ``plan_lines`` has a line per step, event, case and decision, for ``--dry-run`` to</span>
 <span class="sd">    print. ``dispatched`` and ``collected`` are run ids, ``sent`` the messages as they went</span>
-<span class="sd">    out (mention added), ``diverted`` those that stayed with the operator as drafts.</span>
+<span class="sd">    out (mention added), ``diverted`` those that stayed with the operator as drafts, and</span>
+<span class="sd">    ``held`` those the tick put in a case's outbox (liaise #38).</span>
 <span class="sd">    """</span>
 
     <span class="n">plan_lines</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
@@ -1012,7 +1027,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">sent</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Outbound</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
     <span class="n">diverted</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Diversion</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
     <span class="n">problems</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
-    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span></div>
+    <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">held</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Outbound</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span></div>
 
 
 
@@ -1063,6 +1079,20 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">seconds</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">_SECONDS_PER_MINUTE</span><span class="si">}</span><span class="s2">m"</span>
     <span class="n">hours</span><span class="p">,</span> <span class="n">rest</span> <span class="o">=</span> <span class="nb">divmod</span><span class="p">(</span><span class="n">seconds</span><span class="p">,</span> <span class="n">_SECONDS_PER_HOUR</span><span class="p">)</span>
     <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">hours</span><span class="si">}</span><span class="s2">h</span><span class="si">{</span><span class="n">rest</span><span class="w"> </span><span class="o">//</span><span class="w"> </span><span class="n">_SECONDS_PER_MINUTE</span><span class="si">:</span><span class="s2">02d</span><span class="si">}</span><span class="s2">m"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_entries_seen_by</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">run_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""How many of ``case``'s entries the run ``run_id`` could have read: those before its start.</span>
+
+<span class="sd">    The run's prompt was written when it started, so a message heard while it ran is one</span>
+<span class="sd">    its outcomes never answered. Without a start entry for it, every entry so far.</span>
+<span class="sd">    """</span>
+    <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">entry</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">started</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">"run"</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"event"</span><span class="p">)</span> <span class="o">==</span> <span class="n">RUN_STARTED</span>
+        <span class="k">if</span> <span class="n">started</span> <span class="ow">and</span> <span class="n">entry</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"run_id"</span><span class="p">)</span> <span class="o">==</span> <span class="n">run_id</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">index</span>
+    <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_run_starts</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LedgerEntry</span><span class="p">]:</span>
@@ -1303,6 +1333,7 @@ window.runMermaid = runMermaid;</script>
             <span class="k">elif</span> <span class="n">only</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"subject </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: inactive (active = false), not ticked"</span><span class="p">)</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">intake_all</span><span class="p">()</span>
+        <span class="n">tick</span><span class="o">.</span><span class="n">release_all</span><span class="p">()</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">reconcile</span><span class="p">()</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">start_all</span><span class="p">()</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">nudge_all</span><span class="p">()</span>
@@ -1575,7 +1606,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    The run stamps (``running``, ``interrupted`` or ``finished``, the lock checked in</span>
 <span class="sd">    ``state_dir``), the holds, the runs in flight with their heartbeat age, each subject's</span>
 <span class="sd">    cases by state and dispatches today, the unrouted queue (its size and the ``recent``</span>
-<span class="sd">    latest), the drafts waiting for the operator, and the ``recent`` latest digest notes.</span>
+<span class="sd">    latest), the drafts waiting for the operator, the messages held in the outbox, and the</span>
+<span class="sd">    ``recent`` latest digest notes.</span>
 <span class="sd">    """</span>
     <span class="n">now</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
     <span class="n">ledger</span> <span class="o">=</span> <span class="n">Ledger</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
@@ -1630,6 +1662,16 @@ window.runMermaid = runMermaid;</script>
         <span class="n">to</span> <span class="o">=</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ref"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"recipient"</span><span class="p">)</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">to</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="n">outbox</span> <span class="o">=</span> <span class="p">[(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">]</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"held in the outbox: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">outbox</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span>
+        <span class="n">outbox</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pair</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"release_at"</span><span class="p">))</span>
+    <span class="p">):</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2">: sends at "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'release_at'</span><span class="p">)</span><span class="si">}</span><span class="s2"> unless cancelled"</span>
         <span class="p">)</span>
 
     <span class="n">heading</span> <span class="o">=</span> <span class="s2">"messages outside a case held for the operator"</span>
@@ -1722,6 +1764,11 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">collected</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Outbound</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">diverted</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Diversion</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">held</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Outbound</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1">#: Per case, how many entries it had when this tick planned a run's actions.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">planned_at</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1">#: Subjects whose intake failed this tick: their outboxes wait for the next.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intake_failed</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
         <span class="c1">#: Cases this tick changed, in the order it changed them: the label projection's.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">touched</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1">#: Per subject slug, the deliveries waiting for its batch deploy.</span>
@@ -1747,6 +1794,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">diverted</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">diverted</span><span class="p">),</span>
             <span class="n">problems</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">problems</span><span class="p">),</span>
             <span class="n">dry_run</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dry_run</span><span class="p">,</span>
+            <span class="n">held</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">held</span><span class="p">),</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_case</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Case</span><span class="p">:</span>
@@ -1874,9 +1922,12 @@ window.runMermaid = runMermaid;</script>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># one subject's failure is not the tick's</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span><span class="sa">f</span><span class="s2">"intake of </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">_error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">intake_failed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">slug</span><span class="p">)</span>
                 <span class="k">continue</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">+=</span> <span class="n">report</span><span class="o">.</span><span class="n">plan_lines</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">problems</span> <span class="o">+=</span> <span class="n">report</span><span class="o">.</span><span class="n">problems</span>
+            <span class="k">if</span> <span class="n">report</span><span class="o">.</span><span class="n">problems</span><span class="p">:</span>  <span class="c1"># a conversation went unheard: its outbox waits</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">intake_failed</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">slug</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">report</span><span class="o">.</span><span class="n">new_cases</span><span class="p">,</span> <span class="o">*</span><span class="n">report</span><span class="o">.</span><span class="n">updated_cases</span><span class="p">):</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">touched</span><span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -2300,6 +2351,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Carry out a run's planned actions in order: the S5b tick rules."""</span>
         <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">planned_at</span><span class="p">[</span><span class="n">case_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">_entries_seen_by</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">run_id</span><span class="p">)</span>
         <span class="n">planned_send</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">action</span><span class="p">,</span> <span class="n">Send</span><span class="p">)</span> <span class="k">for</span> <span class="n">action</span> <span class="ow">in</span> <span class="n">actions</span><span class="p">)</span>
         <span class="n">held</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">final</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">_DeliveryGroup</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
@@ -2398,15 +2450,23 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">send</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_send</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">send</span><span class="p">:</span> <span class="n">Send</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">provenance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Provenance</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+        <span class="n">send</span><span class="p">:</span> <span class="n">Send</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">provenance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Provenance</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">released</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">"""Put ``send`` through the gate, then send it or keep it as a draft; True once sent.</span>
+<span class="w">        </span><span class="sd">"""Put ``send`` through the gate, then send it, hold it or keep it as a draft; True once sent.</span>
 
 <span class="sd">        ``provenance`` is what wrote the message: None for a run's, which is judged from the</span>
-<span class="sd">        case's messages (:func:`liaise.outbound.case_provenance`).</span>
+<span class="sd">        case's messages (:func:`liaise.outbound.case_provenance`). A ``delay`` goes into the</span>
+<span class="sd">        case's outbox (liaise #38). ``released`` is the outbox item ``send`` is released</span>
+<span class="sd">        from: its hold is the approval on the context, and it is never held again.</span>
 <span class="sd">        """</span>
         <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">send</span><span class="o">.</span><span class="n">case_id</span><span class="p">)</span>
         <span class="n">context</span> <span class="o">=</span> <span class="n">GateContext</span><span class="p">(</span>
+            <span class="n">approval</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">released</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">hold_of</span><span class="p">(</span><span class="n">released</span><span class="p">),</span>
             <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
             <span class="n">case</span><span class="o">=</span><span class="n">case</span><span class="p">,</span>
             <span class="n">now</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
@@ -2432,7 +2492,18 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">"notes"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
             <span class="o">**</span><span class="n">decision</span><span class="o">.</span><span class="n">record</span><span class="p">(),</span>
         <span class="p">}</span>
+        <span class="k">if</span> <span class="n">released</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">detail</span><span class="p">[</span><span class="s2">"released_from"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">"at"</span><span class="p">:</span> <span class="n">released</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"at"</span><span class="p">),</span>
+                <span class="s2">"release_at"</span><span class="p">:</span> <span class="n">released</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"release_at"</span><span class="p">),</span>
+            <span class="p">}</span>
         <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"    note: </span><span class="si">{</span><span class="n">note</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">]</span>
+        <span class="n">holdable</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">decision</span><span class="o">.</span><span class="n">flow</span> <span class="o">==</span> <span class="n">DELAY</span>
+        <span class="n">outbox_on</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">delay_minutes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">holdable</span> <span class="ow">and</span> <span class="n">outbox_on</span> <span class="ow">and</span> <span class="n">released</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">decision</span><span class="o">.</span><span class="n">overridable</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hold</span><span class="p">(</span>
+                <span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">,</span> <span class="n">send</span><span class="p">,</span> <span class="n">decision</span><span class="p">,</span> <span class="n">detail</span><span class="p">,</span> <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">decision</span><span class="o">.</span><span class="n">send</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">draft</span> <span class="o">=</span> <span class="n">make_draft</span><span class="p">(</span>
                 <span class="n">at</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
@@ -2518,6 +2589,210 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">head</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">_preview</span><span class="p">(</span><span class="n">outbound</span><span class="o">.</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">lines</span> <span class="o">+=</span> <span class="n">notes</span>
         <span class="k">return</span> <span class="kc">True</span>
+
+    <span class="c1"># ---- the delay outbox (liaise #38) ----</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hold</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+        <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span>
+        <span class="n">send</span><span class="p">:</span> <span class="n">Send</span><span class="p">,</span>
+        <span class="n">decision</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+        <span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">provenance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Provenance</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Hold ``send``, which the gate gave ``delay``, in its case's outbox; True once sent.</span>
+
+<span class="sd">        ``provenance`` is the one ``send`` was judged with when the tick wrote it (a nudge),</span>
+<span class="sd">        kept so its release is judged alike. With ``policy.delay_minutes = 0`` it is</span>
+<span class="sd">        released at once, through the same path.</span>
+<span class="sd">        """</span>
+        <span class="n">minutes</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">delay_minutes</span>
+        <span class="n">item</span> <span class="o">=</span> <span class="n">make_held</span><span class="p">(</span>
+            <span class="n">send</span><span class="p">,</span>
+            <span class="n">decision</span><span class="p">,</span>
+            <span class="n">at</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">delay</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">),</span>
+            <span class="n">seen</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">planned_at</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">)),</span>
+            <span class="n">provenance</span><span class="o">=</span><span class="n">provenance</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">outbox</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">,</span> <span class="n">item</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entry</span><span class="p">(</span>
+            <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">"gate"</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">send</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
+            <span class="n">detail</span><span class="o">=</span><span class="p">{</span>
+                <span class="o">**</span><span class="n">detail</span><span class="p">,</span>
+                <span class="s2">"decision"</span><span class="p">:</span> <span class="n">HOLD</span><span class="p">,</span>
+                <span class="s2">"release_at"</span><span class="p">:</span> <span class="n">item</span><span class="p">[</span><span class="s2">"release_at"</span><span class="p">],</span>
+                <span class="s2">"outbox"</span><span class="p">:</span> <span class="n">index</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">held</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">send</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"  gate </span><span class="si">{</span><span class="n">send</span><span class="o">.</span><span class="n">purpose</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">send</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">: held in the outbox until "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">'release_at'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">flow</span><span class="si">}</span><span class="s2">); liaise case cancel-send "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2"> takes it off"</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">minutes</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_release_one</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">item</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notice</span><span class="p">(</span>
+            <span class="n">NOTICE_SEND_DELAYED</span><span class="p">,</span>
+            <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+            <span class="n">case_ids</span><span class="o">=</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,),</span>
+            <span class="n">cause</span><span class="o">=</span><span class="sa">f</span><span class="s2">"sends in </span><span class="si">{</span><span class="n">minutes</span><span class="si">}</span><span class="s2"> minutes unless cancelled"</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">release_all</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Step 2: release each case's held messages that are due, oldest case first.</span>
+
+<span class="sd">        Every item is checked on every tick, due or not (:func:`liaise.outbox.release_block`):</span>
+<span class="sd">        one the conversation moved past, one reached too late and one whose release was</span>
+<span class="sd">        interrupted go to the operator as drafts. A subject whose intake failed this tick is</span>
+<span class="sd">        skipped, since the conversation may have moved unheard. Within a case the items go</span>
+<span class="sd">        in order, and one that does not go out keeps the rest for the next tick.</span>
+<span class="sd">        """</span>
+        <span class="n">cases</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">cases</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">case</span><span class="p">:</span> <span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">cases</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">case</span><span class="o">.</span><span class="n">outbox</span> <span class="ow">or</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">slugs</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subjects</span><span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">subject</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">intake_failed</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"  outbox of </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: waits, since intake of </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2"> failed"</span>
+                <span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="n">releasing</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">):</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">done</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_release_one</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">release</span><span class="o">=</span><span class="n">releasing</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># one case's failure is not the tick's</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"releasing </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">'s outbox failed: </span><span class="si">{</span><span class="n">_error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="p">)</span>
+                    <span class="k">break</span>
+                <span class="n">releasing</span> <span class="o">=</span> <span class="n">releasing</span> <span class="ow">and</span> <span class="n">done</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_release_one</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+        <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">item</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">release</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Release ``item`` if it is due and nothing blocks it: True once sent.</span>
+
+<span class="sd">        False when it went to the operator instead, and None when it stays held (not due,</span>
+<span class="sd">        an effect hold, or ``release`` False: an earlier item of its case stayed) or its</span>
+<span class="sd">        release did not go out.</span>
+<span class="sd">        """</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">stale</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">delay_stale_minutes</span>
+        <span class="n">block</span> <span class="o">=</span> <span class="n">release_block</span><span class="p">(</span>
+            <span class="n">case</span><span class="p">,</span>
+            <span class="n">item</span><span class="p">,</span>
+            <span class="n">now</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">stale_after</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="n">stale</span><span class="p">)</span> <span class="k">if</span> <span class="n">stale</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">block</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_held_to_draft</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="o">*</span><span class="n">block</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">release</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_due</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">hold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_effect_hold</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">hold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"  outbox of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"stays held by </span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"  outbox of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_issue_is_closed</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">issue_closed</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># unreadable: it waits, and lapses if that lasts</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_held_to_draft</span><span class="p">(</span>
+                <span class="n">subject</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">),</span> <span class="n">item</span><span class="p">,</span> <span class="s2">"divert"</span><span class="p">,</span> <span class="n">ISSUE_CLOSED_REASON</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="kc">False</span>
+        <span class="n">claimed</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">item</span><span class="p">,</span> <span class="s2">"claimed_at"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_swap_item</span><span class="p">(</span>
+            <span class="n">case_id</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">claimed</span>
+        <span class="p">)</span>  <span class="c1"># at most once: claimed before it is sent</span>
+        <span class="n">sent</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send</span><span class="p">(</span>
+            <span class="n">subject</span><span class="p">,</span>
+            <span class="n">held_message</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">case_id</span><span class="o">=</span><span class="n">case_id</span><span class="p">),</span>
+            <span class="n">provenance</span><span class="o">=</span><span class="n">held_provenance</span><span class="p">(</span><span class="n">item</span><span class="p">),</span>
+            <span class="n">released</span><span class="o">=</span><span class="n">claimed</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_swap_item</span><span class="p">(</span><span class="n">case_id</span><span class="p">,</span> <span class="n">claimed</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">True</span> <span class="k">if</span> <span class="n">sent</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_swap_item</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">item</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">new</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Put ``new`` in place of ``item`` in the case's outbox, or take ``item`` off for None."""</span>
+        <span class="n">case</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_case</span><span class="p">(</span><span class="n">case_id</span><span class="p">)</span>
+        <span class="n">items</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">items</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">items</span><span class="p">[</span><span class="n">index</span> <span class="p">:</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span> <span class="k">if</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">new</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">outbox</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">items</span><span class="p">)))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_held_to_draft</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span>
+        <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span>
+        <span class="n">item</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+        <span class="n">decision</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Take ``item`` out of the outbox and keep it as a draft for the operator, with ``reason``."""</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+        <span class="n">draft</span> <span class="o">=</span> <span class="n">make_draft</span><span class="p">(</span>
+            <span class="n">at</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">now</span><span class="p">,</span>
+            <span class="n">outcome</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outcome"</span><span class="p">),</span>
+            <span class="n">recipient</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"recipient"</span><span class="p">),</span>
+            <span class="n">ref</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ref"</span><span class="p">),</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+            <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
+            <span class="n">notes</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"notes"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(),</span>
+            <span class="n">title</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">),</span>
+            <span class="n">gate</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"gate"</span><span class="p">),</span>
+        <span class="p">)</span>
+        <span class="n">others</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">[:</span><span class="n">index</span><span class="p">],</span> <span class="o">*</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_save</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">outbox</span><span class="o">=</span><span class="n">others</span><span class="p">,</span> <span class="n">drafts</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">case</span><span class="o">.</span><span class="n">drafts</span><span class="p">,</span> <span class="n">draft</span><span class="p">)))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_entry</span><span class="p">(</span>
+            <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+            <span class="s2">"gate"</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">),</span>
+            <span class="n">detail</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">"decision"</span><span class="p">:</span> <span class="n">decision</span><span class="p">,</span>
+                <span class="s2">"reason"</span><span class="p">:</span> <span class="n">reason</span><span class="p">,</span>
+                <span class="s2">"purpose"</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outcome"</span><span class="p">),</span>
+                <span class="s2">"ref"</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ref"</span><span class="p">),</span>
+                <span class="s2">"outbox"</span><span class="p">:</span> <span class="n">index</span><span class="p">,</span>
+                <span class="s2">"release_at"</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"release_at"</span><span class="p">),</span>
+            <span class="p">},</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">diverted</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Diversion</span><span class="p">(</span><span class="n">held_message</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">case_id</span><span class="o">=</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">),</span> <span class="n">reason</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"  outbox of </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2">: "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">reason</span><span class="si">}</span><span class="s2">, kept as a draft"</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_notice</span><span class="p">(</span>
+            <span class="n">NOTICE_SEND_FAILED</span> <span class="k">if</span> <span class="n">decision</span> <span class="o">==</span> <span class="n">INTERRUPTED</span> <span class="k">else</span> <span class="n">NOTICE_DIVERTED</span><span class="p">,</span>
+            <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+            <span class="n">case_ids</span><span class="o">=</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,),</span>
+            <span class="n">cause</span><span class="o">=</span><span class="s2">"outbox"</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_send_own</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span>

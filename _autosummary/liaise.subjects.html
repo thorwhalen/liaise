@@ -10,6 +10,8 @@
 
 <link rel="alternate" type="text/markdown" href="liaise.subjects.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="liaise.subjects.html.md">
+<link rel="describedby" href="llms.txt">
     <title>liaise.subjects &#8212; liaise</title>
   
   
@@ -42,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +57,7 @@
     <link rel="prev" title="liaise.schedule" href="liaise.schedule.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -331,6 +333,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbox.html">liaise.outbox</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -442,31 +445,40 @@ Every table has defaults, so a minimal subject file needs only:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.TAINTED_RUNS" title="liaise.subjects.TAINTED_RUNS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TAINTED_RUNS</span></code></a></p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">approve</span></code> (a run that read untrusted input needs the operator for any audience wider than them) or <code class="docutils literal notranslate"><span class="pre">send</span></code> (the subject waives that).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.DFLT_SUBJECTS_SUBDIR" title="liaise.subjects.DFLT_SUBJECTS_SUBDIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_SUBJECTS_SUBDIR</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.DFLT_DELAY_MINUTES" title="liaise.subjects.DFLT_DELAY_MINUTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_DELAY_MINUTES</span></code></a></p></td>
+<td><p>Minutes a <code class="docutils literal notranslate"><span class="pre">delay</span></code> verdict holds a message in the outbox before the tick sends it (<code class="docutils literal notranslate"><span class="pre">policy.delay_minutes</span></code>; liaise #38); 0 sends it at once.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.RECOMMENDED_DELAY_MINUTES" title="liaise.subjects.RECOMMENDED_DELAY_MINUTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RECOMMENDED_DELAY_MINUTES</span></code></a></p></td>
+<td><p>The window a subject that turns the outbox on is advised to use (liaise ADR 0003).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.DFLT_DELAY_STALE_MINUTES" title="liaise.subjects.DFLT_DELAY_STALE_MINUTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_DELAY_STALE_MINUTES</span></code></a></p></td>
+<td><p>Minutes past its release after which a held message goes to the operator instead of out (<code class="docutils literal notranslate"><span class="pre">policy.delay_stale_minutes</span></code>): nobody watched the window it relied on.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.DFLT_SUBJECTS_SUBDIR" title="liaise.subjects.DFLT_SUBJECTS_SUBDIR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_SUBJECTS_SUBDIR</span></code></a></p></td>
 <td><p>Subject files live in this directory under the config root.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.REPLY_MODES" title="liaise.subjects.REPLY_MODES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REPLY_MODES</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.REPLY_MODES" title="liaise.subjects.REPLY_MODES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REPLY_MODES</span></code></a></p></td>
 <td><p><code class="code docutils literal notranslate"><span class="pre">direct</span></code> posts replies to the conversation; <code class="code docutils literal notranslate"><span class="pre">draft</span></code> holds them for the operator.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.DELIVERY_KINDS" title="liaise.subjects.DELIVERY_KINDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DELIVERY_KINDS</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.DELIVERY_KINDS" title="liaise.subjects.DELIVERY_KINDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DELIVERY_KINDS</span></code></a></p></td>
 <td><p><code class="code docutils literal notranslate"><span class="pre">deploy</span></code> runs the delivery command; <code class="code docutils literal notranslate"><span class="pre">pr_only</span></code> stops at a pull request.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.DELIVERY_PERS" title="liaise.subjects.DELIVERY_PERS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DELIVERY_PERS</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.DELIVERY_PERS" title="liaise.subjects.DELIVERY_PERS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DELIVERY_PERS</span></code></a></p></td>
 <td><p><code class="code docutils literal notranslate"><span class="pre">batch</span></code> once per tick, for every case delivered in it; <code class="code docutils literal notranslate"><span class="pre">issue</span></code> for each case, right after that case's outcomes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.WORKSPACE_KINDS" title="liaise.subjects.WORKSPACE_KINDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WORKSPACE_KINDS</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.WORKSPACE_KINDS" title="liaise.subjects.WORKSPACE_KINDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WORKSPACE_KINDS</span></code></a></p></td>
 <td><p>Where a run works.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.GRADES" title="liaise.subjects.GRADES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GRADES</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.GRADES" title="liaise.subjects.GRADES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GRADES</span></code></a></p></td>
 <td><p>Authenticity grades, weakest first, as correspond names them.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.REF_WILDCARDS" title="liaise.subjects.REF_WILDCARDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REF_WILDCARDS</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.REF_WILDCARDS" title="liaise.subjects.REF_WILDCARDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REF_WILDCARDS</span></code></a></p></td>
 <td><p>What makes a binding's conversation part a glob, which v0.1 cannot poll (&quot;?&quot; starts a binding's conditions, so it never gets that far).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS" title="liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CASE_INSENSITIVE_REF_CHANNELS</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS" title="liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CASE_INSENSITIVE_REF_CHANNELS</span></code></a></p></td>
 <td><p>Channels whose conversation references ignore case, so their bindings load lower-cased (see <a class="reference internal" href="#liaise.subjects.normalize_binding" title="liaise.subjects.normalize_binding"><code class="xref py py-func docutils literal notranslate"><span class="pre">normalize_binding()</span></code></a>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.DFLT_WAITING_LABEL" title="liaise.subjects.DFLT_WAITING_LABEL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_WAITING_LABEL</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.DFLT_WAITING_LABEL" title="liaise.subjects.DFLT_WAITING_LABEL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_WAITING_LABEL</span></code></a></p></td>
 <td><p>Each person's waiting label when a subject sets <code class="docutils literal notranslate"><span class="pre">policy.waiting_labels</span> <span class="pre">=</span> <span class="pre">true</span></code>.</p></td>
 </tr>
 </tbody>
@@ -564,6 +576,22 @@ it; <code class="code docutils literal notranslate"><span class="pre">issue</spa
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.subjects.DFLT_DELAY_MINUTES">
+<span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">DFLT_DELAY_MINUTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#liaise.subjects.DFLT_DELAY_MINUTES" title="Link to this definition">#</a></dt>
+<dd><p>Minutes a <code class="docutils literal notranslate"><span class="pre">delay</span></code> verdict holds a message in the outbox before the tick sends it
+(<code class="docutils literal notranslate"><span class="pre">policy.delay_minutes</span></code>; liaise #38); 0 sends it at once. Unset by default: the outbox
+sends without a person, so a subject turns it on explicitly, and until then a <code class="docutils literal notranslate"><span class="pre">delay</span></code>
+waits for the operator as a draft, as it did before the outbox existed.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.subjects.DFLT_DELAY_STALE_MINUTES">
+<span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">DFLT_DELAY_STALE_MINUTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1440</span></span><a class="headerlink" href="#liaise.subjects.DFLT_DELAY_STALE_MINUTES" title="Link to this definition">#</a></dt>
+<dd><p>Minutes past its release after which a held message goes to the operator instead of out
+(<code class="docutils literal notranslate"><span class="pre">policy.delay_stale_minutes</span></code>): nobody watched the window it relied on. 0 never lapses.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.subjects.DFLT_SUBJECTS_SUBDIR">
 <span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">DFLT_SUBJECTS_SUBDIR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'subjects'</span></span><a class="headerlink" href="#liaise.subjects.DFLT_SUBJECTS_SUBDIR" title="Link to this definition">#</a></dt>
 <dd><p>Subject files live in this directory under the config root.</p>
@@ -596,10 +624,11 @@ succeeded. <code class="docutils literal notranslate"><span class="pre">pr_only<
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.subjects.Policy">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">people</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_reply_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'draft'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reply_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('github'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permissions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grades</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readiness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">escalate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">budget</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployed_nudge_days</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">briefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waiting_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tainted_runs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">link_allowlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canary_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'enforce'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#Policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.Policy" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">Policy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">people</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_reply_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'draft'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reply_modes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">relays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">claim_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">public_channels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('github'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">permissions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grades</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readiness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">escalate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">budget</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deployed_nudge_days</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">briefs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">waiting_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tainted_runs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">link_allowlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canary_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'enforce'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delay_stale_minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1440</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#Policy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.Policy" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Who is who on a subject, what each may do, and how liaise answers them.</p>
-<p><code class="docutils literal notranslate"><span class="pre">people</span></code> maps a channel address (<code class="docutils literal notranslate"><span class="pre">github:pat</span></code>) to a person id and <code class="docutils literal notranslate"><span class="pre">roles</span></code> a
+<blockquote>
+<div><p><code class="docutils literal notranslate"><span class="pre">people</span></code> maps a channel address (<code class="docutils literal notranslate"><span class="pre">github:pat</span></code>) to a person id and <code class="docutils literal notranslate"><span class="pre">roles</span></code> a
 person to a role. <code class="docutils literal notranslate"><span class="pre">permissions</span></code> maps a role to the permissions it grants, and
 <code class="docutils literal notranslate"><span class="pre">grades</span></code> a permission to the authenticity grades it accepts. <code class="docutils literal notranslate"><span class="pre">relays</span></code> are
 authors whose <code class="docutils literal notranslate"><span class="pre">claim_labels</span></code> (routing label to person) count as claims. See
@@ -610,9 +639,18 @@ person, where a claim label is one it reads (see <a class="reference internal" h
 (<code class="docutils literal notranslate"><span class="pre">approve</span></code>, or <code class="docutils literal notranslate"><span class="pre">send</span></code> to waive the taint rule), <code class="docutils literal notranslate"><span class="pre">link_allowlist</span></code> (hosts a link
 may point at besides the channel’s own), <code class="docutils literal notranslate"><span class="pre">canary_terms</span></code> (terms planted in private
 context, never to be sent) and <code class="docutils literal notranslate"><span class="pre">mode</span></code> (<code class="docutils literal notranslate"><span class="pre">enforce</span></code>, or <code class="docutils literal notranslate"><span class="pre">shadow</span></code>, recorded on every
-verdict and enforced alike until shadow mode lands). <code class="docutils literal notranslate"><span class="pre">leak_terms</span></code> are scanned for as
-a label no reader is cleared for; <code class="docutils literal notranslate"><span class="pre">public_channels</span></code> is still read, and decides
+verdict and enforced alike until shadow mode lands). <code class="docutils literal notranslate"><span class="pre">delay_minutes</span></code> turns the delay</p>
+</div></blockquote>
+<p>outbox on (liaise #38): how long a <code class="docutils literal notranslate"><span class="pre">delay</span></code> verdict (an irreversible send to an
+organisation-wide or public place) waits, cancellable, before the tick sends it; 0 sends
+it at once, and None (the default) keeps it for the operator as a draft. A held
+message the tick reaches more than <code class="docutils literal notranslate"><span class="pre">delay_stale_minutes</span></code> after its release goes to the
+operator as a draft instead (0: never).
+<code class="docutils literal notranslate"><span class="pre">leak_terms</span></code> are scanned for as</p>
+<blockquote>
+<div><p>a label no reader is cleared for; <code class="docutils literal notranslate"><span class="pre">public_channels</span></code> is still read, and decides
 nothing: the audience correspond computes does. Both go after one release.</p>
+</div></blockquote>
 <dl class="field-list simple">
 </dl>
 <dl class="py attribute">
@@ -642,6 +680,12 @@ nothing: the audience correspond computes does. Both go after one release.</p>
 <p>How the subject’s processor runs.</p>
 <dl class="field-list simple">
 </dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.subjects.RECOMMENDED_DELAY_MINUTES">
+<span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">RECOMMENDED_DELAY_MINUTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></span><a class="headerlink" href="#liaise.subjects.RECOMMENDED_DELAY_MINUTES" title="Link to this definition">#</a></dt>
+<dd><p>The window a subject that turns the outbox on is advised to use (liaise ADR 0003).</p>
 </dd></dl>
 
 <dl class="py data">
@@ -994,6 +1038,8 @@ naming each when several name it equally closely.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS"><code class="docutils literal notranslate"><span class="pre">CASE_INSENSITIVE_REF_CHANNELS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.DELIVERY_KINDS"><code class="docutils literal notranslate"><span class="pre">DELIVERY_KINDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.DELIVERY_PERS"><code class="docutils literal notranslate"><span class="pre">DELIVERY_PERS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.DFLT_DELAY_MINUTES"><code class="docutils literal notranslate"><span class="pre">DFLT_DELAY_MINUTES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.DFLT_DELAY_STALE_MINUTES"><code class="docutils literal notranslate"><span class="pre">DFLT_DELAY_STALE_MINUTES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.DFLT_SUBJECTS_SUBDIR"><code class="docutils literal notranslate"><span class="pre">DFLT_SUBJECTS_SUBDIR</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.DFLT_WAITING_LABEL"><code class="docutils literal notranslate"><span class="pre">DFLT_WAITING_LABEL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Delivery"><code class="docutils literal notranslate"><span class="pre">Delivery</span></code></a></li>
@@ -1005,6 +1051,7 @@ naming each when several name it equally closely.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.ProcessorConfig"><code class="docutils literal notranslate"><span class="pre">ProcessorConfig</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.RECOMMENDED_DELAY_MINUTES"><code class="docutils literal notranslate"><span class="pre">RECOMMENDED_DELAY_MINUTES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.REF_WILDCARDS"><code class="docutils literal notranslate"><span class="pre">REF_WILDCARDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.REPLY_MODES"><code class="docutils literal notranslate"><span class="pre">REPLY_MODES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.ReadinessPolicy"><code class="docutils literal notranslate"><span class="pre">ReadinessPolicy</span></code></a></li>

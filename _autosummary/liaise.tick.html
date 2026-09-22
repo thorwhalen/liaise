@@ -10,6 +10,8 @@
 
 <link rel="alternate" type="text/markdown" href="liaise.tick.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="liaise.tick.html.md">
+<link rel="describedby" href="llms.txt">
     <title>liaise.tick &#8212; liaise</title>
   
   
@@ -42,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +57,7 @@
     <link rel="prev" title="liaise.testing" href="liaise.testing.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -331,6 +333,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbox.html">liaise.outbox</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -877,12 +880,13 @@ to the owner, who is told once: a deleted or transferred issue never reads again
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.tick.TickReport">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">TickReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plan_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispatched</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problems</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#TickReport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.TickReport" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">TickReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plan_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispatched</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problems</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">held</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#TickReport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.TickReport" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What one <a class="reference internal" href="#liaise.tick.run_once" title="liaise.tick.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_once()</span></code></a> did or, in a dry run, would do.</p>
 <p><code class="docutils literal notranslate"><span class="pre">plan_lines</span></code> has a line per step, event, case and decision, for <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> to
 print. <code class="docutils literal notranslate"><span class="pre">dispatched</span></code> and <code class="docutils literal notranslate"><span class="pre">collected</span></code> are run ids, <code class="docutils literal notranslate"><span class="pre">sent</span></code> the messages as they went
-out (mention added), <code class="docutils literal notranslate"><span class="pre">diverted</span></code> those that stayed with the operator as drafts.</p>
+out (mention added), <code class="docutils literal notranslate"><span class="pre">diverted</span></code> those that stayed with the operator as drafts, and
+<code class="docutils literal notranslate"><span class="pre">held</span></code> those the tick put in a case’s outbox (liaise #38).</p>
 <dl class="field-list simple">
 </dl>
 </dd></dl>
@@ -1012,7 +1016,8 @@ pass that had already finished, read here as a run that started and ended then.<
 <p>The run stamps (<code class="docutils literal notranslate"><span class="pre">running</span></code>, <code class="docutils literal notranslate"><span class="pre">interrupted</span></code> or <code class="docutils literal notranslate"><span class="pre">finished</span></code>, the lock checked in
 <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>), the holds, the runs in flight with their heartbeat age, each subject’s
 cases by state and dispatches today, the unrouted queue (its size and the <code class="docutils literal notranslate"><span class="pre">recent</span></code>
-latest), the drafts waiting for the operator, and the <code class="docutils literal notranslate"><span class="pre">recent</span></code> latest digest notes.</p>
+latest), the drafts waiting for the operator, the messages held in the outbox, and the
+<code class="docutils literal notranslate"><span class="pre">recent</span></code> latest digest notes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>

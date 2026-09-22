@@ -10,6 +10,8 @@
 
 <link rel="alternate" type="text/markdown" href="liaise.cases.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="liaise.cases.html.md">
+<link rel="describedby" href="llms.txt">
     <title>liaise.cases &#8212; liaise</title>
   
   
@@ -42,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +57,7 @@
     <link rel="prev" title="liaise.access" href="liaise.access.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -331,6 +333,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbox.html">liaise.outbox</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -638,7 +641,9 @@ oldest first. Reads only. Raises <code class="docutils literal notranslate"><spa
 <p>Its state and conversations; the reason of its last <code class="docutils literal notranslate"><span class="pre">escalate</span></code> or <code class="docutils literal notranslate"><span class="pre">decline</span></code>; its
 last failed deploy, with the tail of the command’s output; each draft waiting for the
 operator, with the gate’s flow, the audience in words, its whole text with invisible
-characters made visible and every link in full (<a class="reference internal" href="#liaise.cases.held_lines" title="liaise.cases.held_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">held_lines()</span></code></a>); and its
+characters made visible and every link in full (<a class="reference internal" href="#liaise.cases.held_lines" title="liaise.cases.held_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">held_lines()</span></code></a>); each message held
+in the outbox (liaise #38), with when it sends and how to cancel it, shown the same way;
+and its
 <code class="docutils literal notranslate"><span class="pre">entries</span></code> latest ledger entries, oldest first, a line each with its detail and the
 start of its text. Reads only. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for a case the ledger <code class="docutils literal notranslate"><span class="pre">store</span></code>
 does not hold.</p>

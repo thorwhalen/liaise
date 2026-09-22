@@ -25,6 +25,7 @@ liaise.cli
 
    .. autosummary::
    
+      case_cancel_send
       case_list
       case_reject_draft
       case_send_draft

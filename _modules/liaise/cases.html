@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -953,7 +953,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    Its state and conversations; the reason of its last ``escalate`` or ``decline``; its</span>
 <span class="sd">    last failed deploy, with the tail of the command's output; each draft waiting for the</span>
 <span class="sd">    operator, with the gate's flow, the audience in words, its whole text with invisible</span>
-<span class="sd">    characters made visible and every link in full (:func:`held_lines`); and its</span>
+<span class="sd">    characters made visible and every link in full (:func:`held_lines`); each message held</span>
+<span class="sd">    in the outbox (liaise #38), with when it sends and how to cancel it, shown the same way;</span>
+<span class="sd">    and its</span>
 <span class="sd">    ``entries`` latest ledger entries, oldest first, a line each with its detail and the</span>
 <span class="sd">    start of its text. Reads only. Raises ``ValueError`` for a case the ledger ``store``</span>
 <span class="sd">    does not hold.</span>
@@ -1000,6 +1002,19 @@ window.runMermaid = runMermaid;</script>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'reason'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="n">lines</span> <span class="o">+=</span> <span class="n">held_lines</span><span class="p">(</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">),</span> <span class="n">gate</span><span class="o">=</span><span class="n">draft</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"gate"</span><span class="p">))</span>
+    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"held in the outbox: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">outbox</span><span class="p">):</span>
+        <span class="n">claimed</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">", release claimed at </span><span class="si">{</span><span class="n">item</span><span class="p">[</span><span class="s1">'claimed_at'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+            <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"claimed_at"</span><span class="p">)</span>
+            <span class="k">else</span> <span class="s2">""</span>
+        <span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"  [</span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2">: sends at "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'release_at'</span><span class="p">)</span><span class="si">}</span><span class="s2"> unless cancelled (liaise case cancel-send "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">)</span><span class="si">{</span><span class="n">claimed</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+        <span class="n">lines</span> <span class="o">+=</span> <span class="n">held_lines</span><span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">),</span> <span class="n">gate</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"gate"</span><span class="p">))</span>
     <span class="n">shown</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">[</span><span class="o">-</span><span class="n">entries</span><span class="p">:]</span> <span class="k">if</span> <span class="n">entries</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">()</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"latest entries: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">shown</span><span class="p">)</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">entries</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">entry_line</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">shown</span><span class="p">]</span>

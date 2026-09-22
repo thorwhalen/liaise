@@ -97,7 +97,7 @@ order. The design’s `delivered` is `deployed` here.
 
   liaise
 
-### *class* liaise.model.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), defer_until=None)
+### *class* liaise.model.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None)
 
 Bases: `_Record`
 
@@ -107,7 +107,9 @@ One piece of work on a subject, from its first message to its delivery.
 (`github:example/app#12`) whose messages belong to it; `reporter` is the
 person who opened it; `state` is one of [`CASE_STATES`](#liaise.model.CASE_STATES). `entries` is the
 append-only history and `drafts` the outbound messages diverted to the operator.
-`defer_until`, when set, is the earliest time the case may be dispatched again
+`outbox` holds the messages the gate gave `delay`: each waits, cancellable, until
+its `release_at`, when the tick judges it again and sends it (liaise #38; see
+[`liaise.outbox`](liaise.outbox.html.md#module-liaise.outbox)). `defer_until`, when set, is the earliest time the case may be dispatched again
 (after a quota reset, a rate limit, or a busy workspace).
 
 #### with_entry(entry)

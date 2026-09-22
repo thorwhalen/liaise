@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-09-16T05:00:31Z",
+  "built_at": "2026-09-22T13:22:57Z",
   "package": {
     "name": "liaise",
-    "version": "0.1.6",
+    "version": "0.1.7",
     "display_name": "liaise",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "14e88042fce9eae5e241e3b092de204927131f22",
-    "short_commit": "14e8804",
+    "commit": "b982a603f016c0b420f1ec7a0a992d7af894e6ef",
+    "short_commit": "b982a60",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/liaise",
-    "commit_url": "https://github.com/thorwhalen/liaise/commit/14e88042fce9eae5e241e3b092de204927131f22",
+    "commit_url": "https://github.com/thorwhalen/liaise/commit/b982a603f016c0b420f1ec7a0a992d7af894e6ef",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/liaise",
-    "sha": "14e88042fce9eae5e241e3b092de204927131f22",
+    "sha": "b982a603f016c0b420f1ec7a0a992d7af894e6ef",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "35057681135",
-    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/35057681135",
+    "run_id": "35732855867",
+    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/35732855867",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -55,21 +55,21 @@
     "docs_dir": "docsrc"
   },
   "site": {
-    "modules_documented": 27,
-    "objects_documented": 726
+    "modules_documented": 28,
+    "objects_documented": 756
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.7",
+    "latest": "0.1.8",
     "relation": "behind",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout 14e88042fce9eae5e241e3b092de204927131f22\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout b982a603f016c0b420f1ec7a0a992d7af894e6ef\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": false,
     "notes": [
-      "The documented version (0.1.6) is behind the latest release on PyPI (0.1.7): `pip install liaise` gives newer code than these docs describe."
+      "The documented version (0.1.7) is behind the latest release on PyPI (0.1.8): `pip install liaise` gives newer code than these docs describe."
     ]
   }
 }

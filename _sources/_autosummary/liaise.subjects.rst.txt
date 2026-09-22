@@ -9,6 +9,9 @@ liaise.subjects
    .. autosummary::
    
       TAINTED_RUNS
+      DFLT_DELAY_MINUTES
+      RECOMMENDED_DELAY_MINUTES
+      DFLT_DELAY_STALE_MINUTES
       DFLT_SUBJECTS_SUBDIR
       REPLY_MODES
       DELIVERY_KINDS

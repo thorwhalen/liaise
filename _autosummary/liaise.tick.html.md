@@ -297,7 +297,7 @@ to the owner, who is told once: a deleted or transferred issue never reads again
 
 The actor of the entries the tick writes.
 
-### *class* liaise.tick.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False)
+### *class* liaise.tick.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False, held=())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -305,7 +305,8 @@ What one [`run_once()`](#liaise.tick.run_once) did or, in a dry run, would do.
 
 `plan_lines` has a line per step, event, case and decision, for `--dry-run` to
 print. `dispatched` and `collected` are run ids, `sent` the messages as they went
-out (mention added), `diverted` those that stayed with the operator as drafts.
+out (mention added), `diverted` those that stayed with the operator as drafts, and
+`held` those the tick put in a case’s outbox (liaise #38).
 
 ### liaise.tick.Triage
 
@@ -410,7 +411,8 @@ What `liaise status` prints: what the ledger in `store` says, read only.
 The run stamps (`running`, `interrupted` or `finished`, the lock checked in
 `state_dir`), the holds, the runs in flight with their heartbeat age, each subject’s
 cases by state and dispatches today, the unrouted queue (its size and the `recent`
-latest), the drafts waiting for the operator, and the `recent` latest digest notes.
+latest), the drafts waiting for the operator, the messages held in the outbox, and the
+`recent` latest digest notes.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]

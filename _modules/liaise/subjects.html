@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -777,6 +777,17 @@ window.runMermaid = runMermaid;</script>
 <span class="c1">#: the operator for any audience wider than them) or ``send`` (the subject waives that).</span>
 <span class="n">TAINTED_RUNS</span> <span class="o">=</span> <span class="p">(</span><span class="n">TAINTED_RUNS_APPROVE</span><span class="p">,</span> <span class="n">TAINTED_RUNS_SEND</span><span class="p">)</span>
 
+<span class="c1">#: Minutes a ``delay`` verdict holds a message in the outbox before the tick sends it</span>
+<span class="c1">#: (``policy.delay_minutes``; liaise #38); 0 sends it at once. Unset by default: the outbox</span>
+<span class="c1">#: sends without a person, so a subject turns it on explicitly, and until then a ``delay``</span>
+<span class="c1">#: waits for the operator as a draft, as it did before the outbox existed.</span>
+<span class="n">DFLT_DELAY_MINUTES</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="c1">#: The window a subject that turns the outbox on is advised to use (liaise ADR 0003).</span>
+<span class="n">RECOMMENDED_DELAY_MINUTES</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="c1">#: Minutes past its release after which a held message goes to the operator instead of out</span>
+<span class="c1">#: (``policy.delay_stale_minutes``): nobody watched the window it relied on. 0 never lapses.</span>
+<span class="n">DFLT_DELAY_STALE_MINUTES</span> <span class="o">=</span> <span class="mi">24</span> <span class="o">*</span> <span class="mi">60</span>
+
 <span class="c1">#: Subject files live in this directory under the config root.</span>
 <span class="n">DFLT_SUBJECTS_SUBDIR</span> <span class="o">=</span> <span class="s2">"subjects"</span>
 <span class="c1">#: `direct` posts replies to the conversation; `draft` holds them for the operator.</span>
@@ -894,21 +905,27 @@ window.runMermaid = runMermaid;</script>
 <span class="k">class</span><span class="w"> </span><span class="nc">Policy</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Who is who on a subject, what each may do, and how liaise answers them.</span>
 
-<span class="sd">    ``people`` maps a channel address (``github:pat``) to a person id and ``roles`` a</span>
-<span class="sd">    person to a role. ``permissions`` maps a role to the permissions it grants, and</span>
-<span class="sd">    ``grades`` a permission to the authenticity grades it accepts. ``relays`` are</span>
-<span class="sd">    authors whose ``claim_labels`` (routing label to person) count as claims. See</span>
-<span class="sd">    :mod:`liaise.access`. ``waiting_labels`` (person to label) is the mirror of</span>
-<span class="sd">    ``claim_labels``: a label liaise writes on a case's issues while the case waits on that</span>
-<span class="sd">    person, where a claim label is one it reads (see :mod:`liaise.projection`).</span>
+<span class="sd">        ``people`` maps a channel address (``github:pat``) to a person id and ``roles`` a</span>
+<span class="sd">        person to a role. ``permissions`` maps a role to the permissions it grants, and</span>
+<span class="sd">        ``grades`` a permission to the authenticity grades it accepts. ``relays`` are</span>
+<span class="sd">        authors whose ``claim_labels`` (routing label to person) count as claims. See</span>
+<span class="sd">        :mod:`liaise.access`. ``waiting_labels`` (person to label) is the mirror of</span>
+<span class="sd">        ``claim_labels``: a label liaise writes on a case's issues while the case waits on that</span>
+<span class="sd">        person, where a claim label is one it reads (see :mod:`liaise.projection`).</span>
 
-<span class="sd">    The outbound gate's policy (liaise ADR 0002) reads four more: ``tainted_runs``</span>
-<span class="sd">    (``approve``, or ``send`` to waive the taint rule), ``link_allowlist`` (hosts a link</span>
-<span class="sd">    may point at besides the channel's own), ``canary_terms`` (terms planted in private</span>
-<span class="sd">    context, never to be sent) and ``mode`` (``enforce``, or ``shadow``, recorded on every</span>
-<span class="sd">    verdict and enforced alike until shadow mode lands). ``leak_terms`` are scanned for as</span>
-<span class="sd">    a label no reader is cleared for; ``public_channels`` is still read, and decides</span>
-<span class="sd">    nothing: the audience correspond computes does. Both go after one release.</span>
+<span class="sd">        The outbound gate's policy (liaise ADR 0002) reads four more: ``tainted_runs``</span>
+<span class="sd">        (``approve``, or ``send`` to waive the taint rule), ``link_allowlist`` (hosts a link</span>
+<span class="sd">        may point at besides the channel's own), ``canary_terms`` (terms planted in private</span>
+<span class="sd">        context, never to be sent) and ``mode`` (``enforce``, or ``shadow``, recorded on every</span>
+<span class="sd">        verdict and enforced alike until shadow mode lands). ``delay_minutes`` turns the delay</span>
+<span class="sd">    outbox on (liaise #38): how long a ``delay`` verdict (an irreversible send to an</span>
+<span class="sd">    organisation-wide or public place) waits, cancellable, before the tick sends it; 0 sends</span>
+<span class="sd">    it at once, and None (the default) keeps it for the operator as a draft. A held</span>
+<span class="sd">    message the tick reaches more than ``delay_stale_minutes`` after its release goes to the</span>
+<span class="sd">    operator as a draft instead (0: never).</span>
+<span class="sd">    ``leak_terms`` are scanned for as</span>
+<span class="sd">        a label no reader is cleared for; ``public_channels`` is still read, and decides</span>
+<span class="sd">        nothing: the audience correspond computes does. Both go after one release.</span>
 <span class="sd">    """</span>
 
     <span class="n">people</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
@@ -938,7 +955,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">tainted_runs</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">TAINTED_RUNS_APPROVE</span>
     <span class="n">link_allowlist</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
     <span class="n">canary_terms</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ENFORCE</span></div>
+    <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">ENFORCE</span>
+    <span class="n">delay_minutes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_DELAY_MINUTES</span>
+    <span class="n">delay_stale_minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DFLT_DELAY_STALE_MINUTES</span></div>
 
 
 
@@ -1494,6 +1513,24 @@ window.runMermaid = runMermaid;</script>
             <span class="sa">f</span><span class="s2">"got </span><span class="si">{</span><span class="n">deployed_nudge_days</span><span class="si">!r}</span><span class="s2">."</span>
         <span class="p">)</span>
 
+    <span class="k">def</span><span class="w"> </span><span class="nf">minutes</span><span class="p">(</span><span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">example</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: policy.</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> must be a whole number of minutes, 0 or more, "</span>
+                <span class="sa">f</span><span class="s2">"as in </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">example</span><span class="si">}</span><span class="s2">; got </span><span class="si">{</span><span class="n">value</span><span class="si">!r}</span><span class="s2">."</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">value</span>
+
+    <span class="n">delay_minutes</span> <span class="o">=</span> <span class="n">minutes</span><span class="p">(</span>
+        <span class="s2">"delay_minutes"</span><span class="p">,</span> <span class="n">DFLT_DELAY_MINUTES</span><span class="p">,</span> <span class="n">RECOMMENDED_DELAY_MINUTES</span>
+    <span class="p">)</span>
+    <span class="n">delay_stale_minutes</span> <span class="o">=</span> <span class="n">minutes</span><span class="p">(</span>
+        <span class="s2">"delay_stale_minutes"</span><span class="p">,</span> <span class="n">DFLT_DELAY_STALE_MINUTES</span><span class="p">,</span> <span class="n">DFLT_DELAY_STALE_MINUTES</span>
+    <span class="p">)</span>
+
     <span class="k">return</span> <span class="n">Policy</span><span class="p">(</span>
         <span class="n">people</span><span class="o">=</span><span class="n">people</span><span class="p">,</span>
         <span class="n">roles</span><span class="o">=</span><span class="n">roles</span><span class="p">,</span>
@@ -1551,6 +1588,8 @@ window.runMermaid = runMermaid;</script>
             <span class="n">raw</span><span class="p">,</span> <span class="s2">"canary_terms"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy.canary_terms"</span>
         <span class="p">),</span>
         <span class="n">mode</span><span class="o">=</span><span class="n">_choice</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mode"</span><span class="p">,</span> <span class="n">ENFORCE</span><span class="p">),</span> <span class="n">MODES</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy.mode"</span><span class="p">),</span>
+        <span class="n">delay_minutes</span><span class="o">=</span><span class="n">delay_minutes</span><span class="p">,</span>
+        <span class="n">delay_stale_minutes</span><span class="o">=</span><span class="n">delay_stale_minutes</span><span class="p">,</span>
     <span class="p">)</span>
 
 

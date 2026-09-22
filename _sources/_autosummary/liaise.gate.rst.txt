@@ -11,6 +11,7 @@ liaise.gate
       OUTSIDE_A_CASE
       MENTION_CHANNEL
       DELAY_HELD
+      OUTBOX_ACTOR
       GATE_CONCERN
       MAX_WRAPPED_FILTERS
       OutboundFilter
@@ -24,6 +25,7 @@ liaise.gate
       binds
       deslop
       filter_name
+      hold_for
       notify_recipient
       outbound_policy
       outside_a_case

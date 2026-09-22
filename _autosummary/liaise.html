@@ -10,6 +10,8 @@
 
 <link rel="alternate" type="text/markdown" href="liaise.html.md">
 <link rel="describedby" href="../llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="liaise.html.md">
+<link rel="describedby" href="llms.txt">
     <title>liaise &#8212; liaise</title>
   
   
@@ -42,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=6e0256f3"></script>
+    <script src="../_static/documentation_options.js?v=ca7ad2ea"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -55,7 +57,7 @@
     <link rel="prev" title="API reference" href="../api.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.6" />
+  <meta name="docsearch:version" content="0.1.7" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -331,6 +333,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outbound.html">liaise.outbound</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.outbox.html">liaise.outbox</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.outcomes.html">liaise.outcomes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.policy.html">liaise.policy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.processor.html">liaise.processor</a></li>
@@ -605,14 +608,16 @@ recorded with the send.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.Case">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drafts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defer_until</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Case" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">Case</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conversations</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reporter</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updated_at</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drafts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defer_until</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/model.html#Case"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.Case" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Record</span></code></p>
 <p>One piece of work on a subject, from its first message to its delivery.</p>
 <p><code class="docutils literal notranslate"><span class="pre">id</span></code> is <code class="docutils literal notranslate"><span class="pre">&lt;subject&gt;-&lt;n&gt;</span></code>. <code class="docutils literal notranslate"><span class="pre">conversations</span></code> are the encoded refs
 (<code class="docutils literal notranslate"><span class="pre">github:example/app#12</span></code>) whose messages belong to it; <code class="docutils literal notranslate"><span class="pre">reporter</span></code> is the
 person who opened it; <code class="docutils literal notranslate"><span class="pre">state</span></code> is one of <code class="xref py py-data docutils literal notranslate"><span class="pre">CASE_STATES</span></code>. <code class="docutils literal notranslate"><span class="pre">entries</span></code> is the
 append-only history and <code class="docutils literal notranslate"><span class="pre">drafts</span></code> the outbound messages diverted to the operator.
-<code class="docutils literal notranslate"><span class="pre">defer_until</span></code>, when set, is the earliest time the case may be dispatched again
+<code class="docutils literal notranslate"><span class="pre">outbox</span></code> holds the messages the gate gave <code class="docutils literal notranslate"><span class="pre">delay</span></code>: each waits, cancellable, until
+its <code class="docutils literal notranslate"><span class="pre">release_at</span></code>, when the tick judges it again and sends it (liaise #38; see
+<a class="reference internal" href="liaise.outbox.html#module-liaise.outbox" title="liaise.outbox"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.outbox</span></code></a>). <code class="docutils literal notranslate"><span class="pre">defer_until</span></code>, when set, is the earliest time the case may be dispatched again
 (after a quota reset, a rate limit, or a busy workspace).</p>
 <dl class="field-list simple">
 </dl>
@@ -1764,12 +1769,13 @@ GitHub mention is never handed a web-inbox user id.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.TickReport">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">TickReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plan_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispatched</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problems</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#TickReport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.TickReport" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.</span></span><span class="sig-name descname"><span class="pre">TickReport</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">plan_lines</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dispatched</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">collected</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problems</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">held</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#TickReport"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.TickReport" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What one <a class="reference internal" href="#liaise.run_once" title="liaise.run_once"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_once()</span></code></a> did or, in a dry run, would do.</p>
 <p><code class="docutils literal notranslate"><span class="pre">plan_lines</span></code> has a line per step, event, case and decision, for <code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> to
 print. <code class="docutils literal notranslate"><span class="pre">dispatched</span></code> and <code class="docutils literal notranslate"><span class="pre">collected</span></code> are run ids, <code class="docutils literal notranslate"><span class="pre">sent</span></code> the messages as they went
-out (mention added), <code class="docutils literal notranslate"><span class="pre">diverted</span></code> those that stayed with the operator as drafts.</p>
+out (mention added), <code class="docutils literal notranslate"><span class="pre">diverted</span></code> those that stayed with the operator as drafts, and
+<code class="docutils literal notranslate"><span class="pre">held</span></code> those the tick put in a case’s outbox (liaise #38).</p>
 <dl class="field-list simple">
 </dl>
 </dd></dl>
@@ -2127,7 +2133,8 @@ it) and stamps its start and end in <code class="docutils literal notranslate"><
 <p>The run stamps (<code class="docutils literal notranslate"><span class="pre">running</span></code>, <code class="docutils literal notranslate"><span class="pre">interrupted</span></code> or <code class="docutils literal notranslate"><span class="pre">finished</span></code>, the lock checked in
 <code class="docutils literal notranslate"><span class="pre">state_dir</span></code>), the holds, the runs in flight with their heartbeat age, each subject’s
 cases by state and dispatches today, the unrouted queue (its size and the <code class="docutils literal notranslate"><span class="pre">recent</span></code>
-latest), the drafts waiting for the operator, and the <code class="docutils literal notranslate"><span class="pre">recent</span></code> latest digest notes.</p>
+latest), the drafts waiting for the operator, the messages held in the outbox, and the
+<code class="docutils literal notranslate"><span class="pre">recent</span></code> latest digest notes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
@@ -2192,40 +2199,43 @@ latest), the drafts waiting for the operator, and the <code class="docutils lite
 <tr class="row-even"><td><p><a class="reference internal" href="liaise.outbound.html#module-liaise.outbound" title="liaise.outbound"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outbound</span></code></a></p></td>
 <td><p>What the outbound gate's policy filter gathers before the policy decides.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.outcomes.html#module-liaise.outcomes" title="liaise.outcomes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outcomes</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.outbox.html#module-liaise.outbox" title="liaise.outbox"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outbox</span></code></a></p></td>
+<td><p>The delay outbox: messages the gate gave <code class="docutils literal notranslate"><span class="pre">delay</span></code>, held for a cancellable window (liaise #38).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.outcomes.html#module-liaise.outcomes" title="liaise.outcomes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">outcomes</span></code></a></p></td>
 <td><p>Outcomes: what a processor run reports, checked, then planned into actions.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.policy.html#module-liaise.policy" title="liaise.policy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">policy</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.policy.html#module-liaise.policy" title="liaise.policy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">policy</span></code></a></p></td>
 <td><p>Policy and verdict for outbound messages: from findings and an audience to a flow.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.processor.html#module-liaise.processor" title="liaise.processor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">processor</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.processor.html#module-liaise.processor" title="liaise.processor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">processor</span></code></a></p></td>
 <td><p>Processors (design §3.6): what runs a case's work, detached, and how that run ended.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.projection.html#module-liaise.projection" title="liaise.projection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">projection</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.projection.html#module-liaise.projection" title="liaise.projection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">projection</span></code></a></p></td>
 <td><p>Label projection: a case's state, shown on each of its GitHub issues as one label.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.prompt.html#module-liaise.prompt" title="liaise.prompt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prompt</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.prompt.html#module-liaise.prompt" title="liaise.prompt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prompt</span></code></a></p></td>
 <td><p>The prompt composer: the whole prompt a processor run on one case starts from.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.readiness.html#module-liaise.readiness" title="liaise.readiness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readiness</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.readiness.html#module-liaise.readiness" title="liaise.readiness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readiness</span></code></a></p></td>
 <td><p>Readiness: whether a case is ready to dispatch, read off its own ledger entries.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.release.html#module-liaise.release" title="liaise.release"><code class="xref py py-obj docutils literal notranslate"><span class="pre">release</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.release.html#module-liaise.release" title="liaise.release"><code class="xref py py-obj docutils literal notranslate"><span class="pre">release</span></code></a></p></td>
 <td><p>Releasing a message: through the gate, then through correspond, as one step.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.schedule.html#module-liaise.schedule" title="liaise.schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.schedule.html#module-liaise.schedule" title="liaise.schedule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule</span></code></a></p></td>
 <td><p>Scheduling <code class="code docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">run</span> <span class="pre">--once</span></code> (A.7): a launchd agent on macOS, a systemd user timer on Linux.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.subjects.html#module-liaise.subjects" title="liaise.subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subjects</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.subjects.html#module-liaise.subjects" title="liaise.subjects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subjects</span></code></a></p></td>
 <td><p>Subjects: the bodies of work liaise runs, each loaded from <code class="docutils literal notranslate"><span class="pre">subjects/&lt;slug&gt;.toml</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.testing.html#module-liaise.testing" title="liaise.testing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">testing</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.testing.html#module-liaise.testing" title="liaise.testing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">testing</span></code></a></p></td>
 <td><p>Fakes shipped with liaise: for its tests, and for the one-command smoke test.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="liaise.tick.html#module-liaise.tick" title="liaise.tick"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tick</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="liaise.tick.html#module-liaise.tick" title="liaise.tick"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tick</span></code></a></p></td>
 <td><p>The tick: one pass of liaise 0.1's loop (design §3.1).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="liaise.workspace.html#module-liaise.workspace" title="liaise.workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">workspace</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="liaise.workspace.html#module-liaise.workspace" title="liaise.workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">workspace</span></code></a></p></td>
 <td><p>The checkout a subject's runs share: one run at a time, and never beside a live session.</p></td>
 </tr>
 </tbody>

@@ -83,6 +83,7 @@
    migrate
    model
    outbound
+   outbox
    outcomes
    policy
    processor
