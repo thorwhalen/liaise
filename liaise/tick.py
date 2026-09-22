@@ -165,6 +165,7 @@ from liaise.outbox import (
     INTERRUPTED,
     ISSUE_CLOSED_EVENT,
     ISSUE_CLOSED_REASON,
+    held_id,
     held_message,
     held_provenance,
     hold_of,
@@ -928,8 +929,8 @@ def status_lines(
         outbox, key=lambda pair: str(pair[1].get("release_at"))
     ):
         lines.append(
-            f"  {case_id} {item.get('outcome')} to {item.get('ref')}: sends at "
-            f"{item.get('release_at')} unless cancelled"
+            f"  {case_id} {held_id(item)} {item.get('outcome')} to {item.get('ref')}: "
+            f"sends at {item.get('release_at')} unless cancelled"
         )
 
     heading = "messages outside a case held for the operator"
@@ -1751,6 +1752,7 @@ class _Tick:
         }
         if released is not None:
             detail["released_from"] = {
+                "held_id": held_id(released),
                 "at": released.get("at"),
                 "release_at": released.get("release_at"),
             }
@@ -1873,8 +1875,10 @@ class _Tick:
             delay=timedelta(minutes=minutes),
             seen=self.planned_at.get(case.id, len(case.entries)),
             provenance=provenance,
+            serial=len(case.entries),
         )
         index = len(case.outbox)
+        ident = held_id(item)
         self._save(replace(case, outbox=(*case.outbox, item)))
         self._entry(
             case.id,
@@ -1885,13 +1889,14 @@ class _Tick:
                 "decision": HOLD,
                 "release_at": item["release_at"],
                 "outbox": index,
+                "held_id": ident,
             },
         )
         self.held.append(send)
         self.say(
-            f"  gate {send.purpose} to {send.ref}: held in the outbox until "
+            f"  gate {send.purpose} to {send.ref}: held in the outbox as {ident} until "
             f"{item['release_at']} ({decision.flow}); liaise case cancel-send "
-            f"{case.id} {index} takes it off"
+            f"{case.id} {ident} takes it off"
         )
         if minutes == 0:
             return self._release_one(subject, case.id, item)
@@ -2036,6 +2041,7 @@ class _Tick:
                 "purpose": item.get("outcome"),
                 "ref": item.get("ref"),
                 "outbox": index,
+                "held_id": held_id(item),
                 "release_at": item.get("release_at"),
             },
         )
