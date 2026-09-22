@@ -262,29 +262,52 @@ def hook_overrides(
     """What the Claude Code hook asked about and the operator let run (:mod:`liaise.hook`).
 
     ``overrides`` counts them, ``unread`` the writes among them the hook could not read and
-    so never vetted, and ``rules`` how often each rule was among the reasons. They are kept
+    so never vetted (with ``subject``, 0: an unread write names no subject), and ``rules``
+    how often each rule was among the reasons of the writes to ``subject``. Records of an
+    unexpected shape are skipped. They are kept
     apart from the gate's own counts and rates: liaise neither held nor sent these writes,
     and on the hook's path every write is tainted, so folding them into a rule's precision
     would measure the hook's path, not the rule.
     """
+    start = _moment(since)
     rules: Counter = Counter()
     overrides = unread = 0
     for record in ledger.overrides():
-        writes = [w for w in record.get("writes") or () if isinstance(w, Mapping)]
-        if subject is not None and not any(w.get("subject") == subject for w in writes):
-            continue
+        if not isinstance(record, Mapping):
+            continue  # an odd entry is skipped, never a crash
+        given = record.get("writes")
+        writes = [
+            w
+            for w in (given if isinstance(given, (list, tuple)) else ())
+            if isinstance(w, Mapping)
+        ]
+        if subject is not None:
+            writes = [w for w in writes if w.get("subject") == subject]
+            if not writes:
+                continue
         try:
             at = _moment(record.get("ran_at") or record.get("at"))
-        except ValueError:  # a record with no readable time counts only without --since
+        except (
+            ValueError,
+            TypeError,
+        ):  # no readable time: counted only without --since
             at = None
-        if since is not None and (at is None or at < since):
+        if start is not None and (at is None or at < start):
             continue
         overrides += 1
-        unread += int(record.get("unread") or 0)
-        for rule in {
-            _rule_name(rule) for w in writes for rule in w.get("rules") or () if rule
-        }:
-            rules[rule] += 1
+        count = record.get("unread")
+        if subject is None and isinstance(count, int) and not isinstance(count, bool):
+            unread += max(0, count)  # an unread write names no subject
+        names = set()
+        for write in writes:
+            listed = write.get("rules")
+            if isinstance(listed, (list, tuple)):
+                names.update(
+                    _rule_name(rule)
+                    for rule in listed
+                    if isinstance(rule, str) and rule
+                )
+        rules.update(names)
     return {
         "overrides": overrides,
         "unread": unread,
