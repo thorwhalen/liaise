@@ -64,6 +64,17 @@ from liaise.policy import ENFORCE, MODES, TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEN
 #: the operator for any audience wider than them) or ``send`` (the subject waives that).
 TAINTED_RUNS = (TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEND)
 
+#: Minutes a ``delay`` verdict holds a message in the outbox before the tick sends it
+#: (``policy.delay_minutes``; liaise #38); 0 sends it at once. Unset by default: the outbox
+#: sends without a person, so a subject turns it on explicitly, and until then a ``delay``
+#: waits for the operator as a draft, as it did before the outbox existed.
+DFLT_DELAY_MINUTES = None
+#: The window a subject that turns the outbox on is advised to use (liaise ADR 0003).
+RECOMMENDED_DELAY_MINUTES = 10
+#: Minutes past its release after which a held message goes to the operator instead of out
+#: (``policy.delay_stale_minutes``): nobody watched the window it relied on. 0 never lapses.
+DFLT_DELAY_STALE_MINUTES = 24 * 60
+
 #: Subject files live in this directory under the config root.
 DFLT_SUBJECTS_SUBDIR = "subjects"
 #: `direct` posts replies to the conversation; `draft` holds them for the operator.
@@ -164,21 +175,27 @@ class ProcessorConfig:
 class Policy:
     """Who is who on a subject, what each may do, and how liaise answers them.
 
-    ``people`` maps a channel address (``github:pat``) to a person id and ``roles`` a
-    person to a role. ``permissions`` maps a role to the permissions it grants, and
-    ``grades`` a permission to the authenticity grades it accepts. ``relays`` are
-    authors whose ``claim_labels`` (routing label to person) count as claims. See
-    :mod:`liaise.access`. ``waiting_labels`` (person to label) is the mirror of
-    ``claim_labels``: a label liaise writes on a case's issues while the case waits on that
-    person, where a claim label is one it reads (see :mod:`liaise.projection`).
+        ``people`` maps a channel address (``github:pat``) to a person id and ``roles`` a
+        person to a role. ``permissions`` maps a role to the permissions it grants, and
+        ``grades`` a permission to the authenticity grades it accepts. ``relays`` are
+        authors whose ``claim_labels`` (routing label to person) count as claims. See
+        :mod:`liaise.access`. ``waiting_labels`` (person to label) is the mirror of
+        ``claim_labels``: a label liaise writes on a case's issues while the case waits on that
+        person, where a claim label is one it reads (see :mod:`liaise.projection`).
 
-    The outbound gate's policy (liaise ADR 0002) reads four more: ``tainted_runs``
-    (``approve``, or ``send`` to waive the taint rule), ``link_allowlist`` (hosts a link
-    may point at besides the channel's own), ``canary_terms`` (terms planted in private
-    context, never to be sent) and ``mode`` (``enforce``, or ``shadow``, recorded on every
-    verdict and enforced alike until shadow mode lands). ``leak_terms`` are scanned for as
-    a label no reader is cleared for; ``public_channels`` is still read, and decides
-    nothing: the audience correspond computes does. Both go after one release.
+        The outbound gate's policy (liaise ADR 0002) reads four more: ``tainted_runs``
+        (``approve``, or ``send`` to waive the taint rule), ``link_allowlist`` (hosts a link
+        may point at besides the channel's own), ``canary_terms`` (terms planted in private
+        context, never to be sent) and ``mode`` (``enforce``, or ``shadow``, recorded on every
+        verdict and enforced alike until shadow mode lands). ``delay_minutes`` turns the delay
+    outbox on (liaise #38): how long a ``delay`` verdict (an irreversible send to an
+    organisation-wide or public place) waits, cancellable, before the tick sends it; 0 sends
+    it at once, and None (the default) keeps it for the operator as a draft. A held
+    message the tick reaches more than ``delay_stale_minutes`` after its release goes to the
+    operator as a draft instead (0: never).
+    ``leak_terms`` are scanned for as
+        a label no reader is cleared for; ``public_channels`` is still read, and decides
+        nothing: the audience correspond computes does. Both go after one release.
     """
 
     people: Mapping[str, str]
@@ -209,6 +226,8 @@ class Policy:
     link_allowlist: tuple[str, ...] = ()
     canary_terms: tuple[str, ...] = ()
     mode: str = ENFORCE
+    delay_minutes: Optional[int] = DFLT_DELAY_MINUTES
+    delay_stale_minutes: int = DFLT_DELAY_STALE_MINUTES
 
 
 #: Each person's waiting label when a subject sets ``policy.waiting_labels = true``.
@@ -718,6 +737,24 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
             f"got {deployed_nudge_days!r}."
         )
 
+    def minutes(key: str, default: Optional[int], example: int) -> Optional[int]:
+        value = raw.get(key, default)
+        if value is None:
+            return None
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ConfigError(
+                f"{path}: policy.{key} must be a whole number of minutes, 0 or more, "
+                f"as in {key} = {example}; got {value!r}."
+            )
+        return value
+
+    delay_minutes = minutes(
+        "delay_minutes", DFLT_DELAY_MINUTES, RECOMMENDED_DELAY_MINUTES
+    )
+    delay_stale_minutes = minutes(
+        "delay_stale_minutes", DFLT_DELAY_STALE_MINUTES, DFLT_DELAY_STALE_MINUTES
+    )
+
     return Policy(
         people=people,
         roles=roles,
@@ -775,6 +812,8 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
             raw, "canary_terms", path=path, dotted="policy.canary_terms"
         ),
         mode=_choice(raw.get("mode", ENFORCE), MODES, path=path, dotted="policy.mode"),
+        delay_minutes=delay_minutes,
+        delay_stale_minutes=delay_stale_minutes,
     )
 
 

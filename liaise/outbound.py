@@ -444,6 +444,7 @@ def judge(
         reply_mode=subject.reply_mode_for(outbound.recipient),
         tainted_runs=subject.policy.tainted_runs,
         mode=mode or subject.policy.mode,
+        outbox=True,  # liaise #38: the tick holds a delay in the outbox (liaise.outbox)
     )
     verdict = evaluate(
         outbound,

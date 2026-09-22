@@ -25,8 +25,9 @@ the message must be held back: its ``flow``, one of :data:`liaise.policy.FLOWS`
 (``approve`` when it does not say). Each divert is one or more :class:`Concern` records,
 the policy's one per rule that fired. The decision's flow is the most restrictive concern
 still standing, and its reasons are all of them, most restrictive first. A message goes out
-only when that flow is ``send``: ``delay`` waits for the operator until the delay outbox
-exists (liaise #38). A filter that raises, or answers anything but a ``Pass`` or a
+only when that flow is ``send``: the gate diverts a ``delay`` too, and the tick holds it in
+the case's outbox for a cancellable window (liaise #38, :mod:`liaise.outbox`), then judges
+it again with :func:`hold_for`'s approval on the context, which settles the delay alone. A filter that raises, or answers anything but a ``Pass`` or a
 ``Divert``, contributes an ``approve`` concern with the error as its reason. The order stays
 fixed and is not a seam: the mention, the one rewrite, comes last, so every filter judges
 the text as it was written, and the rewrite reaches a send only when nothing held it back.
@@ -91,10 +92,14 @@ OUTSIDE_A_CASE = "a message outside a case"
 CASELESS_REASON = f"{OUTSIDE_A_CASE} waits for the operator"
 #: The channel whose messages must @mention their recipient to reach them.
 MENTION_CHANNEL = "github"
-#: What a decision held back as ``delay`` says, until the outbox (liaise #38) exists.
+#: What a decision held back as ``delay`` says: only the tick's outbox sends it, and only on
+#: a subject that turned it on (``policy.delay_minutes``, liaise #38).
 DELAY_HELD = (
-    "a delay is held for the operator until the delay outbox exists (liaise #38)"
+    "an irreversible send waits for the operator, or in the outbox where the subject "
+    "sets policy.delay_minutes (liaise #38)"
 )
+#: Who a message held in the outbox is released by: the outbox, never a person.
+OUTBOX_ACTOR = "liaise-outbox"
 #: The name the gate files its own concerns under: a void approval, a message it cannot hash.
 GATE_CONCERN = "gate"
 #: How far :func:`filter_name` unwraps a filter to find the name of the check it runs.
@@ -332,6 +337,39 @@ def approval_for(
         verdict_id=None if decision.verdict is None else verdict_id(decision.verdict),
         justification=justification.strip(),
         rules_overridden=decision.overridable,
+    )
+
+
+def hold_for(decision: GateDecision, *, at: datetime, release_at: datetime) -> Approval:
+    """The outbox's release of the message ``decision`` held back as ``delay`` (liaise #38).
+
+    An :class:`~liaise.model.Approval` by :data:`OUTBOX_ACTOR`, bound as an operator's is
+    to the decision's hashes and to what its verdict flagged, that overrides only the rules
+    of its ``delay`` concerns. At release the tick puts it on the context and the gate runs
+    again: while the message, its audience and its verdict are what they were, it settles
+    the delay and the message goes out; anything that changed voids it, and the message
+    becomes a draft with the new verdict. It never settles an ``approve`` concern, so a
+    held message cannot pass anything a person must see.
+
+    Raises ``ValueError`` for a decision whose flow is not ``delay``, or that has no hashes.
+    """
+    if decision.flow != DELAY:
+        raise ValueError(
+            f"only a delay is held in the outbox; this decision is {decision.flow!r}"
+        )
+    if decision.payload_hash is None or decision.audience_hash is None:
+        raise ValueError("a decision with no hashes cannot be held: it binds nothing")
+    rules = tuple(
+        dict.fromkeys(c.rule for c in decision.concerns if c.flow == DELAY and c.rule)
+    )
+    return Approval(
+        by=OUTBOX_ACTOR,
+        at=at,
+        payload_hash=decision.payload_hash,
+        audience_hash=decision.audience_hash,
+        verdict_id=None if decision.verdict is None else verdict_id(decision.verdict),
+        justification=f"held until {release_at.isoformat()}, not cancelled",
+        rules_overridden=rules,
     )
 
 

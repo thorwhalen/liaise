@@ -11,6 +11,7 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
     liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
     liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
+    liaise case cancel-send CASE_ID [INDEX] [--reason TEXT] [--dry-run]
     liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
         [--purpose PURPOSE] [--dry-run]
     liaise message list [--state STATE]
@@ -57,7 +58,7 @@ from typing import Any, NamedTuple, Optional
 
 import cw
 
-from liaise import cases, holds, messages, migrate
+from liaise import cases, holds, messages, migrate, outbox
 from liaise.access import Resolver
 from liaise.config import (
     DFLT_CONFIG_ROOT,
@@ -908,6 +909,54 @@ def case_reject_draft(
     )
 
 
+@_expected_errors(ConfigError, ValueError)
+def case_cancel_send(
+    case_id: str,
+    *index: int,
+    reason: str = "",
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+) -> str:
+    """Take CASE_ID's message INDEX, or its only one, out of the delay outbox, unsent.
+
+    A send to a public or organisation-wide place waits in the outbox for
+    ``policy.delay_minutes`` before the tick sends it (liaise #38); this is how you stop it.
+    Your cancellation is recorded on the case with ``--reason`` and the message's text.
+    The case's state stays as it is. It holds the run lock, so it never races a tick's
+    release. ``--dry-run`` changes nothing.
+    """
+    global_config = load_global_config(_root(root))
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    ledger = Ledger(ChainMap({}, ledger_store) if dry_run else ledger_store)
+    with ExitStack() as between_ticks:
+        if not dry_run:
+            _hold_run_lock(between_ticks, global_config, case_id, done="changed")
+        cancelled = outbox.cancel_send(
+            ledger,
+            case_id,
+            index=_one_index(case_id, index),
+            reason=reason,
+            now=now,
+            dry_run=dry_run,
+        )
+    item = cancelled.item
+    verb = "would cancel" if dry_run else "cancelled"
+    claimed = item.get("claimed_at")
+    fate = (
+        f"its release was interrupted at {claimed}, so it may have gone out: check "
+        f"{item.get('ref')}"
+        if claimed
+        else "nothing was sent"
+    )
+    return (
+        f"{verb} held message [{cancelled.index}] of {case_id} ({item.get('outcome')} "
+        f"to {item.get('ref')}, due at {item.get('release_at')}): {fate}\n"
+        f"{case_id} stays {cancelled.case.state}"
+    )
+
+
 # ---- messages outside a case ----
 
 
@@ -1191,6 +1240,7 @@ _dispatch_funcs = {
         "set-state": case_set_state,
         "send-draft": case_send_draft,
         "reject-draft": case_reject_draft,
+        "cancel-send": case_cancel_send,
     },
     "message": {
         "send": message_send,
@@ -1233,6 +1283,7 @@ _SEAMS = {
         "set-state": ("store", "now"),
         "send-draft": ("registry", "store", "now", "editor", "confirm"),
         "reject-draft": ("store", "now"),
+        "cancel-send": ("store", "now"),
     },
     "message": {
         "send": ("registry", "store", "now", "notify_fn"),
@@ -1263,6 +1314,7 @@ _ARGUMENTS = {
     "case": {
         "send-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "reject-draft": {"index": {"type": int, "metavar": "INDEX"}},
+        "cancel-send": {"index": {"type": int, "metavar": "INDEX"}},
     }
 }
 

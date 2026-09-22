@@ -49,6 +49,7 @@ NOTICE_START_REFUSED = "start refused"
 NOTICE_DAILY_CAP = "daily cap reached"
 NOTICE_ISSUE_UNREADABLE = "issue state unreadable"
 NOTICE_MESSAGE_HELD = "message outside a case held"
+NOTICE_SEND_DELAYED = "message held in the outbox"
 NOTICE_EVENTS = (
     NOTICE_ESCALATION,
     NOTICE_NO_CHANNEL,
@@ -64,6 +65,7 @@ NOTICE_EVENTS = (
     NOTICE_DAILY_CAP,
     NOTICE_ISSUE_UNREADABLE,
     NOTICE_MESSAGE_HELD,
+    NOTICE_SEND_DELAYED,
 )
 #: Each event's notification title, in :func:`notice_title`'s fields: ``{cases}`` (the case
 #: ids, else the subject's slug), ``{subject}`` (the slug) and, for an error alone,
@@ -84,6 +86,7 @@ NOTICE_TITLES = MappingProxyType(
         NOTICE_DAILY_CAP: "liaise: {subject} reached its daily cap",
         NOTICE_ISSUE_UNREADABLE: "liaise: {cases}'s issue cannot be read",
         NOTICE_MESSAGE_HELD: "liaise: a message on {subject} waits for you",
+        NOTICE_SEND_DELAYED: "liaise: a message for {cases} is held before it sends",
     }
 )
 #: Where a notification points the operator for what it leaves out: each case it names,
