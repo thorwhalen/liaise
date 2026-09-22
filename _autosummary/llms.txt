@@ -33,6 +33,7 @@
 - [liaise.subjects](liaise.subjects.html.md): Subjects: the bodies of work liaise runs, each loaded from &#96;subjects/&lt;slug&gt;.toml&#96;.
 - [liaise.testing](liaise.testing.html.md): Fakes shipped with liaise: for its tests, and for the one-command smoke test.
 - [liaise.tick](liaise.tick.html.md): The tick: one pass of liaise 0.1’s loop (design §3.1).
+- [liaise.vet](liaise.vet.html.md): Vetting a draft outside any case: the gate’s verdict, and nothing sent (discussion 32, §5.8).
 - [liaise.workspace](liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 
 ## Optional

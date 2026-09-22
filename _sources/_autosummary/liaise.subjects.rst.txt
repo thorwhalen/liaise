@@ -21,6 +21,7 @@ liaise.subjects
       REF_WILDCARDS
       CASE_INSENSITIVE_REF_CHANNELS
       DFLT_WAITING_LABEL
+      UNBOUND_SLUG
    
    .. rubric:: Functions
 
@@ -34,6 +35,7 @@ liaise.subjects
       poll_ref
       ref_key
       subject_for_ref
+      unbound_subject
    
    .. rubric:: Classes
 
@@ -46,4 +48,10 @@ liaise.subjects
       ReadinessPolicy
       Subject
       Workspace
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      NoSubjectBinding
    

@@ -1,0 +1,24 @@
+liaise.vet
+==========
+
+.. automodule:: liaise.vet
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      VET_FILTERS
+      EXIT_CODES
+      VET_PURPOSE
+      UNKNOWN_PROVENANCE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      before_send
+      immediate_route
+      verdict_record
+      vet
+   

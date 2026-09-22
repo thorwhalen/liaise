@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=1e825a29"></script>
+    <script src="../../_static/documentation_options.js?v=297ad043"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.11" />
+  <meta name="docsearch:version" content="0.1.12" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -1040,6 +1040,13 @@ window.runMermaid = runMermaid;</script>
 <span class="n">_ISSUE_SEPARATOR</span> <span class="o">=</span> <span class="s2">"#"</span>
 
 
+<div class="viewcode-block" id="NoSubjectBinding">
+<a class="viewcode-back" href="../../_autosummary/liaise.subjects.html#liaise.NoSubjectBinding">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NoSubjectBinding</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""No subject's bindings take in a reference (see :func:`subject_for_ref`)."""</span></div>
+
+
+
 <div class="viewcode-block" id="subject_for_ref">
 <a class="viewcode-back" href="../../_autosummary/liaise.subjects.html#liaise.subject_for_ref">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">subject_for_ref</span><span class="p">(</span><span class="n">subjects</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">],</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Subject</span><span class="p">:</span>
@@ -1061,8 +1068,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &gt;&gt;&gt; subject_for_ref({"heron": heron}, "github:Example/Heron#12").slug</span>
 <span class="sd">    'heron'</span>
 
-<span class="sd">    Raises ``ValueError`` naming the subjects there are when none takes ``ref`` in, and</span>
-<span class="sd">    naming each when several name it equally closely.</span>
+<span class="sd">    Raises :class:`NoSubjectBinding` (a ``ValueError``) naming the subjects there are when</span>
+<span class="sd">    none takes ``ref`` in, and ``ValueError`` naming each when several name it equally</span>
+<span class="sd">    closely.</span>
 <span class="sd">    """</span>
     <span class="n">key</span> <span class="o">=</span> <span class="n">ref_key</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
     <span class="n">closeness</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -1082,7 +1090,7 @@ window.runMermaid = runMermaid;</script>
             <span class="n">closeness</span><span class="p">[</span><span class="n">slug</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">closeness</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">slug</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">score</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">closeness</span><span class="p">:</span>
         <span class="n">known</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">subjects</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">"(none)"</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="k">raise</span> <span class="n">NoSubjectBinding</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"no subject binds </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">, so there is no policy to judge a message to it by "</span>
             <span class="sa">f</span><span class="s2">"(the subjects are: </span><span class="si">{</span><span class="n">known</span><span class="si">}</span><span class="s2">); bind it in a subject's file first"</span>
         <span class="p">)</span>
@@ -1190,6 +1198,28 @@ window.runMermaid = runMermaid;</script>
             <span class="n">permission</span><span class="p">,</span> <span class="p">()</span>
         <span class="p">)</span></div>
 </div>
+
+
+
+<span class="c1">#: The slug of :func:`unbound_subject`.</span>
+<span class="n">UNBOUND_SLUG</span> <span class="o">=</span> <span class="s2">"(unbound)"</span>
+
+
+<div class="viewcode-block" id="unbound_subject">
+<a class="viewcode-back" href="../../_autosummary/liaise.subjects.html#liaise.unbound_subject">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">unbound_subject</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Subject</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The subject a reference no subject binds is judged under, where one must be (``liaise vet``).</span>
+
+<span class="sd">    It is what a subject file with nothing but ``[policy]``, ``people = {}`` and</span>
+<span class="sd">    ``roles = {}`` loads to: nobody known, ``direct`` reply mode, the taint rule in force,</span>
+<span class="sd">    ``enforce`` mode. It binds nothing and is inert, so nothing ever polls it.</span>
+
+<span class="sd">    &gt;&gt;&gt; subject = unbound_subject()</span>
+<span class="sd">    &gt;&gt;&gt; subject.slug, subject.bindings, subject.policy.tainted_runs, subject.active</span>
+<span class="sd">    ('(unbound)', (), 'approve', False)</span>
+<span class="sd">    """</span>
+    <span class="n">policy</span> <span class="o">=</span> <span class="n">_policy_from</span><span class="p">({</span><span class="s2">"people"</span><span class="p">:</span> <span class="p">{},</span> <span class="s2">"roles"</span><span class="p">:</span> <span class="p">{}},</span> <span class="n">path</span><span class="o">=</span><span class="n">Path</span><span class="p">(</span><span class="n">UNBOUND_SLUG</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">Subject</span><span class="p">(</span><span class="n">UNBOUND_SLUG</span><span class="p">,</span> <span class="p">(),</span> <span class="n">policy</span><span class="p">,</span> <span class="n">active</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
 
 
 

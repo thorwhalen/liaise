@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=1e825a29"></script>
+    <script src="../../_static/documentation_options.js?v=297ad043"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.11" />
+  <meta name="docsearch:version" content="0.1.12" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -731,6 +731,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    liaise message show MESSAGE_ID</span>
 <span class="sd">    liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]</span>
 <span class="sd">    liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]</span>
+<span class="sd">    liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]</span>
+<span class="sd">        [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]</span>
 <span class="sd">    liaise subject list</span>
 <span class="sd">    liaise subject show SLUG</span>
 <span class="sd">    liaise setup SUBJECT</span>
@@ -2088,6 +2090,99 @@ window.runMermaid = runMermaid;</script>
 <span class="c1"># ---- the gate ----</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_vet_lines</span><span class="p">(</span><span class="n">found</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""``liaise vet``'s answer in words: the verdict, the audience, the readers, the reasons."""</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">found</span><span class="p">[</span><span class="s1">'route'</span><span class="p">]</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">found</span><span class="p">[</span><span class="s1">'flow'</span><span class="p">]</span><span class="si">}</span><span class="s2">) for </span><span class="si">{</span><span class="n">found</span><span class="p">[</span><span class="s1">'ref'</span><span class="p">]</span><span class="si">}</span><span class="s2"> "</span>
+        <span class="sa">f</span><span class="s2">"(subject </span><span class="si">{</span><span class="n">found</span><span class="p">[</span><span class="s1">'subject'</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
+        <span class="sa">f</span><span class="s2">"  audience: </span><span class="si">{</span><span class="n">found</span><span class="p">[</span><span class="s1">'audience'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="k">for</span> <span class="n">person</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[</span><span class="s2">"readers"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">tier</span><span class="p">,</span> <span class="n">clearance</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tier"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">NONE_SHOWN</span><span class="p">,</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"clearance"</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"  reader </span><span class="si">{</span><span class="n">person</span><span class="si">}</span><span class="s2">: tier </span><span class="si">{</span><span class="n">tier</span><span class="si">}</span><span class="s2">, cleared to </span><span class="si">{</span><span class="n">clearance</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="n">NONE_SHOWN</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+    <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  reason: </span><span class="si">{</span><span class="n">visible</span><span class="p">(</span><span class="n">reason</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">reason</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[</span><span class="s2">"reasons"</span><span class="p">]]</span>
+    <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  note: </span><span class="si">{</span><span class="n">visible</span><span class="p">(</span><span class="n">note</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">note</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[</span><span class="s2">"notes"</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">lines</span>
+
+
+<div class="viewcode-block" id="vet">
+<a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.vet">[docs]</a>
+<span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">vet</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">to</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">cc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">bcc</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">project</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+    <span class="n">text_file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">STDIN_FILE_NAME</span><span class="p">,</span>
+    <span class="n">tainted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">untainted</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">json</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">disclosure</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers. Sends nothing.</span>
+
+<span class="sd">    The draft is ``--text``, or ``--text-file`` (standard input by default). ``--to`` names</span>
+<span class="sd">    the person (or people) it is for, ``--cc`` and ``--bcc`` further readers, and</span>
+<span class="sd">    ``--project`` the project it is about. What its author read is unknown, which counts as</span>
+<span class="sd">    tainted, unless ``--untainted`` (nothing untrusted) or ``--tainted`` says. ``--json``</span>
+<span class="sd">    prints the verdict record. ``--to``, ``--cc`` and ``--bcc`` may be repeated. The exit</span>
+<span class="sd">    code is the route of a write made at once: 0 send, 2 draft-to-operator (a ``delay``</span>
+<span class="sd">    too), 3 block (1: the draft could not be vetted). It records nothing.</span>
+<span class="sd">    """</span>
+    <span class="kn">import</span><span class="w"> </span><span class="nn">json</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">json_module</span>
+
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise</span><span class="w"> </span><span class="kn">import</span> <span class="n">vet</span> <span class="k">as</span> <span class="n">vetting</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">outbound_policy</span>
+
+    <span class="k">if</span> <span class="n">tainted</span> <span class="ow">and</span> <span class="n">untainted</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"give at most one of --tainted and --untainted"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ref</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"vet needs --ref, the conversation the draft goes to, such as "</span>
+            <span class="s2">"github:example/app#12"</span>
+        <span class="p">)</span>
+    <span class="n">body</span> <span class="o">=</span> <span class="n">_message_text</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">text</span> <span class="k">else</span> <span class="n">text_file</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">body</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"there is no draft to vet: the text is empty"</span><span class="p">)</span>
+    <span class="n">filters</span> <span class="o">=</span> <span class="n">vetting</span><span class="o">.</span><span class="n">VET_FILTERS</span>
+    <span class="k">if</span> <span class="n">disclosure</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">policy</span> <span class="o">=</span> <span class="n">functools</span><span class="o">.</span><span class="n">partial</span><span class="p">(</span><span class="n">outbound_policy</span><span class="p">,</span> <span class="n">disclosure</span><span class="o">=</span><span class="n">disclosure</span><span class="p">)</span>
+        <span class="n">filters</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">policy</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="n">outbound_policy</span> <span class="k">else</span> <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">filters</span><span class="p">)</span>
+    <span class="n">found</span> <span class="o">=</span> <span class="n">vetting</span><span class="o">.</span><span class="n">vet</span><span class="p">(</span>
+        <span class="n">body</span><span class="p">,</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+        <span class="n">to</span><span class="o">=</span><span class="n">to</span> <span class="ow">or</span> <span class="p">(),</span>
+        <span class="n">cc</span><span class="o">=</span><span class="n">cc</span> <span class="ow">or</span> <span class="p">(),</span>
+        <span class="n">bcc</span><span class="o">=</span><span class="n">bcc</span> <span class="ow">or</span> <span class="p">(),</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">project</span><span class="o">=</span><span class="n">project</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">tainted</span><span class="o">=</span><span class="kc">True</span> <span class="k">if</span> <span class="n">tainted</span> <span class="k">else</span> <span class="p">(</span><span class="kc">False</span> <span class="k">if</span> <span class="n">untainted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">),</span>
+        <span class="n">root</span><span class="o">=</span><span class="n">_root</span><span class="p">(</span><span class="n">root</span><span class="p">),</span>
+        <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
+        <span class="n">outbound_filters</span><span class="o">=</span><span class="n">filters</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">shown</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">json_module</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">found</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">json</span>
+        <span class="k">else</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_vet_lines</span><span class="p">(</span><span class="n">found</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">found</span><span class="p">[</span><span class="s2">"exit_code"</span><span class="p">]:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">shown</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="n">found</span><span class="p">[</span><span class="s2">"exit_code"</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">shown</span></div>
+
+
+
 <div class="viewcode-block" id="gate_report">
 <a class="viewcode-back" href="../../_autosummary/liaise.cli.html#liaise.cli.gate_report">[docs]</a>
 <span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
@@ -2147,6 +2242,7 @@ window.runMermaid = runMermaid;</script>
     <span class="p">},</span>
     <span class="s2">"subject"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"list"</span><span class="p">:</span> <span class="n">subject_list</span><span class="p">,</span> <span class="s2">"show"</span><span class="p">:</span> <span class="n">subject_show</span><span class="p">},</span>
     <span class="s2">"gate"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"report"</span><span class="p">:</span> <span class="n">gate_report</span><span class="p">},</span>
+    <span class="s2">"vet"</span><span class="p">:</span> <span class="n">vet</span><span class="p">,</span>
     <span class="s2">"setup"</span><span class="p">:</span> <span class="n">setup</span><span class="p">,</span>
     <span class="s2">"migrate-config"</span><span class="p">:</span> <span class="n">migrate_config</span><span class="p">,</span>
     <span class="s2">"schedule"</span><span class="p">:</span> <span class="p">{</span>
@@ -2191,6 +2287,7 @@ window.runMermaid = runMermaid;</script>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">),</span>
     <span class="p">},</span>
     <span class="s2">"gate"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"report"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"store"</span><span class="p">,)},</span>
+    <span class="s2">"vet"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"registry"</span><span class="p">,</span> <span class="s2">"now"</span><span class="p">,</span> <span class="s2">"disclosure"</span><span class="p">),</span>
     <span class="s2">"setup"</span><span class="p">:</span> <span class="p">(</span><span class="s2">"labeler"</span><span class="p">,),</span>
 <span class="p">}</span>
 
@@ -2209,12 +2306,14 @@ window.runMermaid = runMermaid;</script>
 
 <span class="c1">#: What a command's arguments need beyond their signature, nested as :data:`_SEAMS` is: a</span>
 <span class="c1">#: draft's INDEX is a number (see :func:`_one_index`).</span>
+<span class="n">_READERS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"action"</span><span class="p">:</span> <span class="s2">"extend"</span><span class="p">,</span> <span class="s2">"nargs"</span><span class="p">:</span> <span class="s2">"+"</span><span class="p">}</span>  <span class="c1"># --to a --to b, or --to a b: both kept</span>
 <span class="n">_ARGUMENTS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"vet"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"to"</span><span class="p">:</span> <span class="n">_READERS</span><span class="p">,</span> <span class="s2">"cc"</span><span class="p">:</span> <span class="n">_READERS</span><span class="p">,</span> <span class="s2">"bcc"</span><span class="p">:</span> <span class="n">_READERS</span><span class="p">},</span>
     <span class="s2">"case"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"index"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"metavar"</span><span class="p">:</span> <span class="s2">"INDEX"</span><span class="p">}},</span>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"index"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"metavar"</span><span class="p">:</span> <span class="s2">"INDEX"</span><span class="p">}},</span>
         <span class="s2">"cancel-send"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"index"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"metavar"</span><span class="p">:</span> <span class="s2">"ID|INDEX"</span><span class="p">}},</span>
-    <span class="p">}</span>
+    <span class="p">},</span>
 <span class="p">}</span>
 
 

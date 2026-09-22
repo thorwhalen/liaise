@@ -2,20 +2,18 @@
 
 # About this build
 
-This documentation was built on **2026-09-22 14:33 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/ff7c39af7a82bd0cd41479cbd846b40e9cd462d0"><code>ff7c39a</code></a> on branch <code>main</code>, for **liaise 0.1.11** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-22 16:45 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/6fd028b537ef693dfc34b15a2b46719852091dcb"><code>6fd028b</code></a> on branch <code>main</code>, for **liaise 0.1.12** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.11) is behind the latest release on PyPI (0.1.12): `pip install liaise` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/ff7c39af7a82bd0cd41479cbd846b40e9cd462d0"><code>ff7c39af7a82bd0cd41479cbd846b40e9cd462d0</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/6fd028b537ef693dfc34b15a2b46719852091dcb"><code>6fd028b537ef693dfc34b15a2b46719852091dcb</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
-| Tags at this commit | <code>0.1.11</code>                                                                                                                                      |
+| Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
 | Remote              | <code>https://github.com/thorwhalen/liaise</code>                                                                                                        |
 
@@ -24,9 +22,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35740807249">35740807249</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35755924010">35755924010</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>c4bbaf12eca562b8acbd5bc7976b99d1f2ad6643</code> (in the history of the built commit) |
+| Event commit | <code>6fd028b537ef693dfc34b15a2b46719852091dcb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -51,13 +49,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.12/">0.1.12</a>, newer than the documented version (0.1.11).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.12/">0.1.12</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout ff7c39af7a82bd0cd41479cbd846b40e9cd462d0
+git checkout 6fd028b537ef693dfc34b15a2b46719852091dcb
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

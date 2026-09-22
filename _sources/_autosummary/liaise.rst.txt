@@ -96,4 +96,5 @@
    subjects
    testing
    tick
+   vet
    workspace

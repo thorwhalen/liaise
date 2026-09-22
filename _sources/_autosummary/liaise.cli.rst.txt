@@ -52,4 +52,5 @@ liaise.cli
       subject_list
       subject_show
       unhold
+      vet
    

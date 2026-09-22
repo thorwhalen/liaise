@@ -21,6 +21,8 @@ liaise message list [--state STATE]
 liaise message show MESSAGE_ID
 liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]
 liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
+liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]
+    [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
 liaise subject list
 liaise subject show SLUG
 liaise setup SUBJECT
@@ -88,6 +90,7 @@ traceback.
 | [`subject_list`](#liaise.cli.subject_list)(\*[, root])                            | Every configured subject with its bindings, flagging an inactive one and any binding that could never match. |
 | [`subject_show`](#liaise.cli.subject_show)(slug, \*[, root])                      | The subject SLUG as liaise reads it, every default applied, and its binding problems.                        |
 | [`unhold`](#liaise.cli.unhold)(scope, \*[, root, store])                    | Lift the hold on SCOPE, whoever set it.                                                                      |
+| [`vet`](#liaise.cli.vet)(\*[, ref, to, cc, bcc, project, title, ...])    | Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers.                |
 
 ### liaise.cli.ALREADY_POSTED *= 'an earlier attempt had already posted it, so it was not posted again'*
 
@@ -467,6 +470,21 @@ The subject SLUG as liaise reads it, every default applied, and its binding prob
 ### liaise.cli.unhold(scope, , root=None, store=None)
 
 Lift the hold on SCOPE, whoever set it.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.vet(, ref='', to=None, cc=None, bcc=None, project='', title='', text='', text_file='-', tainted=False, untainted=False, json=False, root=None, registry=None, now=None, disclosure=None)
+
+Vet a draft for REF outside any case: the gate’s verdict, the audience in words, the readers. Sends nothing.
+
+The draft is `--text`, or `--text-file` (standard input by default). `--to` names
+the person (or people) it is for, `--cc` and `--bcc` further readers, and
+`--project` the project it is about. What its author read is unknown, which counts as
+tainted, unless `--untainted` (nothing untrusted) or `--tainted` says. `--json`
+prints the verdict record. `--to`, `--cc` and `--bcc` may be repeated. The exit
+code is the route of a write made at once: 0 send, 2 draft-to-operator (a `delay`
+too), 3 block (1: the draft could not be vetted). It records nothing.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

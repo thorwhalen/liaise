@@ -1315,4 +1315,5 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`subjects`](liaise.subjects.html.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.                                   |
 | [`testing`](liaise.testing.html.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                                        |
 | [`tick`](liaise.tick.html.md#module-liaise.tick)             | The tick: one pass of liaise 0.1's loop (design §3.1).                                                               |
+| [`vet`](liaise.vet.html.md#module-liaise.vet)               | Vetting a draft outside any case: the gate's verdict, and nothing sent (discussion 32, §5.8).                        |
 | [`workspace`](liaise.workspace.html.md#module-liaise.workspace)   | The checkout a subject's runs share: one run at a time, and never beside a live session.                             |

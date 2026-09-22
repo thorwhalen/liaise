@@ -1,4 +1,4 @@
-> built 2026-09-22 14:33 UTC from ff7c39a (main) · liaise 0.1.11. Details: build_info.json
+> built 2026-09-22 16:45 UTC from 6fd028b (main) · liaise 0.1.12. Details: build_info.json
 
 # index.html.md
 
@@ -756,6 +756,8 @@ liaise message list [--state STATE]
 liaise message show MESSAGE_ID
 liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]
 liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
+liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]
+    [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
 liaise subject list
 liaise subject show SLUG
 liaise setup SUBJECT
@@ -823,6 +825,7 @@ traceback.
 | [`subject_list`](_autosummary/liaise.cli.html.md#liaise.cli.subject_list)(\*[, root])                            | Every configured subject with its bindings, flagging an inactive one and any binding that could never match. |
 | [`subject_show`](_autosummary/liaise.cli.html.md#liaise.cli.subject_show)(slug, \*[, root])                      | The subject SLUG as liaise reads it, every default applied, and its binding problems.                        |
 | [`unhold`](_autosummary/liaise.cli.html.md#liaise.cli.unhold)(scope, \*[, root, store])                    | Lift the hold on SCOPE, whoever set it.                                                                      |
+| [`vet`](_autosummary/liaise.cli.html.md#liaise.cli.vet)(\*[, ref, to, cc, bcc, project, title, ...])    | Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers.                |
 
 ### liaise.cli.ALREADY_POSTED *= 'an earlier attempt had already posted it, so it was not posted again'*
 
@@ -1202,6 +1205,21 @@ The subject SLUG as liaise reads it, every default applied, and its binding prob
 ### liaise.cli.unhold(scope, , root=None, store=None)
 
 Lift the hold on SCOPE, whoever set it.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.vet(, ref='', to=None, cc=None, bcc=None, project='', title='', text='', text_file='-', tainted=False, untainted=False, json=False, root=None, registry=None, now=None, disclosure=None)
+
+Vet a draft for REF outside any case: the gate’s verdict, the audience in words, the readers. Sends nothing.
+
+The draft is `--text`, or `--text-file` (standard input by default). `--to` names
+the person (or people) it is for, `--cc` and `--bcc` further readers, and
+`--project` the project it is about. What its author read is unknown, which counts as
+tainted, unless `--untainted` (nothing untrusted) or `--tainted` says. `--json`
+prints the verdict record. `--to`, `--cc` and `--bcc` may be repeated. The exit
+code is the route of a write made at once: 0 send, 2 draft-to-operator (a `delay`
+too), 3 block (1: the draft could not be vetted). It records nothing.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -4346,6 +4364,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`subjects`](_autosummary/liaise.subjects.html.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.                                   |
 | [`testing`](_autosummary/liaise.testing.html.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                                        |
 | [`tick`](_autosummary/liaise.tick.html.md#module-liaise.tick)             | The tick: one pass of liaise 0.1's loop (design §3.1).                                                               |
+| [`vet`](_autosummary/liaise.vet.html.md#module-liaise.vet)               | Vetting a draft outside any case: the gate's verdict, and nothing sent (discussion 32, §5.8).                        |
 | [`workspace`](_autosummary/liaise.workspace.html.md#module-liaise.workspace)   | The checkout a subject's runs share: one run at a time, and never beside a live session.                             |
 
 
@@ -8024,6 +8043,7 @@ roles = { pat = "partner" }
 | [`REF_WILDCARDS`](_autosummary/liaise.subjects.html.md#liaise.subjects.REF_WILDCARDS)                 | What makes a binding's conversation part a glob, which v0.1 cannot poll ("?" starts a binding's conditions, so it never gets that far).                            |
 | [`CASE_INSENSITIVE_REF_CHANNELS`](_autosummary/liaise.subjects.html.md#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS) | Channels whose conversation references ignore case, so their bindings load lower-cased (see [`normalize_binding()`](_autosummary/liaise.subjects.html.md#liaise.subjects.normalize_binding)). |
 | [`DFLT_WAITING_LABEL`](_autosummary/liaise.subjects.html.md#liaise.subjects.DFLT_WAITING_LABEL)            | Each person's waiting label when a subject sets `policy.waiting_labels = true`.                                                                                    |
+| [`UNBOUND_SLUG`](_autosummary/liaise.subjects.html.md#liaise.subjects.UNBOUND_SLUG)                  | The slug of [`unbound_subject()`](_autosummary/liaise.subjects.html.md#liaise.subjects.unbound_subject).                                                                                    |
 
 ### Functions
 
@@ -8036,6 +8056,7 @@ roles = { pat = "partner" }
 | [`poll_ref`](_autosummary/liaise.subjects.html.md#liaise.subjects.poll_ref)(binding)                       | The conversation `binding` is polled on, or None when v0.1 cannot poll it.                                                   |
 | [`ref_key`](_autosummary/liaise.subjects.html.md#liaise.subjects.ref_key)(ref)                            | How two polled conversations compare: without regard to case, as their cursors do.                                           |
 | [`subject_for_ref`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref)(subjects, ref)          | The subject whose bindings take in `ref`, the conversation a message outside a case goes to.                                 |
+| [`unbound_subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.unbound_subject)()                       | The subject a reference no subject binds is judged under, where one must be (`liaise vet`).                                  |
 
 ### Classes
 
@@ -8047,6 +8068,11 @@ roles = { pat = "partner" }
 | [`ReadinessPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](_autosummary/liaise.readiness.html.md#module-liaise.readiness)). |
 | [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                            |
 | [`Workspace`](_autosummary/liaise.subjects.html.md#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                             |
+
+### Exceptions
+
+| [`NoSubjectBinding`](_autosummary/liaise.subjects.html.md#liaise.subjects.NoSubjectBinding)   | No subject's bindings take in a reference (see [`subject_for_ref()`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref)).   |
+|---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
 
 ### *class* liaise.subjects.BudgetPolicy(concurrent=1, timeout_minutes=60, max_turns=200, daily_dispatches=6)
 
@@ -8105,6 +8131,12 @@ succeeded. `pr_only` stops at a pull request and runs nothing.
 ### liaise.subjects.GRADES *= ('forged', 'claimed', 'platform', 'domain', 'bound', 'crypto')*
 
 Authenticity grades, weakest first, as correspond names them.
+
+### *exception* liaise.subjects.NoSubjectBinding
+
+Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueError)
+
+No subject’s bindings take in a reference (see [`subject_for_ref()`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref)).
 
 ### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>, tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce', delay_minutes=None, delay_stale_minutes=1440)
 
@@ -8253,6 +8285,10 @@ the operator for any audience wider than them) or `send` (the subject waives tha
 * **Type:**
   What `policy.tainted_runs` may say
 
+### liaise.subjects.UNBOUND_SLUG *= '(unbound)'*
+
+The slug of [`unbound_subject()`](_autosummary/liaise.subjects.html.md#liaise.subjects.unbound_subject).
+
 ### liaise.subjects.WORKSPACE_KINDS *= ('shared',)*
 
 Where a run works. v0.1 has one checkout, shared by the subject’s runs.
@@ -8390,8 +8426,26 @@ message by, so a message goes only where its subject binds.
 'heron'
 ```
 
-Raises `ValueError` naming the subjects there are when none takes `ref` in, and
-naming each when several name it equally closely.
+Raises [`NoSubjectBinding`](_autosummary/liaise.subjects.html.md#liaise.subjects.NoSubjectBinding) (a `ValueError`) naming the subjects there are when
+none takes `ref` in, and `ValueError` naming each when several name it equally
+closely.
+
+### liaise.subjects.unbound_subject()
+
+The subject a reference no subject binds is judged under, where one must be (`liaise vet`).
+
+It is what a subject file with nothing but `[policy]`, `people = {}` and
+`roles = {}` loads to: nobody known, `direct` reply mode, the taint rule in force,
+`enforce` mode. It binds nothing and is inert, so nothing ever polls it.
+
+* **Return type:**
+  [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)
+
+```pycon
+>>> subject = unbound_subject()
+>>> subject.slug, subject.bindings, subject.policy.tainted_runs, subject.active
+('(unbound)', (), 'approve', False)
+```
 
 
 # _autosummary/liaise.testing.html.md
@@ -9043,6 +9097,153 @@ latest), the drafts waiting for the operator, the messages held in the outbox, a
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
+# _autosummary/liaise.vet.html.md
+
+# liaise.vet
+
+Vetting a draft outside any case: the gate’s verdict, and nothing sent (discussion 32, §5.8).
+
+[`vet()`](_autosummary/liaise.vet.html.md#liaise.vet.vet) puts a draft through the same gate every message liaise sends passes
+([`liaise.gate.run_gate()`](_autosummary/liaise.gate.html.md#liaise.gate.run_gate)), with a case-less context (liaise #28), and returns the
+verdict as a JSON-ready record: the flow, the route, the reasons, the audience in words and
+the tiers consulted. It sends nothing and records nothing, so it is safe to run at any time
+and to expose over MCP later. `liaise vet` prints it, with the exit code
+[`EXIT_CODES`](_autosummary/liaise.vet.html.md#liaise.vet.EXIT_CODES) gives the route: 0 send, 2 draft-to-operator, 3 block.
+Whoever vets a draft then posts it themselves, at once, so the exit code is the route of
+an immediate write ([`immediate_route()`](_autosummary/liaise.vet.html.md#liaise.vet.immediate_route)): a `delay` exits 2.
+
+**The same gate, less what does not apply.** Discussion 32 rejects a separate gate for
+`vet` (§11). [`VET_FILTERS`](_autosummary/liaise.vet.html.md#liaise.vet.VET_FILTERS) are [`DFLT_OUTBOUND_FILTERS`](_autosummary/liaise.gate.html.md#liaise.gate.DFLT_OUTBOUND_FILTERS) in their
+order, less two whose job is liaise’s own sending: [`outside_a_case()`](_autosummary/liaise.gate.html.md#liaise.gate.outside_a_case)
+holds every message liaise itself would send outside a case for the operator (its sender
+chose the readers), and [`notify_recipient()`](_autosummary/liaise.gate.html.md#liaise.gate.notify_recipient) adds the `@mention` liaise
+needs to reach someone on GitHub. Here the sender is whoever asks, and liaise sends
+nothing; the hold on a sender-chosen destination is the taint rule’s job, since the
+provenance of a vetted draft is unknown unless the caller says otherwise (decision 10).
+`outbound_filters=` takes another tuple.
+
+**The subject** is the one whose bindings take the reference in
+([`liaise.subjects.subject_for_ref()`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref)); when none does, [`unbound_subject()`](_autosummary/liaise.subjects.html.md#liaise.subjects.unbound_subject), whose
+policy has every default: nobody known, the taint rule in force, `direct` reply mode.
+
+**Where nothing can be held.** A `delay` routes to `send` in liaise’s own sending
+(discussion §5.5), because its outbox holds it. `liaise vet`’s exit code,
+[`before_send()`](_autosummary/liaise.vet.html.md#liaise.vet.before_send) (correspond’s check) and the Claude Code hook stand in front of a write
+that happens at once, with no outbox, so for them a `delay` degrades to
+draft-to-operator, as §5.5 degrades it where the outbox does not exist:
+[`immediate_route()`](_autosummary/liaise.vet.html.md#liaise.vet.immediate_route).
+
+### Module Attributes
+
+| [`VET_FILTERS`](_autosummary/liaise.vet.html.md#liaise.vet.VET_FILTERS)        | every one, in order, but the two that presuppose liaise as the sender (see the module docstring).   |
+|---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
+| [`EXIT_CODES`](_autosummary/liaise.vet.html.md#liaise.vet.EXIT_CODES)         | The exit code of `liaise vet` for each route.                                                       |
+| [`VET_PURPOSE`](_autosummary/liaise.vet.html.md#liaise.vet.VET_PURPOSE)        | the writing card and deslop read it.                                                                |
+| [`UNKNOWN_PROVENANCE`](_autosummary/liaise.vet.html.md#liaise.vet.UNKNOWN_PROVENANCE) | Why a vetted draft counts as tainted when the caller did not say (decision 10).                     |
+
+### Functions
+
+| [`before_send`](_autosummary/liaise.vet.html.md#liaise.vet.before_send)(ref, draft, audience, \*\*context)   | correspond's `before_send` check: [`vet()`](_autosummary/liaise.vet.html.md#liaise.vet.vet), raising `Refused` or `NeedsApproval`.     |
+|---------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| [`immediate_route`](_autosummary/liaise.vet.html.md#liaise.vet.immediate_route)(flow)                            | The route of `flow` for a write that happens at once: a `delay` is draft-to-operator.                                               |
+| [`verdict_record`](_autosummary/liaise.vet.html.md#liaise.vet.verdict_record)(decision, \*, subject, ref)       | What `vet` answers about `decision`: JSON-ready, and never the text or a value found.                                               |
+| [`vet`](_autosummary/liaise.vet.html.md#liaise.vet.vet)(text, \*, ref[, to, cc, bcc, title, ...])    | The gate's verdict on `text` sent to `ref` for `to`, as [`verdict_record()`](_autosummary/liaise.vet.html.md#liaise.vet.verdict_record) gives it. |
+
+### liaise.vet.EXIT_CODES *: [Mapping](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [int](https://docs.python.org/3/builtins/functions.html#int)]* *= {'block': 3, 'draft': 2, 'send': 0}*
+
+The exit code of `liaise vet` for each route.
+
+### liaise.vet.UNKNOWN_PROVENANCE *= 'nobody said what the author of this draft read (--untainted says it read nothing untrusted)'*
+
+Why a vetted draft counts as tainted when the caller did not say (decision 10).
+
+### liaise.vet.VET_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound), [GateContext](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)], [Pass](_autosummary/liaise.gate.html.md#liaise.gate.Pass) | [Divert](_autosummary/liaise.gate.html.md#liaise.gate.Divert)], ...]* *= (<function outbound_policy>, <function writing_card>, <function deslop>)*
+
+every one, in order, but the two that presuppose
+liaise as the sender (see the module docstring). Derived by exclusion, so a filter added
+to the gate reaches `vet` too.
+
+* **Type:**
+  The gate’s filters as `vet` runs them
+
+### liaise.vet.VET_PURPOSE *= 'reply'*
+
+the writing card and deslop read it.
+
+* **Type:**
+  The purpose a vetted draft is judged for
+
+### liaise.vet.before_send(ref, draft, audience, \*\*context)
+
+correspond’s `before_send` check: [`vet()`](_autosummary/liaise.vet.html.md#liaise.vet.vet), raising `Refused` or `NeedsApproval`.
+
+Set it once in correspond’s config:
+
+```default
+before_send = "liaise.vet:before_send"
+```
+
+`ref` is correspond’s conversation reference, `draft` its draft (its text, title and
+copies are vetted) and `audience` the audience correspond computed, which the gate
+judges as given. The subject is the one binding the reference, else
+[`unbound_subject()`](_autosummary/liaise.subjects.html.md#liaise.subjects.unbound_subject), and the provenance is unknown. A block raises
+`correspond.errors.Refused` and anything for the operator, a `delay` included (the
+write happens at once: [`immediate_route()`](_autosummary/liaise.vet.html.md#liaise.vet.immediate_route)), `NeedsApproval`, each with the reasons
+joined; a send returns None. The details carry the flow, the rules and the hashes,
+never the text. A draft that cannot be vetted (a configuration that does not load) is
+`NeedsApproval` with the reason.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### liaise.vet.immediate_route(flow)
+
+The route of `flow` for a write that happens at once: a `delay` is draft-to-operator.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> immediate_route("delay"), immediate_route("send"), immediate_route("refuse")
+('draft', 'send', 'block')
+```
+
+### liaise.vet.verdict_record(decision, , subject, ref)
+
+What `vet` answers about `decision`: JSON-ready, and never the text or a value found.
+
+`flow` and `route` are the decision’s (`route` as liaise’s own sending would
+take it, where the outbox holds a `delay`). `exit_code` is the route of a write
+that happens at once ([`immediate_route()`](_autosummary/liaise.vet.html.md#liaise.vet.immediate_route), [`EXIT_CODES`](_autosummary/liaise.vet.html.md#liaise.vet.EXIT_CODES)): whoever vets a
+draft posts it themselves, so a `delay` exits 2. `reasons` every standing concern’s text, most restrictive first,
+`rules` the rules they came from, `audience` the audience in words, `readers` the
+tier and clearance of each reader consulted, `notes` every filter’s notes, and
+`record` what a ledger `gate` entry would keep (`GateDecision.record()`).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### liaise.vet.vet(text, \*, ref, to=(), cc=(), bcc=(), title=None, project=None, tainted=None, root=None, subjects=None, registry=None, audience=None, now=None, fingerprint_key=None, outbound_filters=(<function outbound_policy>, <function writing_card>, <function deslop>))
+
+The gate’s verdict on `text` sent to `ref` for `to`, as [`verdict_record()`](_autosummary/liaise.vet.html.md#liaise.vet.verdict_record) gives it. Sends nothing.
+
+`to` is the person (or people) the draft is for: the first is its recipient and the
+rest count as copies, beside `cc` and `bcc`, so each is a reader the policy judges.
+`project` names the project it is about. `tainted` is what the author read: None
+(unknown, which counts as tainted), True, or False (`--untainted`: nothing untrusted).
+`root` is liaise’s config root, whose subjects and state directory are read (none is
+needed); `subjects` replaces the subjects read from it. `audience` is correspond’s
+record of who can read `ref`; None asks correspond now, on `registry`.
+`fingerprint_key` is as [`GateContext`](_autosummary/liaise.gate.html.md#liaise.gate.GateContext) has it; by default the key
+in the state directory, and none is created.
+
+Raises `ValueError` for a reference that is not one, and
+[`ConfigError`](_autosummary/liaise.config.html.md#liaise.config.ConfigError) for a configuration that does not load.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+
 # _autosummary/liaise.workspace.html.md
 
 # liaise.workspace
@@ -9245,20 +9446,18 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-22 14:33 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/ff7c39af7a82bd0cd41479cbd846b40e9cd462d0"><code>ff7c39a</code></a> on branch <code>main</code>, for **liaise 0.1.11** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-22 16:45 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/6fd028b537ef693dfc34b15a2b46719852091dcb"><code>6fd028b</code></a> on branch <code>main</code>, for **liaise 0.1.12** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.11) is behind the latest release on PyPI (0.1.12): `pip install liaise` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/ff7c39af7a82bd0cd41479cbd846b40e9cd462d0"><code>ff7c39af7a82bd0cd41479cbd846b40e9cd462d0</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/6fd028b537ef693dfc34b15a2b46719852091dcb"><code>6fd028b537ef693dfc34b15a2b46719852091dcb</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
-| Tags at this commit | <code>0.1.11</code>                                                                                                                                      |
+| Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
 | Remote              | <code>https://github.com/thorwhalen/liaise</code>                                                                                                        |
 
@@ -9267,9 +9466,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35740807249">35740807249</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35755924010">35755924010</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>c4bbaf12eca562b8acbd5bc7976b99d1f2ad6643</code> (in the history of the built commit) |
+| Event commit | <code>6fd028b537ef693dfc34b15a2b46719852091dcb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -9294,13 +9493,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.12/">0.1.12</a>, newer than the documented version (0.1.11).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.12/">0.1.12</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout ff7c39af7a82bd0cd41479cbd846b40e9cd462d0
+git checkout 6fd028b537ef693dfc34b15a2b46719852091dcb
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

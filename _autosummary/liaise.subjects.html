@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=1e825a29"></script>
+    <script src="../_static/documentation_options.js?v=297ad043"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.schedule" href="liaise.schedule.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.11" />
+  <meta name="docsearch:version" content="0.1.12" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -346,6 +346,7 @@
 <li class="toctree-l2 current active"><a class="current reference internal" href="#">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
 </details></li>
@@ -482,6 +483,9 @@ Every table has defaults, so a minimal subject file needs only:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.DFLT_WAITING_LABEL" title="liaise.subjects.DFLT_WAITING_LABEL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_WAITING_LABEL</span></code></a></p></td>
 <td><p>Each person's waiting label when a subject sets <code class="docutils literal notranslate"><span class="pre">policy.waiting_labels</span> <span class="pre">=</span> <span class="pre">true</span></code>.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.UNBOUND_SLUG" title="liaise.subjects.UNBOUND_SLUG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UNBOUND_SLUG</span></code></a></p></td>
+<td><p>The slug of <a class="reference internal" href="#liaise.subjects.unbound_subject" title="liaise.subjects.unbound_subject"><code class="xref py py-func docutils literal notranslate"><span class="pre">unbound_subject()</span></code></a>.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -512,6 +516,9 @@ Every table has defaults, so a minimal subject file needs only:</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.subject_for_ref" title="liaise.subjects.subject_for_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_for_ref</span></code></a>(subjects, ref)</p></td>
 <td><p>The subject whose bindings take in <code class="docutils literal notranslate"><span class="pre">ref</span></code>, the conversation a message outside a case goes to.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.unbound_subject" title="liaise.subjects.unbound_subject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unbound_subject</span></code></a>()</p></td>
+<td><p>The subject a reference no subject binds is judged under, where one must be (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">vet</span></code>).</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -538,6 +545,15 @@ Every table has defaults, so a minimal subject file needs only:</p>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.Workspace" title="liaise.subjects.Workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Workspace</span></code></a>([kind, path])</p></td>
 <td><p>Where a subject's runs do their work.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Exceptions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.NoSubjectBinding" title="liaise.subjects.NoSubjectBinding"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NoSubjectBinding</span></code></a></p></td>
+<td><p>No subject's bindings take in a reference (see <a class="reference internal" href="#liaise.subjects.subject_for_ref" title="liaise.subjects.subject_for_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">subject_for_ref()</span></code></a>).</p></td>
 </tr>
 </tbody>
 </table>
@@ -621,6 +637,13 @@ succeeded. <code class="docutils literal notranslate"><span class="pre">pr_only<
 <dt class="sig sig-object py" id="liaise.subjects.GRADES">
 <span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">GRADES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('forged',</span> <span class="pre">'claimed',</span> <span class="pre">'platform',</span> <span class="pre">'domain',</span> <span class="pre">'bound',</span> <span class="pre">'crypto')</span></span><a class="headerlink" href="#liaise.subjects.GRADES" title="Link to this definition">#</a></dt>
 <dd><p>Authenticity grades, weakest first, as correspond names them.</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="liaise.subjects.NoSubjectBinding">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">NoSubjectBinding</span></span><a class="reference internal" href="../_modules/liaise/subjects.html#NoSubjectBinding"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.NoSubjectBinding" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a></p>
+<p>No subject’s bindings take in a reference (see <a class="reference internal" href="#liaise.subjects.subject_for_ref" title="liaise.subjects.subject_for_ref"><code class="xref py py-func docutils literal notranslate"><span class="pre">subject_for_ref()</span></code></a>).</p>
 </dd></dl>
 
 <dl class="py class">
@@ -826,6 +849,12 @@ the operator for any audience wider than them) or <code class="docutils literal 
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.subjects.UNBOUND_SLUG">
+<span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">UNBOUND_SLUG</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'(unbound)'</span></span><a class="headerlink" href="#liaise.subjects.UNBOUND_SLUG" title="Link to this definition">#</a></dt>
+<dd><p>The slug of <a class="reference internal" href="#liaise.subjects.unbound_subject" title="liaise.subjects.unbound_subject"><code class="xref py py-func docutils literal notranslate"><span class="pre">unbound_subject()</span></code></a>.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.subjects.WORKSPACE_KINDS">
 <span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">WORKSPACE_KINDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('shared',)</span></span><a class="headerlink" href="#liaise.subjects.WORKSPACE_KINDS" title="Link to this definition">#</a></dt>
 <dd><p>Where a run works. v0.1 has one checkout, shared by the subject’s runs.</p>
@@ -983,8 +1012,28 @@ message by, so a message goes only where its subject binds.</p>
 <span class="go">'heron'</span>
 </pre></div>
 </div>
-<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> naming the subjects there are when none takes <code class="docutils literal notranslate"><span class="pre">ref</span></code> in, and
-naming each when several name it equally closely.</p>
+<p>Raises <a class="reference internal" href="#liaise.subjects.NoSubjectBinding" title="liaise.subjects.NoSubjectBinding"><code class="xref py py-class docutils literal notranslate"><span class="pre">NoSubjectBinding</span></code></a> (a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code>) naming the subjects there are when
+none takes <code class="docutils literal notranslate"><span class="pre">ref</span></code> in, and <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> naming each when several name it equally
+closely.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.subjects.unbound_subject">
+<span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">unbound_subject</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#unbound_subject"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.unbound_subject" title="Link to this definition">#</a></dt>
+<dd><p>The subject a reference no subject binds is judged under, where one must be (<code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">vet</span></code>).</p>
+<p>It is what a subject file with nothing but <code class="docutils literal notranslate"><span class="pre">[policy]</span></code>, <code class="docutils literal notranslate"><span class="pre">people</span> <span class="pre">=</span> <span class="pre">{}</span></code> and
+<code class="docutils literal notranslate"><span class="pre">roles</span> <span class="pre">=</span> <span class="pre">{}</span></code> loads to: nobody known, <code class="docutils literal notranslate"><span class="pre">direct</span></code> reply mode, the taint rule in force,
+<code class="docutils literal notranslate"><span class="pre">enforce</span></code> mode. It binds nothing and is inert, so nothing ever polls it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">subject</span> <span class="o">=</span> <span class="n">unbound_subject</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span> <span class="n">subject</span><span class="o">.</span><span class="n">bindings</span><span class="p">,</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">tainted_runs</span><span class="p">,</span> <span class="n">subject</span><span class="o">.</span><span class="n">active</span>
+<span class="go">('(unbound)', (), 'approve', False)</span>
+</pre></div>
+</div>
 </dd></dl>
 
 </section>
@@ -1046,6 +1095,7 @@ naming each when several name it equally closely.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.DFLT_WAITING_LABEL"><code class="docutils literal notranslate"><span class="pre">DFLT_WAITING_LABEL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Delivery"><code class="docutils literal notranslate"><span class="pre">Delivery</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.GRADES"><code class="docutils literal notranslate"><span class="pre">GRADES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.NoSubjectBinding"><code class="docutils literal notranslate"><span class="pre">NoSubjectBinding</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Policy"><code class="docutils literal notranslate"><span class="pre">Policy</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Policy.briefs"><code class="docutils literal notranslate"><span class="pre">Policy.briefs</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Policy.deployed_nudge_days"><code class="docutils literal notranslate"><span class="pre">Policy.deployed_nudge_days</span></code></a></li>
@@ -1069,6 +1119,7 @@ naming each when several name it equally closely.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.TAINTED_RUNS"><code class="docutils literal notranslate"><span class="pre">TAINTED_RUNS</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.UNBOUND_SLUG"><code class="docutils literal notranslate"><span class="pre">UNBOUND_SLUG</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.WORKSPACE_KINDS"><code class="docutils literal notranslate"><span class="pre">WORKSPACE_KINDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Workspace"><code class="docutils literal notranslate"><span class="pre">Workspace</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.address_key"><code class="docutils literal notranslate"><span class="pre">address_key()</span></code></a></li>
@@ -1079,6 +1130,7 @@ naming each when several name it equally closely.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.poll_ref"><code class="docutils literal notranslate"><span class="pre">poll_ref()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.ref_key"><code class="docutils literal notranslate"><span class="pre">ref_key()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.subject_for_ref"><code class="docutils literal notranslate"><span class="pre">subject_for_ref()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.unbound_subject"><code class="docutils literal notranslate"><span class="pre">unbound_subject()</span></code></a></li>
 </ul>
   </nav></div>
 

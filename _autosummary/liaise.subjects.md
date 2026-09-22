@@ -48,6 +48,7 @@ roles = { pat = "partner" }
 | [`REF_WILDCARDS`](#liaise.subjects.REF_WILDCARDS)                 | What makes a binding's conversation part a glob, which v0.1 cannot poll ("?" starts a binding's conditions, so it never gets that far).                            |
 | [`CASE_INSENSITIVE_REF_CHANNELS`](#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS) | Channels whose conversation references ignore case, so their bindings load lower-cased (see [`normalize_binding()`](#liaise.subjects.normalize_binding)). |
 | [`DFLT_WAITING_LABEL`](#liaise.subjects.DFLT_WAITING_LABEL)            | Each person's waiting label when a subject sets `policy.waiting_labels = true`.                                                                                    |
+| [`UNBOUND_SLUG`](#liaise.subjects.UNBOUND_SLUG)                  | The slug of [`unbound_subject()`](#liaise.subjects.unbound_subject).                                                                                    |
 
 ### Functions
 
@@ -60,6 +61,7 @@ roles = { pat = "partner" }
 | [`poll_ref`](#liaise.subjects.poll_ref)(binding)                       | The conversation `binding` is polled on, or None when v0.1 cannot poll it.                                                   |
 | [`ref_key`](#liaise.subjects.ref_key)(ref)                            | How two polled conversations compare: without regard to case, as their cursors do.                                           |
 | [`subject_for_ref`](#liaise.subjects.subject_for_ref)(subjects, ref)          | The subject whose bindings take in `ref`, the conversation a message outside a case goes to.                                 |
+| [`unbound_subject`](#liaise.subjects.unbound_subject)()                       | The subject a reference no subject binds is judged under, where one must be (`liaise vet`).                                  |
 
 ### Classes
 
@@ -71,6 +73,11 @@ roles = { pat = "partner" }
 | [`ReadinessPolicy`](#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.md#module-liaise.readiness)). |
 | [`Subject`](#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                            |
 | [`Workspace`](#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                             |
+
+### Exceptions
+
+| [`NoSubjectBinding`](#liaise.subjects.NoSubjectBinding)   | No subject's bindings take in a reference (see [`subject_for_ref()`](#liaise.subjects.subject_for_ref)).   |
+|---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
 
 ### *class* liaise.subjects.BudgetPolicy(concurrent=1, timeout_minutes=60, max_turns=200, daily_dispatches=6)
 
@@ -129,6 +136,12 @@ succeeded. `pr_only` stops at a pull request and runs nothing.
 ### liaise.subjects.GRADES *= ('forged', 'claimed', 'platform', 'domain', 'bound', 'crypto')*
 
 Authenticity grades, weakest first, as correspond names them.
+
+### *exception* liaise.subjects.NoSubjectBinding
+
+Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueError)
+
+No subject’s bindings take in a reference (see [`subject_for_ref()`](#liaise.subjects.subject_for_ref)).
 
 ### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>, tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce', delay_minutes=None, delay_stale_minutes=1440)
 
@@ -277,6 +290,10 @@ the operator for any audience wider than them) or `send` (the subject waives tha
 * **Type:**
   What `policy.tainted_runs` may say
 
+### liaise.subjects.UNBOUND_SLUG *= '(unbound)'*
+
+The slug of [`unbound_subject()`](#liaise.subjects.unbound_subject).
+
 ### liaise.subjects.WORKSPACE_KINDS *= ('shared',)*
 
 Where a run works. v0.1 has one checkout, shared by the subject’s runs.
@@ -414,5 +431,23 @@ message by, so a message goes only where its subject binds.
 'heron'
 ```
 
-Raises `ValueError` naming the subjects there are when none takes `ref` in, and
-naming each when several name it equally closely.
+Raises [`NoSubjectBinding`](#liaise.subjects.NoSubjectBinding) (a `ValueError`) naming the subjects there are when
+none takes `ref` in, and `ValueError` naming each when several name it equally
+closely.
+
+### liaise.subjects.unbound_subject()
+
+The subject a reference no subject binds is judged under, where one must be (`liaise vet`).
+
+It is what a subject file with nothing but `[policy]`, `people = {}` and
+`roles = {}` loads to: nobody known, `direct` reply mode, the taint rule in force,
+`enforce` mode. It binds nothing and is inert, so nothing ever polls it.
+
+* **Return type:**
+  [`Subject`](#liaise.subjects.Subject)
+
+```pycon
+>>> subject = unbound_subject()
+>>> subject.slug, subject.bindings, subject.policy.tainted_runs, subject.active
+('(unbound)', (), 'approve', False)
+```

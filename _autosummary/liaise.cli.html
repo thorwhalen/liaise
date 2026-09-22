@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=1e825a29"></script>
+    <script src="../_static/documentation_options.js?v=297ad043"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.cases" href="liaise.cases.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.11" />
+  <meta name="docsearch:version" content="0.1.12" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -346,6 +346,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
 </details></li>
@@ -432,6 +433,8 @@
 <span class="n">liaise</span> <span class="n">message</span> <span class="n">show</span> <span class="n">MESSAGE_ID</span>
 <span class="n">liaise</span> <span class="n">message</span> <span class="n">send</span><span class="o">-</span><span class="n">draft</span> <span class="n">MESSAGE_ID</span> <span class="p">[</span><span class="o">--</span><span class="n">edit</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">new</span><span class="o">-</span><span class="n">attempt</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">message</span> <span class="n">reject</span><span class="o">-</span><span class="n">draft</span> <span class="n">MESSAGE_ID</span> <span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">vet</span> <span class="o">--</span><span class="n">ref</span> <span class="n">REF</span> <span class="p">[</span><span class="o">--</span><span class="n">to</span> <span class="n">PERSON</span><span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">cc</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">bcc</span> <span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">project</span> <span class="n">P</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">T</span><span class="p">]</span>
+    <span class="p">[</span><span class="o">--</span><span class="n">text</span> <span class="n">TEXT</span> <span class="o">|</span> <span class="o">--</span><span class="n">text</span><span class="o">-</span><span class="n">file</span> <span class="n">FILE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">tainted</span> <span class="o">|</span> <span class="o">--</span><span class="n">untainted</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">json</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="nb">list</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="n">show</span> <span class="n">SLUG</span>
 <span class="n">liaise</span> <span class="n">setup</span> <span class="n">SUBJECT</span>
@@ -575,6 +578,9 @@ traceback.</p>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.unhold" title="liaise.cli.unhold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unhold</span></code></a>(scope, *[, root, store])</p></td>
 <td><p>Lift the hold on SCOPE, whoever set it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.vet" title="liaise.cli.vet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vet</span></code></a>(*[, ref, to, cc, bcc, project, title, ...])</p></td>
+<td><p>Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers.</p></td>
 </tr>
 </tbody>
 </table>
@@ -1065,6 +1071,24 @@ queue, the drafts waiting for the operator, and the latest digest notes.</p>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.vet">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">vet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bcc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'-'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">untainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#vet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.vet" title="Link to this definition">#</a></dt>
+<dd><p>Vet a draft for REF outside any case: the gate’s verdict, the audience in words, the readers. Sends nothing.</p>
+<p>The draft is <code class="docutils literal notranslate"><span class="pre">--text</span></code>, or <code class="docutils literal notranslate"><span class="pre">--text-file</span></code> (standard input by default). <code class="docutils literal notranslate"><span class="pre">--to</span></code> names
+the person (or people) it is for, <code class="docutils literal notranslate"><span class="pre">--cc</span></code> and <code class="docutils literal notranslate"><span class="pre">--bcc</span></code> further readers, and
+<code class="docutils literal notranslate"><span class="pre">--project</span></code> the project it is about. What its author read is unknown, which counts as
+tainted, unless <code class="docutils literal notranslate"><span class="pre">--untainted</span></code> (nothing untrusted) or <code class="docutils literal notranslate"><span class="pre">--tainted</span></code> says. <code class="docutils literal notranslate"><span class="pre">--json</span></code>
+prints the verdict record. <code class="docutils literal notranslate"><span class="pre">--to</span></code>, <code class="docutils literal notranslate"><span class="pre">--cc</span></code> and <code class="docutils literal notranslate"><span class="pre">--bcc</span></code> may be repeated. The exit
+code is the route of a write made at once: 0 send, 2 draft-to-operator (a <code class="docutils literal notranslate"><span class="pre">delay</span></code>
+too), 3 block (1: the draft could not be vetted). It records nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </section>
 
 
@@ -1153,6 +1177,7 @@ queue, the drafts waiting for the operator, and the latest digest notes.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.subject_list"><code class="docutils literal notranslate"><span class="pre">subject_list()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.subject_show"><code class="docutils literal notranslate"><span class="pre">subject_show()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.unhold"><code class="docutils literal notranslate"><span class="pre">unhold()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.vet"><code class="docutils literal notranslate"><span class="pre">vet()</span></code></a></li>
 </ul>
   </nav></div>
 

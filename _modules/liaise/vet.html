@@ -1,0 +1,1072 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="alternate" type="text/markdown" href="vet.html.md">
+<link rel="describedby" href="../../llms.txt" type="text/markdown">
+    <title>liaise.vet &#8212; liaise</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/epythet.css?v=be2741c3" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
+
+    <script src="../../_static/documentation_options.js?v=297ad043"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=fd10adb8"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (false) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+
+const load = async () => {
+    initStyles();
+
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/liaise/vet';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.1.12" />
+  
+    
+    <script src="../../_static/searchtools.js"></script>
+    <script src="../../_static/language_data.js"></script>
+    <script src="../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">liaise</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/liaise" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">liaise.vet</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for liaise.vet</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Vetting a draft outside any case: the gate's verdict, and nothing sent (discussion 32, §5.8).</span>
+
+<span class="sd">:func:`vet` puts a draft through the same gate every message liaise sends passes</span>
+<span class="sd">(:func:`liaise.gate.run_gate`), with a case-less context (liaise #28), and returns the</span>
+<span class="sd">verdict as a JSON-ready record: the flow, the route, the reasons, the audience in words and</span>
+<span class="sd">the tiers consulted. It sends nothing and records nothing, so it is safe to run at any time</span>
+<span class="sd">and to expose over MCP later. ``liaise vet`` prints it, with the exit code</span>
+<span class="sd">:data:`EXIT_CODES` gives the route: 0 send, 2 draft-to-operator, 3 block.</span>
+<span class="sd">Whoever vets a draft then posts it themselves, at once, so the exit code is the route of</span>
+<span class="sd">an immediate write (:func:`immediate_route`): a ``delay`` exits 2.</span>
+
+<span class="sd">**The same gate, less what does not apply.** Discussion 32 rejects a separate gate for</span>
+<span class="sd">``vet`` (§11). :data:`VET_FILTERS` are :data:`~liaise.gate.DFLT_OUTBOUND_FILTERS` in their</span>
+<span class="sd">order, less two whose job is liaise's own sending: :func:`~liaise.gate.outside_a_case`</span>
+<span class="sd">holds every message liaise itself would send outside a case for the operator (its sender</span>
+<span class="sd">chose the readers), and :func:`~liaise.gate.notify_recipient` adds the ``@mention`` liaise</span>
+<span class="sd">needs to reach someone on GitHub. Here the sender is whoever asks, and liaise sends</span>
+<span class="sd">nothing; the hold on a sender-chosen destination is the taint rule's job, since the</span>
+<span class="sd">provenance of a vetted draft is unknown unless the caller says otherwise (decision 10).</span>
+<span class="sd">``outbound_filters=`` takes another tuple.</span>
+
+<span class="sd">**The subject** is the one whose bindings take the reference in</span>
+<span class="sd">(:func:`liaise.subjects.subject_for_ref`); when none does, :func:`~liaise.subjects.unbound_subject`, whose</span>
+<span class="sd">policy has every default: nobody known, the taint rule in force, ``direct`` reply mode.</span>
+
+<span class="sd">**Where nothing can be held.** A ``delay`` routes to ``send`` in liaise's own sending</span>
+<span class="sd">(discussion §5.5), because its outbox holds it. ``liaise vet``'s exit code,</span>
+<span class="sd">:func:`before_send` (correspond's check) and the Claude Code hook stand in front of a write</span>
+<span class="sd">that happens at once, with no outbox, so for them a ``delay`` degrades to</span>
+<span class="sd">draft-to-operator, as §5.5 degrades it where the outbox does not exist:</span>
+<span class="sd">:func:`immediate_route`.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_CONFIG_ROOT</span><span class="p">,</span> <span class="n">load_global_config</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.detect</span><span class="w"> </span><span class="kn">import</span> <span class="n">key_source</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DFLT_OUTBOUND_FILTERS</span><span class="p">,</span>
+    <span class="n">GateContext</span><span class="p">,</span>
+    <span class="n">GateDecision</span><span class="p">,</span>
+    <span class="n">Outbound</span><span class="p">,</span>
+    <span class="n">OutboundFilter</span><span class="p">,</span>
+    <span class="n">notify_recipient</span><span class="p">,</span>
+    <span class="n">outside_a_case</span><span class="p">,</span>
+    <span class="n">run_gate</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DELAY</span><span class="p">,</span>
+    <span class="n">ROUTE_BLOCK</span><span class="p">,</span>
+    <span class="n">ROUTE_DRAFT</span><span class="p">,</span>
+    <span class="n">ROUTE_SEND</span><span class="p">,</span>
+    <span class="n">ROUTES</span><span class="p">,</span>
+    <span class="n">Provenance</span><span class="p">,</span>
+    <span class="n">audience_in_words</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.release</span><span class="w"> </span><span class="kn">import</span> <span class="n">audience_of</span><span class="p">,</span> <span class="n">sendable_ref</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">UNBOUND_SLUG</span><span class="p">,</span>
+    <span class="n">NoSubjectBinding</span><span class="p">,</span>
+    <span class="n">Subject</span><span class="p">,</span>
+    <span class="n">load_subjects</span><span class="p">,</span>
+    <span class="n">subject_for_ref</span><span class="p">,</span>
+    <span class="n">unbound_subject</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#: The gate's filters as ``vet`` runs them: every one, in order, but the two that presuppose</span>
+<span class="c1">#: liaise as the sender (see the module docstring). Derived by exclusion, so a filter added</span>
+<span class="c1">#: to the gate reaches ``vet`` too.</span>
+<span class="n">VET_FILTERS</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+    <span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">DFLT_OUTBOUND_FILTERS</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">outside_a_case</span><span class="p">,</span> <span class="n">notify_recipient</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#: The exit code of ``liaise vet`` for each route.</span>
+<span class="n">EXIT_CODES</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">ROUTE_SEND</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="n">ROUTE_DRAFT</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="n">ROUTE_BLOCK</span><span class="p">:</span> <span class="mi">3</span><span class="p">}</span>
+<span class="c1">#: The purpose a vetted draft is judged for: the writing card and deslop read it.</span>
+<span class="n">VET_PURPOSE</span> <span class="o">=</span> <span class="s2">"reply"</span>
+<span class="c1">#: Why a vetted draft counts as tainted when the caller did not say (decision 10).</span>
+<span class="n">UNKNOWN_PROVENANCE</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"nobody said what the author of this draft read (--untainted says it read nothing "</span>
+    <span class="s2">"untrusted)"</span>
+<span class="p">)</span>
+<span class="n">UNTAINTED</span> <span class="o">=</span> <span class="s2">"the caller vouched that the author read nothing untrusted"</span>
+<span class="n">TAINTED</span> <span class="o">=</span> <span class="s2">"the caller said the author read untrusted content"</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_subject_for</span><span class="p">(</span><span class="n">subjects</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">],</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Subject</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The subject whose bindings take ``ref`` in, else :func:`~liaise.subjects.unbound_subject`.</span>
+
+<span class="sd">    A reference bound equally closely by two subjects still raises, as it does for a send.</span>
+<span class="sd">    """</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">subject_for_ref</span><span class="p">(</span><span class="n">subjects</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">NoSubjectBinding</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">unbound_subject</span><span class="p">()</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_normalised_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``ref`` stripped; a GitHub issue or repository as :func:`~liaise.release.sendable_ref` keeps it."""</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">ref</span> <span class="ow">or</span> <span class="s2">":"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ref</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ref</span><span class="si">!r}</span><span class="s2"> is not a conversation reference: give one such as "</span>
+            <span class="sa">f</span><span class="s2">"github:example/app#12"</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">ref</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"github"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">sendable_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">ref</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_provenance</span><span class="p">(</span><span class="n">tainted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Provenance</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">tainted</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Provenance</span><span class="o">.</span><span class="n">unknown</span><span class="p">(</span><span class="n">UNKNOWN_PROVENANCE</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Provenance</span><span class="o">.</span><span class="n">tainted_by</span><span class="p">(</span><span class="n">TAINTED</span><span class="p">)</span> <span class="k">if</span> <span class="n">tainted</span> <span class="k">else</span> <span class="n">Provenance</span><span class="o">.</span><span class="n">clean</span><span class="p">(</span><span class="n">UNTAINTED</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_people</span><span class="p">(</span><span class="n">to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+    <span class="n">people</span> <span class="o">=</span> <span class="p">(</span><span class="n">to</span><span class="p">,)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">to</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">to</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">people</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+
+
+<div class="viewcode-block" id="immediate_route">
+<a class="viewcode-back" href="../../_autosummary/liaise.vet.html#liaise.vet.immediate_route">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">immediate_route</span><span class="p">(</span><span class="n">flow</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The route of ``flow`` for a write that happens at once: a ``delay`` is draft-to-operator.</span>
+
+<span class="sd">    &gt;&gt;&gt; immediate_route("delay"), immediate_route("send"), immediate_route("refuse")</span>
+<span class="sd">    ('draft', 'send', 'block')</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">ROUTE_DRAFT</span> <span class="k">if</span> <span class="n">flow</span> <span class="o">==</span> <span class="n">DELAY</span> <span class="k">else</span> <span class="n">ROUTES</span><span class="p">[</span><span class="n">flow</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="verdict_record">
+<a class="viewcode-back" href="../../_autosummary/liaise.vet.html#liaise.vet.verdict_record">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">verdict_record</span><span class="p">(</span><span class="n">decision</span><span class="p">:</span> <span class="n">GateDecision</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""What ``vet`` answers about ``decision``: JSON-ready, and never the text or a value found.</span>
+
+<span class="sd">    ``flow`` and ``route`` are the decision's (``route`` as liaise's own sending would</span>
+<span class="sd">    take it, where the outbox holds a ``delay``). ``exit_code`` is the route of a write</span>
+<span class="sd">    that happens at once (:func:`immediate_route`, :data:`EXIT_CODES`): whoever vets a</span>
+<span class="sd">    draft posts it themselves, so a ``delay`` exits 2. ``reasons`` every standing concern's text, most restrictive first,</span>
+<span class="sd">    ``rules`` the rules they came from, ``audience`` the audience in words, ``readers`` the</span>
+<span class="sd">    tier and clearance of each reader consulted, ``notes`` every filter's notes, and</span>
+<span class="sd">    ``record`` what a ledger ``gate`` entry would keep (:meth:`GateDecision.record`).</span>
+<span class="sd">    """</span>
+    <span class="n">verdict</span> <span class="o">=</span> <span class="n">decision</span><span class="o">.</span><span class="n">verdict</span>
+    <span class="n">route</span> <span class="o">=</span> <span class="n">ROUTES</span><span class="p">[</span><span class="n">decision</span><span class="o">.</span><span class="n">flow</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"ref"</span><span class="p">:</span> <span class="n">ref</span><span class="p">,</span>
+        <span class="s2">"subject"</span><span class="p">:</span> <span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+        <span class="s2">"flow"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span>
+        <span class="s2">"route"</span><span class="p">:</span> <span class="n">route</span><span class="p">,</span>
+        <span class="s2">"exit_code"</span><span class="p">:</span> <span class="n">EXIT_CODES</span><span class="p">[</span><span class="n">immediate_route</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">flow</span><span class="p">)],</span>
+        <span class="s2">"reasons"</span><span class="p">:</span> <span class="p">[</span><span class="n">concern</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">concerns</span><span class="p">],</span>
+        <span class="s2">"rules"</span><span class="p">:</span> <span class="p">[</span><span class="n">concern</span><span class="o">.</span><span class="n">rule</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">concerns</span> <span class="k">if</span> <span class="n">concern</span><span class="o">.</span><span class="n">rule</span><span class="p">],</span>
+        <span class="s2">"audience"</span><span class="p">:</span> <span class="p">(</span>
+            <span class="n">decision</span><span class="o">.</span><span class="n">audience_words</span>
+            <span class="k">if</span> <span class="n">verdict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">audience_in_words</span><span class="p">({</span><span class="s2">"ref"</span><span class="p">:</span> <span class="n">ref</span><span class="p">})</span>
+        <span class="p">),</span>
+        <span class="s2">"readers"</span><span class="p">:</span> <span class="p">(</span>
+            <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">verdict</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="p">{</span><span class="n">person</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">entry</span><span class="p">)</span> <span class="k">for</span> <span class="n">person</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">verdict</span><span class="o">.</span><span class="n">readers</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="p">),</span>
+        <span class="s2">"notes"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">),</span>
+        <span class="s2">"payload_hash"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span>
+        <span class="s2">"audience_hash"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">audience_hash</span><span class="p">,</span>
+        <span class="s2">"record"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">record</span><span class="p">(),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="vet">
+<a class="viewcode-back" href="../../_autosummary/liaise.vet.html#liaise.vet.vet">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">vet</span><span class="p">(</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">to</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">cc</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">bcc</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">title</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">project</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">tainted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">root</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">subjects</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Subject</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">registry</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">audience</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">fingerprint_key</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bytes</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="nb">bytes</span><span class="p">],</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">outbound_filters</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OutboundFilter</span><span class="p">]</span> <span class="o">=</span> <span class="n">VET_FILTERS</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The gate's verdict on ``text`` sent to ``ref`` for ``to``, as :func:`verdict_record` gives it. Sends nothing.</span>
+
+<span class="sd">    ``to`` is the person (or people) the draft is for: the first is its recipient and the</span>
+<span class="sd">    rest count as copies, beside ``cc`` and ``bcc``, so each is a reader the policy judges.</span>
+<span class="sd">    ``project`` names the project it is about. ``tainted`` is what the author read: None</span>
+<span class="sd">    (unknown, which counts as tainted), True, or False (``--untainted``: nothing untrusted).</span>
+<span class="sd">    ``root`` is liaise's config root, whose subjects and state directory are read (none is</span>
+<span class="sd">    needed); ``subjects`` replaces the subjects read from it. ``audience`` is correspond's</span>
+<span class="sd">    record of who can read ``ref``; None asks correspond now, on ``registry``.</span>
+<span class="sd">    ``fingerprint_key`` is as :class:`~liaise.gate.GateContext` has it; by default the key</span>
+<span class="sd">    in the state directory, and none is created.</span>
+
+<span class="sd">    Raises ``ValueError`` for a reference that is not one, and</span>
+<span class="sd">    :class:`~liaise.config.ConfigError` for a configuration that does not load.</span>
+<span class="sd">    """</span>
+    <span class="n">ref</span> <span class="o">=</span> <span class="n">_normalised_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+    <span class="n">config_root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">DFLT_CONFIG_ROOT</span>
+    <span class="k">if</span> <span class="n">subjects</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">subjects</span> <span class="o">=</span> <span class="n">load_subjects</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span>
+    <span class="n">subject</span> <span class="o">=</span> <span class="n">_subject_for</span><span class="p">(</span><span class="n">subjects</span><span class="p">,</span> <span class="n">ref</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fingerprint_key</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">state_dir</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">config_root</span> <span class="o">/</span> <span class="s2">"config.toml"</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="n">state_dir</span> <span class="o">=</span> <span class="n">load_global_config</span><span class="p">(</span><span class="n">config_root</span><span class="p">)</span><span class="o">.</span><span class="n">state_dir</span>
+        <span class="n">fingerprint_key</span> <span class="o">=</span> <span class="n">key_source</span><span class="p">(</span><span class="n">state_dir</span><span class="p">,</span> <span class="n">create</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">people</span> <span class="o">=</span> <span class="n">_people</span><span class="p">(</span><span class="n">to</span><span class="p">)</span>
+    <span class="n">recipient</span><span class="p">,</span> <span class="o">*</span><span class="n">also</span> <span class="o">=</span> <span class="n">people</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">""</span><span class="p">,)</span>
+    <span class="n">outbound</span> <span class="o">=</span> <span class="n">Outbound</span><span class="p">(</span>
+        <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">,</span>
+        <span class="n">channel</span><span class="o">=</span><span class="n">ref</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">":"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span>
+        <span class="n">recipient</span><span class="o">=</span><span class="n">recipient</span><span class="p">,</span>
+        <span class="n">purpose</span><span class="o">=</span><span class="n">VET_PURPOSE</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="p">(</span><span class="n">title</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">cc</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">also</span><span class="p">,</span> <span class="o">*</span><span class="n">_people</span><span class="p">(</span><span class="n">cc</span><span class="p">)),</span>
+        <span class="n">bcc</span><span class="o">=</span><span class="n">_people</span><span class="p">(</span><span class="n">bcc</span><span class="p">),</span>
+        <span class="n">project</span><span class="o">=</span><span class="n">project</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">audience</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">audience</span> <span class="o">=</span> <span class="n">audience_of</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">registry</span><span class="o">=</span><span class="n">registry</span><span class="p">)</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="n">GateContext</span><span class="p">(</span>
+        <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span>
+        <span class="n">now</span><span class="o">=</span><span class="n">now</span> <span class="ow">or</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span>
+        <span class="n">audience</span><span class="o">=</span><span class="n">audience</span><span class="p">,</span>
+        <span class="n">provenance</span><span class="o">=</span><span class="n">_provenance</span><span class="p">(</span><span class="n">tainted</span><span class="p">),</span>
+        <span class="n">fingerprint_key</span><span class="o">=</span><span class="n">fingerprint_key</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">decision</span> <span class="o">=</span> <span class="n">run_gate</span><span class="p">(</span><span class="n">outbound</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">outbound_filters</span><span class="o">=</span><span class="n">outbound_filters</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">verdict_record</span><span class="p">(</span><span class="n">decision</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="n">ref</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="before_send">
+<a class="viewcode-back" href="../../_autosummary/liaise.vet.html#liaise.vet.before_send">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">before_send</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">draft</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">audience</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">**</span><span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""correspond's ``before_send`` check: :func:`vet`, raising ``Refused`` or ``NeedsApproval``.</span>
+
+<span class="sd">    Set it once in correspond's config::</span>
+
+<span class="sd">        before_send = "liaise.vet:before_send"</span>
+
+<span class="sd">    ``ref`` is correspond's conversation reference, ``draft`` its draft (its text, title and</span>
+<span class="sd">    copies are vetted) and ``audience`` the audience correspond computed, which the gate</span>
+<span class="sd">    judges as given. The subject is the one binding the reference, else</span>
+<span class="sd">    :func:`~liaise.subjects.unbound_subject`, and the provenance is unknown. A block raises</span>
+<span class="sd">    ``correspond.errors.Refused`` and anything for the operator, a ``delay`` included (the</span>
+<span class="sd">    write happens at once: :func:`immediate_route`), ``NeedsApproval``, each with the reasons</span>
+<span class="sd">    joined; a send returns None. The details carry the flow, the rules and the hashes,</span>
+<span class="sd">    never the text. A draft that cannot be vetted (a configuration that does not load) is</span>
+<span class="sd">    ``NeedsApproval`` with the reason.</span>
+<span class="sd">    """</span>
+    <span class="kn">from</span><span class="w"> </span><span class="nn">correspond.errors</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeedsApproval</span><span class="p">,</span> <span class="n">Refused</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">record</span> <span class="o">=</span> <span class="n">vet</span><span class="p">(</span>
+            <span class="nb">getattr</span><span class="p">(</span><span class="n">draft</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span>
+            <span class="n">ref</span><span class="o">=</span><span class="n">ref</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="n">_encoded</span><span class="p">(</span><span class="n">ref</span><span class="p">),</span>
+            <span class="n">cc</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">draft</span><span class="p">,</span> <span class="s2">"cc"</span><span class="p">,</span> <span class="p">())</span> <span class="ow">or</span> <span class="p">()),</span>
+            <span class="n">bcc</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">draft</span><span class="p">,</span> <span class="s2">"bcc"</span><span class="p">,</span> <span class="p">())</span> <span class="ow">or</span> <span class="p">()),</span>
+            <span class="n">title</span><span class="o">=</span><span class="nb">getattr</span><span class="p">(</span><span class="n">draft</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+            <span class="n">audience</span><span class="o">=</span><span class="n">audience</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># a check that cannot judge holds the write</span>
+        <span class="k">raise</span> <span class="n">NeedsApproval</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"liaise could not vet this draft (</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="nn">error</span>
+    <span class="n">route</span> <span class="o">=</span> <span class="n">immediate_route</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">"flow"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">route</span> <span class="o">==</span> <span class="n">ROUTE_SEND</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">reasons</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">record</span><span class="p">[</span><span class="s2">"reasons"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">record</span><span class="p">[</span><span class="s2">"flow"</span><span class="p">]</span> <span class="o">==</span> <span class="n">DELAY</span> <span class="ow">and</span> <span class="n">route</span> <span class="o">==</span> <span class="n">ROUTE_DRAFT</span><span class="p">:</span>
+        <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"the write happens at once, so nothing can hold it for a delay"</span><span class="p">)</span>
+    <span class="n">details</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"flow"</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">"flow"</span><span class="p">],</span>
+        <span class="s2">"rules"</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">"rules"</span><span class="p">],</span>
+        <span class="s2">"payload_hash"</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">"payload_hash"</span><span class="p">],</span>
+        <span class="s2">"audience_hash"</span><span class="p">:</span> <span class="n">record</span><span class="p">[</span><span class="s2">"audience_hash"</span><span class="p">],</span>
+    <span class="p">}</span>
+    <span class="n">reason</span> <span class="o">=</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">reasons</span><span class="p">)</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"liaise vet: </span><span class="si">{</span><span class="n">record</span><span class="p">[</span><span class="s1">'flow'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+    <span class="k">if</span> <span class="n">route</span> <span class="o">==</span> <span class="n">ROUTE_BLOCK</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">Refused</span><span class="p">(</span><span class="n">reason</span><span class="p">,</span> <span class="o">**</span><span class="n">details</span><span class="p">)</span>
+    <span class="k">raise</span> <span class="n">NeedsApproval</span><span class="p">(</span><span class="n">reason</span><span class="p">,</span> <span class="o">**</span><span class="n">details</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_encoded</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""correspond's reference as a string: its ``encoded`` form, ``&lt;channel&gt;:&lt;id&gt;``."""</span>
+    <span class="n">encoded</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="s2">"encoded"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">encoded</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">encoded</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
