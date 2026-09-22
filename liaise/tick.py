@@ -164,7 +164,9 @@ from liaise.outbox import (
     HOLD,
     INTERRUPTED,
     ISSUE_CLOSED_EVENT,
+    ISSUE_CLOSED_REASON,
     held_message,
+    held_provenance,
     hold_of,
     is_due,
     make_held,
@@ -358,6 +360,20 @@ def _fmt_age(seconds: float) -> str:
         return f"{seconds // _SECONDS_PER_MINUTE}m"
     hours, rest = divmod(seconds, _SECONDS_PER_HOUR)
     return f"{hours}h{rest // _SECONDS_PER_MINUTE:02d}m"
+
+
+def _entries_seen_by(case: Case, run_id: str) -> int:
+    """How many of ``case``'s entries the run ``run_id`` could have read: those before its start.
+
+    The run's prompt was written when it started, so a message heard while it ran is one
+    its outcomes never answered. Without a start entry for it, every entry so far.
+    """
+    for index in range(len(case.entries) - 1, -1, -1):
+        entry = case.entries[index]
+        started = entry.kind == "run" and entry.detail.get("event") == RUN_STARTED
+        if started and entry.detail.get("run_id") == run_id:
+            return index
+    return len(case.entries)
 
 
 def _run_starts(case: Case) -> list[LedgerEntry]:
@@ -1167,6 +1183,8 @@ class _Tick:
                 continue
             self.lines += report.plan_lines()
             self.problems += report.problems
+            if report.problems:  # a conversation went unheard: its outbox waits
+                self.intake_failed.add(slug)
             for case in (*report.new_cases, *report.updated_cases):
                 self.touched[case.id] = None
 
@@ -1590,7 +1608,7 @@ class _Tick:
     ) -> None:
         """Carry out a run's planned actions in order: the S5b tick rules."""
         case = self._case(case_id)
-        self.planned_at[case_id] = len(case.entries)
+        self.planned_at[case_id] = _entries_seen_by(case, run_id)
         planned_send = any(isinstance(action, Send) for action in actions)
         held: list[str] = []
         final: Union[None, tuple[str, str], _DeliveryGroup] = None
@@ -1737,8 +1755,11 @@ class _Tick:
                 "release_at": released.get("release_at"),
             }
         notes = [f"    note: {note}" for note in decision.notes]
-        if decision.send is None and decision.flow == DELAY and released is None:
-            return self._hold(subject, case, send, decision, detail)
+        holdable = decision.send is None and decision.flow == DELAY
+        if holdable and released is None and decision.overridable:
+            return self._hold(
+                subject, case, send, decision, detail, provenance=provenance
+            )
         if decision.send is None:
             draft = make_draft(
                 at=self.now,
@@ -1834,10 +1855,14 @@ class _Tick:
         send: Send,
         decision: Any,
         detail: Mapping[str, Any],
+        *,
+        provenance: Optional[Provenance] = None,
     ) -> bool:
         """Hold ``send``, which the gate gave ``delay``, in its case's outbox; True once sent.
 
-        With ``policy.delay_minutes = 0`` it is released at once, through the same path.
+        ``provenance`` is the one ``send`` was judged with when the tick wrote it (a nudge),
+        kept so its release is judged alike. With ``policy.delay_minutes = 0`` it is
+        released at once, through the same path.
         """
         minutes = subject.policy.delay_minutes
         item = make_held(
@@ -1846,6 +1871,7 @@ class _Tick:
             at=self.now,
             delay=timedelta(minutes=minutes),
             seen=self.planned_at.get(case.id, len(case.entries)),
+            provenance=provenance,
         )
         index = len(case.outbox)
         self._save(replace(case, outbox=(*case.outbox, item)))
@@ -1897,7 +1923,13 @@ class _Tick:
                 continue
             releasing = True
             for item in tuple(case.outbox):
-                done = self._release_one(subject, case.id, item, release=releasing)
+                try:
+                    done = self._release_one(subject, case.id, item, release=releasing)
+                except Exception as error:  # one case's failure is not the tick's
+                    self.problem(
+                        f"releasing {case.id}'s outbox failed: {_error_text(error)}"
+                    )
+                    break
                 releasing = releasing and done is not None
 
     def _release_one(
@@ -1936,12 +1968,23 @@ class _Tick:
                 f"stays held by {hold.scope}"
             )
             return None
+        label = f"  outbox of {case_id}"
+        if self._issue_is_closed(case, label):
+            if self.issue_closed.get(case_id) is None:
+                return None  # unreadable: it waits, and lapses if that lasts
+            self._held_to_draft(
+                subject, self._case(case_id), item, "divert", ISSUE_CLOSED_REASON
+            )
+            return False
         claimed = {**item, "claimed_at": self.now.isoformat()}
         self._swap_item(
             case_id, item, claimed
         )  # at most once: claimed before it is sent
         sent = self._send(
-            subject, held_message(item, case_id=case_id), released=claimed
+            subject,
+            held_message(item, case_id=case_id),
+            provenance=held_provenance(item),
+            released=claimed,
         )
         self._swap_item(case_id, claimed, None)
         return True if sent else None

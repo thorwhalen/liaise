@@ -47,6 +47,7 @@ from liaise.intake import LIAISE_ACTOR, SELF_ROLE
 from liaise.ledger import Ledger
 from liaise.model import Approval, Case, LedgerEntry
 from liaise.outcomes import Send
+from liaise.policy import Provenance
 
 #: The ``decision`` of a ``gate`` entry about the outbox: held, cancelled by the operator,
 #: made a draft (``divert``), or made a draft for being reached too late (``lapse``). A
@@ -66,6 +67,8 @@ DFLT_CANCEL_REASON = "cancelled by the operator"
 MOVED_ON_REASON = "the conversation moved on while this message was held ({what}): the operator decides"
 #: Why a held message reached long after its release is a draft.
 LAPSED_REASON = "held past its release by {late}, longer than the {limit} allowed: the operator decides"
+#: Why a held message whose issue is closed at its release is a draft.
+ISSUE_CLOSED_REASON = "its issue is closed: the operator decides whether it still goes"
 #: Why a message whose release was interrupted is a draft.
 INTERRUPTED_REASON = (
     "its release was interrupted at {claimed_at}, and it may have gone out: check {ref} "
@@ -88,6 +91,7 @@ def make_held(
     at: datetime,
     delay: timedelta,
     seen: int,
+    provenance: Optional[Provenance] = None,
 ) -> dict[str, Any]:
     """One item of a case's ``outbox``: ``outbound``, which ``decision`` gave ``delay``, JSON-ready.
 
@@ -95,8 +99,10 @@ def make_held(
     binds to are of that message, and the gate adds the mention again at release. The item
     carries its ``release_at`` (``at`` plus ``delay``), the hold (:func:`liaise.gate.hold_for`),
     what the gate decided (:meth:`GateDecision.summary`) and its notes, ``seen`` (how many
-    entries the case had when the message was planned, for :func:`moved_on`), and
-    ``claimed_at``, None until the tick starts releasing it.
+    entries the run that wrote it could have read, for :func:`moved_on`), the
+    ``provenance`` it was judged with when the tick wrote it itself (None: a run's, read
+    from the ledger again at release), and ``claimed_at``, None until the tick starts
+    releasing it.
     """
     release_at = at + delay
     return {
@@ -108,10 +114,13 @@ def make_held(
         "channel": outbound.channel,
         "title": outbound.title,
         "text": outbound.text,
+        "cc": list(outbound.cc),
+        "bcc": list(outbound.bcc),
         "hold": hold_for(decision, at=at, release_at=release_at).to_dict(),
         "gate": decision.summary(),
         "notes": list(decision.notes),
         "seen": seen,
+        "provenance": None if provenance is None else provenance.to_dict(),
         "claimed_at": None,
     }
 
@@ -126,7 +135,15 @@ def held_message(item: Mapping[str, Any], *, case_id: str) -> Send:
         text=item["text"],
         title=item.get("title"),
         case_id=case_id,
+        cc=tuple(item.get("cc") or ()),
+        bcc=tuple(item.get("bcc") or ()),
     )
+
+
+def held_provenance(item: Mapping[str, Any]) -> Optional[Provenance]:
+    """The provenance ``item`` was held with, or None for a run's (read from the ledger again)."""
+    kept = item.get("provenance")
+    return None if kept is None else Provenance.of(kept)
 
 
 def hold_of(item: Mapping[str, Any]) -> Approval:
@@ -156,15 +173,22 @@ def moved_on(case: Case, item: Mapping[str, Any]) -> Optional[str]:
     (entries are append-only, so a count is exact where a time is not: a comment heard late
     carries the time it was written). Among the entries after it, any of these moves it:
 
-    - a ``message`` not written by the channel's own account (intake's ``self`` role: a
-      comment of liaise's heard back moves nothing);
+    - a ``message``, unless the channel's own account wrote it (intake's ``self`` role)
+      with the text of a message liaise sent on the case: a comment of liaise's heard back
+      moves nothing, and one the operator wrote by hand on liaise's account does;
     - a ``transition`` by anyone but liaise itself: the operator set the case's state;
     - a ``run`` entry that read the case's issue closed.
     """
     seen = item.get("seen")
     later = case.entries[seen:] if isinstance(seen, int) else ()
+    sent = {
+        (e.text or "").strip()
+        for e in case.entries
+        if e.kind == "gate" and e.detail.get("decision") == "send" and e.text
+    }
     for entry in later:
-        if entry.kind == "message" and entry.detail.get("role") != SELF_ROLE:
+        own = entry.detail.get("role") == SELF_ROLE
+        if entry.kind == "message" and not (own and (entry.text or "").strip() in sent):
             return f"a message by {entry.actor or 'someone'} at {_stamp(entry.at)}"
         if entry.kind == "transition" and entry.actor != LIAISE_ACTOR:
             return (

@@ -42,13 +42,15 @@ The policy gives an irreversible send to an `org` or `public` audience the flow 
 
 ## Decision 4: a held message goes out only into the conversation it was written for
 
-**Chose:** each item records `seen`, how many entries the case had when the run's actions were planned. On every tick, for every item, due or not, any later entry of these kinds turns the item into a draft for the operator (`divert`, reason "the conversation moved on"):
+**Chose:** each item records `seen`, how many entries the case had when the run that wrote the message started (its prompt was written then, so a comment heard while it ran is one its reply never answered). On every tick, for every item, due or not, any later entry of these kinds turns the item into a draft for the operator (`divert`, reason "the conversation moved on"):
 
-- a `message` not written by the channel's own account;
+- a `message`, unless the channel's own account wrote it with the text of a message liaise sent on the case (the operator commenting by hand on liaise's account counts);
 - a `transition` by anyone but liaise, such as the operator setting the state;
 - a `run` entry that read the issue closed.
 
-A later item of the same case is judged by the same rule, so it goes the same way. An effect hold keeps an item held, and it lapses under decision 3 if the hold outlasts the stale bound. An inactive subject is not ticked, so its items wait and lapse the same way. When a subject's intake failed this tick, its outboxes wait for the next tick, since the conversation may have moved unheard. Within a case the items go in order, and one that does not go out keeps the rest for the next tick.
+Right before a release the tick reads the issue's state (once a tick, as it does before a start). If the issue is closed, the message becomes a draft. If the state cannot be read, the message waits.
+
+A later item of the same case is judged by the same rule, so it goes the same way. An effect hold keeps an item held, and it lapses under decision 3 if the hold outlasts the stale bound. An inactive subject is not ticked, so its items wait and lapse the same way. When a subject's intake failed this tick, or reported a problem for any conversation, its outboxes wait for the next tick, since the conversation may have moved unheard. A message the tick wrote itself (a nudge) keeps the provenance it was judged with, so its release is judged alike. One case's failure to release is a problem line, never the tick's end. Within a case the items go in order, and one that does not go out keeps the rest for the next tick.
 
 **Alternatives:** cancel instead of draft (loses the text, and a draft still lets the operator send it); compare times rather than entry counts (an entry carries the time the message was written, so a comment heard late would be missed); rely on the verdict alone (blind to a trusted partner saying "never mind" and to the operator's own moves, the common cases); act at each event (four call sites and a dry-run overlay to reason about, where the drain sees the same entries once).
 

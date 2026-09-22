@@ -943,9 +943,16 @@ def case_cancel_send(
         )
     item = cancelled.item
     verb = "would cancel" if dry_run else "cancelled"
+    claimed = item.get("claimed_at")
+    fate = (
+        f"its release was interrupted at {claimed}, so it may have gone out: check "
+        f"{item.get('ref')}"
+        if claimed
+        else "nothing was sent"
+    )
     return (
         f"{verb} held message [{cancelled.index}] of {case_id} ({item.get('outcome')} "
-        f"to {item.get('ref')}, due at {item.get('release_at')}): nothing was sent\n"
+        f"to {item.get('ref')}, due at {item.get('release_at')}): {fate}\n"
         f"{case_id} stays {cancelled.case.state}"
     )
 

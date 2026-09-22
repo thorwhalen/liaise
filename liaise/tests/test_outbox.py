@@ -267,3 +267,56 @@ def test_two_held_messages_on_a_case_go_out_in_order_and_one_can_be_cancelled(wo
     world.tick(DUE)
 
     assert [draft.text for _, draft in world.github.sent] == ["@pat Second note."]
+
+
+def test_a_poll_that_fails_keeps_the_outbox_waiting(public, monkeypatch):
+    from correspond.errors import ChannelError
+
+    public.tick(HELD_AT)
+
+    def unreachable(*args, **kwargs):
+        raise ChannelError("GitHub answered 502", kind="unavailable")
+
+    monkeypatch.setattr(public.github, "poll", unreachable)
+    report = public.tick(DUE)
+
+    assert public.github.sent == [] and len(public.case().outbox) == 1
+    assert f"  outbox of {CASE_1}: waits, since intake of {SLUG} failed" in report.plan_lines
+
+
+def test_an_issue_closed_during_the_window_turns_the_held_message_into_a_draft(public):
+    public.tick(HELD_AT)
+    public.github.set_state(REPO, 12, "closed")
+
+    public.tick(DUE)
+
+    assert public.github.sent == []
+    (draft,) = public.case().drafts
+    assert "closed" in draft["reason"]
+
+
+def test_a_message_heard_while_the_run_ran_is_one_the_reply_never_answered(world):
+    world.github.set_visibility(REPO, "public")
+    world.issue()
+    world.tick()  # the run starts
+    world.github.add_comment(REPO, 12, author="pat", body="Never mind, found it.", created_at=LATER - timedelta(minutes=1))
+
+    world.tick(HELD_AT)  # hears the comment, then collects the run and holds its reply
+    world.tick(DUE)
+
+    assert world.github.sent == []
+    (draft,) = world.case().drafts
+    assert "moved on" in draft["reason"]
+
+
+def test_a_comment_the_operator_writes_on_liaises_account_stops_the_release(public):
+    public.tick(HELD_AT)
+    public.github.add_comment(
+        REPO, 12, author="owner", body="Hold on, that answer is wrong.", created_at=HELD_AT + timedelta(minutes=1), is_self=True
+    )
+
+    public.tick(DUE)
+
+    assert public.github.sent == []
+    (draft,) = public.case().drafts
+    assert "moved on" in draft["reason"]
