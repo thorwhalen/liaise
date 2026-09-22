@@ -273,6 +273,11 @@ _KEYWORDS = frozenset(
     {"if", "then", "else", "elif", "do", "while", "until", "!", "{", "}", "fi", "done"}
 )
 _ASSIGNMENT_RE = re.compile(r"^[A-Za-z_]\w*(\[[^]]*\])?\+?=")
+#: A ``gh`` command line, whatever names the program.
+_GH_SHAPED_RE = re.compile(
+    r"\b(?:issue|pr)\s+(?:comment|create|edit|review|close|reopen|merge)\b"
+    r"|\bapi\s+(?:-\S+\s+)*(?:/?repos/|graphql\b)"
+)
 _HEREDOC_TOKEN = "\x00liaise-heredoc-{}\x00"
 #: Redirections that move no text the hook would need: ``2>&1``, ``>/dev/null``.
 _HARMLESS_REDIRECT_RE = re.compile(r"\d?>>?[ \t]*(?:&[12]\b|/dev/null\b)")
@@ -473,7 +478,17 @@ def _program(word: str) -> str:
 
 
 def _mentions_a_writer(text: str) -> bool:
-    return bool(re.search(r"(?<![\w.-])(gh|correspond)(?![\w.-])", text))
+    """Whether ``text`` names ``gh`` or ``correspond``, however the shell's quoting spells it.
+
+    Quotes and backslashes are dropped first (``"g"h`` and ``g\\h`` are ``gh``), and a
+    ``gh``-shaped command line (``issue comment``, ``api repos/``) counts even without the
+    program's name, which a ``$`` may have built.
+    """
+    plain = re.sub(r"[\"'\\]", "", text)
+    return bool(
+        re.search(r"(?<![\w.-])(gh|correspond)(?![\w.-])", plain)
+        or _GH_SHAPED_RE.search(plain)
+    )
 
 
 # ---- reading one gh or correspond command ----

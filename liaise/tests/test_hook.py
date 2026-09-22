@@ -527,3 +527,11 @@ def test_a_body_file_must_be_a_regular_file(run_hook, tmp_path):
 def test_harmless_redirections_are_fine(run_hook):
     assert run_hook.bash("gh issue list 2>&1 | head") is None
     assert run_hook.bash("gh pr view 3 > /dev/null") is None
+
+
+@pytest.mark.parametrize(
+    "command",
+    ['"g"h issue comment 12 -b hi', "g\\h issue comment 12 -b hi", "${G}h issue comment 12 -b hi", "$'\\x67h' pr review 3 -b hi"],
+)
+def test_a_program_name_the_shell_assembles_is_still_seen(run_hook, command):
+    assert decision(run_hook.bash(command)) in ("ask", "deny"), command
