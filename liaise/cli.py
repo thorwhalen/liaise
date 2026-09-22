@@ -20,6 +20,8 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]
     liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T]
         [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
+    liaise vet --hook
+    liaise hook install | uninstall | status [--settings FILE]
     liaise subject list
     liaise subject show SLUG
     liaise setup SUBJECT
@@ -1322,6 +1324,96 @@ def _vet_lines(found: Mapping[str, Any]) -> list[str]:
     return lines
 
 
+def _vet_hook(
+    *,
+    refused: Sequence[str],
+    root: Optional[str],
+    registry: Optional[Mapping[str, Any]],
+    now: Optional[datetime],
+    disclosure: Optional[Callable[..., Mapping[str, Any]]],
+    store: Optional[MutableMapping[str, Any]],
+    repo_of: Optional[Callable[[Optional[str]], Optional[str]]],
+) -> Optional[str]:
+    """``liaise vet --hook``: the hook's answer for the JSON on standard input, or None."""
+    import json as json_module
+
+    from liaise import hook as hooks
+    from liaise import vet as vetting
+    from liaise.gate import outbound_policy
+
+    raw = sys.stdin.read()
+    if refused:
+        # The hook judges with the provenance unknown and the destination the command
+        # names; a flag that would change either is refused, and the write goes to the
+        # operator.
+        return json_module.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": hooks.PRE_TOOL_USE,
+                    "permissionDecision": hooks.ASK,
+                    "permissionDecisionReason": (
+                        f"liaise: vet --hook takes no {', '.join(refused)}; fix the hook "
+                        f"command (liaise hook install)"
+                    ),
+                }
+            }
+        )
+    config_root = _root(root)
+    filters = vetting.VET_FILTERS
+    if disclosure is not None:
+        policy = functools.partial(outbound_policy, disclosure=disclosure)
+        filters = tuple(policy if f is outbound_policy else f for f in filters)
+    vet_fn = functools.partial(
+        vetting.vet, registry=registry, now=now, outbound_filters=filters
+    )
+
+    def ledger_store() -> MutableMapping[str, Any]:
+        if store is not None:
+            return store
+        return _ledger_store(load_global_config(config_root), None, create=True)
+
+    answer = hooks.run_hook(
+        raw,
+        ledger_store=ledger_store,
+        vet_fn=vet_fn,
+        root=config_root,
+        repo_of=repo_of or hooks.repo_of_checkout,
+        now=now,
+    )
+    return answer or None
+
+
+@_expected_errors(ConfigError, ValueError)
+def hook_install(*, settings: str = "") -> str:
+    """Add liaise's PreToolUse and PostToolUse hooks to Claude Code's settings (``~/.claude/settings.json``).
+
+    Both run ``liaise vet --hook`` on Bash and correspond's MCP write tools. Every other
+    hook and setting is kept, and running it again changes nothing. The hook can only hold
+    a write back (``ask``, ``deny``), never let one through that the operator's own
+    permission rules would not. ``--settings`` names another settings file.
+    """
+    from liaise import hook as hooks
+
+    return hooks.install_hooks(settings or hooks.DFLT_SETTINGS)
+
+
+@_expected_errors(ConfigError, ValueError)
+def hook_uninstall(*, settings: str = "") -> str:
+    """Remove liaise's hooks from Claude Code's settings, keeping everything else."""
+    from liaise import hook as hooks
+
+    return hooks.uninstall_hooks(settings or hooks.DFLT_SETTINGS)
+
+
+@_expected_errors(ConfigError, ValueError)
+def hook_status(*, settings: str = "") -> str:
+    """Whether liaise's hooks are in Claude Code's settings: installed, outdated or missing, per event."""
+    from liaise import hook as hooks
+
+    states = hooks.hook_status(settings or hooks.DFLT_SETTINGS)
+    return "\n".join(f"{event}: {state}" for event, state in states.items())
+
+
 @_expected_errors(ConfigError, ValueError)
 def vet(
     *,
@@ -1336,11 +1428,14 @@ def vet(
     tainted: bool = False,
     untainted: bool = False,
     json: bool = False,
+    hook: bool = False,
     root: Optional[str] = None,
     registry: Optional[Mapping[str, Any]] = None,
     now: Optional[datetime] = None,
     disclosure: Optional[Callable[..., Mapping[str, Any]]] = None,
-) -> str:
+    store: Optional[MutableMapping[str, Any]] = None,
+    repo_of: Optional[Callable[[Optional[str]], Optional[str]]] = None,
+) -> Optional[str]:
     """Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers. Sends nothing.
 
     The draft is ``--text``, or ``--text-file`` (standard input by default). ``--to`` names
@@ -1350,12 +1445,41 @@ def vet(
     prints the verdict record. ``--to``, ``--cc`` and ``--bcc`` may be repeated. The exit
     code is the route of a write made at once: 0 send, 2 draft-to-operator (a ``delay``
     too), 3 block (1: the draft could not be vetted). It records nothing.
+
+    ``--hook`` reads a Claude Code hook's JSON on standard input instead (``liaise hook
+    install`` sets it up; see :mod:`liaise.hook`): on PreToolUse it prints ``deny`` or
+    ``ask`` with the reasons for a ``gh`` or ``correspond`` write the gate holds back, and
+    nothing otherwise; on PostToolUse it records the override when a command it asked
+    about ran. It always exits 0, and fails closed (``ask``).
     """
     import json as json_module
 
     from liaise import vet as vetting
     from liaise.gate import outbound_policy
 
+    if hook:
+        return _vet_hook(
+            refused=[
+                flag
+                for flag, given in (
+                    ("--untainted", untainted),
+                    ("--tainted", tainted),
+                    ("--ref", ref),
+                    ("--text", text),
+                    ("--to", to),
+                    ("--cc", cc),
+                    ("--bcc", bcc),
+                    ("--json", json),
+                )
+                if given
+            ],
+            root=root,
+            registry=registry,
+            now=now,
+            disclosure=disclosure,
+            store=store,
+            repo_of=repo_of,
+        )
     if tainted and untainted:
         raise ValueError("give at most one of --tainted and --untainted")
     if not ref:
@@ -1452,6 +1576,11 @@ _dispatch_funcs = {
     "subject": {"list": subject_list, "show": subject_show},
     "gate": {"report": gate_report},
     "vet": vet,
+    "hook": {
+        "install": hook_install,
+        "uninstall": hook_uninstall,
+        "status": hook_status,
+    },
     "setup": setup,
     "migrate-config": migrate_config,
     "schedule": {
@@ -1496,7 +1625,7 @@ _SEAMS = {
         "reject-draft": ("store", "now"),
     },
     "gate": {"report": ("store",)},
-    "vet": ("registry", "now", "disclosure"),
+    "vet": ("registry", "now", "disclosure", "store", "repo_of"),
     "setup": ("labeler",),
 }
 

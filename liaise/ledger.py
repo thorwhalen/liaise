@@ -16,6 +16,8 @@ flat string with no "/", since ``dol.Jsons`` would read one as a subdirectory::
     budget_notified__<subject>__<day>   when the operator heard that day's cap was reached
     issue_check__<case_id>              an IssueCheck: the tick's reads of the case's issue state
     message__<message_id>               an OutboundMessage: one sent or held outside any case
+    hook_pending__<key>                 what the Claude Code hook asked about, until the tool ran
+    override__<key>                     a write the hook asked about that the operator let run
 
 The variable parts (ids, refs, scopes) are percent-encoded, so the scope
 ``repo:example/app`` is stored under ``hold__repo%3Aexample%2Fapp``. The result has
@@ -32,7 +34,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import os
-from collections.abc import Iterator, MutableMapping
+from collections.abc import Iterator, Mapping, MutableMapping
 from dataclasses import replace
 from datetime import date, datetime
 from functools import cached_property
@@ -344,6 +346,43 @@ class Ledger:
     def unrouted(self) -> Iterator[dict[str, Any]]:
         """Every queued unrouted message, as a fresh dict, in no set order."""
         return (copy.deepcopy(item) for item in self._values("unrouted"))
+
+    # ---- the Claude Code hook: pending asks and the overrides they became ----
+
+    def set_hook_pending(self, key: str, record: Mapping[str, Any]) -> None:
+        """Keep what the hook asked the operator about, under ``key``, until the tool runs.
+
+        ``record`` never holds a message's text: the flow, the rules, the hashes, the ref.
+        """
+        self.store[_key("hook_pending", key)] = to_jsonable(dict(record))
+
+    def pop_hook_pending(self, key: str) -> Optional[dict[str, Any]]:
+        """The pending ask under ``key``, removed; None when there is none."""
+        stored = _key("hook_pending", key)
+        record = self.store.get(stored)
+        if record is not None:
+            _delete(self.store, stored)
+        return None if record is None else copy.deepcopy(record)
+
+    def hook_pending(self) -> Iterator[tuple[str, dict[str, Any]]]:
+        """Every pending ask, as ``(key, record)``, in no set order."""
+        head = "hook_pending" + _SEP
+        for stored in list(self.store):
+            if stored.startswith(head):
+                record = self.store.get(stored)
+                if record is not None:
+                    yield unquote(stored[len(head) :]), copy.deepcopy(record)
+
+    def add_override(self, key: str, record: Mapping[str, Any]) -> None:
+        """Record that the operator let a write the hook asked about go ahead (discussion §5.8).
+
+        Kept apart from cases and messages: liaise neither held nor sent it.
+        """
+        self.store[_key("override", key)] = to_jsonable(dict(record))
+
+    def overrides(self) -> Iterator[dict[str, Any]]:
+        """Every recorded hook override, as a fresh dict, in no set order."""
+        return (copy.deepcopy(item) for item in self._values("override"))
 
     # ---- daily dispatch counters ----
 
