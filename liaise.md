@@ -1,4 +1,4 @@
-> built 2026-09-22 13:22 UTC from b982a60 (main) · liaise 0.1.7. Details: build_info.json
+> built 2026-09-22 13:34 UTC from 0356dca (main) · liaise 0.1.8. Details: build_info.json
 
 # index.html.md
 
@@ -184,7 +184,7 @@ When a run plans no state of its own, its case moves to `needs-partner` if a mes
 
 **Every filter runs, and the most restrictive answer decides** (see [ADR 0002]()). Each one says how far to hold the message back — send it, hold it for a cancellable window, send it back to be revised, ask you, or refuse it as written — and the message goes out only when nothing holds it back. So a draft held for you arrives flagged with everything the gate found in it, rather than with the first thing. A message it holds is kept on the case as a draft, with the audience in words and every reason, and you are told (never what it said). The gate fails closed: a filter that raises, or answers anything but pass or divert, asks you, with the error as its reason. acquaint is optional: without it every reader counts as need-to-know, your `policy.leak_terms` are the words to look for, and the writing card and deslop filters add a note and let the message through. Messages go out through correspond, and one that fails to send is kept as a draft, recorded, and reported to you.
 
-**A send to a public or organisation-wide place cannot be withdrawn,** so by default it is held for you as a draft, whatever the reply mode. Set `policy.delay_minutes` (10 is the advised window) and the tick instead holds it in the case’s outbox for that long before it goes out by itself, and tells you only that a message is held and for how long. The outbox is off until you set it, since it sends without a person. `liaise case show <case>` and `liaise status` list what is held and when it sends; `liaise case cancel-send <case> [INDEX] [--reason TEXT]` takes it off, unsent. When the window has passed, the next tick judges the message again, against who can read the destination then: if the text, the audience or the verdict changed since it was held (a repository gone public, a stranger’s comment on the issue), it is not sent and becomes a draft with the new verdict. So is a held message whose conversation moved on meanwhile (a new message on the case, you setting its state, its issue closed), one reached more than `policy.delay_stale_minutes` after its release, and one whose release was interrupted, since it may already have gone out. A hold on the subject, the person or the repository keeps it held. With `delay_minutes = 0` it is sent at once. See [ADR 0003]().
+**A send to a public or organisation-wide place cannot be withdrawn,** so by default it is held for you as a draft, whatever the reply mode. Set `policy.delay_minutes` (10 is the advised window) and the tick instead holds it in the case’s outbox for that long before it goes out by itself, and tells you only that a message is held and for how long. The outbox is off until you set it, since it sends without a person. `liaise case show <case>` and `liaise status` list what is held and when it sends; `liaise case cancel-send <case> [ID] [--reason TEXT]` takes it off, unsent. `ID` is the held message’s id (like `h3f9a0c12`), which the tick prints when it holds the message and `case show` and `status` list beside it; it names the same message for as long as it is held. Its position in the outbox (`INDEX`) is also accepted, but it shifts when an earlier message goes out or is cancelled. When the window has passed, the next tick judges the message again, against who can read the destination then: if the text, the audience or the verdict changed since it was held (a repository gone public, a stranger’s comment on the issue), it is not sent and becomes a draft with the new verdict. So is a held message whose conversation moved on meanwhile (a new message on the case, you setting its state, its issue closed), one reached more than `policy.delay_stale_minutes` after its release, and one whose release was interrupted, since it may already have gone out. A hold on the subject, the person or the repository keeps it held. With `delay_minutes = 0` it is sent at once. See [ADR 0003]().
 
 **Sending a draft.** A draft waits for you, and nothing sends it on its own. `liaise case show <case>` numbers each draft, and `liaise case send-draft <case> [INDEX]` sends the one you approve. The gate runs again on it, every filter of it, against who can read the destination right then. `--edit` opens the text in `$VISUAL` or `$EDITOR` first, and the gate judges what you saved, so a path pasted into an edit is stopped like one the agent wrote. It then shows you where the message goes and who can read it there, what the gate holds it back for, and the exact text — invisible characters spelled out and every link in full — and sends only once you answer `y` at a terminal. Your answer is an approval bound to that text and that audience, recorded with `--justification TEXT`: it releases the message past what you were shown, never past a refusal, and if the text or the readership changes before it goes out, nothing is sent and you see the new verdict. An agent’s shell or a processor run has no terminal, so neither can release a draft. A message the gate diverts again, or that its channel refuses, stays on the case with the new reason. Once the last draft is sent, a case in `needs-owner` whose draft was an `ask`, `reply` or `propose` moves to `needs-partner`; after an escalation’s text, move it on yourself. A delivery message whose delivery a hold kept is refused, since that change was never delivered. `liaise case reject-draft <case> [INDEX] --reason TEXT` takes a draft off the case without sending it, and records why.
 
@@ -745,7 +745,7 @@ liaise case show CASE_ID
 liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
 liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
 liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
-liaise case cancel-send CASE_ID [INDEX] [--reason TEXT] [--dry-run]
+liaise case cancel-send CASE_ID [ID|INDEX] [--reason TEXT] [--dry-run]
 liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
     [--purpose PURPOSE] [--dry-run]
 liaise message list [--state STATE]
@@ -791,7 +791,7 @@ traceback.
 
 ### Functions
 
-| [`case_cancel_send`](_autosummary/liaise.cli.html.md#liaise.cli.case_cancel_send)(case_id, \*index[, reason, ...])   | Take CASE_ID's message INDEX, or its only one, out of the delay outbox, unsent.                              |
+| [`case_cancel_send`](_autosummary/liaise.cli.html.md#liaise.cli.case_cancel_send)(case_id, \*index[, reason, ...])   | Take CASE_ID's held message ID (or INDEX), or its only one, out of the delay outbox, unsent.                 |
 |------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
 | [`case_list`](_autosummary/liaise.cli.html.md#liaise.cli.case_list)(\*[, state, root, store])                 | Every case in the ledger, a line each: its id, its state and its conversations.                              |
 | [`case_reject_draft`](_autosummary/liaise.cli.html.md#liaise.cli.case_reject_draft)(case_id, \*index[, reason, ...])  | Decline CASE_ID's draft INDEX, or its only one, recording `--reason`.                                        |
@@ -876,7 +876,10 @@ a first line, then a rule.
 
 ### liaise.cli.case_cancel_send(case_id, \*index, reason='', dry_run=False, root=None, store=None, now=None)
 
-Take CASE_ID’s message INDEX, or its only one, out of the delay outbox, unsent.
+Take CASE_ID’s held message ID (or INDEX), or its only one, out of the delay outbox, unsent.
+
+ID is what `liaise case show` and the tick’s hold line print (like `h3f9a0c12`) and
+always names the same message; INDEX, its position, shifts as earlier ones leave.
 
 A send to a public or organisation-wide place waits in the outbox for
 `policy.delay_minutes` before the tick sends it (liaise #38); this is how you stop it.
@@ -5633,7 +5636,13 @@ tick does not send it at once, and does not hand it to the operator as a draft e
 keeps it on the case’s `outbox` until `release_at`
 (`policy.delay_minutes` later), tells the operator only that a message is held and for
 how long, and sends it on the first tick at or after that time. Until then the operator
-takes it off with `liaise case cancel-send CASE [INDEX]` ([`cancel_send()`](_autosummary/liaise.outbox.html.md#liaise.outbox.cancel_send)).
+takes it off with `liaise case cancel-send CASE [ID | INDEX]` ([`cancel_send()`](_autosummary/liaise.outbox.html.md#liaise.outbox.cancel_send)).
+
+**Naming a held message.** Each item has an `id` ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id), e.g. `h3f9a0c12`)
+that never changes and is never reused on its case, printed wherever the item is: the
+tick’s hold line, `liaise case show` and `liaise status`. Its INDEX, its position in
+the outbox, is also accepted, but shifts as earlier items go out or are cancelled, so an
+index printed at hold time can later name another message; the id cannot.
 
 **What a release re-checks.** Each item carries the outbox’s own
 [`Approval`](_autosummary/liaise.model.html.md#liaise.model.Approval) ([`liaise.gate.hold_for()`](_autosummary/liaise.gate.html.md#liaise.gate.hold_for)), bound to the message, its
@@ -5660,6 +5669,9 @@ goes to the operator.
 
 Every transition is a `gate` entry on the case whose `decision` is one of
 `OUTBOX_DECISIONS`, and no operator notification carries anything the message says.
+Each records the item’s `held_id` (a release’s `send` entry, in `released_from`),
+which is what joins the entries about one message; their `outbox` is only the item’s
+position at that moment.
 
 ### Module Attributes
 
@@ -5676,21 +5688,27 @@ Every transition is a `gate` entry on the case whose `decision` is one of
 | [`LAPSED_REASON`](_autosummary/liaise.outbox.html.md#liaise.outbox.LAPSED_REASON)       | Why a held message reached long after its release is a draft.                                                                                          |
 | [`ISSUE_CLOSED_REASON`](_autosummary/liaise.outbox.html.md#liaise.outbox.ISSUE_CLOSED_REASON) | Why a held message whose issue is closed at its release is a draft.                                                                                    |
 | [`INTERRUPTED_REASON`](_autosummary/liaise.outbox.html.md#liaise.outbox.INTERRUPTED_REASON)  | Why a message whose release was interrupted is a draft.                                                                                                |
+| [`HELD_ID_PREFIX`](_autosummary/liaise.outbox.html.md#liaise.outbox.HELD_ID_PREFIX)      | What starts a held message's id, so an id can never be read as an INDEX.                                                                               |
+| [`HELD_ID_DIGITS`](_autosummary/liaise.outbox.html.md#liaise.outbox.HELD_ID_DIGITS)      | 32 bits, among the handful of items a case ever holds.                                                                                                 |
+| [`HELD_ID_PATTERN`](_autosummary/liaise.outbox.html.md#liaise.outbox.HELD_ID_PATTERN)     | What a held message's id looks like ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)).                                                      |
+| [`Which`](_autosummary/liaise.outbox.html.md#liaise.outbox.Which)               | its INDEX (a position) or its id ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)).                                                         |
 
 ### Functions
 
-| [`cancel_send`](_autosummary/liaise.outbox.html.md#liaise.outbox.cancel_send)(ledger, case_id, \*[, index, ...])     | Take the case `case_id`'s held message at `index` out of the outbox, unsent.             |
-|-----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| [`held_at`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_at)(item)                                      | When `item` was held.                                                                    |
-| [`held_message`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_message)(item, \*, case_id)                    | The message `item` holds, as the tick hands it to the gate again.                        |
-| [`held_provenance`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_provenance)(item)                              | The provenance `item` was held with, or None for a run's (read from the ledger again).   |
-| [`hold_of`](_autosummary/liaise.outbox.html.md#liaise.outbox.hold_of)(item)                                      | The outbox's approval `item` carries, for the context of its release.                    |
-| [`is_due`](_autosummary/liaise.outbox.html.md#liaise.outbox.is_due)(item, now)                                  | Whether `item`'s window has passed at `now`.                                             |
-| [`make_held`](_autosummary/liaise.outbox.html.md#liaise.outbox.make_held)(outbound, decision, \*, at, delay, seen) | One item of a case's `outbox`: `outbound`, which `decision` gave `delay`, JSON-ready.    |
-| [`moved_on`](_autosummary/liaise.outbox.html.md#liaise.outbox.moved_on)(case, item)                               | What moved the conversation past `item` since it was planned, or None.                   |
-| [`pick_held`](_autosummary/liaise.outbox.html.md#liaise.outbox.pick_held)(case[, index])                           | `(index, item)`: `case`'s held message at `index`, or its only one when `index` is None. |
-| [`release_at`](_autosummary/liaise.outbox.html.md#liaise.outbox.release_at)(item)                                   | When `item` may go out.                                                                  |
-| [`release_block`](_autosummary/liaise.outbox.html.md#liaise.outbox.release_block)(case, item, \*, now, stale_after)    | `(decision, reason)` when `item`, due at `now`, must go to the operator instead.         |
+| [`cancel_send`](_autosummary/liaise.outbox.html.md#liaise.outbox.cancel_send)(ledger, case_id, \*[, index, ...])     | Take the case `case_id`'s held message `index` out of the outbox, unsent.              |
+|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`held_at`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_at)(item)                                      | When `item` was held.                                                                  |
+| [`held_id`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)(item)                                      | The id that names `item` for as long as it is held, whatever its position.             |
+| [`held_message`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_message)(item, \*, case_id)                    | The message `item` holds, as the tick hands it to the gate again.                      |
+| [`held_provenance`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_provenance)(item)                              | The provenance `item` was held with, or None for a run's (read from the ledger again). |
+| [`hold_of`](_autosummary/liaise.outbox.html.md#liaise.outbox.hold_of)(item)                                      | The outbox's approval `item` carries, for the context of its release.                  |
+| [`is_due`](_autosummary/liaise.outbox.html.md#liaise.outbox.is_due)(item, now)                                  | Whether `item`'s window has passed at `now`.                                           |
+| [`make_held`](_autosummary/liaise.outbox.html.md#liaise.outbox.make_held)(outbound, decision, \*, at, delay, seen) | One item of a case's `outbox`: `outbound`, which `decision` gave `delay`, JSON-ready.  |
+| [`moved_on`](_autosummary/liaise.outbox.html.md#liaise.outbox.moved_on)(case, item)                               | What moved the conversation past `item` since it was planned, or None.                 |
+| [`parse_which`](_autosummary/liaise.outbox.html.md#liaise.outbox.parse_which)(text)                                  | `text` as a held message is named: an int for an INDEX (all digits), else an id.       |
+| [`pick_held`](_autosummary/liaise.outbox.html.md#liaise.outbox.pick_held)(case[, index])                           | `(index, item)`: `case`'s held message named by `index`, or its only one for None.     |
+| [`release_at`](_autosummary/liaise.outbox.html.md#liaise.outbox.release_at)(item)                                   | When `item` may go out.                                                                |
+| [`release_block`](_autosummary/liaise.outbox.html.md#liaise.outbox.release_block)(case, item, \*, now, stale_after)    | `(decision, reason)` when `item`, due at `now`, must go to the operator instead.       |
 
 ### Classes
 
@@ -5722,6 +5740,22 @@ the operator.
 ### liaise.outbox.DFLT_CANCEL_REASON *= 'cancelled by the operator'*
 
 The reason a cancel records when the operator gives none.
+
+### liaise.outbox.HELD_ID_DIGITS *= 8*
+
+32 bits, among the
+handful of items a case ever holds.
+
+* **Type:**
+  How many hex digits of the digest follow [`HELD_ID_PREFIX`](_autosummary/liaise.outbox.html.md#liaise.outbox.HELD_ID_PREFIX)
+
+### liaise.outbox.HELD_ID_PATTERN *= re.compile('h[0-9a-f]{8}')*
+
+What a held message’s id looks like ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)).
+
+### liaise.outbox.HELD_ID_PREFIX *= 'h'*
+
+What starts a held message’s id, so an id can never be read as an INDEX.
 
 ### liaise.outbox.HOLD *= 'hold'*
 
@@ -5775,9 +5809,20 @@ Why a held message the conversation moved past is a draft, not a send.
 
 The entry kind every outbox transition is recorded as.
 
+### liaise.outbox.Which
+
+its INDEX (a position) or its id ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)).
+
+* **Type:**
+  What names a held message
+
+alias of [`int`](https://docs.python.org/3/builtins/functions.html#int) | [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.outbox.cancel_send(ledger, case_id, , index=None, reason='', by='operator', now=None, dry_run=False)
 
-Take the case `case_id`’s held message at `index` out of the outbox, unsent.
+Take the case `case_id`’s held message `index` out of the outbox, unsent.
+
+`index` is the item’s id ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)) or its position ([`pick_held()`](_autosummary/liaise.outbox.html.md#liaise.outbox.pick_held)).
 
 A `gate` entry by `by`, stamped `now`, keeps its text, where it would have gone,
 when it would have, and `reason` ([`DFLT_CANCEL_REASON`](_autosummary/liaise.outbox.html.md#liaise.outbox.DFLT_CANCEL_REASON) when blank). The case’s
@@ -5793,6 +5838,18 @@ When `item` was held.
 
 * **Return type:**
   [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+
+### liaise.outbox.held_id(item)
+
+The id that names `item` for as long as it is held, whatever its position.
+
+The one [`make_held()`](_autosummary/liaise.outbox.html.md#liaise.outbox.make_held) gave it; an item held before items had ids gets one derived
+from when it was held, where it goes and what it says. That is as stable, but two such
+items held at the same moment with the same text to the same place share it, and
+[`pick_held()`](_autosummary/liaise.outbox.html.md#liaise.outbox.pick_held) then names the first.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.outbox.held_message(item, , case_id)
 
@@ -5822,7 +5879,7 @@ Whether `item`’s window has passed at `now`.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-### liaise.outbox.make_held(outbound, decision, , at, delay, seen, provenance=None)
+### liaise.outbox.make_held(outbound, decision, , at, delay, seen, provenance=None, serial=None)
 
 One item of a case’s `outbox`: `outbound`, which `decision` gave `delay`, JSON-ready.
 
@@ -5834,6 +5891,12 @@ entries the run that wrote it could have read, for [`moved_on()`](_autosummary/l
 `provenance` it was judged with when the tick wrote it itself (None: a run’s, read
 from the ledger again at release), and `claimed_at`, None until the tick starts
 releasing it.
+
+Its `id` ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)) is a digest of the case, `at`, the message’s
+`payload_hash` and `serial`: the position the hold’s own `gate` entry takes on the
+case (its entry count before the hold), which no other hold on the case shares, since
+entries are only ever appended. None leaves the id to the rest, as unique unless the
+same message is held twice at the same moment.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
@@ -5855,12 +5918,23 @@ carries the time it was written). Among the entries after it, any of these moves
 * **Return type:**
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
+### liaise.outbox.parse_which(text)
+
+`text` as a held message is named: an int for an INDEX (all digits), else an id.
+
+Raises `ValueError` for anything that is neither.
+
+* **Return type:**
+  `Union`[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
 ### liaise.outbox.pick_held(case, index=None)
 
-`(index, item)`: `case`’s held message at `index`, or its only one when `index` is None.
+`(index, item)`: `case`’s held message named by `index`, or its only one for None.
 
-Raises `ValueError`, saying which there are, for a case with none, an index it holds
-nothing at, and no index on a case holding several.
+`index` is an item’s id ([`held_id()`](_autosummary/liaise.outbox.html.md#liaise.outbox.held_id)), which always names the same message, or
+its position, which shifts as earlier items leave. Raises `ValueError`, saying which
+there are, for a case with none, an id or index it holds nothing at, and no name on a
+case holding several.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
@@ -8814,18 +8888,16 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-22 13:22 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/b982a603f016c0b420f1ec7a0a992d7af894e6ef"><code>b982a60</code></a> on branch <code>main</code>, for **liaise 0.1.7** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-22 13:34 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/0356dca3ef8fb56cafceee4c7784262449bc8619"><code>0356dca</code></a> on branch <code>main</code>, for **liaise 0.1.8** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.7) is behind the latest release on PyPI (0.1.8): `pip install liaise` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/b982a603f016c0b420f1ec7a0a992d7af894e6ef"><code>b982a603f016c0b420f1ec7a0a992d7af894e6ef</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/0356dca3ef8fb56cafceee4c7784262449bc8619"><code>0356dca3ef8fb56cafceee4c7784262449bc8619</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -8836,9 +8908,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35732855867">35732855867</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35734075925">35734075925</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>b982a603f016c0b420f1ec7a0a992d7af894e6ef</code> (in the history of the built commit) |
+| Event commit | <code>0356dca3ef8fb56cafceee4c7784262449bc8619</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -8863,13 +8935,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.8/">0.1.8</a>, newer than the documented version (0.1.7).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.8/">0.1.8</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout b982a603f016c0b420f1ec7a0a992d7af894e6ef
+git checkout 0356dca3ef8fb56cafceee4c7784262449bc8619
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

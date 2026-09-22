@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=ca7ad2ea"></script>
+    <script src="../../_static/documentation_options.js?v=22607128"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.7" />
+  <meta name="docsearch:version" content="0.1.8" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -724,7 +724,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]</span>
 <span class="sd">    liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]</span>
 <span class="sd">    liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]</span>
-<span class="sd">    liaise case cancel-send CASE_ID [INDEX] [--reason TEXT] [--dry-run]</span>
+<span class="sd">    liaise case cancel-send CASE_ID [ID|INDEX] [--reason TEXT] [--dry-run]</span>
 <span class="sd">    liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]</span>
 <span class="sd">        [--purpose PURPOSE] [--dry-run]</span>
 <span class="sd">    liaise message list [--state STATE]</span>
@@ -1371,15 +1371,17 @@ window.runMermaid = runMermaid;</script>
 
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_one_index</span><span class="p">(</span><span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""The one INDEX a draft command was given, or None without one. Raises ``ValueError`` for more.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_one_index</span><span class="p">(</span>
+    <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">what</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"draft"</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The one INDEX (or id) a command was given, or None without one. Raises ``ValueError`` for more.</span>
 
 <span class="sd">    INDEX is ``*index`` in the signature, since cw makes a parameter with a default an</span>
-<span class="sd">    option, and the command line spells it ``[INDEX]``.</span>
+<span class="sd">    option, and the command line spells it ``[INDEX]``. ``what`` is what it names.</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">given</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">index</span><span class="p">))</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"name one draft of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> at a time, not </span><span class="si">{</span><span class="n">given</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"name one </span><span class="si">{</span><span class="n">what</span><span class="si">}</span><span class="s2"> of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> at a time, not </span><span class="si">{</span><span class="n">given</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">index</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">index</span> <span class="k">else</span> <span class="kc">None</span>
 
 
@@ -1681,14 +1683,17 @@ window.runMermaid = runMermaid;</script>
 <span class="nd">@_expected_errors</span><span class="p">(</span><span class="n">ConfigError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">case_cancel_send</span><span class="p">(</span>
     <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="o">*</span><span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+    <span class="o">*</span><span class="n">index</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">root</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">store</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Take CASE_ID's message INDEX, or its only one, out of the delay outbox, unsent.</span>
+<span class="w">    </span><span class="sd">"""Take CASE_ID's held message ID (or INDEX), or its only one, out of the delay outbox, unsent.</span>
+
+<span class="sd">    ID is what ``liaise case show`` and the tick's hold line print (like ``h3f9a0c12``) and</span>
+<span class="sd">    always names the same message; INDEX, its position, shifts as earlier ones leave.</span>
 
 <span class="sd">    A send to a public or organisation-wide place waits in the outbox for</span>
 <span class="sd">    ``policy.delay_minutes`` before the tick sends it (liaise #38); this is how you stop it.</span>
@@ -1705,7 +1710,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">cancelled</span> <span class="o">=</span> <span class="n">outbox</span><span class="o">.</span><span class="n">cancel_send</span><span class="p">(</span>
             <span class="n">ledger</span><span class="p">,</span>
             <span class="n">case_id</span><span class="p">,</span>
-            <span class="n">index</span><span class="o">=</span><span class="n">_one_index</span><span class="p">(</span><span class="n">case_id</span><span class="p">,</span> <span class="n">index</span><span class="p">),</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">_one_index</span><span class="p">(</span><span class="n">case_id</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">what</span><span class="o">=</span><span class="s2">"held message"</span><span class="p">),</span>
             <span class="n">reason</span><span class="o">=</span><span class="n">reason</span><span class="p">,</span>
             <span class="n">now</span><span class="o">=</span><span class="n">now</span><span class="p">,</span>
             <span class="n">dry_run</span><span class="o">=</span><span class="n">dry_run</span><span class="p">,</span>
@@ -1720,8 +1725,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">else</span> <span class="s2">"nothing was sent"</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> held message [</span><span class="si">{</span><span class="n">cancelled</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
-        <span class="sa">f</span><span class="s2">"to </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2">, due at </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'release_at'</span><span class="p">)</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">fate</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> held message [</span><span class="si">{</span><span class="n">cancelled</span><span class="o">.</span><span class="n">index</span><span class="si">}</span><span class="s2">] of </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">outbox</span><span class="o">.</span><span class="n">held_id</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">, "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'outcome'</span><span class="p">)</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ref'</span><span class="p">)</span><span class="si">}</span><span class="s2">, due at </span><span class="si">{</span><span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'release_at'</span><span class="p">)</span><span class="si">}</span><span class="s2">): "</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">fate</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span>
         <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2"> stays </span><span class="si">{</span><span class="n">cancelled</span><span class="o">.</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span></div>
 
@@ -2099,7 +2105,7 @@ window.runMermaid = runMermaid;</script>
     <span class="s2">"case"</span><span class="p">:</span> <span class="p">{</span>
         <span class="s2">"send-draft"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"index"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"metavar"</span><span class="p">:</span> <span class="s2">"INDEX"</span><span class="p">}},</span>
         <span class="s2">"reject-draft"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"index"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"metavar"</span><span class="p">:</span> <span class="s2">"INDEX"</span><span class="p">}},</span>
-        <span class="s2">"cancel-send"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"index"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="s2">"metavar"</span><span class="p">:</span> <span class="s2">"INDEX"</span><span class="p">}},</span>
+        <span class="s2">"cancel-send"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"index"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="s2">"metavar"</span><span class="p">:</span> <span class="s2">"ID|INDEX"</span><span class="p">}},</span>
     <span class="p">}</span>
 <span class="p">}</span>
 

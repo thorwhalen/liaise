@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=ca7ad2ea"></script>
+    <script src="../../_static/documentation_options.js?v=22607128"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.7" />
+  <meta name="docsearch:version" content="0.1.8" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -719,7 +719,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">keeps it on the case's :attr:`~liaise.model.Case.outbox` until ``release_at``</span>
 <span class="sd">(``policy.delay_minutes`` later), tells the operator only that a message is held and for</span>
 <span class="sd">how long, and sends it on the first tick at or after that time. Until then the operator</span>
-<span class="sd">takes it off with ``liaise case cancel-send CASE [INDEX]`` (:func:`cancel_send`).</span>
+<span class="sd">takes it off with ``liaise case cancel-send CASE [ID | INDEX]`` (:func:`cancel_send`).</span>
+
+<span class="sd">**Naming a held message.** Each item has an ``id`` (:func:`held_id`, e.g. ``h3f9a0c12``)</span>
+<span class="sd">that never changes and is never reused on its case, printed wherever the item is: the</span>
+<span class="sd">tick's hold line, ``liaise case show`` and ``liaise status``. Its INDEX, its position in</span>
+<span class="sd">the outbox, is also accepted, but shifts as earlier items go out or are cancelled, so an</span>
+<span class="sd">index printed at hold time can later name another message; the id cannot.</span>
 
 <span class="sd">**What a release re-checks.** Each item carries the outbox's own</span>
 <span class="sd">:class:`~liaise.model.Approval` (:func:`liaise.gate.hold_for`), bound to the message, its</span>
@@ -746,21 +752,26 @@ window.runMermaid = runMermaid;</script>
 
 <span class="sd">Every transition is a ``gate`` entry on the case whose ``decision`` is one of</span>
 <span class="sd">:data:`OUTBOX_DECISIONS`, and no operator notification carries anything the message says.</span>
+<span class="sd">Each records the item's ``held_id`` (a release's ``send`` entry, in ``released_from``),</span>
+<span class="sd">which is what joins the entries about one message; their ``outbox`` is only the item's</span>
+<span class="sd">position at that moment.</span>
 <span class="sd">"""</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mapping</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">hashlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">sha256</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">GateDecision</span><span class="p">,</span> <span class="n">hold_for</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.intake</span><span class="w"> </span><span class="kn">import</span> <span class="n">LIAISE_ACTOR</span><span class="p">,</span> <span class="n">SELF_ROLE</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Approval</span><span class="p">,</span> <span class="n">Case</span><span class="p">,</span> <span class="n">LedgerEntry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outcomes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Send</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provenance</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Provenance</span><span class="p">,</span> <span class="n">canonical_json</span>
 
 <span class="c1">#: The ``decision`` of a ``gate`` entry about the outbox: held, cancelled by the operator,</span>
 <span class="c1">#: made a draft (``divert``), or made a draft for being reached too late (``lapse``). A</span>
@@ -789,6 +800,42 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span>
 
 
+<span class="c1">#: What starts a held message's id, so an id can never be read as an INDEX.</span>
+<span class="n">HELD_ID_PREFIX</span> <span class="o">=</span> <span class="s2">"h"</span>
+<span class="c1">#: How many hex digits of the digest follow :data:`HELD_ID_PREFIX`: 32 bits, among the</span>
+<span class="c1">#: handful of items a case ever holds.</span>
+<span class="n">HELD_ID_DIGITS</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="c1">#: What a held message's id looks like (:func:`held_id`).</span>
+<span class="n">HELD_ID_PATTERN</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"</span><span class="si">{</span><span class="n">HELD_ID_PREFIX</span><span class="si">}</span><span class="s2">[0-9a-f]</span><span class="se">{{</span><span class="si">{</span><span class="n">HELD_ID_DIGITS</span><span class="si">}</span><span class="se">}}</span><span class="s2">"</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_short_digest</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="n">digest</span> <span class="o">=</span> <span class="n">sha256</span><span class="p">(</span><span class="n">canonical_json</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">HELD_ID_PREFIX</span> <span class="o">+</span> <span class="n">digest</span><span class="p">[:</span><span class="n">HELD_ID_DIGITS</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="held_id">
+<a class="viewcode-back" href="../../_autosummary/liaise.outbox.html#liaise.outbox.held_id">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">held_id</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The id that names ``item`` for as long as it is held, whatever its position.</span>
+
+<span class="sd">    The one :func:`make_held` gave it; an item held before items had ids gets one derived</span>
+<span class="sd">    from when it was held, where it goes and what it says. That is as stable, but two such</span>
+<span class="sd">    items held at the same moment with the same text to the same place share it, and</span>
+<span class="sd">    :func:`pick_held` then names the first.</span>
+<span class="sd">    """</span>
+    <span class="n">kept</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">kept</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">kept</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_short_digest</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="n">key</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"at"</span><span class="p">,</span> <span class="s2">"release_at"</span><span class="p">,</span> <span class="s2">"channel"</span><span class="p">,</span> <span class="s2">"ref"</span><span class="p">,</span> <span class="s2">"recipient"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">)</span></div>
+
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_stamp</span><span class="p">(</span><span class="n">moment</span><span class="p">:</span> <span class="n">datetime</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">moment</span><span class="o">.</span><span class="n">astimezone</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
 
@@ -807,6 +854,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">delay</span><span class="p">:</span> <span class="n">timedelta</span><span class="p">,</span>
     <span class="n">seen</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">provenance</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Provenance</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">serial</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""One item of a case's ``outbox``: ``outbound``, which ``decision`` gave ``delay``, JSON-ready.</span>
 
@@ -818,9 +866,24 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ``provenance`` it was judged with when the tick wrote it itself (None: a run's, read</span>
 <span class="sd">    from the ledger again at release), and ``claimed_at``, None until the tick starts</span>
 <span class="sd">    releasing it.</span>
+
+<span class="sd">    Its ``id`` (:func:`held_id`) is a digest of the case, ``at``, the message's</span>
+<span class="sd">    ``payload_hash`` and ``serial``: the position the hold's own ``gate`` entry takes on the</span>
+<span class="sd">    case (its entry count before the hold), which no other hold on the case shares, since</span>
+<span class="sd">    entries are only ever appended. None leaves the id to the rest, as unique unless the</span>
+<span class="sd">    same message is held twice at the same moment.</span>
 <span class="sd">    """</span>
     <span class="n">release_at</span> <span class="o">=</span> <span class="n">at</span> <span class="o">+</span> <span class="n">delay</span>
+    <span class="n">ident</span> <span class="o">=</span> <span class="n">_short_digest</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s2">"case"</span><span class="p">:</span> <span class="n">outbound</span><span class="o">.</span><span class="n">case_id</span><span class="p">,</span>
+            <span class="s2">"at"</span><span class="p">:</span> <span class="n">_stamp</span><span class="p">(</span><span class="n">at</span><span class="p">),</span>
+            <span class="s2">"payload_hash"</span><span class="p">:</span> <span class="n">decision</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span>
+            <span class="s2">"serial"</span><span class="p">:</span> <span class="n">serial</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="p">)</span>
     <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"id"</span><span class="p">:</span> <span class="n">ident</span><span class="p">,</span>
         <span class="s2">"at"</span><span class="p">:</span> <span class="n">_stamp</span><span class="p">(</span><span class="n">at</span><span class="p">),</span>
         <span class="s2">"release_at"</span><span class="p">:</span> <span class="n">_stamp</span><span class="p">(</span><span class="n">release_at</span><span class="p">),</span>
         <span class="s2">"outcome"</span><span class="p">:</span> <span class="n">outbound</span><span class="o">.</span><span class="n">purpose</span><span class="p">,</span>
@@ -967,23 +1030,66 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<span class="c1">#: What names a held message: its INDEX (a position) or its id (:func:`held_id`).</span>
+<span class="n">Which</span> <span class="o">=</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="parse_which">
+<a class="viewcode-back" href="../../_autosummary/liaise.outbox.html#liaise.outbox.parse_which">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">parse_which</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Which</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``text`` as a held message is named: an int for an INDEX (all digits), else an id.</span>
+
+<span class="sd">    Raises ``ValueError`` for anything that is neither.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">text</span>
+    <span class="n">text</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[0-9]+"</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">HELD_ID_PATTERN</span><span class="o">.</span><span class="n">fullmatch</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()):</span>
+        <span class="k">return</span> <span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">text</span><span class="si">!r}</span><span class="s2"> names no held message: give its id (like </span><span class="si">{</span><span class="n">HELD_ID_PREFIX</span><span class="si">}</span><span class="s2">"</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'0'</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">HELD_ID_DIGITS</span><span class="si">}</span><span class="s2">) or its INDEX"</span>
+    <span class="p">)</span></div>
+
+
+
 <div class="viewcode-block" id="pick_held">
 <a class="viewcode-back" href="../../_autosummary/liaise.outbox.html#liaise.outbox.pick_held">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">pick_held</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">"""``(index, item)``: ``case``'s held message at ``index``, or its only one when ``index`` is None.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pick_held</span><span class="p">(</span>
+    <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Which</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""``(index, item)``: ``case``'s held message named by ``index``, or its only one for None.</span>
 
-<span class="sd">    Raises ``ValueError``, saying which there are, for a case with none, an index it holds</span>
-<span class="sd">    nothing at, and no index on a case holding several.</span>
+<span class="sd">    ``index`` is an item's id (:func:`held_id`), which always names the same message, or</span>
+<span class="sd">    its position, which shifts as earlier items leave. Raises ``ValueError``, saying which</span>
+<span class="sd">    there are, for a case with none, an id or index it holds nothing at, and no name on a</span>
+<span class="sd">    case holding several.</span>
 <span class="sd">    """</span>
     <span class="n">items</span> <span class="o">=</span> <span class="n">case</span><span class="o">.</span><span class="n">outbox</span>
     <span class="n">listed</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"liaise case show </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> lists them"</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">items</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"case </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> has no message held in the outbox"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">wanted</span> <span class="o">=</span> <span class="n">parse_which</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wanted</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">held_id</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">wanted</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"case </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> holds no message </span><span class="si">{</span><span class="n">wanted</span><span class="si">}</span><span class="s2">: it has gone out, been "</span>
+                    <span class="sa">f</span><span class="s2">"cancelled or become a draft, or it is another case's; held now: "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ids</span><span class="p">)</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">listed</span><span class="si">}</span><span class="s2">)"</span>
+                <span class="p">)</span>
+            <span class="n">at</span> <span class="o">=</span> <span class="n">ids</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">wanted</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">at</span><span class="p">,</span> <span class="n">items</span><span class="p">[</span><span class="n">at</span><span class="p">]</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">wanted</span>
     <span class="n">last</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
     <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">last</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">"case </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> holds </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2"> messages, [0] to [</span><span class="si">{</span><span class="n">last</span><span class="si">}</span><span class="s2">]: name the one "</span>
-            <span class="sa">f</span><span class="s2">"to cancel (</span><span class="si">{</span><span class="n">listed</span><span class="si">}</span><span class="s2">)"</span>
+            <span class="sa">f</span><span class="s2">"case </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> holds </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2"> messages, "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">held_id</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">item</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">items</span><span class="p">)</span><span class="si">}</span><span class="s2">: name the one to cancel "</span>
+            <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">listed</span><span class="si">}</span><span class="s2">)"</span>
         <span class="p">)</span>
     <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">index</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">index</span> <span class="o">&lt;=</span> <span class="n">last</span><span class="p">:</span>
@@ -1013,13 +1119,15 @@ window.runMermaid = runMermaid;</script>
     <span class="n">ledger</span><span class="p">:</span> <span class="n">Ledger</span><span class="p">,</span>
     <span class="n">case_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">index</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Which</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
     <span class="n">by</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DFLT_CANCELLED_BY</span><span class="p">,</span>
     <span class="n">now</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">dry_run</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Cancellation</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""Take the case ``case_id``'s held message at ``index`` out of the outbox, unsent.</span>
+<span class="w">    </span><span class="sd">"""Take the case ``case_id``'s held message ``index`` out of the outbox, unsent.</span>
+
+<span class="sd">    ``index`` is the item's id (:func:`held_id`) or its position (:func:`pick_held`).</span>
 
 <span class="sd">    A ``gate`` entry by ``by``, stamped ``now``, keeps its text, where it would have gone,</span>
 <span class="sd">    when it would have, and ``reason`` (:data:`DFLT_CANCEL_REASON` when blank). The case's</span>
@@ -1043,6 +1151,7 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">"purpose"</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outcome"</span><span class="p">),</span>
             <span class="s2">"ref"</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ref"</span><span class="p">),</span>
             <span class="s2">"outbox"</span><span class="p">:</span> <span class="n">index</span><span class="p">,</span>
+            <span class="s2">"held_id"</span><span class="p">:</span> <span class="n">held_id</span><span class="p">(</span><span class="n">item</span><span class="p">),</span>
             <span class="s2">"release_at"</span><span class="p">:</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"release_at"</span><span class="p">),</span>
         <span class="p">},</span>
     <span class="p">)</span>

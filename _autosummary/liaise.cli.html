@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=ca7ad2ea"></script>
+    <script src="../_static/documentation_options.js?v=22607128"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.cases" href="liaise.cases.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.7" />
+  <meta name="docsearch:version" content="0.1.8" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -424,7 +424,7 @@
 <span class="n">liaise</span> <span class="n">case</span> <span class="nb">set</span><span class="o">-</span><span class="n">state</span> <span class="n">CASE_ID</span> <span class="n">STATE</span> <span class="p">[</span><span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">case</span> <span class="n">send</span><span class="o">-</span><span class="n">draft</span> <span class="n">CASE_ID</span> <span class="p">[</span><span class="n">INDEX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">edit</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">case</span> <span class="n">reject</span><span class="o">-</span><span class="n">draft</span> <span class="n">CASE_ID</span> <span class="p">[</span><span class="n">INDEX</span><span class="p">]</span> <span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
-<span class="n">liaise</span> <span class="n">case</span> <span class="n">cancel</span><span class="o">-</span><span class="n">send</span> <span class="n">CASE_ID</span> <span class="p">[</span><span class="n">INDEX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">case</span> <span class="n">cancel</span><span class="o">-</span><span class="n">send</span> <span class="n">CASE_ID</span> <span class="p">[</span><span class="n">ID</span><span class="o">|</span><span class="n">INDEX</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">reason</span> <span class="n">TEXT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">message</span> <span class="n">send</span> <span class="n">PERSON</span> <span class="o">--</span><span class="n">ref</span> <span class="n">REF</span> <span class="p">(</span><span class="o">--</span><span class="n">text</span> <span class="n">TEXT</span> <span class="o">|</span> <span class="o">--</span><span class="n">text</span><span class="o">-</span><span class="n">file</span> <span class="n">FILE</span><span class="p">)</span> <span class="p">[</span><span class="o">--</span><span class="n">title</span> <span class="n">TITLE</span><span class="p">]</span>
     <span class="p">[</span><span class="o">--</span><span class="n">purpose</span> <span class="n">PURPOSE</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">message</span> <span class="nb">list</span> <span class="p">[</span><span class="o">--</span><span class="n">state</span> <span class="n">STATE</span><span class="p">]</span>
@@ -495,7 +495,7 @@ traceback.</p>
 <div class="pst-scrollable-table-container"><table class="autosummary longtable table">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.case_cancel_send" title="liaise.cli.case_cancel_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">case_cancel_send</span></code></a>(case_id, *index[, reason, ...])</p></td>
-<td><p>Take CASE_ID's message INDEX, or its only one, out of the delay outbox, unsent.</p></td>
+<td><p>Take CASE_ID's held message ID (or INDEX), or its only one, out of the delay outbox, unsent.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.case_list" title="liaise.cli.case_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">case_list</span></code></a>(*[, state, root, store])</p></td>
 <td><p>Every case in the ledger, a line each: its id, its state and its conversations.</p></td>
@@ -657,7 +657,9 @@ holds the run lock.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.cli.case_cancel_send">
 <span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">case_cancel_send</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#case_cancel_send"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.case_cancel_send" title="Link to this definition">#</a></dt>
-<dd><p>Take CASE_ID’s message INDEX, or its only one, out of the delay outbox, unsent.</p>
+<dd><p>Take CASE_ID’s held message ID (or INDEX), or its only one, out of the delay outbox, unsent.</p>
+<p>ID is what <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> and the tick’s hold line print (like <code class="docutils literal notranslate"><span class="pre">h3f9a0c12</span></code>) and
+always names the same message; INDEX, its position, shifts as earlier ones leave.</p>
 <p>A send to a public or organisation-wide place waits in the outbox for
 <code class="docutils literal notranslate"><span class="pre">policy.delay_minutes</span></code> before the tick sends it (liaise #38); this is how you stop it.
 Your cancellation is recorded on the case with <code class="docutils literal notranslate"><span class="pre">--reason</span></code> and the message’s text.

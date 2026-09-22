@@ -14,7 +14,7 @@ liaise case show CASE_ID
 liaise case set-state CASE_ID STATE [--reason TEXT] [--dry-run]
 liaise case send-draft CASE_ID [INDEX] [--edit] [--dry-run]
 liaise case reject-draft CASE_ID [INDEX] --reason TEXT [--dry-run]
-liaise case cancel-send CASE_ID [INDEX] [--reason TEXT] [--dry-run]
+liaise case cancel-send CASE_ID [ID|INDEX] [--reason TEXT] [--dry-run]
 liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE]
     [--purpose PURPOSE] [--dry-run]
 liaise message list [--state STATE]
@@ -60,7 +60,7 @@ traceback.
 
 ### Functions
 
-| [`case_cancel_send`](#liaise.cli.case_cancel_send)(case_id, \*index[, reason, ...])   | Take CASE_ID's message INDEX, or its only one, out of the delay outbox, unsent.                              |
+| [`case_cancel_send`](#liaise.cli.case_cancel_send)(case_id, \*index[, reason, ...])   | Take CASE_ID's held message ID (or INDEX), or its only one, out of the delay outbox, unsent.                 |
 |------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------|
 | [`case_list`](#liaise.cli.case_list)(\*[, state, root, store])                 | Every case in the ledger, a line each: its id, its state and its conversations.                              |
 | [`case_reject_draft`](#liaise.cli.case_reject_draft)(case_id, \*index[, reason, ...])  | Decline CASE_ID's draft INDEX, or its only one, recording `--reason`.                                        |
@@ -145,7 +145,10 @@ a first line, then a rule.
 
 ### liaise.cli.case_cancel_send(case_id, \*index, reason='', dry_run=False, root=None, store=None, now=None)
 
-Take CASE_ID’s message INDEX, or its only one, out of the delay outbox, unsent.
+Take CASE_ID’s held message ID (or INDEX), or its only one, out of the delay outbox, unsent.
+
+ID is what `liaise case show` and the tick’s hold line print (like `h3f9a0c12`) and
+always names the same message; INDEX, its position, shifts as earlier ones leave.
 
 A send to a public or organisation-wide place waits in the outbox for
 `policy.delay_minutes` before the tick sends it (liaise #38); this is how you stop it.

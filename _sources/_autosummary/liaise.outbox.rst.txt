@@ -20,6 +20,10 @@ liaise.outbox
       LAPSED_REASON
       ISSUE_CLOSED_REASON
       INTERRUPTED_REASON
+      HELD_ID_PREFIX
+      HELD_ID_DIGITS
+      HELD_ID_PATTERN
+      Which
    
    .. rubric:: Functions
 
@@ -27,12 +31,14 @@ liaise.outbox
    
       cancel_send
       held_at
+      held_id
       held_message
       held_provenance
       hold_of
       is_due
       make_held
       moved_on
+      parse_which
       pick_held
       release_at
       release_block
