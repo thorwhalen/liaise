@@ -206,7 +206,7 @@ The labelled records `verdict`’s message identified, each once, in order: neve
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
-### liaise.outbound.findings_in(outbound, disclosure, \*, subject, key=None, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>))
+### liaise.outbound.findings_in(outbound, disclosure, \*, subject, key=None, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>))
 
 What `detectors` find in the text, the title and each attachment name of `outbound`.
 
@@ -226,7 +226,7 @@ to nobody, which the policy counts at `clear`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
-### liaise.outbound.judge(outbound, \*, subject, now, audience=None, provenance=None, mode=None, key=None, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>), resolver=<function resolve_person>)
+### liaise.outbound.judge(outbound, \*, subject, now, audience=None, provenance=None, mode=None, key=None, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>), resolver=<function resolve_person>)
 
 The policy’s verdict on `outbound`, sent to its destination on `subject`, with what it consulted.
 

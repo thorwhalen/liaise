@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=e2f3408e"></script>
+    <script src="../../_static/documentation_options.js?v=d50bcae4"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.15" />
+  <meta name="docsearch:version" content="0.1.16" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -732,6 +732,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">  a whole word after normalisation.</span>
 <span class="sd">- ``third_party``: the same for a person's term (entity ``person:&lt;id&gt;``), unless that person</span>
 <span class="sd">  is a reader, one of ``disclosure["people"]``. A reader is never a third party.</span>
+<span class="sd">- ``vocabulary`` and ``third_party`` again, rule ``term-in-link``: either kind of term that a</span>
+<span class="sd">  link or image destination spells out in its path, query or fragment glued to other words</span>
+<span class="sd">  (``/HeronTerms.pdf``, ``?p=heron2026``), over the whole destination (liaise #46).</span>
 <span class="sd">- ``exfiltration``: link and image destinations whose host is not in ``allowlist`` (a host</span>
 <span class="sd">  or any of its subdomains), read as a browser reads them (Markdown inline and reference</span>
 <span class="sd">  links and images, HTML attributes, autolinks and bare URLs); base64 runs, wrapped or not,</span>
@@ -1723,6 +1726,12 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
 
     <span class="nd">@cached_property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">destinations</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Destinations</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Every link and image destination of the message (:func:`_destinations`), parsed</span>
+<span class="sd">        once for the detectors that read them."""</span>
+        <span class="k">return</span> <span class="n">_destinations</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">)</span>
+
+    <span class="nd">@cached_property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">normalised</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Normalised</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The readings of the message folded for matching terms: as written, and rendered."""</span>
         <span class="n">readings</span> <span class="o">=</span> <span class="p">(</span><span class="n">_view_of</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">text</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">rendered</span><span class="p">)</span>
@@ -2129,8 +2138,44 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">audience_severity</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_term_findings</span><span class="p">(</span><span class="n">scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">people</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Finding</span><span class="p">]:</span>
-    <span class="n">kind</span><span class="p">,</span> <span class="n">rule</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"third_party"</span><span class="p">,</span> <span class="s2">"person-name"</span><span class="p">)</span> <span class="k">if</span> <span class="n">people</span> <span class="k">else</span> <span class="p">(</span><span class="s2">"vocabulary"</span><span class="p">,</span> <span class="s2">"term"</span><span class="p">)</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">_Term</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""A disclosure term to look for, with what a finding of it says: its kind, entity,</span>
+<span class="sd">    label, the readers it is sealed from, and its severity for this audience."""</span>
+
+    <span class="n">folded</span><span class="p">:</span> <span class="n">FoldedTerm</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">entity</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">label</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">sealed_from</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">severity</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">finding</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span>
+        <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">end</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">rule</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">material</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Finding</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">scan</span><span class="o">.</span><span class="n">finding</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+            <span class="n">start</span><span class="p">,</span>
+            <span class="n">end</span><span class="p">,</span>
+            <span class="n">rule</span><span class="o">=</span><span class="n">rule</span><span class="p">,</span>
+            <span class="n">severity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">severity</span><span class="p">,</span>
+            <span class="n">entity</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">entity</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">label</span><span class="p">,</span>
+            <span class="n">sealed_from</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sealed_from</span><span class="p">,</span>
+            <span class="n">material</span><span class="o">=</span><span class="n">material</span><span class="p">,</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_terms_of</span><span class="p">(</span><span class="n">scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">people</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">_Term</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The vocabulary terms of people (``people``) or of other entities, less the readers'</span>
+<span class="sd">    own names: a reader is never a third party."""</span>
+    <span class="n">kind</span> <span class="o">=</span> <span class="s2">"third_party"</span> <span class="k">if</span> <span class="n">people</span> <span class="k">else</span> <span class="s2">"vocabulary"</span>
     <span class="k">for</span> <span class="n">folded</span><span class="p">,</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">_vocabulary_entries</span><span class="p">(</span><span class="n">scan</span><span class="p">):</span>
         <span class="n">entity</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"entity"</span><span class="p">)</span>
         <span class="n">is_person</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">entity</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">entity</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">PERSON_PREFIX</span><span class="p">)</span>
@@ -2143,17 +2188,14 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
         <span class="n">sealed_from</span> <span class="o">=</span> <span class="n">_ids</span><span class="p">(</span><span class="n">entry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sealed_from"</span><span class="p">))</span>
         <span class="n">severity</span> <span class="o">=</span> <span class="n">_term_severity</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">sealed_from</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">spans</span><span class="p">(</span><span class="n">folded</span><span class="p">):</span>
-            <span class="k">yield</span> <span class="n">scan</span><span class="o">.</span><span class="n">finding</span><span class="p">(</span>
-                <span class="n">kind</span><span class="p">,</span>
-                <span class="n">start</span><span class="p">,</span>
-                <span class="n">end</span><span class="p">,</span>
-                <span class="n">rule</span><span class="o">=</span><span class="n">rule</span><span class="p">,</span>
-                <span class="n">severity</span><span class="o">=</span><span class="n">severity</span><span class="p">,</span>
-                <span class="n">entity</span><span class="o">=</span><span class="n">entity</span><span class="p">,</span>
-                <span class="n">label</span><span class="o">=</span><span class="n">label</span><span class="p">,</span>
-                <span class="n">sealed_from</span><span class="o">=</span><span class="n">sealed_from</span><span class="p">,</span>
-            <span class="p">)</span>
+        <span class="k">yield</span> <span class="n">_Term</span><span class="p">(</span><span class="n">folded</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">entity</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">sealed_from</span><span class="p">,</span> <span class="n">severity</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_term_findings</span><span class="p">(</span><span class="n">scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">people</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Finding</span><span class="p">]:</span>
+    <span class="n">rule</span> <span class="o">=</span> <span class="s2">"person-name"</span> <span class="k">if</span> <span class="n">people</span> <span class="k">else</span> <span class="s2">"term"</span>
+    <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">_terms_of</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">people</span><span class="o">=</span><span class="n">people</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">scan</span><span class="o">.</span><span class="n">spans</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">folded</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="n">term</span><span class="o">.</span><span class="n">finding</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">rule</span><span class="o">=</span><span class="n">rule</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="detect_vocabulary">
@@ -2171,6 +2213,133 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""A ``third_party`` finding for each whole-word occurrence of a person's disclosure</span>
 <span class="sd">    term, when that person is not a reader."""</span>
     <span class="k">return</span> <span class="n">_term_findings</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">people</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#: The fewest characters a term glued into a link must have to be found there. Splitting a</span>
+<span class="c1">#: hash, a signature or an id at its digits leaves runs of two or three letters, which a</span>
+<span class="c1">#: short term (an acronym) would match by chance; a longer one does not.</span>
+<span class="n">MIN_LINK_TERM_CHARS</span> <span class="o">=</span> <span class="mi">4</span>
+<span class="c1">#: How many times a link destination's escapes are decoded: one layer of character</span>
+<span class="c1">#: references over percent-escapes, or references escaped twice (``&amp;amp;#8203;``).</span>
+<span class="n">MAX_LINK_DECODES</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="c1">#: What separates two words of a link's path or query: anything but a letter or a digit.</span>
+<span class="n">_LINK_SEPARATOR</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"[\W_]+"</span><span class="p">)</span>
+<span class="c1">#: The scheme and authority a destination starts with, and a ``www.`` host without a</span>
+<span class="c1">#: scheme; the host is :func:`scan_links`' concern.</span>
+<span class="n">_LINK_AUTHORITY</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"^\s*(?:[A-Za-z][A-Za-z0-9+.-]{0,31}:)?(?:[/</span><span class="se">\\</span><span class="s2">]{2,}[^/</span><span class="se">\\</span><span class="s2">?#]*|www\.[^/</span><span class="se">\\</span><span class="s2">?#]*)?"</span><span class="p">,</span>
+    <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="c1">#: :func:`_glued_word_breaks` for ASCII text, which is most of what links hold.</span>
+<span class="n">_ASCII_GLUED_WORD_BREAK</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span>
+    <span class="sa">r</span><span class="s2">"(?&lt;=[A-Za-z])(?=[0-9])|(?&lt;=[0-9])(?=[A-Za-z])"</span>
+    <span class="sa">r</span><span class="s2">"|(?&lt;=[a-z])(?=[A-Z])|(?&lt;=[A-Z])(?=[A-Z][a-z])"</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_glued_word_breaks</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``text`` with a space wherever a word is glued to the next: a lower-case letter before</span>
+<span class="sd">    a capital (``heronTerms``), a capital before a capitalised word (``PDFTerms``), and a</span>
+<span class="sd">    letter beside a digit (``heron2026``), in any script."""</span>
+    <span class="k">if</span> <span class="n">text</span><span class="o">.</span><span class="n">isascii</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">_ASCII_GLUED_WORD_BREAK</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">" "</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">char</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">index</span><span class="p">:</span>
+            <span class="n">before</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="n">after</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="n">index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">index</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">else</span> <span class="s2">""</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">isalpha</span><span class="p">()</span> <span class="ow">and</span> <span class="n">char</span><span class="o">.</span><span class="n">isdigit</span><span class="p">())</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">isdigit</span><span class="p">()</span> <span class="ow">and</span> <span class="n">char</span><span class="o">.</span><span class="n">isalpha</span><span class="p">())</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">islower</span><span class="p">()</span> <span class="ow">and</span> <span class="n">char</span><span class="o">.</span><span class="n">isupper</span><span class="p">())</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="n">before</span><span class="o">.</span><span class="n">isupper</span><span class="p">()</span> <span class="ow">and</span> <span class="n">char</span><span class="o">.</span><span class="n">isupper</span><span class="p">()</span> <span class="ow">and</span> <span class="n">after</span><span class="o">.</span><span class="n">islower</span><span class="p">())</span>
+            <span class="p">):</span>
+                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
+        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">char</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="link_words">
+<a class="viewcode-back" href="../../_autosummary/liaise.detect.html#liaise.detect.link_words">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">link_words</span><span class="p">(</span><span class="n">destination</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The words of a link destination's path, query and fragment, one space apart.</span>
+
+<span class="sd">    Character references and percent-escapes are decoded, compatibility forms folded</span>
+<span class="sd">    (full-width letters read as letters) and invisible characters removed before words</span>
+<span class="sd">    glued together by case or by digits are split, so a term a link spells out reads as</span>
+<span class="sd">    the term.</span>
+
+<span class="sd">    &gt;&gt;&gt; link_words("https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms")</span>
+<span class="sd">    'Heron Acquisition terms 2026 pdf p heron Terms'</span>
+<span class="sd">    &gt;&gt;&gt; link_words("https://example.org/%48eron&amp;amp;x")</span>
+<span class="sd">    'Heron x'</span>
+<span class="sd">    &gt;&gt;&gt; link_words("www.example.org/Her&amp;#8203;onTerms")</span>
+<span class="sd">    'Heron Terms'</span>
+<span class="sd">    """</span>
+    <span class="n">decoded</span> <span class="o">=</span> <span class="n">destination</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">MAX_LINK_DECODES</span><span class="p">):</span>
+        <span class="n">again</span> <span class="o">=</span> <span class="n">unquote</span><span class="p">(</span><span class="n">html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">decoded</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">again</span> <span class="o">==</span> <span class="n">decoded</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">decoded</span> <span class="o">=</span> <span class="n">again</span>
+    <span class="n">decoded</span> <span class="o">=</span> <span class="n">_INVISIBLE_RUN</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">unicodedata</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="s2">"NFKC"</span><span class="p">,</span> <span class="n">decoded</span><span class="p">))</span>
+    <span class="n">rest</span> <span class="o">=</span> <span class="n">_LINK_AUTHORITY</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">decoded</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">_LINK_SEPARATOR</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">_glued_word_breaks</span><span class="p">(</span><span class="n">rest</span><span class="p">)))</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="detect_link_terms">
+<a class="viewcode-back" href="../../_autosummary/liaise.detect.html#liaise.detect.detect_link_terms">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">detect_link_terms</span><span class="p">(</span><span class="n">scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Finding</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""A ``vocabulary`` or ``third_party`` finding, rule ``term-in-link``, for a disclosure</span>
+<span class="sd">    term a link or image destination spells out in its path, query or fragment only by</span>
+<span class="sd">    gluing it to other words (``/HeronTerms.pdf``, ``?p=heron2026``), which the whole-word</span>
+<span class="sd">    readings of :func:`detect_vocabulary` and :func:`detect_third_parties` do not see.</span>
+
+<span class="sd">    The destination's words are read with :func:`link_words` and matched as those two</span>
+<span class="sd">    match the message, so the finding is the same kind, label and severity as the term's</span>
+<span class="sd">    anywhere else, and its fingerprint is the fingerprint of the words it matched, as the</span>
+<span class="sd">    term's would be; it spans the whole destination. A term of fewer than</span>
+<span class="sd">    :data:`MIN_LINK_TERM_CHARS` characters is not looked for, a term those two already</span>
+<span class="sd">    found inside the destination is not found again, and a destination inside another</span>
+<span class="sd">    (a ``srcset`` candidate) is read once, with the one around it. The host is not read:</span>
+<span class="sd">    that is :func:`scan_links`' concern (liaise #46).</span>
+<span class="sd">    """</span>
+    <span class="n">terms</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">term</span>
+        <span class="k">for</span> <span class="n">people</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">_terms_of</span><span class="p">(</span><span class="n">scan</span><span class="p">,</span> <span class="n">people</span><span class="o">=</span><span class="n">people</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">folded</span><span class="o">.</span><span class="n">text</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MIN_LINK_TERM_CHARS</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">terms</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="n">links</span><span class="p">,</span> <span class="n">readings</span><span class="p">,</span> <span class="n">last_end</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">{},</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">_link_spans</span><span class="p">(</span><span class="n">scan</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="n">destinations</span><span class="o">=</span><span class="n">scan</span><span class="o">.</span><span class="n">destinations</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">last_end</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># inside the destination before it</span>
+        <span class="n">last_end</span> <span class="o">=</span> <span class="n">end</span>
+        <span class="n">destination</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">destination</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">readings</span><span class="p">:</span>  <span class="c1"># a destination repeated is read once</span>
+            <span class="n">words</span> <span class="o">=</span> <span class="n">link_words</span><span class="p">(</span><span class="n">destination</span><span class="p">)</span>
+            <span class="n">readings</span><span class="p">[</span><span class="n">destination</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">normalise</span><span class="p">(</span><span class="n">words</span><span class="p">))</span> <span class="k">if</span> <span class="n">words</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">readings</span><span class="p">[</span><span class="n">destination</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">links</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="o">*</span><span class="n">readings</span><span class="p">[</span><span class="n">destination</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">links</span><span class="p">:</span>
+        <span class="k">return</span>
+    <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">terms</span><span class="p">:</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">spans</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">folded</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">words</span><span class="p">,</span> <span class="n">reading</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">start</span> <span class="o">&lt;=</span> <span class="n">s</span> <span class="ow">and</span> <span class="n">e</span> <span class="o">&lt;=</span> <span class="n">end</span> <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">found</span><span class="p">):</span>
+                <span class="k">continue</span>  <span class="c1"># the message reading already found it in this destination</span>
+            <span class="n">matched</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">reading</span><span class="o">.</span><span class="n">spans</span><span class="p">(</span><span class="n">term</span><span class="o">.</span><span class="n">folded</span><span class="p">)),</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">matched</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">material</span> <span class="o">=</span> <span class="n">_folded_value</span><span class="p">(</span><span class="n">words</span><span class="p">[</span><span class="n">matched</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="n">matched</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="k">yield</span> <span class="n">term</span><span class="o">.</span><span class="n">finding</span><span class="p">(</span>
+                    <span class="n">scan</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">rule</span><span class="o">=</span><span class="s2">"term-in-link"</span><span class="p">,</span> <span class="n">material</span><span class="o">=</span><span class="n">material</span>
+                <span class="p">)</span></div>
 
 
 
@@ -2431,6 +2600,22 @@ window.runMermaid = runMermaid;</script>
             <span class="k">yield</span> <span class="n">match</span><span class="o">.</span><span class="n">start</span><span class="p">(),</span> <span class="n">match</span><span class="o">.</span><span class="n">end</span><span class="p">(</span><span class="s2">"authority"</span><span class="p">),</span> <span class="n">hosts</span><span class="p">,</span> <span class="kc">False</span>
 
 
+<span class="c1">#: ``(start, end, hosts, image)`` of one link or image destination.</span>
+<span class="n">Destination</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">frozenset</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]</span>
+<span class="c1">#: What :func:`_destinations` parses: the destinations its parsers read, then every</span>
+<span class="c1">#: ``//host`` anywhere (:func:`_loose_urls`), which backs them.</span>
+<span class="n">Destinations</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Destination</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Destination</span><span class="p">,</span> <span class="o">...</span><span class="p">]]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Destinations</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Every link and image destination of ``text``: Markdown (inline and reference), HTML</span>
+<span class="sd">    attributes and autolinks, plain URLs; then every ``//host`` anywhere."""</span>
+    <span class="n">parsed</span> <span class="o">=</span> <span class="n">chain_iterables</span><span class="p">(</span>
+        <span class="n">_markdown_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_html_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_text_urls</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">parsed</span><span class="p">),</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">_loose_urls</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="scan_links">
 <a class="viewcode-back" href="../../_autosummary/liaise.detect.html#liaise.detect.scan_links">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">scan_links</span><span class="p">(</span><span class="n">scan</span><span class="p">:</span> <span class="n">Scan</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Finding</span><span class="p">]:</span>
@@ -2453,16 +2638,14 @@ window.runMermaid = runMermaid;</script>
             <span class="n">previous_end</span><span class="p">,</span> <span class="n">previous_image</span> <span class="o">=</span> <span class="n">found</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
             <span class="n">found</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">previous_end</span><span class="p">),</span> <span class="n">image</span> <span class="ow">or</span> <span class="n">previous_image</span><span class="p">)</span>
 
-    <span class="n">parsed</span> <span class="o">=</span> <span class="n">chain_iterables</span><span class="p">(</span>
-        <span class="n">_markdown_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_html_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_text_urls</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="p">)</span>
+    <span class="n">parsed</span><span class="p">,</span> <span class="n">loose</span> <span class="o">=</span> <span class="n">scan</span><span class="o">.</span><span class="n">destinations</span>
     <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">hosts</span><span class="p">,</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">parsed</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">image</span><span class="p">:</span>
             <span class="n">image_starts</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
         <span class="n">consider</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">hosts</span><span class="p">,</span> <span class="n">image</span><span class="p">)</span>
     <span class="n">spans</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
     <span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">start</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">spans</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">hosts</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">_loose_urls</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">hosts</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">loose</span><span class="p">:</span>
         <span class="n">index</span> <span class="o">=</span> <span class="n">bisect_right</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">starts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">spans</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span>
             <span class="k">continue</span>  <span class="c1"># inside a URL already found</span>
@@ -2491,21 +2674,28 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    &gt;&gt;&gt; link_urls("See [the docs](https://example.org/a) and https://example.com/b.")</span>
 <span class="sd">    ('https://example.org/a', 'https://example.com/b')</span>
 <span class="sd">    """</span>
+    <span class="n">spans</span> <span class="o">=</span> <span class="n">_link_spans</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">spans</span><span class="p">))</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_link_spans</span><span class="p">(</span>
+    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">destinations</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Destinations</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""``(start, end)`` of every link and image destination in ``text``, in order, as</span>
+<span class="sd">    :func:`link_urls` reads them; from ``destinations`` when they were parsed already."""</span>
+    <span class="n">parsed</span><span class="p">,</span> <span class="n">loose</span> <span class="o">=</span> <span class="n">destinations</span> <span class="ow">or</span> <span class="n">_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
     <span class="n">found</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">parsed</span> <span class="o">=</span> <span class="n">chain_iterables</span><span class="p">(</span>
-        <span class="n">_markdown_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_html_destinations</span><span class="p">(</span><span class="n">text</span><span class="p">),</span> <span class="n">_text_urls</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-    <span class="p">)</span>
     <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">parsed</span><span class="p">:</span>
         <span class="n">found</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
     <span class="n">spans</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
     <span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="n">start</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">spans</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">_loose_urls</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">loose</span><span class="p">:</span>
         <span class="n">index</span> <span class="o">=</span> <span class="n">bisect_right</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
         <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">starts</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">spans</span><span class="p">[</span><span class="n">index</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
             <span class="k">continue</span>  <span class="c1"># inside a URL already found</span>
         <span class="n">found</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">end</span><span class="p">,</span> <span class="n">found</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">))</span>
-    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span> <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">items</span><span class="p">())))</span></div>
-
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">found</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
 
 
 <span class="c1"># ---- exfiltration: encoded runs ----</span>
@@ -2959,6 +3149,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">detect_exfiltration</span><span class="p">,</span>
     <span class="n">detect_personal</span><span class="p">,</span>
     <span class="n">detect_third_parties</span><span class="p">,</span>
+    <span class="n">detect_link_terms</span><span class="p">,</span>
 <span class="p">)</span>
 
 

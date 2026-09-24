@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=e2f3408e"></script>
+    <script src="../_static/documentation_options.js?v=d50bcae4"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.config" href="liaise.config.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.15" />
+  <meta name="docsearch:version" content="0.1.16" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -436,6 +436,9 @@ percent-encoded.</p></li>
 a whole word after normalisation.</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">third_party</span></code>: the same for a person’s term (entity <code class="docutils literal notranslate"><span class="pre">person:&lt;id&gt;</span></code>), unless that person
 is a reader, one of <code class="docutils literal notranslate"><span class="pre">disclosure[&quot;people&quot;]</span></code>. A reader is never a third party.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> and <code class="docutils literal notranslate"><span class="pre">third_party</span></code> again, rule <code class="docutils literal notranslate"><span class="pre">term-in-link</span></code>: either kind of term that a
+link or image destination spells out in its path, query or fragment glued to other words
+(<code class="docutils literal notranslate"><span class="pre">/HeronTerms.pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">?p=heron2026</span></code>), over the whole destination (liaise #46).</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">exfiltration</span></code>: link and image destinations whose host is not in <code class="docutils literal notranslate"><span class="pre">allowlist</span></code> (a host
 or any of its subdomains), read as a browser reads them (Markdown inline and reference
 links and images, HTML attributes, autolinks and bare URLs); base64 runs, wrapped or not,
@@ -557,8 +560,20 @@ share-alike source.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.SECRET_RULES" title="liaise.detect.SECRET_RULES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SECRET_RULES</span></code></a></p></td>
 <td><p>the 0.1 token shapes and private-key header, then distinctive-prefix rules adapted from gitleaks (the gitleaks id precedes each).</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.MIN_LINK_TERM_CHARS" title="liaise.detect.MIN_LINK_TERM_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MIN_LINK_TERM_CHARS</span></code></a></p></td>
+<td><p>The fewest characters a term glued into a link must have to be found there.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.MAX_LINK_DECODES" title="liaise.detect.MAX_LINK_DECODES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_LINK_DECODES</span></code></a></p></td>
+<td><p>one layer of character references over percent-escapes, or references escaped twice (<code class="docutils literal notranslate"><span class="pre">&amp;amp;#8203;</span></code>).</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.MAX_TAG_LOOKBACK" title="liaise.detect.MAX_TAG_LOOKBACK"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_TAG_LOOKBACK</span></code></a></p></td>
 <td><p>How far back an attribute looks for the <code class="docutils literal notranslate"><span class="pre">&lt;</span></code> of the tag it would belong to.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.Destination" title="liaise.detect.Destination"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Destination</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end,</span> <span class="pre">hosts,</span> <span class="pre">image)</span></code> of one link or image destination.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.Destinations" title="liaise.detect.Destinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Destinations</span></code></a></p></td>
+<td><p>the destinations its parsers read, then every <code class="docutils literal notranslate"><span class="pre">//host</span></code> anywhere (<code class="xref py py-func docutils literal notranslate"><span class="pre">_loose_urls()</span></code>), which backs them.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.INTERNAL_NETWORKS" title="liaise.detect.INTERNAL_NETWORKS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">INTERNAL_NETWORKS</span></code></a></p></td>
 <td><p>Private (RFC 1918 and unique-local), loopback, shared (RFC 6598) and link-local networks: addresses that say something about the inside of a network.</p></td>
@@ -596,26 +611,32 @@ share-alike source.</p>
 <tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_exfiltration</span></code>(scan)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_personal</span></code>(scan)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.detect_link_terms" title="liaise.detect.detect_link_terms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_link_terms</span></code></a>(scan)</p></td>
+<td><p>A <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> or <code class="docutils literal notranslate"><span class="pre">third_party</span></code> finding, rule <code class="docutils literal notranslate"><span class="pre">term-in-link</span></code>, for a disclosure term a link or image destination spells out in its path, query or fragment only by gluing it to other words (<code class="docutils literal notranslate"><span class="pre">/HeronTerms.pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">?p=heron2026</span></code>), which the whole-word readings of <a class="reference internal" href="#liaise.detect.detect_vocabulary" title="liaise.detect.detect_vocabulary"><code class="xref py py-func docutils literal notranslate"><span class="pre">detect_vocabulary()</span></code></a> and <a class="reference internal" href="#liaise.detect.detect_third_parties" title="liaise.detect.detect_third_parties"><code class="xref py py-func docutils literal notranslate"><span class="pre">detect_third_parties()</span></code></a> do not see.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_personal</span></code>(scan)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.detect_third_parties" title="liaise.detect.detect_third_parties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_third_parties</span></code></a>(scan)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.detect_third_parties" title="liaise.detect.detect_third_parties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_third_parties</span></code></a>(scan)</p></td>
 <td><p>A <code class="docutils literal notranslate"><span class="pre">third_party</span></code> finding for each whole-word occurrence of a person's disclosure term, when that person is not a reader.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.detect_vocabulary" title="liaise.detect.detect_vocabulary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_vocabulary</span></code></a>(scan)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.detect_vocabulary" title="liaise.detect.detect_vocabulary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">detect_vocabulary</span></code></a>(scan)</p></td>
 <td><p>A <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> finding for each whole-word occurrence of a disclosure term whose entity is not a person.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.fingerprint_key" title="liaise.detect.fingerprint_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fingerprint_key</span></code></a>([state_dir, key_file, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.fingerprint_key" title="liaise.detect.fingerprint_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fingerprint_key</span></code></a>([state_dir, key_file, ...])</p></td>
 <td><p>The fingerprint key in <code class="docutils literal notranslate"><span class="pre">&lt;state_dir&gt;/&lt;key_file&gt;</span></code>, created on first use.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.fold_term" title="liaise.detect.fold_term"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fold_term</span></code></a>(term)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.fold_term" title="liaise.detect.fold_term"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fold_term</span></code></a>(term)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">term</span></code> folded as <a class="reference internal" href="#liaise.detect.normalise" title="liaise.detect.normalise"><code class="xref py py-func docutils literal notranslate"><span class="pre">normalise()</span></code></a> folds a message, with its word breaks.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.key_source" title="liaise.detect.key_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">key_source</span></code></a>([state_dir, key_file, key_bytes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.key_source" title="liaise.detect.key_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">key_source</span></code></a>([state_dir, key_file, key_bytes, ...])</p></td>
 <td><p>A callable that answers one key, however often it is asked: <a class="reference internal" href="#liaise.detect.fingerprint_key" title="liaise.detect.fingerprint_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">fingerprint_key()</span></code></a>, once.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.link_urls" title="liaise.detect.link_urls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">link_urls</span></code></a>(text)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.link_urls" title="liaise.detect.link_urls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">link_urls</span></code></a>(text)</p></td>
 <td><p>Every link and image destination in <code class="docutils literal notranslate"><span class="pre">text</span></code>, in full, in order, each once.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.detect.link_words" title="liaise.detect.link_words"><code class="xref py py-obj docutils literal notranslate"><span class="pre">link_words</span></code></a>(destination)</p></td>
+<td><p>The words of a link destination's path, query and fragment, one space apart.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.detect.local_path_scanner" title="liaise.detect.local_path_scanner"><code class="xref py py-obj docutils literal notranslate"><span class="pre">local_path_scanner</span></code></a>([rules])</p></td>
 <td><p>A check for <code class="docutils literal notranslate"><span class="pre">rules</span></code>: an <code class="docutils literal notranslate"><span class="pre">exfiltration</span></code> finding spanning each path, from where its rule matched to the end of the path.</p></td>
@@ -700,7 +721,7 @@ share-alike source.</p>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.detect.DFLT_DETECTORS">
-<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">DFLT_DETECTORS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#liaise.detect.Scan" title="liaise.detect.Scan"><span class="pre">Scan</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#liaise.detect.Finding" title="liaise.detect.Finding"><span class="pre">Finding</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">secret_detector.&lt;locals&gt;.detect_secrets&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">detect_canaries&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">detect_vocabulary&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">detect_third_parties&gt;)</span></span><a class="headerlink" href="#liaise.detect.DFLT_DETECTORS" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">DFLT_DETECTORS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.14)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#liaise.detect.Scan" title="liaise.detect.Scan"><span class="pre">Scan</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable" title="(in Python v3.14)"><span class="pre">Iterable</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#liaise.detect.Finding" title="liaise.detect.Finding"><span class="pre">Finding</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">secret_detector.&lt;locals&gt;.detect_secrets&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">detect_canaries&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">detect_vocabulary&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">detect_third_parties&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">detect_link_terms&gt;)</span></span><a class="headerlink" href="#liaise.detect.DFLT_DETECTORS" title="Link to this definition">#</a></dt>
 <dd><p>The detectors <a class="reference internal" href="#liaise.detect.detect" title="liaise.detect.detect"><code class="xref py py-func docutils literal notranslate"><span class="pre">detect()</span></code></a> runs by default, one per kind of <a class="reference internal" href="#liaise.detect.KINDS" title="liaise.detect.KINDS"><code class="xref py py-data docutils literal notranslate"><span class="pre">KINDS</span></code></a>.</p>
 </dd></dl>
 
@@ -720,6 +741,26 @@ green for a person (discussion §4.2).</p>
 <dt class="sig sig-object py" id="liaise.detect.DFLT_STATE_DIR">
 <span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">DFLT_STATE_DIR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">PosixPath('~/.local/share/liaise')</span></span><a class="headerlink" href="#liaise.detect.DFLT_STATE_DIR" title="Link to this definition">#</a></dt>
 <dd><p>Where the fingerprint key lives when no liaise config names a state directory.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.detect.Destination">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">Destination</span></span><a class="headerlink" href="#liaise.detect.Destination" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">end,</span> <span class="pre">hosts,</span> <span class="pre">image)</span></code> of one link or image destination.</p>
+<p>alias of <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#frozenset" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">frozenset</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>]</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.detect.Destinations">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">Destinations</span></span><a class="headerlink" href="#liaise.detect.Destinations" title="Link to this definition">#</a></dt>
+<dd><p>the destinations its parsers read, then every
+<code class="docutils literal notranslate"><span class="pre">//host</span></code> anywhere (<code class="xref py py-func docutils literal notranslate"><span class="pre">_loose_urls()</span></code>), which backs them.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>What <code class="xref py py-func docutils literal notranslate"><span class="pre">_destinations()</span></code> parses</p>
+</dd>
+</dl>
+<p>alias of <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#frozenset" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">frozenset</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>], …], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#frozenset" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">frozenset</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>], …]]</p>
 </dd></dl>
 
 <dl class="py data">
@@ -865,6 +906,18 @@ macOS’s temporary directories.</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.detect.MAX_LINK_DECODES">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">MAX_LINK_DECODES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></span><a class="headerlink" href="#liaise.detect.MAX_LINK_DECODES" title="Link to this definition">#</a></dt>
+<dd><p>one layer of character
+references over percent-escapes, or references escaped twice (<code class="docutils literal notranslate"><span class="pre">&amp;amp;#8203;</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>How many times a link destination’s escapes are decoded</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.detect.MAX_TAG_LOOKBACK">
 <span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">MAX_TAG_LOOKBACK</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1024</span></span><a class="headerlink" href="#liaise.detect.MAX_TAG_LOOKBACK" title="Link to this definition">#</a></dt>
 <dd><p>How far back an attribute looks for the <code class="docutils literal notranslate"><span class="pre">&lt;</span></code> of the tag it would belong to.</p>
@@ -891,6 +944,14 @@ commit hashes quoted in a message are not findings.</p>
 <dd class="field-odd"><p>The shortest hex run that is a finding</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.detect.MIN_LINK_TERM_CHARS">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">MIN_LINK_TERM_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></span><a class="headerlink" href="#liaise.detect.MIN_LINK_TERM_CHARS" title="Link to this definition">#</a></dt>
+<dd><p>The fewest characters a term glued into a link must have to be found there. Splitting a
+hash, a signature or an id at its digits leaves runs of two or three letters, which a
+short term (an acronym) would match by chance; a longer one does not.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -1016,6 +1077,13 @@ time a finding is made.</p>
 <dt class="sig sig-object py" id="liaise.detect.Scan.audience_severity">
 <span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">audience_severity</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><a class="headerlink" href="#liaise.detect.Scan.audience_severity" title="Link to this definition">#</a></dt>
 <dd><p>The severity of a finding that only the audience makes serious.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.detect.Scan.destinations">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">destinations</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#frozenset" title="(in Python v3.14)"><span class="pre">frozenset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#frozenset" title="(in Python v3.14)"><span class="pre">frozenset</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.detect.Scan.destinations" title="Link to this definition">#</a></dt>
+<dd><p>Every link and image destination of the message (<code class="xref py py-func docutils literal notranslate"><span class="pre">_destinations()</span></code>), parsed
+once for the detectors that read them.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1242,7 +1310,7 @@ Hugging Face (<code class="docutils literal notranslate"><span class="pre">hf_</
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.detect.detect">
-<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">detect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canary_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">personal_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detectors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">secret_detector.&lt;locals&gt;.detect_secrets&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_canaries&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_vocabulary&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_third_parties&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#detect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.detect" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">detect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowlist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">canary_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">personal_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">detectors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">secret_detector.&lt;locals&gt;.detect_secrets&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_canaries&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_vocabulary&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">chain.&lt;locals&gt;.chained&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_third_parties&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">detect_link_terms&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#detect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.detect" title="Link to this definition">#</a></dt>
 <dd><p>What <code class="docutils literal notranslate"><span class="pre">detectors</span></code> find in <code class="docutils literal notranslate"><span class="pre">text</span></code>, ordered by position, each finding once.</p>
 <p><code class="docutils literal notranslate"><span class="pre">disclosure</span></code> is the JSON of <code class="docutils literal notranslate"><span class="pre">acquaint.disclosure</span></code> (its <code class="docutils literal notranslate"><span class="pre">people</span></code>,
 <code class="docutils literal notranslate"><span class="pre">least_clearance</span></code> and <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> are read; <code class="docutils literal notranslate"><span class="pre">{}</span></code> when there is none).
@@ -1272,6 +1340,28 @@ read only when there is a finding. A caller with a config in hand should pass it
 <span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">detect_canaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#detect_canaries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.detect_canaries" title="Link to this definition">#</a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">canary</span></code> finding, severity 5, wherever a canary term occurs, even inside a word:
 a canary is unique by construction, so a match anywhere is the alarm.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#liaise.detect.Finding" title="liaise.detect.Finding"><code class="xref py py-class docutils literal notranslate"><span class="pre">Finding</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.detect.detect_link_terms">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">detect_link_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scan</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#detect_link_terms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.detect_link_terms" title="Link to this definition">#</a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">vocabulary</span></code> or <code class="docutils literal notranslate"><span class="pre">third_party</span></code> finding, rule <code class="docutils literal notranslate"><span class="pre">term-in-link</span></code>, for a disclosure
+term a link or image destination spells out in its path, query or fragment only by
+gluing it to other words (<code class="docutils literal notranslate"><span class="pre">/HeronTerms.pdf</span></code>, <code class="docutils literal notranslate"><span class="pre">?p=heron2026</span></code>), which the whole-word
+readings of <a class="reference internal" href="#liaise.detect.detect_vocabulary" title="liaise.detect.detect_vocabulary"><code class="xref py py-func docutils literal notranslate"><span class="pre">detect_vocabulary()</span></code></a> and <a class="reference internal" href="#liaise.detect.detect_third_parties" title="liaise.detect.detect_third_parties"><code class="xref py py-func docutils literal notranslate"><span class="pre">detect_third_parties()</span></code></a> do not see.</p>
+<p>The destination’s words are read with <a class="reference internal" href="#liaise.detect.link_words" title="liaise.detect.link_words"><code class="xref py py-func docutils literal notranslate"><span class="pre">link_words()</span></code></a> and matched as those two
+match the message, so the finding is the same kind, label and severity as the term’s
+anywhere else, and its fingerprint is the fingerprint of the words it matched, as the
+term’s would be; it spans the whole destination. A term of fewer than
+<a class="reference internal" href="#liaise.detect.MIN_LINK_TERM_CHARS" title="liaise.detect.MIN_LINK_TERM_CHARS"><code class="xref py py-data docutils literal notranslate"><span class="pre">MIN_LINK_TERM_CHARS</span></code></a> characters is not looked for, a term those two already
+found inside the destination is not found again, and a destination inside another
+(a <code class="docutils literal notranslate"><span class="pre">srcset</span></code> candidate) is read once, with the one around it. The host is not read:
+that is <a class="reference internal" href="#liaise.detect.scan_links" title="liaise.detect.scan_links"><code class="xref py py-func docutils literal notranslate"><span class="pre">scan_links()</span></code></a>’ concern (liaise #46).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#liaise.detect.Finding" title="liaise.detect.Finding"><code class="xref py py-class docutils literal notranslate"><span class="pre">Finding</span></code></a>]</span></p>
@@ -1368,6 +1458,29 @@ destination another.</p>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link_urls</span><span class="p">(</span><span class="s2">"See [the docs](https://example.org/a) and https://example.com/b."</span><span class="p">)</span>
 <span class="go">('https://example.org/a', 'https://example.com/b')</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.detect.link_words">
+<span class="sig-prename descclassname"><span class="pre">liaise.detect.</span></span><span class="sig-name descname"><span class="pre">link_words</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">destination</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/detect.html#link_words"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.detect.link_words" title="Link to this definition">#</a></dt>
+<dd><p>The words of a link destination’s path, query and fragment, one space apart.</p>
+<p>Character references and percent-escapes are decoded, compatibility forms folded
+(full-width letters read as letters) and invisible characters removed before words
+glued together by case or by digits are split, so a term a link spells out reads as
+the term.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">link_words</span><span class="p">(</span><span class="s2">"https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms"</span><span class="p">)</span>
+<span class="go">'Heron Acquisition terms 2026 pdf p heron Terms'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link_words</span><span class="p">(</span><span class="s2">"https://example.org/</span><span class="si">%48e</span><span class="s2">ron&amp;amp;x"</span><span class="p">)</span>
+<span class="go">'Heron x'</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">link_words</span><span class="p">(</span><span class="s2">"www.example.org/Her&amp;#8203;onTerms"</span><span class="p">)</span>
+<span class="go">'Heron Terms'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1605,6 +1718,8 @@ override or a terminal escape shows as what it is, where it is.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.DFLT_DETECTORS"><code class="docutils literal notranslate"><span class="pre">DFLT_DETECTORS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.DFLT_ENTITY_LABEL"><code class="docutils literal notranslate"><span class="pre">DFLT_ENTITY_LABEL</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.DFLT_STATE_DIR"><code class="docutils literal notranslate"><span class="pre">DFLT_STATE_DIR</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Destination"><code class="docutils literal notranslate"><span class="pre">Destination</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Destinations"><code class="docutils literal notranslate"><span class="pre">Destinations</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Detector"><code class="docutils literal notranslate"><span class="pre">Detector</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.EMAIL_PATTERN"><code class="docutils literal notranslate"><span class="pre">EMAIL_PATTERN</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.ENV_FILE_PATTERN"><code class="docutils literal notranslate"><span class="pre">ENV_FILE_PATTERN</span></code></a></li>
@@ -1624,9 +1739,11 @@ override or a terminal escape shows as what it is, where it is.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.LOCAL_PATH_PATTERNS"><code class="docutils literal notranslate"><span class="pre">LOCAL_PATH_PATTERNS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.LOCAL_PATH_RULES"><code class="docutils literal notranslate"><span class="pre">LOCAL_PATH_RULES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.MAX_DESTINATION"><code class="docutils literal notranslate"><span class="pre">MAX_DESTINATION</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.MAX_LINK_DECODES"><code class="docutils literal notranslate"><span class="pre">MAX_LINK_DECODES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.MAX_TAG_LOOKBACK"><code class="docutils literal notranslate"><span class="pre">MAX_TAG_LOOKBACK</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.MIN_BASE64_RUN"><code class="docutils literal notranslate"><span class="pre">MIN_BASE64_RUN</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.MIN_HEX_RUN"><code class="docutils literal notranslate"><span class="pre">MIN_HEX_RUN</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.MIN_LINK_TERM_CHARS"><code class="docutils literal notranslate"><span class="pre">MIN_LINK_TERM_CHARS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.MIN_WRAPPED_BASE64_LINE"><code class="docutils literal notranslate"><span class="pre">MIN_WRAPPED_BASE64_LINE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Normalised"><code class="docutils literal notranslate"><span class="pre">Normalised</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Normalised.spans"><code class="docutils literal notranslate"><span class="pre">Normalised.spans()</span></code></a></li>
@@ -1644,6 +1761,7 @@ override or a terminal escape shows as what it is, where it is.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Scan"><code class="docutils literal notranslate"><span class="pre">Scan</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Scan.allows"><code class="docutils literal notranslate"><span class="pre">Scan.allows()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Scan.audience_severity"><code class="docutils literal notranslate"><span class="pre">Scan.audience_severity</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Scan.destinations"><code class="docutils literal notranslate"><span class="pre">Scan.destinations</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Scan.finding"><code class="docutils literal notranslate"><span class="pre">Scan.finding()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Scan.fingerprint"><code class="docutils literal notranslate"><span class="pre">Scan.fingerprint()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.Scan.key"><code class="docutils literal notranslate"><span class="pre">Scan.key()</span></code></a></li>
@@ -1673,12 +1791,14 @@ override or a terminal escape shows as what it is, where it is.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.chain"><code class="docutils literal notranslate"><span class="pre">chain()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.detect"><code class="docutils literal notranslate"><span class="pre">detect()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.detect_canaries"><code class="docutils literal notranslate"><span class="pre">detect_canaries()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.detect_link_terms"><code class="docutils literal notranslate"><span class="pre">detect_link_terms()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.detect_third_parties"><code class="docutils literal notranslate"><span class="pre">detect_third_parties()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.detect_vocabulary"><code class="docutils literal notranslate"><span class="pre">detect_vocabulary()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.fingerprint_key"><code class="docutils literal notranslate"><span class="pre">fingerprint_key()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.fold_term"><code class="docutils literal notranslate"><span class="pre">fold_term()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.key_source"><code class="docutils literal notranslate"><span class="pre">key_source()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.link_urls"><code class="docutils literal notranslate"><span class="pre">link_urls()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.link_words"><code class="docutils literal notranslate"><span class="pre">link_words()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.local_path_scanner"><code class="docutils literal notranslate"><span class="pre">local_path_scanner()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.normalise"><code class="docutils literal notranslate"><span class="pre">normalise()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.detect.render"><code class="docutils literal notranslate"><span class="pre">render()</span></code></a></li>

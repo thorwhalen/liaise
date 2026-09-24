@@ -30,7 +30,11 @@ liaise.detect
       ENV_FILE_PATTERN
       Detector
       SECRET_RULES
+      MIN_LINK_TERM_CHARS
+      MAX_LINK_DECODES
       MAX_TAG_LOOKBACK
+      Destination
+      Destinations
       INTERNAL_NETWORKS
       LOCAL_PATH_LITERALS
       LOCAL_PATH_RULES
@@ -46,6 +50,7 @@ liaise.detect
       detect
       detect_canaries
       detect_exfiltration
+      detect_link_terms
       detect_personal
       detect_third_parties
       detect_vocabulary
@@ -53,6 +58,7 @@ liaise.detect
       fold_term
       key_source
       link_urls
+      link_words
       local_path_scanner
       normalise
       render

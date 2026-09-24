@@ -1,4 +1,4 @@
-> built 2026-09-24 09:01 UTC from ed025fa (main) · liaise 0.1.15. Details: build_info.json
+> built 2026-09-24 09:21 UTC from dff8da8 (main) · liaise 0.1.16. Details: build_info.json
 
 # index.html.md
 
@@ -1453,6 +1453,9 @@ The six kinds (discussion §5.2):
   a whole word after normalisation.
 - `third_party`: the same for a person’s term (entity `person:<id>`), unless that person
   is a reader, one of `disclosure["people"]`. A reader is never a third party.
+- `vocabulary` and `third_party` again, rule `term-in-link`: either kind of term that a
+  link or image destination spells out in its path, query or fragment glued to other words
+  (`/HeronTerms.pdf`, `?p=heron2026`), over the whole destination (liaise #46).
 - `exfiltration`: link and image destinations whose host is not in `allowlist` (a host
   or any of its subdomains), read as a browser reads them (Markdown inline and reference
   links and images, HTML attributes, autolinks and bare URLs); base64 runs, wrapped or not,
@@ -1537,7 +1540,11 @@ share-alike source.
 | [`ENV_FILE_PATTERN`](_autosummary/liaise.detect.html.md#liaise.detect.ENV_FILE_PATTERN)        | A path ending in `.env`.                                                                                                                                                                                                                   |
 | [`Detector`](_autosummary/liaise.detect.html.md#liaise.detect.Detector)                | one detector, or one check within a detector.                                                                                                                                                                                              |
 | [`SECRET_RULES`](_autosummary/liaise.detect.html.md#liaise.detect.SECRET_RULES)            | the 0.1 token shapes and private-key header, then distinctive-prefix rules adapted from gitleaks (the gitleaks id precedes each).                                                                                                          |
+| [`MIN_LINK_TERM_CHARS`](_autosummary/liaise.detect.html.md#liaise.detect.MIN_LINK_TERM_CHARS)     | The fewest characters a term glued into a link must have to be found there.                                                                                                                                                                |
+| [`MAX_LINK_DECODES`](_autosummary/liaise.detect.html.md#liaise.detect.MAX_LINK_DECODES)        | one layer of character references over percent-escapes, or references escaped twice (`&amp;#8203;`).                                                                                                                                       |
 | [`MAX_TAG_LOOKBACK`](_autosummary/liaise.detect.html.md#liaise.detect.MAX_TAG_LOOKBACK)        | How far back an attribute looks for the `<` of the tag it would belong to.                                                                                                                                                                 |
+| [`Destination`](_autosummary/liaise.detect.html.md#liaise.detect.Destination)             | `(start, end, hosts, image)` of one link or image destination.                                                                                                                                                                             |
+| [`Destinations`](_autosummary/liaise.detect.html.md#liaise.detect.Destinations)            | the destinations its parsers read, then every `//host` anywhere (`_loose_urls()`), which backs them.                                                                                                                                       |
 | [`INTERNAL_NETWORKS`](_autosummary/liaise.detect.html.md#liaise.detect.INTERNAL_NETWORKS)       | Private (RFC 1918 and unique-local), loopback, shared (RFC 6598) and link-local networks: addresses that say something about the inside of a network.                                                                                      |
 | [`LOCAL_PATH_LITERALS`](_autosummary/liaise.detect.html.md#liaise.detect.LOCAL_PATH_LITERALS)     | The literals every match of each of [`LOCAL_PATH_PATTERNS`](_autosummary/liaise.detect.html.md#liaise.detect.LOCAL_PATH_PATTERNS) contains, in order.                                                                                                               |
 | [`LOCAL_PATH_RULES`](_autosummary/liaise.detect.html.md#liaise.detect.LOCAL_PATH_RULES)        | The 0.1 path patterns as rules.                                                                                                                                                                                                            |
@@ -1547,30 +1554,32 @@ share-alike source.
 
 ### Functions
 
-| [`chain`](_autosummary/liaise.detect.html.md#liaise.detect.chain)(\*detectors[, name])                        | One detector that yields the findings of `detectors`, in order.                                                                                                                                                                                                                                                              |
-|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`detect`](_autosummary/liaise.detect.html.md#liaise.detect.detect)(text, \*, disclosure[, allowlist, ...])    | What `detectors` find in `text`, ordered by position, each finding once.                                                                                                                                                                                                                                                     |
-| [`detect_canaries`](_autosummary/liaise.detect.html.md#liaise.detect.detect_canaries)(scan)                             | A `canary` finding, severity 5, wherever a canary term occurs, even inside a word: a canary is unique by construction, so a match anywhere is the alarm.                                                                                                                                                                     |
-| `detect_exfiltration`(scan)                                                                        |                                                                                                                                                                                                                                                                                                                              |
-| `detect_personal`(scan)                                                                            |                                                                                                                                                                                                                                                                                                                              |
-| [`detect_third_parties`](_autosummary/liaise.detect.html.md#liaise.detect.detect_third_parties)(scan)                        | A `third_party` finding for each whole-word occurrence of a person's disclosure term, when that person is not a reader.                                                                                                                                                                                                      |
-| [`detect_vocabulary`](_autosummary/liaise.detect.html.md#liaise.detect.detect_vocabulary)(scan)                           | A `vocabulary` finding for each whole-word occurrence of a disclosure term whose entity is not a person.                                                                                                                                                                                                                     |
-| [`fingerprint_key`](_autosummary/liaise.detect.html.md#liaise.detect.fingerprint_key)([state_dir, key_file, ...])       | The fingerprint key in `<state_dir>/<key_file>`, created on first use.                                                                                                                                                                                                                                                       |
-| [`fold_term`](_autosummary/liaise.detect.html.md#liaise.detect.fold_term)(term)                                   | `term` folded as [`normalise()`](_autosummary/liaise.detect.html.md#liaise.detect.normalise) folds a message, with its word breaks.                                                                                                                                                                                                         |
-| [`key_source`](_autosummary/liaise.detect.html.md#liaise.detect.key_source)([state_dir, key_file, key_bytes, ...]) | A callable that answers one key, however often it is asked: [`fingerprint_key()`](_autosummary/liaise.detect.html.md#liaise.detect.fingerprint_key), once.                                                                                                                                                                                        |
-| [`link_urls`](_autosummary/liaise.detect.html.md#liaise.detect.link_urls)(text)                                   | Every link and image destination in `text`, in full, in order, each once.                                                                                                                                                                                                                                                    |
-| [`local_path_scanner`](_autosummary/liaise.detect.html.md#liaise.detect.local_path_scanner)([rules])                       | A check for `rules`: an `exfiltration` finding spanning each path, from where its rule matched to the end of the path.                                                                                                                                                                                                       |
-| [`normalise`](_autosummary/liaise.detect.html.md#liaise.detect.normalise)(text)                                   | Fold `text` for matching, keeping where each folded character came from.                                                                                                                                                                                                                                                     |
-| [`render`](_autosummary/liaise.detect.html.md#liaise.detect.render)(text)                                      | `text` as a Markdown or HTML reader sees it, or None when rendering changes nothing.                                                                                                                                                                                                                                         |
-| [`scan_base64_runs`](_autosummary/liaise.detect.html.md#liaise.detect.scan_base64_runs)(scan)                            | An `exfiltration` finding for each base64 or base64url run of at least [`MIN_BASE64_RUN`](_autosummary/liaise.detect.html.md#liaise.detect.MIN_BASE64_RUN) characters, on one line or wrapped over several (indented or quoted too), that mixes digits, capitals and small letters, which encoded data does and a long word or path rarely does. |
-| [`scan_email_addresses`](_autosummary/liaise.detect.html.md#liaise.detect.scan_email_addresses)(scan)                        | A `personal` finding for each email address.                                                                                                                                                                                                                                                                                 |
-| [`scan_hex_runs`](_autosummary/liaise.detect.html.md#liaise.detect.scan_hex_runs)(scan)                               | An `exfiltration` finding for each run of at least [`MIN_HEX_RUN`](_autosummary/liaise.detect.html.md#liaise.detect.MIN_HEX_RUN) hex digits that mixes digits and letters.                                                                                                                                                                    |
-| [`scan_invisible_characters`](_autosummary/liaise.detect.html.md#liaise.detect.scan_invisible_characters)(scan)                   | An `exfiltration` finding for each word holding invisible characters the text does not need to render (see `_needed_invisible()`): zero-width spaces, direction overrides, tag characters, variation selectors used to carry data.                                                                                           |
-| [`scan_links`](_autosummary/liaise.detect.html.md#liaise.detect.scan_links)(scan)                                  | An `exfiltration` finding for each link or image whose host is not allowlisted.                                                                                                                                                                                                                                              |
-| [`scan_personal_terms`](_autosummary/liaise.detect.html.md#liaise.detect.scan_personal_terms)(scan)                         | A `personal` finding for each whole-word occurrence of a personal term.                                                                                                                                                                                                                                                      |
-| [`scan_private_addresses`](_autosummary/liaise.detect.html.md#liaise.detect.scan_private_addresses)(scan)                      | An `exfiltration` finding for each IPv4 or IPv6 address in [`INTERNAL_NETWORKS`](_autosummary/liaise.detect.html.md#liaise.detect.INTERNAL_NETWORKS).                                                                                                                                                                                               |
-| [`secret_detector`](_autosummary/liaise.detect.html.md#liaise.detect.secret_detector)([rules])                          | A detector of `rules`: a `secret` finding for each match, severity 5.                                                                                                                                                                                                                                                        |
-| [`visible`](_autosummary/liaise.detect.html.md#liaise.detect.visible)(text)                                     | `text` with each invisible or control character written as `<U+XXXX>`.                                                                                                                                                                                                                                                       |
+| [`chain`](_autosummary/liaise.detect.html.md#liaise.detect.chain)(\*detectors[, name])                        | One detector that yields the findings of `detectors`, in order.                                                                                                                                                                                                                                                                                                                                                               |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`detect`](_autosummary/liaise.detect.html.md#liaise.detect.detect)(text, \*, disclosure[, allowlist, ...])    | What `detectors` find in `text`, ordered by position, each finding once.                                                                                                                                                                                                                                                                                                                                                      |
+| [`detect_canaries`](_autosummary/liaise.detect.html.md#liaise.detect.detect_canaries)(scan)                             | A `canary` finding, severity 5, wherever a canary term occurs, even inside a word: a canary is unique by construction, so a match anywhere is the alarm.                                                                                                                                                                                                                                                                      |
+| `detect_exfiltration`(scan)                                                                        |                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| [`detect_link_terms`](_autosummary/liaise.detect.html.md#liaise.detect.detect_link_terms)(scan)                           | A `vocabulary` or `third_party` finding, rule `term-in-link`, for a disclosure term a link or image destination spells out in its path, query or fragment only by gluing it to other words (`/HeronTerms.pdf`, `?p=heron2026`), which the whole-word readings of [`detect_vocabulary()`](_autosummary/liaise.detect.html.md#liaise.detect.detect_vocabulary) and [`detect_third_parties()`](_autosummary/liaise.detect.html.md#liaise.detect.detect_third_parties) do not see. |
+| `detect_personal`(scan)                                                                            |                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| [`detect_third_parties`](_autosummary/liaise.detect.html.md#liaise.detect.detect_third_parties)(scan)                        | A `third_party` finding for each whole-word occurrence of a person's disclosure term, when that person is not a reader.                                                                                                                                                                                                                                                                                                       |
+| [`detect_vocabulary`](_autosummary/liaise.detect.html.md#liaise.detect.detect_vocabulary)(scan)                           | A `vocabulary` finding for each whole-word occurrence of a disclosure term whose entity is not a person.                                                                                                                                                                                                                                                                                                                      |
+| [`fingerprint_key`](_autosummary/liaise.detect.html.md#liaise.detect.fingerprint_key)([state_dir, key_file, ...])       | The fingerprint key in `<state_dir>/<key_file>`, created on first use.                                                                                                                                                                                                                                                                                                                                                        |
+| [`fold_term`](_autosummary/liaise.detect.html.md#liaise.detect.fold_term)(term)                                   | `term` folded as [`normalise()`](_autosummary/liaise.detect.html.md#liaise.detect.normalise) folds a message, with its word breaks.                                                                                                                                                                                                                                                                                                          |
+| [`key_source`](_autosummary/liaise.detect.html.md#liaise.detect.key_source)([state_dir, key_file, key_bytes, ...]) | A callable that answers one key, however often it is asked: [`fingerprint_key()`](_autosummary/liaise.detect.html.md#liaise.detect.fingerprint_key), once.                                                                                                                                                                                                                                                                                         |
+| [`link_urls`](_autosummary/liaise.detect.html.md#liaise.detect.link_urls)(text)                                   | Every link and image destination in `text`, in full, in order, each once.                                                                                                                                                                                                                                                                                                                                                     |
+| [`link_words`](_autosummary/liaise.detect.html.md#liaise.detect.link_words)(destination)                           | The words of a link destination's path, query and fragment, one space apart.                                                                                                                                                                                                                                                                                                                                                  |
+| [`local_path_scanner`](_autosummary/liaise.detect.html.md#liaise.detect.local_path_scanner)([rules])                       | A check for `rules`: an `exfiltration` finding spanning each path, from where its rule matched to the end of the path.                                                                                                                                                                                                                                                                                                        |
+| [`normalise`](_autosummary/liaise.detect.html.md#liaise.detect.normalise)(text)                                   | Fold `text` for matching, keeping where each folded character came from.                                                                                                                                                                                                                                                                                                                                                      |
+| [`render`](_autosummary/liaise.detect.html.md#liaise.detect.render)(text)                                      | `text` as a Markdown or HTML reader sees it, or None when rendering changes nothing.                                                                                                                                                                                                                                                                                                                                          |
+| [`scan_base64_runs`](_autosummary/liaise.detect.html.md#liaise.detect.scan_base64_runs)(scan)                            | An `exfiltration` finding for each base64 or base64url run of at least [`MIN_BASE64_RUN`](_autosummary/liaise.detect.html.md#liaise.detect.MIN_BASE64_RUN) characters, on one line or wrapped over several (indented or quoted too), that mixes digits, capitals and small letters, which encoded data does and a long word or path rarely does.                                                                                                  |
+| [`scan_email_addresses`](_autosummary/liaise.detect.html.md#liaise.detect.scan_email_addresses)(scan)                        | A `personal` finding for each email address.                                                                                                                                                                                                                                                                                                                                                                                  |
+| [`scan_hex_runs`](_autosummary/liaise.detect.html.md#liaise.detect.scan_hex_runs)(scan)                               | An `exfiltration` finding for each run of at least [`MIN_HEX_RUN`](_autosummary/liaise.detect.html.md#liaise.detect.MIN_HEX_RUN) hex digits that mixes digits and letters.                                                                                                                                                                                                                                                                     |
+| [`scan_invisible_characters`](_autosummary/liaise.detect.html.md#liaise.detect.scan_invisible_characters)(scan)                   | An `exfiltration` finding for each word holding invisible characters the text does not need to render (see `_needed_invisible()`): zero-width spaces, direction overrides, tag characters, variation selectors used to carry data.                                                                                                                                                                                            |
+| [`scan_links`](_autosummary/liaise.detect.html.md#liaise.detect.scan_links)(scan)                                  | An `exfiltration` finding for each link or image whose host is not allowlisted.                                                                                                                                                                                                                                                                                                                                               |
+| [`scan_personal_terms`](_autosummary/liaise.detect.html.md#liaise.detect.scan_personal_terms)(scan)                         | A `personal` finding for each whole-word occurrence of a personal term.                                                                                                                                                                                                                                                                                                                                                       |
+| [`scan_private_addresses`](_autosummary/liaise.detect.html.md#liaise.detect.scan_private_addresses)(scan)                      | An `exfiltration` finding for each IPv4 or IPv6 address in [`INTERNAL_NETWORKS`](_autosummary/liaise.detect.html.md#liaise.detect.INTERNAL_NETWORKS).                                                                                                                                                                                                                                                                                                |
+| [`secret_detector`](_autosummary/liaise.detect.html.md#liaise.detect.secret_detector)([rules])                          | A detector of `rules`: a `secret` finding for each match, severity 5.                                                                                                                                                                                                                                                                                                                                                         |
+| [`visible`](_autosummary/liaise.detect.html.md#liaise.detect.visible)(text)                                     | `text` with each invisible or control character written as `<U+XXXX>`.                                                                                                                                                                                                                                                                                                                                                        |
 
 ### Classes
 
@@ -1592,7 +1601,7 @@ share-alike source.
 
 The package data file of confusable characters.
 
-### liaise.detect.DFLT_DETECTORS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[Scan](_autosummary/liaise.detect.html.md#liaise.detect.Scan)], [Iterable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable)[[Finding](_autosummary/liaise.detect.html.md#liaise.detect.Finding)]], ...]* *= (<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>)*
+### liaise.detect.DFLT_DETECTORS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[Scan](_autosummary/liaise.detect.html.md#liaise.detect.Scan)], [Iterable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable)[[Finding](_autosummary/liaise.detect.html.md#liaise.detect.Finding)]], ...]* *= (<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>)*
 
 The detectors [`detect()`](_autosummary/liaise.detect.html.md#liaise.detect.detect) runs by default, one per kind of [`KINDS`](_autosummary/liaise.detect.html.md#liaise.detect.KINDS).
 
@@ -1607,6 +1616,22 @@ green for a person (discussion §4.2).
 ### liaise.detect.DFLT_STATE_DIR *= PosixPath('~/.local/share/liaise')*
 
 Where the fingerprint key lives when no liaise config names a state directory.
+
+### liaise.detect.Destination
+
+`(start, end, hosts, image)` of one link or image destination.
+
+alias of [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int), [`frozenset`](https://docs.python.org/3/builtins/stdtypes.html#frozenset), [`bool`](https://docs.python.org/3/builtins/functions.html#bool)]
+
+### liaise.detect.Destinations
+
+the destinations its parsers read, then every
+`//host` anywhere (`_loose_urls()`), which backs them.
+
+* **Type:**
+  What `_destinations()` parses
+
+alias of [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int), [`frozenset`](https://docs.python.org/3/builtins/stdtypes.html#frozenset), [`bool`](https://docs.python.org/3/builtins/functions.html#bool)], …], [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int), [`frozenset`](https://docs.python.org/3/builtins/stdtypes.html#frozenset), [`bool`](https://docs.python.org/3/builtins/functions.html#bool)], …]]
 
 ### liaise.detect.Detector
 
@@ -1712,6 +1737,14 @@ The 0.1 path patterns as rules.
 
 How much of a link destination is read for its host.
 
+### liaise.detect.MAX_LINK_DECODES *= 3*
+
+one layer of character
+references over percent-escapes, or references escaped twice (`&amp;#8203;`).
+
+* **Type:**
+  How many times a link destination’s escapes are decoded
+
 ### liaise.detect.MAX_TAG_LOOKBACK *= 1024*
 
 How far back an attribute looks for the `<` of the tag it would belong to.
@@ -1730,6 +1763,12 @@ commit hashes quoted in a message are not findings.
 
 * **Type:**
   The shortest hex run that is a finding
+
+### liaise.detect.MIN_LINK_TERM_CHARS *= 4*
+
+The fewest characters a term glued into a link must have to be found there. Splitting a
+hash, a signature or an id at its digits leaves runs of two or three letters, which a
+short term (an acronym) would match by chance; a longer one does not.
 
 ### liaise.detect.MIN_WRAPPED_BASE64_LINE *= 40*
 
@@ -1822,6 +1861,11 @@ Whether `host` is an allowlisted host or a subdomain of one.
 #### *property* audience_severity *: [int](https://docs.python.org/3/builtins/functions.html#int)*
 
 The severity of a finding that only the audience makes serious.
+
+#### *property* destinations *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[int](https://docs.python.org/3/builtins/functions.html#int), [int](https://docs.python.org/3/builtins/functions.html#int), [frozenset](https://docs.python.org/3/builtins/stdtypes.html#frozenset), [bool](https://docs.python.org/3/builtins/functions.html#bool)], ...], [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[int](https://docs.python.org/3/builtins/functions.html#int), [int](https://docs.python.org/3/builtins/functions.html#int), [frozenset](https://docs.python.org/3/builtins/stdtypes.html#frozenset), [bool](https://docs.python.org/3/builtins/functions.html#bool)], ...]]*
+
+Every link and image destination of the message (`_destinations()`), parsed
+once for the detectors that read them.
 
 #### finding(kind, start, end, , rule, severity, entity=None, label=None, sealed_from=(), material=None)
 
@@ -1978,7 +2022,7 @@ One detector that yields the findings of `detectors`, in order.
 * **Return type:**
   [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Scan`](_autosummary/liaise.detect.html.md#liaise.detect.Scan)], [`Iterable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterable)[[`Finding`](_autosummary/liaise.detect.html.md#liaise.detect.Finding)]]
 
-### liaise.detect.detect(text, \*, disclosure, allowlist=(), canary_terms=(), personal_terms=(), key=None, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>))
+### liaise.detect.detect(text, \*, disclosure, allowlist=(), canary_terms=(), personal_terms=(), key=None, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>))
 
 What `detectors` find in `text`, ordered by position, each finding once.
 
@@ -2007,6 +2051,25 @@ read only when there is a finding. A caller with a config in hand should pass it
 
 A `canary` finding, severity 5, wherever a canary term occurs, even inside a word:
 a canary is unique by construction, so a match anywhere is the alarm.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Finding`](_autosummary/liaise.detect.html.md#liaise.detect.Finding)]
+
+### liaise.detect.detect_link_terms(scan)
+
+A `vocabulary` or `third_party` finding, rule `term-in-link`, for a disclosure
+term a link or image destination spells out in its path, query or fragment only by
+gluing it to other words (`/HeronTerms.pdf`, `?p=heron2026`), which the whole-word
+readings of [`detect_vocabulary()`](_autosummary/liaise.detect.html.md#liaise.detect.detect_vocabulary) and [`detect_third_parties()`](_autosummary/liaise.detect.html.md#liaise.detect.detect_third_parties) do not see.
+
+The destination’s words are read with [`link_words()`](_autosummary/liaise.detect.html.md#liaise.detect.link_words) and matched as those two
+match the message, so the finding is the same kind, label and severity as the term’s
+anywhere else, and its fingerprint is the fingerprint of the words it matched, as the
+term’s would be; it spans the whole destination. A term of fewer than
+[`MIN_LINK_TERM_CHARS`](_autosummary/liaise.detect.html.md#liaise.detect.MIN_LINK_TERM_CHARS) characters is not looked for, a term those two already
+found inside the destination is not found again, and a destination inside another
+(a `srcset` candidate) is read once, with the one around it. The host is not read:
+that is [`scan_links()`](_autosummary/liaise.detect.html.md#liaise.detect.scan_links)’ concern (liaise #46).
 
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Finding`](_autosummary/liaise.detect.html.md#liaise.detect.Finding)]
@@ -2084,6 +2147,27 @@ destination another.
 ```pycon
 >>> link_urls("See [the docs](https://example.org/a) and https://example.com/b.")
 ('https://example.org/a', 'https://example.com/b')
+```
+
+### liaise.detect.link_words(destination)
+
+The words of a link destination’s path, query and fragment, one space apart.
+
+Character references and percent-escapes are decoded, compatibility forms folded
+(full-width letters read as letters) and invisible characters removed before words
+glued together by case or by digits are split, so a term a link spells out reads as
+the term.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> link_words("https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms")
+'Heron Acquisition terms 2026 pdf p heron Terms'
+>>> link_words("https://example.org/%48eron&amp;x")
+'Heron x'
+>>> link_words("www.example.org/Her&#8203;onTerms")
+'Heron Terms'
 ```
 
 ### liaise.detect.local_path_scanner(rules=(PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:Users|home|root)/'), literals=('/Users/', '/home/', '/root/')), PathRule(rule='local-path', pattern=re.compile('\\\\\\\\b[A-Za-z]:(?:\\\\\\\\\\\\\\\\{1,2}|/)Users(?:\\\\\\\\\\\\\\\\{1,2}|/)', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/mnt/[A-Za-z]/Users/', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:private/var|var/folders)/'), literals=('/private/var/', '/var/folders/')), PathRule(rule='env-file', pattern=re.compile('(?<=[\\\\\\\\\\\\\\\\/])\\\\\\\\.env(?![\\\\\\\\w-]|\\\\\\\\.\\\\\\\\w)'), literals=('.env',))))
@@ -2664,7 +2748,7 @@ diverted. Other channels pass unchanged.
 * **Return type:**
   `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
 
-### liaise.gate.outbound_policy(outbound, ctx, \*, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>), resolver=<function resolve_person>)
+### liaise.gate.outbound_policy(outbound, ctx, \*, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>), resolver=<function resolve_person>)
 
 Hold back what the outbound policy (discussion §5.4) does not let go now.
 
@@ -4599,7 +4683,7 @@ that otherwise succeeded. Build `body` with `notice_body()`.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-### liaise.outbound_policy(outbound, ctx, \*, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>), resolver=<function resolve_person>)
+### liaise.outbound_policy(outbound, ctx, \*, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>), resolver=<function resolve_person>)
 
 Hold back what the outbound policy (discussion §5.4) does not let go now.
 
@@ -6176,7 +6260,7 @@ The labelled records `verdict`’s message identified, each once, in order: neve
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
-### liaise.outbound.findings_in(outbound, disclosure, \*, subject, key=None, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>))
+### liaise.outbound.findings_in(outbound, disclosure, \*, subject, key=None, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>))
 
 What `detectors` find in the text, the title and each attachment name of `outbound`.
 
@@ -6196,7 +6280,7 @@ to nobody, which the policy counts at `clear`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
-### liaise.outbound.judge(outbound, \*, subject, now, audience=None, provenance=None, mode=None, key=None, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>), resolver=<function resolve_person>)
+### liaise.outbound.judge(outbound, \*, subject, now, audience=None, provenance=None, mode=None, key=None, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>), resolver=<function resolve_person>)
 
 The policy’s verdict on `outbound`, sent to its destination on `subject`, with what it consulted.
 
@@ -10047,18 +10131,16 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-24 09:01 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/ed025fa6638153c4800698c5fc46b231a6439ddb"><code>ed025fa</code></a> on branch <code>main</code>, for **liaise 0.1.15** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-24 09:21 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/dff8da8835ac6e620eb24aff0886167ed50e265e"><code>dff8da8</code></a> on branch <code>main</code>, for **liaise 0.1.16** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.15) is behind the latest release on PyPI (0.1.16): `pip install liaise` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/ed025fa6638153c4800698c5fc46b231a6439ddb"><code>ed025fa6638153c4800698c5fc46b231a6439ddb</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/dff8da8835ac6e620eb24aff0886167ed50e265e"><code>dff8da8835ac6e620eb24aff0886167ed50e265e</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -10069,9 +10151,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35978400420">35978400420</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35980449770">35980449770</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>ed025fa6638153c4800698c5fc46b231a6439ddb</code> (in the history of the built commit) |
+| Event commit | <code>dff8da8835ac6e620eb24aff0886167ed50e265e</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -10096,13 +10178,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.16/">0.1.16</a>, newer than the documented version (0.1.15).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.16/">0.1.16</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout ed025fa6638153c4800698c5fc46b231a6439ddb
+git checkout dff8da8835ac6e620eb24aff0886167ed50e265e
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
