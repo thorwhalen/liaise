@@ -24,13 +24,13 @@ Every message liaise sends — a run's outcome, a draft the owner releases, a me
 - **Give every project, organisation and person that must not reach an audience a label and its vocabulary** in acquaint; `policy.leak_terms` still works, and counts as a label nobody is cleared for.
 - **Set `policy.link_allowlist`** to the hosts your messages may link to, and `policy.canary_terms` to words planted where only a private context has them.
 - **Keep `default_reply_mode = "draft"`** for anyone where a mistake would be expensive. On a public repository nothing sends by itself today anyway: an irreversible send waits for you until the delay outbox is built.
+- **Shadow mode never loosens the gate.** `mode = "shadow"` holds back exactly what `enforce` does; it also records what liaise 0.1 would have decided, so `liaise gate report` can print the shadow agreement and the missed findings, and say whether to enforce.
 - **Read drafts with `liaise case show`.** It gives the gate's answer, the audience in words, the whole text with invisible characters spelled out, and every link in full. `liaise case send-draft` shows the same and sends only on a typed `y`, recording your approval with `--justification`.
 
 ## Not built yet
 
 - **`liaise vet`, the `before_send` seam and the Claude Code hook** (issue #37): a draft written outside liaise, or a `gh` command in a coding session, does not meet this gate.
 - **The delay outbox** (issue #38): `delay` is a draft for you until it exists.
-- **Shadow mode and the gate report** (issue #39): `mode = "shadow"` is accepted and recorded, and enforces meanwhile.
 - **A private word inside a link's path** (issue #46) still reaches a wide audience at `approve`: a plain link is shown to you in full rather than refused.
 - **Returning a `revise` to the processor**: it is a flagged draft for you today.
 - **A semantic pass**: nothing catches a paraphrase that names no term (scenario S7, a known miss).

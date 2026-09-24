@@ -30,7 +30,9 @@ verdict), `detect.py` (detectors: what a message holds, reported without the
 value), `policy.py` (findings + audience -> flow), `outbound.py` (what the policy
 filter gathers), `messages.py` (agent-initiated messages, also through the gate),
 `outbox.py` (the delay outbox — messages gated `delay`, held in a cancellable
-window), `release.py` (send: through the gate, then through `correspond`).
+window), `release.py` (send: through the gate, then through `correspond`),
+`legacy.py` (the 0.1 gate replayed as a counterfactual, recorded beside each
+verdict for shadow agreement).
 
 **Operator surface:** `cli.py` / `__main__.py` (the `liaise` command), `cases.py`
 (`liaise case list`, `show`, `set-state`, `send-draft`, `reject-draft`), `report.py`

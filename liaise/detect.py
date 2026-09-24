@@ -155,7 +155,7 @@ MAX_DESTINATION = 2048
 #: The package data file of confusable characters.
 CONFUSABLES_RESOURCE = "confusables.json"
 
-# ---- the 0.1 leak-scan patterns (liaise.gate reads them from here) ----
+# ---- the 0.1 leak-scan patterns (liaise.legacy replays them for shadow mode) ----
 
 #: The token shapes of the 0.1 leak scan, each without the word boundary it starts at: the
 #: GitHub (``ghp_`` and its siblings, ``github_pat_``), ``sk-`` API key, AWS access key,

@@ -25,9 +25,13 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   (false diverts over the messages that should have gone as written: those sent as judged
   plus the false diverts);
 - **shadow**: the judged messages of subjects in ``policy.mode = "shadow"``. Shadow mode
-  enforces like ``enforce`` until its sending semantics are decided (liaise #39), so no
-  would-be verdict differs from the decision yet, and shadow agreement and missed findings
-  are not observable: the report says so rather than printing a number that means nothing.
+  enforces like ``enforce`` (liaise #51: nothing sends that the policy holds back); beside
+  each verdict the gate records what liaise 0.1 would have decided (:mod:`liaise.legacy`).
+  **Compared** counts the shadow messages that carry that counterfactual; **shadow
+  agreement** is the share of them where the policy and 0.1 are in the same flow class
+  (:func:`liaise.legacy.flow_class`: sent, or held back), and a **missed finding** is one
+  0.1 would have sent where the policy found severity :data:`MISSED_SEVERITY` or above.
+  Entries recorded before the counterfactual was are shadow but not compared.
 
 - **hook overrides**: writes the Claude Code hook (:mod:`liaise.hook`) asked the operator
   about and the operator let run, how many of them it could not read, and the rules among
@@ -48,6 +52,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional, Union
 
 from liaise.gate import OUTBOX_ACTOR
+from liaise.legacy import flow_class
 from liaise.ledger import Ledger
 from liaise.model import LedgerEntry
 from liaise.outbox import HOLD
@@ -63,10 +68,10 @@ MAX_FALSE_DIVERT_RATE = 0.1
 MAX_RULE_NAME = 40
 #: The entry kind the gate's decisions are recorded as.
 GATE_KIND = "gate"
-#: Why shadow agreement and missed findings cannot be counted yet.
-SHADOW_PENDING = (
-    "shadow mode enforces like enforce until its sending semantics are decided "
-    "(liaise #39), so it records no would-be verdict that differs from the decision"
+#: Why shadow agreement and missed findings cannot be counted when nothing was compared.
+SHADOW_UNOBSERVED = (
+    "no shadow message carries 0.1's counterfactual, which the gate records since "
+    "liaise #39"
 )
 
 
@@ -147,6 +152,31 @@ def _records(
         yield message.subject, message.entries
 
 
+def _max_severity(detail: Mapping[str, Any]) -> int:
+    """The highest severity of a finding among a gate entry's concerns, 0 when none says."""
+    severities = [
+        finding.get("severity")
+        for key in ("concerns", "settled")
+        for concern in detail.get(key) or ()
+        if isinstance(concern, Mapping)
+        for finding in concern.get("findings") or ()
+        if isinstance(finding, Mapping)
+    ]
+    return max(
+        (s for s in severities if isinstance(s, int) and not isinstance(s, bool)),
+        default=0,
+    )
+
+
+def _legacy_flow(detail: Mapping[str, Any]) -> Optional[str]:
+    """The flow 0.1 would have chosen, as the gate recorded it; None when it did not."""
+    counterfactual = detail.get("counterfactual")
+    if not isinstance(counterfactual, Mapping):
+        return None
+    flow = counterfactual.get("flow")
+    return flow if isinstance(flow, str) else None
+
+
 def _empty_rule() -> dict[str, int]:
     return {"fired": 0, "released": 0, "confirmed": 0}
 
@@ -193,6 +223,16 @@ def gate_report(
                 mode = verdict.get("mode") if isinstance(verdict, Mapping) else None
                 if mode == SHADOW or (mode is None and owner in shadow_now):
                     counts["shadow"] += 1
+                    legacy = _legacy_flow(detail)
+                    if legacy is not None:
+                        counts["shadow compared"] += 1
+                        counts["agreed"] += flow_class(legacy) == flow_class(
+                            detail.get("flow")
+                        )
+                        counts["missed"] += (
+                            flow_class(legacy) == flow_class(SEND)
+                            and _max_severity(detail) >= MISSED_SEVERITY
+                        )
                 for rule in fired:
                     rules.setdefault(rule, _empty_rule())["fired"] += 1
             elif counted and _is_outbox_release(detail):
@@ -217,7 +257,7 @@ def gate_report(
         entry["precision"] = (
             None if judged == 0 else round(entry["confirmed"] / judged, 3)
         )
-    judged = counts["judged"]
+    judged, compared = counts["judged"], counts["shadow compared"]
     should_send = counts["sent as judged"] + counts["false diverts"]
     false_divert_rate = (
         None if should_send == 0 else counts["false diverts"] / should_send
@@ -235,19 +275,20 @@ def gate_report(
                 "false diverts",
                 "rejected",
                 "shadow",
+                "shadow compared",
             )
         },
         "override_rate": None if judged == 0 else counts["released"] / judged,
         "false_divert_rate": false_divert_rate,
         "rules": dict(sorted(rules.items())),
-        "shadow_agreement": None,
-        "missed_high_severity": None,
-        "shadow_note": SHADOW_PENDING,
+        "shadow_agreement": None if compared == 0 else counts["agreed"] / compared,
+        "missed_high_severity": None if compared == 0 else counts["missed"],
+        "shadow_note": SHADOW_UNOBSERVED if compared == 0 else None,
     }
     report["hook"] = hook_overrides(ledger, subject=subject, since=start)
     report["enforce"] = enforce_recommended(
-        shadow_messages=counts["shadow"],
-        missed_high_severity=None,
+        shadow_messages=compared,
+        missed_high_severity=report["missed_high_severity"],
         false_divert_rate=false_divert_rate,
     )
     return report
@@ -323,23 +364,28 @@ def enforce_recommended(
 ) -> dict[str, Any]:
     """Decision 11's rollout rule: ``{"recommended": bool, "reason": str}``.
 
-    ``missed_high_severity`` is how many findings of severity :data:`MISSED_SEVERITY` or
-    above shadow mode let through (None: not observable, which never recommends).
+    ``shadow_messages`` counts the shadow messages compared with 0.1's counterfactual, and
+    ``missed_high_severity`` how many of them 0.1 would have sent with a finding of
+    severity :data:`MISSED_SEVERITY` or above (None: not observable, which never
+    recommends).
 
     >>> enforce_recommended(shadow_messages=40, missed_high_severity=0, false_divert_rate=0.05)
     {'recommended': True, 'reason': '40 shadow messages, no missed finding of severity 4 or above, false-divert rate 0.05 (at most 0.1)'}
     >>> enforce_recommended(shadow_messages=12, missed_high_severity=0, false_divert_rate=0.0)['reason']
-    'only 12 shadow messages, fewer than 30'
+    'only 12 shadow messages compared with 0.1, fewer than 30'
     """
     if shadow_messages < MIN_SHADOW_MESSAGES:
         return {
             "recommended": False,
-            "reason": f"only {shadow_messages} shadow messages, fewer than {MIN_SHADOW_MESSAGES}",
+            "reason": (
+                f"only {shadow_messages} shadow messages compared with 0.1, fewer than "
+                f"{MIN_SHADOW_MESSAGES}"
+            ),
         }
     if missed_high_severity is None:
         return {
             "recommended": False,
-            "reason": f"missed findings are not observable yet: {SHADOW_PENDING}",
+            "reason": f"missed findings are not observable: {SHADOW_UNOBSERVED}",
         }
     if missed_high_severity > 0:
         return {
@@ -378,7 +424,19 @@ def report_lines(report: Mapping[str, Any]) -> list[str]:
     lines += [f"  {name}: {value}" for name, value in counts.items()]
     lines.append(f"  override rate: {_rate(report['override_rate'])}")
     lines.append(f"  false-divert rate: {_rate(report['false_divert_rate'])}")
-    lines.append(f"  shadow agreement: n/a ({report['shadow_note']})")
+    agreement, missed = report["shadow_agreement"], report["missed_high_severity"]
+    if agreement is None:
+        lines.append(f"  shadow agreement: n/a ({report['shadow_note']})")
+        lines.append("  missed findings: n/a (nothing compared)")
+    else:
+        lines.append(
+            f"  shadow agreement: {agreement:.3f} (same flow class as 0.1, of "
+            f"{counts['shadow compared']} compared)"
+        )
+        lines.append(
+            f"  missed findings (0.1 would have sent, severity {MISSED_SEVERITY} or "
+            f"above): {missed}"
+        )
     rules = report["rules"]
     lines.append(
         f"per rule (fired, released as false positive, confirmed, precision): {len(rules)}"
