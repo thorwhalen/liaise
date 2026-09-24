@@ -133,3 +133,6 @@ def test_without_the_link_term_detector_a_term_glued_into_a_link_path_is_approve
     assert case.evaluate().flow == "refuse"
     assert case.evaluate(detectors=less).flow == "approve"
     assert prepare(BY_ID["S22"]).evaluate().flow == "approve"  # a plain link still delivers
+    allowlisted = prepare(BY_ID["X-link-path-allowlisted"])
+    assert allowlisted.evaluate().flow == "revise"
+    assert allowlisted.evaluate(detectors=less).flow == "delay"

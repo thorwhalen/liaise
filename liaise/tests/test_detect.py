@@ -1094,3 +1094,30 @@ def test_the_link_term_is_labelled_and_graded_like_the_term():
     (plain,) = detect("Heron", disclosure={"vocabulary": _HERON}, key=KEY)
     (glued,) = [f for f in detect(text, disclosure={"vocabulary": _HERON}, key=KEY) if f.rule == "term-in-link"]
     assert (glued.label, glued.entity, glued.severity) == (plain.label, plain.entity, plain.severity)
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["Her&amp;#8203;onTerms", "Her​onTerms", "ＨｅｒｏｎTerms", "caféHeron"],
+)
+def test_invisible_characters_escapes_and_other_scripts_do_not_hide_a_glued_term(path):
+    assert [rule for _, rule, _, _ in _link_terms(f"See https://files.example.net/{path} ok")] == ["term-in-link"]
+
+
+def test_a_short_term_is_not_looked_for_inside_a_link_and_a_www_host_is_not_read():
+    ce = [{"term": "CE", "entity": "project:ce", "label": "amber"}]
+    assert _link_terms("See https://files.example.net/commit/4ce1a29b7f0e3d", vocabulary=ce) == []
+    assert _link_terms("See www.HeronTerms.example/x") == []
+
+
+def test_a_glued_term_has_the_fingerprint_the_term_has_anywhere():
+    def fingerprint(text, rule):
+        return next(f.fingerprint for f in detect(text, disclosure={"vocabulary": _HERON}, key=KEY) if f.rule == rule)
+
+    glued = fingerprint("See https://files.example.net/HeronTerms", "term-in-link")
+    assert glued == fingerprint("See https://other.example.net/theHeronPlan", "term-in-link") == fingerprint("Heron", "term")
+
+
+def test_a_srcset_candidate_is_read_once_with_its_attribute():
+    text = '<img srcset="https://a.example.net/x.png 1x, https://a.example.net/HeronT.png 2x">'
+    assert len(_link_terms(text)) == 1

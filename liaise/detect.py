@@ -1350,7 +1350,15 @@ class _Term:
     sealed_from: tuple[str, ...]
     severity: int
 
-    def finding(self, scan: Scan, start: int, end: int, *, rule: str) -> Finding:
+    def finding(
+        self,
+        scan: Scan,
+        start: int,
+        end: int,
+        *,
+        rule: str,
+        material: Optional[str] = None,
+    ) -> Finding:
         return scan.finding(
             self.kind,
             start,
@@ -1360,6 +1368,7 @@ class _Term:
             entity=self.entity,
             label=self.label,
             sealed_from=self.sealed_from,
+            material=material,
         )
 
 
@@ -1401,35 +1410,67 @@ def detect_third_parties(scan: Scan) -> Iterator[Finding]:
     return _term_findings(scan, people=True)
 
 
-#: Where a word inside a link's path or query breaks without a separator: a lower-case
-#: letter before a capital (``heronTerms``), a capital before a capitalised word
-#: (``PDFTerms``), and letters beside digits (``heron2026``).
-_GLUED_WORD_BREAK = re.compile(
-    r"(?<=[^\W\d_])(?=\d)|(?<=\d)(?=[^\W\d_])"
-    r"|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
-)
+#: The fewest characters a term glued into a link must have to be found there. Splitting a
+#: hash, a signature or an id at its digits leaves runs of two or three letters, which a
+#: short term (an acronym) would match by chance; a longer one does not.
+MIN_LINK_TERM_CHARS = 4
+#: How many times a link destination's escapes are decoded: one layer of character
+#: references over percent-escapes, or references escaped twice (``&amp;#8203;``).
+MAX_LINK_DECODES = 3
 #: What separates two words of a link's path or query: anything but a letter or a digit.
 _LINK_SEPARATOR = re.compile(r"[\W_]+")
-#: The scheme and authority a destination starts with; its host is :func:`scan_links`'s.
+#: The scheme and authority a destination starts with, and a ``www.`` host without a
+#: scheme; the host is :func:`scan_links`' concern.
 _LINK_AUTHORITY = re.compile(
-    r"^\s*(?:[A-Za-z][A-Za-z0-9+.-]{0,31}:)?(?:[/\\]{2,}[^/\\?#]*)?"
+    r"^\s*(?:[A-Za-z][A-Za-z0-9+.-]{0,31}:)?(?:[/\\]{2,}[^/\\?#]*|www\.[^/\\?#]*)?",
+    re.IGNORECASE,
 )
+
+
+def _glued_word_breaks(text: str) -> str:
+    """``text`` with a space wherever a word is glued to the next: a lower-case letter before
+    a capital (``heronTerms``), a capital before a capitalised word (``PDFTerms``), and a
+    letter beside a digit (``heron2026``), in any script."""
+    out = []
+    for index, char in enumerate(text):
+        if index:
+            before = text[index - 1]
+            after = text[index + 1] if index + 1 < len(text) else ""
+            if (
+                (before.isalpha() and char.isdigit())
+                or (before.isdigit() and char.isalpha())
+                or (before.islower() and char.isupper())
+                or (before.isupper() and char.isupper() and after.islower())
+            ):
+                out.append(" ")
+        out.append(char)
+    return "".join(out)
 
 
 def link_words(destination: str) -> str:
     """The words of a link destination's path, query and fragment, one space apart.
 
-    Percent-escapes and character references are decoded, and words glued together by
-    case or by digits are split, so a term a link spells out reads as the term.
+    Character references and percent-escapes are decoded, compatibility forms folded
+    (full-width letters read as letters) and invisible characters removed before words
+    glued together by case or by digits are split, so a term a link spells out reads as
+    the term.
 
     >>> link_words("https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms")
     'Heron Acquisition terms 2026 pdf p heron Terms'
     >>> link_words("https://example.org/%48eron&amp;x")
     'Heron x'
+    >>> link_words("www.example.org/Her&#8203;onTerms")
+    'Heron Terms'
     """
-    decoded = unquote(html.unescape(destination))
+    decoded = destination
+    for _ in range(MAX_LINK_DECODES):
+        again = unquote(html.unescape(decoded))
+        if again == decoded:
+            break
+        decoded = again
+    decoded = _INVISIBLE_RUN.sub("", unicodedata.normalize("NFKC", decoded))
     rest = _LINK_AUTHORITY.sub("", decoded, count=1)
-    return " ".join(_LINK_SEPARATOR.split(_GLUED_WORD_BREAK.sub(" ", rest))).strip()
+    return " ".join(_LINK_SEPARATOR.split(_glued_word_breaks(rest))).strip()
 
 
 def detect_link_terms(scan: Scan) -> Iterator[Finding]:
@@ -1440,24 +1481,34 @@ def detect_link_terms(scan: Scan) -> Iterator[Finding]:
 
     The destination's words are read with :func:`link_words` and matched as those two
     match the message, so the finding is the same kind, label and severity as the term's
-    anywhere else; it spans the whole destination. A term those two already found inside
-    the destination is not found again. The host is not read: that is
-    :func:`scan_links`' concern (liaise #46).
+    anywhere else, and its fingerprint is the fingerprint of the words it matched, as the
+    term's would be; it spans the whole destination. A term of fewer than
+    :data:`MIN_LINK_TERM_CHARS` characters is not looked for, a term those two already
+    found inside the destination is not found again, and a destination inside another
+    (a ``srcset`` candidate) is read once, with the one around it. The host is not read:
+    that is :func:`scan_links`' concern (liaise #46).
     """
-    spans = _link_spans(scan.text)
-    if not spans:
+    links = []
+    for start, end in _link_spans(scan.text):
+        if links and start < links[-1][1]:
+            continue  # inside the destination before it
+        words = link_words(scan.text[start:end])
+        links.append((start, end, words, normalise(words)))
+    if not links:
         return
-    links = [
-        (start, end, normalise(link_words(scan.text[start:end])))
-        for start, end in spans
-    ]
     for term in (*_terms_of(scan, people=False), *_terms_of(scan, people=True)):
+        if len(term.folded.text) < MIN_LINK_TERM_CHARS:
+            continue
         found = scan.spans(term.folded)
-        for start, end, words in links:
+        for start, end, words, reading in links:
             if any(start <= s and e <= end for s, e in found):
                 continue  # the message reading already found it in this destination
-            if next(iter(words.spans(term.folded)), None) is not None:
-                yield term.finding(scan, start, end, rule="term-in-link")
+            matched = next(iter(reading.spans(term.folded)), None)
+            if matched is not None:
+                material = _folded_value(words[matched[0] : matched[1]])
+                yield term.finding(
+                    scan, start, end, rule="term-in-link", material=material
+                )
 
 
 # ---- exfiltration: links and images ----

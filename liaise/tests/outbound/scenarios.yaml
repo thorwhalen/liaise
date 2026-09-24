@@ -459,3 +459,14 @@ extras:
     case: true
     provenance: tainted
     expected: [refuse]
+
+  - id: X-link-path-allowlisted
+    isolates: "no write-down, for a term glued into the path of a link to an allowlisted host (liaise #46)"
+    recipient: ada
+    channel: public_issue
+    text: >-
+      Fixed in the next build. The notes are at
+      https://github.com/example/app/blob/main/HeronAcquisitionTerms.md if you want them.
+    case: true
+    provenance: clean
+    expected: [revise]
