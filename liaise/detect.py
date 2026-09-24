@@ -19,6 +19,9 @@ The six kinds (discussion §5.2):
   a whole word after normalisation.
 - ``third_party``: the same for a person's term (entity ``person:<id>``), unless that person
   is a reader, one of ``disclosure["people"]``. A reader is never a third party.
+- ``vocabulary`` and ``third_party`` again, rule ``term-in-link``: either kind of term that a
+  link or image destination spells out in its path, query or fragment glued to other words
+  (``/HeronTerms.pdf``, ``?p=heron2026``), over the whole destination (liaise #46).
 - ``exfiltration``: link and image destinations whose host is not in ``allowlist`` (a host
   or any of its subdomains), read as a browser reads them (Markdown inline and reference
   links and images, HTML attributes, autolinks and bare URLs); base64 runs, wrapped or not,
@@ -957,6 +960,12 @@ class Scan:
         return render(self.text)
 
     @cached_property
+    def destinations(self) -> Destinations:
+        """Every link and image destination of the message (:func:`_destinations`), parsed
+        once for the detectors that read them."""
+        return _destinations(self.text)
+
+    @cached_property
     def normalised(self) -> tuple[Normalised, ...]:
         """The readings of the message folded for matching terms: as written, and rendered."""
         readings = (_view_of(self.text), self.rendered)
@@ -1335,8 +1344,44 @@ def _term_severity(scan: Scan, label: str, sealed_from: tuple[str, ...]) -> int:
     return scan.audience_severity
 
 
-def _term_findings(scan: Scan, *, people: bool) -> Iterator[Finding]:
-    kind, rule = ("third_party", "person-name") if people else ("vocabulary", "term")
+@dataclass(frozen=True)
+class _Term:
+    """A disclosure term to look for, with what a finding of it says: its kind, entity,
+    label, the readers it is sealed from, and its severity for this audience."""
+
+    folded: FoldedTerm
+    kind: str
+    entity: Optional[str]
+    label: str
+    sealed_from: tuple[str, ...]
+    severity: int
+
+    def finding(
+        self,
+        scan: Scan,
+        start: int,
+        end: int,
+        *,
+        rule: str,
+        material: Optional[str] = None,
+    ) -> Finding:
+        return scan.finding(
+            self.kind,
+            start,
+            end,
+            rule=rule,
+            severity=self.severity,
+            entity=self.entity,
+            label=self.label,
+            sealed_from=self.sealed_from,
+            material=material,
+        )
+
+
+def _terms_of(scan: Scan, *, people: bool) -> Iterator[_Term]:
+    """The vocabulary terms of people (``people``) or of other entities, less the readers'
+    own names: a reader is never a third party."""
+    kind = "third_party" if people else "vocabulary"
     for folded, entry in _vocabulary_entries(scan):
         entity = entry.get("entity")
         is_person = isinstance(entity, str) and entity.startswith(PERSON_PREFIX)
@@ -1349,17 +1394,14 @@ def _term_findings(scan: Scan, *, people: bool) -> Iterator[Finding]:
         )
         sealed_from = _ids(entry.get("sealed_from"))
         severity = _term_severity(scan, label, sealed_from)
-        for start, end in scan.spans(folded):
-            yield scan.finding(
-                kind,
-                start,
-                end,
-                rule=rule,
-                severity=severity,
-                entity=entity,
-                label=label,
-                sealed_from=sealed_from,
-            )
+        yield _Term(folded, kind, entity, label, sealed_from, severity)
+
+
+def _term_findings(scan: Scan, *, people: bool) -> Iterator[Finding]:
+    rule = "person-name" if people else "term"
+    for term in _terms_of(scan, people=people):
+        for start, end in scan.spans(term.folded):
+            yield term.finding(scan, start, end, rule=rule)
 
 
 def detect_vocabulary(scan: Scan) -> Iterator[Finding]:
@@ -1372,6 +1414,127 @@ def detect_third_parties(scan: Scan) -> Iterator[Finding]:
     """A ``third_party`` finding for each whole-word occurrence of a person's disclosure
     term, when that person is not a reader."""
     return _term_findings(scan, people=True)
+
+
+#: The fewest characters a term glued into a link must have to be found there. Splitting a
+#: hash, a signature or an id at its digits leaves runs of two or three letters, which a
+#: short term (an acronym) would match by chance; a longer one does not.
+MIN_LINK_TERM_CHARS = 4
+#: How many times a link destination's escapes are decoded: one layer of character
+#: references over percent-escapes, or references escaped twice (``&amp;#8203;``).
+MAX_LINK_DECODES = 3
+#: What separates two words of a link's path or query: anything but a letter or a digit.
+_LINK_SEPARATOR = re.compile(r"[\W_]+")
+#: The scheme and authority a destination starts with, and a ``www.`` host without a
+#: scheme; the host is :func:`scan_links`' concern.
+_LINK_AUTHORITY = re.compile(
+    r"^\s*(?:[A-Za-z][A-Za-z0-9+.-]{0,31}:)?(?:[/\\]{2,}[^/\\?#]*|www\.[^/\\?#]*)?",
+    re.IGNORECASE,
+)
+
+
+#: :func:`_glued_word_breaks` for ASCII text, which is most of what links hold.
+_ASCII_GLUED_WORD_BREAK = re.compile(
+    r"(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])"
+    r"|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
+)
+
+
+def _glued_word_breaks(text: str) -> str:
+    """``text`` with a space wherever a word is glued to the next: a lower-case letter before
+    a capital (``heronTerms``), a capital before a capitalised word (``PDFTerms``), and a
+    letter beside a digit (``heron2026``), in any script."""
+    if text.isascii():
+        return _ASCII_GLUED_WORD_BREAK.sub(" ", text)
+    out = []
+    for index, char in enumerate(text):
+        if index:
+            before = text[index - 1]
+            after = text[index + 1] if index + 1 < len(text) else ""
+            if (
+                (before.isalpha() and char.isdigit())
+                or (before.isdigit() and char.isalpha())
+                or (before.islower() and char.isupper())
+                or (before.isupper() and char.isupper() and after.islower())
+            ):
+                out.append(" ")
+        out.append(char)
+    return "".join(out)
+
+
+def link_words(destination: str) -> str:
+    """The words of a link destination's path, query and fragment, one space apart.
+
+    Character references and percent-escapes are decoded, compatibility forms folded
+    (full-width letters read as letters) and invisible characters removed before words
+    glued together by case or by digits are split, so a term a link spells out reads as
+    the term.
+
+    >>> link_words("https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms")
+    'Heron Acquisition terms 2026 pdf p heron Terms'
+    >>> link_words("https://example.org/%48eron&amp;x")
+    'Heron x'
+    >>> link_words("www.example.org/Her&#8203;onTerms")
+    'Heron Terms'
+    """
+    decoded = destination
+    for _ in range(MAX_LINK_DECODES):
+        again = unquote(html.unescape(decoded))
+        if again == decoded:
+            break
+        decoded = again
+    decoded = _INVISIBLE_RUN.sub("", unicodedata.normalize("NFKC", decoded))
+    rest = _LINK_AUTHORITY.sub("", decoded, count=1)
+    return " ".join(_LINK_SEPARATOR.split(_glued_word_breaks(rest))).strip()
+
+
+def detect_link_terms(scan: Scan) -> Iterator[Finding]:
+    """A ``vocabulary`` or ``third_party`` finding, rule ``term-in-link``, for a disclosure
+    term a link or image destination spells out in its path, query or fragment only by
+    gluing it to other words (``/HeronTerms.pdf``, ``?p=heron2026``), which the whole-word
+    readings of :func:`detect_vocabulary` and :func:`detect_third_parties` do not see.
+
+    The destination's words are read with :func:`link_words` and matched as those two
+    match the message, so the finding is the same kind, label and severity as the term's
+    anywhere else, and its fingerprint is the fingerprint of the words it matched, as the
+    term's would be; it spans the whole destination. A term of fewer than
+    :data:`MIN_LINK_TERM_CHARS` characters is not looked for, a term those two already
+    found inside the destination is not found again, and a destination inside another
+    (a ``srcset`` candidate) is read once, with the one around it. The host is not read:
+    that is :func:`scan_links`' concern (liaise #46).
+    """
+    terms = [
+        term
+        for people in (False, True)
+        for term in _terms_of(scan, people=people)
+        if len(term.folded.text) >= MIN_LINK_TERM_CHARS
+    ]
+    if not terms:
+        return
+    links, readings, last_end = [], {}, -1
+    for start, end in _link_spans(scan.text, destinations=scan.destinations):
+        if start < last_end:
+            continue  # inside the destination before it
+        last_end = end
+        destination = scan.text[start:end]
+        if destination not in readings:  # a destination repeated is read once
+            words = link_words(destination)
+            readings[destination] = (words, normalise(words)) if words else None
+        if readings[destination] is not None:
+            links.append((start, end, *readings[destination]))
+    if not links:
+        return
+    for term in terms:
+        found = scan.spans(term.folded)
+        for start, end, words, reading in links:
+            if any(start <= s and e <= end for s, e in found):
+                continue  # the message reading already found it in this destination
+            matched = next(iter(reading.spans(term.folded)), None)
+            if matched is not None:
+                material = _folded_value(words[matched[0] : matched[1]])
+                yield term.finding(
+                    scan, start, end, rule="term-in-link", material=material
+                )
 
 
 # ---- exfiltration: links and images ----
@@ -1631,6 +1794,22 @@ def _loose_urls(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
             yield match.start(), match.end("authority"), hosts, False
 
 
+#: ``(start, end, hosts, image)`` of one link or image destination.
+Destination = tuple[int, int, frozenset, bool]
+#: What :func:`_destinations` parses: the destinations its parsers read, then every
+#: ``//host`` anywhere (:func:`_loose_urls`), which backs them.
+Destinations = tuple[tuple[Destination, ...], tuple[Destination, ...]]
+
+
+def _destinations(text: str) -> Destinations:
+    """Every link and image destination of ``text``: Markdown (inline and reference), HTML
+    attributes and autolinks, plain URLs; then every ``//host`` anywhere."""
+    parsed = chain_iterables(
+        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
+    )
+    return tuple(parsed), tuple(_loose_urls(text))
+
+
 def scan_links(scan: Scan) -> Iterator[Finding]:
     """An ``exfiltration`` finding for each link or image whose host is not allowlisted.
 
@@ -1651,16 +1830,14 @@ def scan_links(scan: Scan) -> Iterator[Finding]:
             previous_end, previous_image = found.get(start, (end, False))
             found[start] = (max(end, previous_end), image or previous_image)
 
-    parsed = chain_iterables(
-        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
-    )
+    parsed, loose = scan.destinations
     for start, end, hosts, image in parsed:
         if image:
             image_starts.add(start)
         consider(start, end, hosts, image)
     spans = sorted(found.items())
     starts = [start for start, _ in spans]
-    for start, end, hosts, _ in _loose_urls(text):
+    for start, end, hosts, _ in loose:
         index = bisect_right(starts, start) - 1
         if index >= 0 and starts[index] < start < spans[index][1][0]:
             continue  # inside a URL already found
@@ -1686,20 +1863,27 @@ def link_urls(text: str) -> tuple[str, ...]:
     >>> link_urls("See [the docs](https://example.org/a) and https://example.com/b.")
     ('https://example.org/a', 'https://example.com/b')
     """
+    spans = _link_spans(text)
+    return tuple(dict.fromkeys(text[start:end] for start, end in spans))
+
+
+def _link_spans(
+    text: str, *, destinations: Optional[Destinations] = None
+) -> list[tuple[int, int]]:
+    """``(start, end)`` of every link and image destination in ``text``, in order, as
+    :func:`link_urls` reads them; from ``destinations`` when they were parsed already."""
+    parsed, loose = destinations or _destinations(text)
     found: dict[int, int] = {}
-    parsed = chain_iterables(
-        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
-    )
     for start, end, _, _ in parsed:
         found[start] = max(end, found.get(start, end))
     spans = sorted(found.items())
     starts = [start for start, _ in spans]
-    for start, end, _, _ in _loose_urls(text):
+    for start, end, _, _ in loose:
         index = bisect_right(starts, start) - 1
         if index >= 0 and starts[index] <= start < spans[index][1]:
             continue  # inside a URL already found
         found[start] = max(end, found.get(start, end))
-    return tuple(dict.fromkeys(text[start:end] for start, end in sorted(found.items())))
+    return sorted(found.items())
 
 
 # ---- exfiltration: encoded runs ----
@@ -2126,6 +2310,7 @@ DFLT_DETECTORS: tuple[Detector, ...] = (
     detect_exfiltration,
     detect_personal,
     detect_third_parties,
+    detect_link_terms,
 )
 
 

@@ -31,6 +31,6 @@ Every message liaise sends — a run's outcome, a draft the owner releases, a me
 
 - **`liaise vet`, the `before_send` seam and the Claude Code hook** (issue #37): a draft written outside liaise, or a `gh` command in a coding session, does not meet this gate.
 - **The delay outbox** (issue #38): `delay` is a draft for you until it exists.
-- **A private word inside a link's path** (issue #46) still reaches a wide audience at `approve`: a plain link is shown to you in full rather than refused.
+- **A private word inside a link to an unknown host** still reaches a wide audience at `approve` when nothing else holds the message back: you are shown the link in full, and since issue #46 the word among the reasons, even when it is glued to other words in the path (`/HeronTerms.pdf`). A term glued to an all-capitals run (`HERONterms`) or into the host is not found, nor a term under four characters inside a link.
 - **Returning a `revise` to the processor**: it is a flagged draft for you today.
 - **A semantic pass**: nothing catches a paraphrase that names no term (scenario S7, a known miss).

@@ -1047,3 +1047,77 @@ def test_a_million_character_message_is_scanned_within_the_bound(text):
     _detect(text, **options)
     elapsed = time.perf_counter() - started
     assert elapsed < LONG_WORD_SCAN_BOUND_S, f"detect took {elapsed:.1f}s"
+
+
+# ---- a term a link's path spells out (liaise #46) ----
+
+_HERON = [{"term": "Heron", "entity": "project:heron", "label": "amber"}]
+_PEOPLE = [{"term": "Bram Kest", "entity": "person:bram", "label": "amber"}]
+
+
+def _link_terms(text, vocabulary=_HERON, people=None):
+    from liaise.detect import detect_link_terms
+
+    disclosure = {"vocabulary": vocabulary, "people": people or {}}
+    return [(f.kind, f.rule, f.start, f.end) for f in detect(text, disclosure=disclosure, key=KEY, detectors=[detect_link_terms])]
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://files.example.net/HeronAcquisitionTerms.pdf",
+        "https://files.example.net/d?p=heronTerms",
+        "https://files.example.net/heron2026.pdf",
+        "https://files.example.net/x#theHeronPlan",
+        "https://files.example.net/%48eronTerms",
+    ],
+)
+def test_a_term_glued_into_a_link_is_found_over_the_whole_destination(url):
+    text = f"Notes: {url} ok"
+    assert _link_terms(text) == [("vocabulary", "term-in-link", 7, 7 + len(url))]
+
+
+def test_a_markdown_destination_and_a_multi_word_person_are_read_too():
+    text = "See [notes](https://files.example.net/BramKestNotes.md)."
+    assert _link_terms(text, vocabulary=_PEOPLE) == [("third_party", "term-in-link", 12, 54)]
+    assert _link_terms(text, vocabulary=_PEOPLE, people={"bram": {}}) == []  # a reader is no third party
+
+
+def test_what_the_whole_word_reading_finds_or_the_host_says_is_not_found_again():
+    assert _link_terms("See https://files.example.net/heron-terms.pdf") == []
+    assert _link_terms("See https://heronterms.example.net/a") == []  # the host is scan_links' concern
+    assert _link_terms("See https://files.example.net/Heronry.pdf and HeronTerms") == []
+
+
+def test_the_link_term_is_labelled_and_graded_like_the_term():
+    text = "See https://files.example.net/HeronTerms.pdf"
+    (plain,) = detect("Heron", disclosure={"vocabulary": _HERON}, key=KEY)
+    (glued,) = [f for f in detect(text, disclosure={"vocabulary": _HERON}, key=KEY) if f.rule == "term-in-link"]
+    assert (glued.label, glued.entity, glued.severity) == (plain.label, plain.entity, plain.severity)
+
+
+@pytest.mark.parametrize(
+    "path",
+    ["Her&amp;#8203;onTerms", "Her​onTerms", "ＨｅｒｏｎTerms", "caféHeron"],
+)
+def test_invisible_characters_escapes_and_other_scripts_do_not_hide_a_glued_term(path):
+    assert [rule for _, rule, _, _ in _link_terms(f"See https://files.example.net/{path} ok")] == ["term-in-link"]
+
+
+def test_a_short_term_is_not_looked_for_inside_a_link_and_a_www_host_is_not_read():
+    ce = [{"term": "CE", "entity": "project:ce", "label": "amber"}]
+    assert _link_terms("See https://files.example.net/commit/4ce1a29b7f0e3d", vocabulary=ce) == []
+    assert _link_terms("See www.HeronTerms.example/x") == []
+
+
+def test_a_glued_term_has_the_fingerprint_the_term_has_anywhere():
+    def fingerprint(text, rule):
+        return next(f.fingerprint for f in detect(text, disclosure={"vocabulary": _HERON}, key=KEY) if f.rule == rule)
+
+    glued = fingerprint("See https://files.example.net/HeronTerms", "term-in-link")
+    assert glued == fingerprint("See https://other.example.net/theHeronPlan", "term-in-link") == fingerprint("Heron", "term")
+
+
+def test_a_srcset_candidate_is_read_once_with_its_attribute():
+    text = '<img srcset="https://a.example.net/x.png 1x, https://a.example.net/HeronT.png 2x">'
+    assert len(_link_terms(text)) == 1
