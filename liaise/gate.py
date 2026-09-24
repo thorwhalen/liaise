@@ -62,6 +62,7 @@ from typing import Any, Callable, Optional, Union
 
 from liaise.access import Resolver, resolve_person
 from liaise.detect import DFLT_DETECTORS, Detector, Finding
+from liaise.legacy import Counterfactual, legacy_decision
 from liaise.model import Approval, Case
 from liaise.outbound import (
     DisclosureSource,
@@ -254,7 +255,9 @@ class GateDecision:
     the filter of the most restrictive concern, as an operator notification may say it: the
     reason can quote what a filter raised. ``verdict`` and ``consulted`` are the policy's
     verdict and what it consulted. ``approval`` is the one on the context, and
-    ``payload_hash`` and ``audience_hash`` what it had to match.
+    ``payload_hash`` and ``audience_hash`` what it had to match. ``counterfactual`` is what
+    liaise 0.1's gate would have decided about the same message (:mod:`liaise.legacy`),
+    recorded beside the verdict so shadow agreement can be counted; it decides nothing.
     """
 
     send: Optional[Outbound]
@@ -269,6 +272,7 @@ class GateDecision:
     approval: Optional[Approval] = None
     payload_hash: Optional[str] = None
     audience_hash: Optional[str] = None
+    counterfactual: Optional[Counterfactual] = None
 
     @property
     def bound(self) -> bool:
@@ -305,7 +309,8 @@ class GateDecision:
         The flow and every concern with its findings (kinds, positions and fingerprints,
         never the value), what the approval settled, the policy's verdict (its audience
         snapshot, the readers' tiers and clearances, the mode), the labels, seals and
-        provenance consulted, and the approval with whether it bound.
+        provenance consulted, the approval with whether it bound, and what 0.1 would have
+        decided (its flow and the kinds it would have held the message for, no values).
         """
         return {
             "flow": self.flow,
@@ -317,6 +322,9 @@ class GateDecision:
             "approval_bound": None if self.approval is None else self.bound,
             "payload_hash": self.payload_hash,
             "audience_hash": self.audience_hash,
+            "counterfactual": (
+                None if self.counterfactual is None else self.counterfactual.to_dict()
+            ),
         }
 
 
@@ -620,6 +628,35 @@ def _void(approval: Approval, hashes: tuple[Optional[str], Optional[str]]) -> Co
     )
 
 
+#: The filters 0.1's gate had that the gate still runs unchanged: a concern of theirs held
+#: the message in 0.1 too. Named, not inferred, so a filter added later is never mistaken
+#: for one 0.1 had (0.1's reply mode and leak scan are replayed by :mod:`liaise.legacy`).
+_SHARED_WITH_LEGACY = frozenset(
+    {writing_card.__name__, deslop.__name__, notify_recipient.__name__}
+)
+
+
+def _counterfactual(
+    outbound: Outbound, ctx: GateContext, concerns: Iterable[Concern]
+) -> Optional[Counterfactual]:
+    """What 0.1 would have decided about ``outbound`` as written (see :mod:`liaise.legacy`).
+
+    The filters the gate shares with 0.1 held it back in 0.1 too. None when the replay
+    itself fails: a counterfactual is a measurement, and never holds up a decision.
+    """
+    shared = [c.filter for c in concerns if c.filter in _SHARED_WITH_LEGACY]
+    try:
+        return legacy_decision(
+            outbound,
+            ctx.subject,
+            in_case=ctx.case is not None,
+            approved=isinstance(ctx.approval, Approval),
+            shared_diverts=shared,
+        )
+    except Exception:  # an odd subject or message: the report counts it unobservable
+        return None
+
+
 def run_gate(
     outbound: Outbound,
     ctx: GateContext,
@@ -636,6 +673,7 @@ def run_gate(
     ``approve`` concern naming it.
     """
     entry_payload: Optional[Mapping[str, Any]] = None
+    as_written = outbound
     try:
         judged_audience = audience_snapshot(ctx.audience, outbound.ref)
         entry_payload = payload_of(outbound)
@@ -709,6 +747,7 @@ def run_gate(
         at = approval.at.isoformat()
         notes.append(f"released by {approval.by} at {at}, past: {rules}{why}")
     flow = most_restrictive(concern.flow for concern in standing)
+    counterfactual = _counterfactual(as_written, ctx, concerns)
     common = dict(
         notes=tuple(notes),
         flow=flow,
@@ -719,6 +758,7 @@ def run_gate(
         approval=approval,
         payload_hash=hashes[0],
         audience_hash=hashes[1],
+        counterfactual=counterfactual,
     )
     if flow == SEND:
         return GateDecision(send=outbound, diverted=None, **common)

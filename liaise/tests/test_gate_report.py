@@ -37,7 +37,8 @@ def _concern(rule, flow="approve"):
     }
 
 
-def _judged(minutes, *, text, rules=(), decision=None, mode="enforce", error=None):
+def _judged(minutes, *, text, rules=(), decision=None, mode="enforce", error=None, legacy=None, severity=None):
+    """A first judgement; ``legacy`` is 0.1's counterfactual flow, when the gate recorded one."""
     flow = "approve" if rules else "send"
     decision = decision or ("divert" if rules else "send")
     detail = {
@@ -51,6 +52,11 @@ def _judged(minutes, *, text, rules=(), decision=None, mode="enforce", error=Non
     }
     if error:
         detail["error"] = error
+    if legacy is not None:
+        detail["counterfactual"] = {"version": "0.1", "flow": legacy, "reasons": []}
+    if severity is not None:
+        for concern in detail["concerns"]:
+            concern["findings"][0]["severity"] = severity
     return LedgerEntry(at=T0 + timedelta(minutes=minutes), kind="gate", actor="liaise", text=text, detail=detail)
 
 
@@ -121,6 +127,7 @@ def test_the_report_counts_judgements_releases_and_rejections(ledger):
         "false diverts": 1,
         "rejected": 1,
         "shadow": 0,
+        "shadow compared": 0,
     }
     assert report["override_rate"] == pytest.approx(2 / 5)
     assert report["false_divert_rate"] == pytest.approx(1 / 3)  # 1 false divert of 3 that should send
@@ -211,15 +218,45 @@ def test_the_report_never_prints_text_values_or_fingerprints(ledger):
     assert printed.splitlines()[-1].startswith("enforce recommended: no (")
 
 
-def test_shadow_entries_are_counted_and_agreement_is_reported_as_not_observable():
+def test_shadow_entries_without_a_counterfactual_are_counted_but_not_compared():
     entries = [_judged(i, text=f"m{i}", mode="shadow") for i in range(MIN_SHADOW_MESSAGES)]
     report = gate_report(_ledger(entries))
 
-    assert report["counts"]["shadow"] == MIN_SHADOW_MESSAGES
+    assert report["counts"]["shadow"] == MIN_SHADOW_MESSAGES and report["counts"]["shadow compared"] == 0
     assert report["shadow_agreement"] is None and report["missed_high_severity"] is None
     assert not report["enforce"]["recommended"]
-    assert "not observable" in report["enforce"]["reason"]
+    assert "fewer than" in report["enforce"]["reason"]
+    assert "shadow agreement: n/a" in "\n".join(report_lines(report))
     assert gate_report(_ledger(entries[:1]), shadow_subjects=[SUBJECT])["counts"]["shadow"] == 1
+
+
+def test_shadow_agreement_is_the_share_in_the_same_flow_class_as_0_1():
+    entries = [
+        _judged(0, text="a", mode="shadow", legacy="send"),  # both send: agree
+        _judged(1, text="b", rules=("secrets",), mode="shadow", legacy="approve"),  # both held: agree
+        _judged(2, text="c", rules=("irreversibility",), mode="shadow", legacy="send", severity=2),  # disagree
+        _judged(3, text="d", rules=("audience",), mode="shadow", legacy="send", severity=4),  # a missed finding
+        _judged(4, text="e", mode="enforce", legacy="approve"),  # not shadow: not compared
+        _judged(5, text="f", mode="shadow"),  # before the counterfactual: shadow, not compared
+    ]
+    report = gate_report(_ledger(entries))
+
+    assert report["counts"]["shadow"] == 5 and report["counts"]["shadow compared"] == 4
+    assert report["shadow_agreement"] == 0.5 and report["missed_high_severity"] == 1
+    assert report["shadow_note"] is None
+    printed = "\n".join(report_lines(report))
+    assert "shadow agreement: 0.500 (same flow class as 0.1, of 4 compared)" in printed
+    assert "missed findings (0.1 would have sent, severity 4 or above): 1" in printed
+
+
+def test_the_rollout_line_uses_the_compared_shadow_messages():
+    clean = [_judged(i, text=f"m{i}", mode="shadow", legacy="send") for i in range(MIN_SHADOW_MESSAGES)]
+    assert gate_report(_ledger(clean))["enforce"]["recommended"] is True
+    missed = clean + [_judged(99, text="x", rules=("secrets",), mode="shadow", legacy="send", severity=5)]
+    enforce = gate_report(_ledger(missed))["enforce"]
+    assert enforce["recommended"] is False and "1 missed finding" in enforce["reason"]
+    few = gate_report(_ledger(clean[:-1] + [_judged(98, text="y", mode="shadow")]))["enforce"]
+    assert few["reason"].startswith(f"only {MIN_SHADOW_MESSAGES - 1} shadow messages compared")
 
 
 @pytest.mark.parametrize(
@@ -273,6 +310,36 @@ def test_a_real_tick_and_outbox_release_are_counted_without_the_outbox_as_an_ove
 
     assert report["counts"]["released"] == 0 and report["counts"]["judged"] >= 1
     assert report["rules"]["irreversibility"]["released"] == 0
+
+
+def test_a_shadow_subject_still_holds_what_the_policy_holds_and_records_what_0_1_would_have_done(world):
+    """Acceptance (#39, as decided on #51): shadow mode enforces, and measures against 0.1.
+
+    A canary term is something 0.1 never looked for: it would have sent this reply. The
+    policy refuses it, shadow mode or not, and the gate entry records both.
+    """
+    from dataclasses import replace
+
+    from liaise.tests.test_tick import CASE_1, LATER
+    from liaise.model import Outcome, RunResult
+    from liaise.processor import EchoProcessor
+
+    canary = "violet-anchor-example"
+    policy = replace(world.subject.policy, mode="shadow", canary_terms=(canary,))
+    world.subject = replace(world.subject, policy=policy)
+    reply = Outcome(kind="reply", text=f"The export is fixed; see {canary} for the notes.")
+    world.processor = EchoProcessor(results={CASE_1: RunResult(run_id="", outcomes=(reply,))})
+    world.issue()
+    world.tick()
+    world.tick(LATER)
+
+    assert world.github.sent == []  # nothing sends that the policy holds back
+    (gate,) = [e for e in world.case().entries if e.kind == "gate"]
+    assert gate.detail["verdict"]["mode"] == "shadow" and gate.detail["flow"] == "refuse"
+    assert gate.detail["counterfactual"] == {"version": "0.1", "flow": "send", "reasons": []}
+    report = gate_report(world.store, shadow_subjects=[world.subject.slug])
+    assert report["counts"]["shadow compared"] == 1
+    assert report["shadow_agreement"] == 0.0 and report["missed_high_severity"] == 1
 
 
 from liaise.tests.test_tick import fixed_run_suffix, no_real_acquaint, world  # noqa: E402,F401

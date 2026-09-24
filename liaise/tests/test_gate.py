@@ -763,3 +763,63 @@ def test_the_record_holds_the_verdict_the_consulted_labels_and_the_approval_neve
     assert record["consulted"]["disclosure"]["labels"] == {"policy.leak_terms": LABELS[-1]}
     assert record["consulted"]["provenance"]["tainted"] is False
     assert "Example-Internal" not in repr(record) and "example-internal" not in repr(record)
+
+
+# ---- the 0.1 counterfactual (liaise #39, #51) ----
+
+
+def test_every_decision_records_what_0_1_would_have_done_without_a_value():
+    plain = _gate()
+    assert plain.counterfactual.flow == "send" and plain.record()["counterfactual"]["flow"] == "send"
+
+    draft = _gate(subject=_subject(default_reply_mode="draft"))
+    assert draft.counterfactual.to_dict() == {"version": "0.1", "flow": "approve", "reasons": ["draft reply mode"]}
+
+    outside = _gate(case=False, case_id=None)
+    assert outside.counterfactual.reasons == ("outside a case",)
+
+    token = "ghp_" + "d" * 36
+    leaky = _gate(f"Use {token} to log in.", title="Mail pat" + "@example.com")
+    assert leaky.counterfactual.reasons == ("leak scan: token, email",)
+    assert token not in repr(leaky.record()["counterfactual"])
+
+
+def test_0_1_scanned_only_the_public_channels_and_let_any_approval_past_its_reply_mode():
+    token = "ghp_" + "d" * 36
+    quiet = _subject(public_channels=())
+    assert _gate(f"Use {token}.", subject=quiet).counterfactual.flow == "send"
+
+    subject = _subject(default_reply_mode="draft")
+    held = run_gate(_outbound(), _context(subject))
+    released = run_gate(_outbound(), _context(subject, approval=_approved(held)))
+    assert released.counterfactual.flow == "send"
+
+
+def test_a_counterfactual_that_fails_decides_nothing(monkeypatch):
+    from liaise import gate
+
+    monkeypatch.setattr(gate, "legacy_decision", _raising(RuntimeError("odd")))
+    decision = _gate()
+
+    assert decision.send is not None and decision.counterfactual is None
+    assert decision.record()["counterfactual"] is None
+
+
+def test_shadow_mode_holds_what_enforce_holds():
+    token = "ghp_" + "d" * 36
+    enforce = _gate(f"Use {token}.")
+    shadow = _gate(f"Use {token}.", subject=_subject(mode="shadow"))
+
+    assert shadow.send is None and shadow.flow == enforce.flow == "refuse"
+    assert shadow.verdict.mode == "shadow"
+
+
+def test_a_filter_0_1_never_had_does_not_count_as_a_0_1_divert():
+    from liaise.gate import DFLT_OUTBOUND_FILTERS
+
+    def later_check(outbound, ctx):
+        return Divert("a later check", flow="refuse")
+
+    decision = run_gate(_outbound(), _context(), outbound_filters=(*DFLT_OUTBOUND_FILTERS, later_check))
+
+    assert decision.flow == "refuse" and decision.counterfactual.flow == "send"

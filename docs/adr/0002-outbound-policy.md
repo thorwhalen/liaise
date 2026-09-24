@@ -63,13 +63,26 @@ A run is tainted when the case holds a message its subject does not trust for `r
 
 `tainted_runs` (`approve`, or `send` to waive the taint rule), `link_allowlist`, `canary_terms` and `mode` (`enforce` or `shadow`).
 
+### Shadow mode is a counterfactual (amended 2026-09-24, issues #39 and #51)
+
+Discussion 32 §7 had a subject in shadow mode *decide as 0.1 did* while the policy's verdict was only recorded. The owner decided otherwise on issue #51: **the policy enforces on every subject, `mode = "shadow"` included, and nothing sends that it holds back.** What shadow mode adds is a measurement.
+
+- **The counterfactual.** Beside every verdict the gate records what liaise 0.1's gate would have decided about the same message (`liaise.legacy`, the `counterfactual` of a `gate` entry): `send`, or a draft for the operator (`approve`, which is what a 0.1 divert was), with the reasons named by kind, never by value. It replays 0.1's reply mode (a message outside a case or in `draft` reply mode waits, unless any approval is on the context), 0.1's leak scan (on the channels in `policy.public_channels` only, over the text and the title, with 0.1's patterns, which `liaise.detect` still owns, and `policy.leak_terms`), and takes the filters the two gates share (the writing card, deslop, the mention) as they answered. It judges the message as written, before the mention, as 0.1 did. A replay that fails records nothing and decides nothing.
+- **Agreement is by flow class.** A message is either sent at once (`send`) or held back (every other flow); 0.1 could say nothing finer, so the policy's `revise` or `refuse` agrees with a 0.1 divert. A `delay` counts as held even where the outbox sends it unseen after its window, so on such a subject agreement errs low, never high. *Shadow agreement* is the share of shadow messages compared where the classes match.
+- **A missed finding** is a shadow message 0.1 would have sent where the policy found a finding of severity 4 or above. Decision 11's rollout line counts the shadow messages *compared* — those whose entry carries a counterfactual — and needs at least thirty, none missed, and a false-divert rate of at most one in ten.
+- **The counterfactual is recorded for every subject**, not only shadow ones: it costs a regex pass and records no value. The report compares shadow messages only, because decision 11 is about them.
+
+**Why option 1 (shadow really sends as 0.1 did) was declined.** It is the only option that shows how operators behave when the gate does not hold messages, and that is not worth loosening outbound safety on a live subject: a subject in shadow mode would send the S2 draft, a canary term, or a private word to a public repository, which the policy exists to stop. It would also need 0.1's leak scan back as a live filter, beside the policy, which this record rejected. **Option 3 (drop shadow mode)** was not taken either, so the agreement number stays available.
+
+**What the counterfactual cannot show:** how operators would act on the messages 0.1 would have sent and the policy held (they see a draft, not a sent message), and whether a missed finding would have been caught downstream. Agreement is between two gates, not between a gate and the operator; the operator's side is the override and false-divert rates.
+
 ## Consequences
 
 - **More messages wait for the operator, and none that waited before goes out unseen.** A subject whose people have no acquaint records will see every recipient counted a stranger, which is `approve`.
 - **On a public repository nothing sends by itself yet.** An irreversible send to an `org` or `public` audience is `delay`, which §5.5 degrades to a draft until the delay outbox (issue #38) exists, and the reason says so. Issue #36's acceptance line reads "`send` for the export-only draft"; on a public repository the table gives that draft `delay`, and it is held. The same draft to a private repository sends. This is the design's own degradation, not a new rule, and L5 lifts it.
 - **A `revise` verdict is a flagged draft for the operator.** Returning it to the processor to resubmit is not built; the flow, the route and the reasons are recorded so it can be, without changing a caller.
 - **acquaint that imports and then fails holds every message back**, with the error as the reason: the gate does not judge a message with less than it should know. Without acquaint, every reader is `need-to-know` and the subject's leak terms are the vocabulary.
-- **`mode = "shadow"` is accepted, recorded on every verdict, and enforces like `enforce`** until shadow mode lands (issue #39).
+- **`mode = "shadow"` enforces like `enforce`, always**, and measures the policy against 0.1: see "Shadow mode is a counterfactual" above (issues #39 and #51).
 - **Not wired yet, and left for the slices that own them:** the operator's own addresses and handles as `personal` terms, and a recipient's AI tolerance for the disclosure-stance rule. Both are inputs the policy already reads.
 - **`cc`, `bcc` and `attachments` are judged, hashed and refused at the send, and nothing in 0.1 sets them.** They are on `Outbound` for `liaise vet` (L4) and for the day a channel with copies is bound; until then a draft carries none, and `release_draft` rebuilds the message without them. A channel that gains copies must carry them through the draft as well as the gate.
 - **A known miss, filed as issue #46:** private words inside a link's path reach a wide audience at `approve`, since a plain link is shown to the operator in full rather than refused.
