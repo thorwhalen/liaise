@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=468bc497"></script>
+    <script src="../_static/documentation_options.js?v=e2f3408e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.errors" href="liaise.errors.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.14" />
+  <meta name="docsearch:version" content="0.1.15" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -330,6 +330,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.hook.html">liaise.hook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.legacy.html">liaise.legacy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
@@ -651,7 +652,7 @@ one in the configured state directory).</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.gate.GateDecision">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">GateDecision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">send</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'send'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concerns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consulted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateDecision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.GateDecision" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.gate.</span></span><span class="sig-name descname"><span class="pre">GateDecision</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">send</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diverted_by</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'send'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">concerns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verdict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">consulted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;factory&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">counterfactual</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/gate.html#GateDecision"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.gate.GateDecision" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What <a class="reference internal" href="#liaise.gate.run_gate" title="liaise.gate.run_gate"><code class="xref py py-func docutils literal notranslate"><span class="pre">run_gate()</span></code></a> decided: <code class="docutils literal notranslate"><span class="pre">send</span></code> a message, or why it is <code class="docutils literal notranslate"><span class="pre">diverted</span></code>.</p>
 <p>Exactly one of <code class="docutils literal notranslate"><span class="pre">send</span></code> (the message as the filters left it) and <code class="docutils literal notranslate"><span class="pre">diverted</span></code> (every
@@ -661,7 +662,9 @@ released it past. <code class="docutils literal notranslate"><span class="pre">n
 the filter of the most restrictive concern, as an operator notification may say it: the
 reason can quote what a filter raised. <code class="docutils literal notranslate"><span class="pre">verdict</span></code> and <code class="docutils literal notranslate"><span class="pre">consulted</span></code> are the policy’s
 verdict and what it consulted. <code class="docutils literal notranslate"><span class="pre">approval</span></code> is the one on the context, and
-<code class="docutils literal notranslate"><span class="pre">payload_hash</span></code> and <code class="docutils literal notranslate"><span class="pre">audience_hash</span></code> what it had to match.</p>
+<code class="docutils literal notranslate"><span class="pre">payload_hash</span></code> and <code class="docutils literal notranslate"><span class="pre">audience_hash</span></code> what it had to match. <code class="docutils literal notranslate"><span class="pre">counterfactual</span></code> is what
+liaise 0.1’s gate would have decided about the same message (<a class="reference internal" href="liaise.legacy.html#module-liaise.legacy" title="liaise.legacy"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.legacy</span></code></a>),
+recorded beside the verdict so shadow agreement can be counted; it decides nothing.</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py property">
@@ -689,7 +692,8 @@ verdict and what it consulted. <code class="docutils literal notranslate"><span 
 <p>The flow and every concern with its findings (kinds, positions and fingerprints,
 never the value), what the approval settled, the policy’s verdict (its audience
 snapshot, the readers’ tiers and clearances, the mode), the labels, seals and
-provenance consulted, and the approval with whether it bound.</p>
+provenance consulted, the approval with whether it bound, and what 0.1 would have
+decided (its flow and the kinds it would have held the message for, no values).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>

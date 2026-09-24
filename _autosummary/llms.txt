@@ -17,6 +17,7 @@
 - [liaise.holds](liaise.holds.html.md): Holds: stops on work, by scope, set by the operator or by the tick itself.
 - [liaise.hook](liaise.hook.html.md): The Claude Code hook: every &#96;gh&#96; or &#96;correspond&#96; write from any session is vetted first (discussion ...
 - [liaise.ledger](liaise.ledger.html.md): The ledger: liaise’s own record of what it has seen, opened, decided and started.
+- [liaise.legacy](liaise.legacy.html.md): What liaise 0.1’s gate would have decided: the counterfactual shadow mode measures against (liaise #...
 - [liaise.messages](liaise.messages.html.md): Messages outside a case: what an agent says to a person on its own initiative, through the gate.
 - [liaise.migrate](liaise.migrate.html.md): Derive 0.1 subject files from a 0.0.x configuration: &#96;liaise migrate-config&#96;.
 - [liaise.model](liaise.model.html.md): The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.

@@ -80,6 +80,7 @@
    holds
    hook
    ledger
+   legacy
    messages
    migrate
    model

@@ -1,4 +1,4 @@
-> built 2026-09-22 17:33 UTC from 8450876 (main) · liaise 0.1.14. Details: build_info.json
+> built 2026-09-24 09:01 UTC from ed025fa (main) · liaise 0.1.15. Details: build_info.json
 
 # index.html.md
 
@@ -80,7 +80,7 @@ public_channels = ["github"]                  # kept for one release; the audien
 tainted_runs = "approve"                      # or "send": a run that read untrusted input may still send
 link_allowlist = []                           # hosts a link may point at, besides the channel's own
 canary_terms = []                             # terms planted in private context: never sent, always refused
-mode = "enforce"                              # or "shadow" (recorded and counted by `liaise gate report`; it enforces like "enforce" until #51 is decided)
+mode = "enforce"                              # or "shadow": enforces the same, and records what liaise 0.1 would have decided, for `liaise gate report`
 # delay_minutes = 10                          # turns the outbox on: a public or org-wide send waits this long, cancellable, then goes; unset: it waits for you
 delay_stale_minutes = 1440                    # a held message reached later than this past its release goes to you; 0 never
 deployed_nudge_days = 3
@@ -266,7 +266,7 @@ A subject’s runs share its checkout (`workspace.path`, behind the `workspace=`
 - `liaise message send PERSON --ref REF (--text TEXT | --text-file FILE) [--title TITLE] [--purpose ask|reply|propose] [--dry-run]`: a message outside any case, to a GitHub issue a subject binds, or to a repository with `--title`, which opens an issue. It is judged by the gate and, in 0.1, held for you to release, exiting 2. `--text-file -` reads standard input. `--dry-run` records and tells nothing.
 - `liaise message list [--state held|sent|rejected]` and `liaise message show MESSAGE_ID`: the messages sent or held outside a case, and one with its text and history. They change nothing.
 - `liaise message send-draft MESSAGE_ID [--edit] [--new-attempt] [--dry-run]` and `liaise message reject-draft MESSAGE_ID --reason TEXT [--dry-run]`: send a held message after confirming it at a terminal, or decline it; as `case send-draft` and `case reject-draft` do for a case’s drafts.
-- `liaise gate report [--subject SLUG] [--since TIME]`: what the outbound gate did, in counts. It lists the messages judged, sent as judged, held, released by you (a release you did not edit is a false divert) and rejected. For each rule it shows how often the rule fired, how often you released its findings as false positives, how often you confirmed them by rejecting the draft, and its precision. It also gives the override and false-divert rates, and ends with the rollout rule of discussion 32 (enforce after 30 shadow messages with no missed finding of severity 4 or above and at most one false divert in ten). The outbox’s own releases are not counted as your overrides. It never prints a message’s text, a value or a fingerprint, and it changes nothing.
+- `liaise gate report [--subject SLUG] [--since TIME]`: what the outbound gate did, in counts. It lists the messages judged, sent as judged, held, released by you (a release you did not edit is a false divert) and rejected. For each rule it shows how often the rule fired, how often you released its findings as false positives, how often you confirmed them by rejecting the draft, and its precision. It also gives the override and false-divert rates and, for subjects in shadow mode, the shadow agreement (how often the policy and liaise 0.1 would both have sent, or both held back) and the missed findings (messages 0.1 would have sent where the policy found severity 4 or above). It ends with the rollout rule of discussion 32 (enforce after 30 shadow messages compared with 0.1, with no missed finding and at most one false divert in ten). The outbox’s own releases are not counted as your overrides. It never prints a message’s text, a value or a fingerprint, and it changes nothing.
 - `liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T] [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]`: put a draft through the gate outside any case, sending and recording nothing. It prints the verdict, the audience in words, each reader’s tier and clearance, and the reasons. The exit code is the route of a post made at once: 0 send, 2 draft for you (a `delay` too), 3 block, 1 cannot vet. The draft is read from standard input by default. What its author read counts as tainted unless `--untainted` says otherwise. For correspond, `before_send = "liaise.vet:before_send"` in its config runs the same check on every write.
 - `liaise hook install | uninstall | status [--settings FILE]`: add or remove a Claude Code PreToolUse hook and a PostToolUse hook (`liaise vet --hook`) in `~/.claude/settings.json`. They vet every `gh` or `correspond` write a session makes: a block is denied and anything for you is asked, with the reasons. The hook never answers allow, so your own permission rules still decide the rest. What it cannot read is asked, and a yes to an ask is recorded as an override. Installing is your choice, per machine.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
@@ -2486,7 +2486,7 @@ read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`
 without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
 one in the configured state directory).
 
-### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None)
+### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -2499,7 +2499,9 @@ released it past. `notes` holds every filter’s notes, in order. `diverted_by` 
 the filter of the most restrictive concern, as an operator notification may say it: the
 reason can quote what a filter raised. `verdict` and `consulted` are the policy’s
 verdict and what it consulted. `approval` is the one on the context, and
-`payload_hash` and `audience_hash` what it had to match.
+`payload_hash` and `audience_hash` what it had to match. `counterfactual` is what
+liaise 0.1’s gate would have decided about the same message ([`liaise.legacy`](_autosummary/liaise.legacy.html.md#module-liaise.legacy)),
+recorded beside the verdict so shadow agreement can be counted; it decides nothing.
 
 #### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
 
@@ -2520,7 +2522,8 @@ What a ledger `gate` entry records of the decision (discussion §5.7).
 The flow and every concern with its findings (kinds, positions and fingerprints,
 never the value), what the approval settled, the policy’s verdict (its audience
 snapshot, the readers’ tiers and clearances, the mode), the labels, seals and
-provenance consulted, and the approval with whether it bound.
+provenance consulted, the approval with whether it bound, and what 0.1 would have
+decided (its flow and the kinds it would have held the message for, no values).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3703,7 +3706,7 @@ read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`
 without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
 one in the configured state directory).
 
-### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None)
+### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -3716,7 +3719,9 @@ released it past. `notes` holds every filter’s notes, in order. `diverted_by` 
 the filter of the most restrictive concern, as an operator notification may say it: the
 reason can quote what a filter raised. `verdict` and `consulted` are the policy’s
 verdict and what it consulted. `approval` is the one on the context, and
-`payload_hash` and `audience_hash` what it had to match.
+`payload_hash` and `audience_hash` what it had to match. `counterfactual` is what
+liaise 0.1’s gate would have decided about the same message ([`liaise.legacy`](_autosummary/liaise.legacy.html.md#module-liaise.legacy)),
+recorded beside the verdict so shadow agreement can be counted; it decides nothing.
 
 #### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
 
@@ -3737,7 +3742,8 @@ What a ledger `gate` entry records of the decision (discussion §5.7).
 The flow and every concern with its findings (kinds, positions and fingerprints,
 never the value), what the approval settled, the policy’s verdict (its audience
 snapshot, the readers’ tiers and clearances, the mode), the labels, seals and
-provenance consulted, and the approval with whether it bound.
+provenance consulted, the approval with whether it bound, and what 0.1 would have
+decided (its flow and the kinds it would have held the message for, no values).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -4733,6 +4739,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`holds`](_autosummary/liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
 | [`hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)             | The Claude Code hook: every `gh` or `correspond` write from any session is vetted first (discussion 32, §5.8).       |
 | [`ledger`](_autosummary/liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
+| [`legacy`](_autosummary/liaise.legacy.html.md#module-liaise.legacy)         | What liaise 0.1's gate would have decided: the counterfactual shadow mode measures against (liaise #39, #51).        |
 | [`messages`](_autosummary/liaise.messages.html.md#module-liaise.messages)     | Messages outside a case: what an agent says to a person on its own initiative, through the gate.                     |
 | [`migrate`](_autosummary/liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
 | [`model`](_autosummary/liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |
@@ -5121,6 +5128,148 @@ Creates the directory, since `dol.Jsons` will not create one on write.
 
 * **Return type:**
   [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+
+# _autosummary/liaise.legacy.html.md
+
+# liaise.legacy
+
+What liaise 0.1’s gate would have decided: the counterfactual shadow mode measures against (liaise #39, #51).
+
+Shadow mode does not loosen the gate. The policy of discussion 32 enforces on every
+subject, `mode = "shadow"` included, and nothing sends that it holds back (the owner’s
+decision on liaise #51, recorded in ADR 0002). What shadow mode adds is a measurement:
+beside each verdict the gate records what 0.1 would have decided about the same message,
+so `liaise gate report` can count how often the two agree and which messages 0.1 would
+have let out that the policy found severe (decision 11’s *missed findings*).
+
+0.1’s gate ran, and stopped at the first divert: `reply_mode` (a message outside a case,
+or in `draft` reply mode, waits for the operator, unless an approval is on the context),
+`leak_scan` (on a channel listed in `policy.public_channels` only: an absolute local
+path, a `.env` path, an email address, a private key’s first line, a token shape, or one
+of `policy.leak_terms` as a whole word, in the text or the title), `writing_card`,
+`deslop` and `notify_recipient`. The last three are the gate’s filters today, unchanged,
+so [`legacy_decision()`](_autosummary/liaise.legacy.html.md#liaise.legacy.legacy_decision) takes what they held back as given rather than running them
+twice. Its answer is 0.1’s own vocabulary: `send`, or a draft for the operator (recorded
+as the flow `approve`, which is what a 0.1 divert was).
+
+**Agreement is by flow class** ([`flow_class()`](_autosummary/liaise.legacy.html.md#liaise.legacy.flow_class)): a message is either sent at once
+(`send`) or held back (every other flow). 0.1 could say nothing finer, so a `revise` or
+a `refuse` the policy chose agrees with a 0.1 divert. A `delay` counts as held even on a
+subject whose outbox sends it unseen when its window passes, so on such a subject a 0.1
+`send` against a policy `delay` is a disagreement: agreement errs low, never high.
+
+The counterfactual records the kinds 0.1 would have diverted on, never a value or a
+position: it is kept in the ledger beside the verdict, and the report reads counts only.
+
+### Module Attributes
+
+| [`LEGACY_VERSION`](_autosummary/liaise.legacy.html.md#liaise.legacy.LEGACY_VERSION)         | The version of liaise whose gate [`legacy_decision()`](_autosummary/liaise.legacy.html.md#liaise.legacy.legacy_decision) replays.                                                |
+|-------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`LEGACY_PUBLIC_CHANNELS`](_autosummary/liaise.legacy.html.md#liaise.legacy.LEGACY_PUBLIC_CHANNELS) | The channels 0.1 scanned when a subject named none, kept here so the replay outlives `policy.public_channels`, which the policy no longer reads (ADR 0002). |
+| [`SENT`](_autosummary/liaise.legacy.html.md#liaise.legacy.SENT)                   | out with no person looking, or held back.                                                                                                                   |
+| [`HELD`](_autosummary/liaise.legacy.html.md#liaise.legacy.HELD)                   | out with no person looking, or held back.                                                                                                                   |
+| [`OUTSIDE_A_CASE`](_autosummary/liaise.legacy.html.md#liaise.legacy.OUTSIDE_A_CASE)         | What 0.1 diverted a message outside a case, or in draft reply mode, for.                                                                                    |
+| [`LEAK_SCAN`](_autosummary/liaise.legacy.html.md#liaise.legacy.LEAK_SCAN)              | The prefix of a 0.1 leak-scan reason; the kinds follow it.                                                                                                  |
+
+### Functions
+
+| [`flow_class`](_autosummary/liaise.legacy.html.md#liaise.legacy.flow_class)(flow)                                | [`SENT`](_autosummary/liaise.legacy.html.md#liaise.legacy.SENT) for `send`, [`HELD`](_autosummary/liaise.legacy.html.md#liaise.legacy.HELD) for every other flow: what agreement compares.   |
+|--------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`leak_kinds`](_autosummary/liaise.legacy.html.md#liaise.legacy.leak_kinds)(text, \*[, leak_terms])              | The kinds 0.1's leak scan found in `text`, each once, in the order 0.1 listed them.                                                                                      |
+| [`legacy_decision`](_autosummary/liaise.legacy.html.md#liaise.legacy.legacy_decision)(outbound, subject, \*, in_case) | What 0.1's gate would have decided about `outbound` on `subject`.                                                                                                        |
+
+### Classes
+
+| [`Counterfactual`](_autosummary/liaise.legacy.html.md#liaise.legacy.Counterfactual)(flow[, reasons])   | What 0.1 would have decided: `flow` (`send` or `approve`) and why it held the message.   |
+|------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+
+### *class* liaise.legacy.Counterfactual(flow, reasons=())
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What 0.1 would have decided: `flow` (`send` or `approve`) and why it held the message.
+
+`reasons` name what 0.1 diverted on — a filter, or the leak scan’s kinds — never
+what the message said.
+
+#### to_dict()
+
+JSON-ready, with the version it replays.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### liaise.legacy.HELD *= 'held'*
+
+out with no person looking, or held back.
+
+* **Type:**
+  The two flow classes agreement is measured by
+
+### liaise.legacy.LEAK_SCAN *= 'leak scan'*
+
+The prefix of a 0.1 leak-scan reason; the kinds follow it.
+
+### liaise.legacy.LEGACY_PUBLIC_CHANNELS *= ('github',)*
+
+The channels 0.1 scanned when a subject named none, kept here so the replay outlives
+`policy.public_channels`, which the policy no longer reads (ADR 0002).
+
+### liaise.legacy.LEGACY_VERSION *= '0.1'*
+
+The version of liaise whose gate [`legacy_decision()`](_autosummary/liaise.legacy.html.md#liaise.legacy.legacy_decision) replays.
+
+### liaise.legacy.OUTSIDE_A_CASE *= 'outside a case'*
+
+What 0.1 diverted a message outside a case, or in draft reply mode, for.
+
+### liaise.legacy.SENT *= 'sent'*
+
+out with no person looking, or held back.
+
+* **Type:**
+  The two flow classes agreement is measured by
+
+### liaise.legacy.flow_class(flow)
+
+[`SENT`](_autosummary/liaise.legacy.html.md#liaise.legacy.SENT) for `send`, [`HELD`](_autosummary/liaise.legacy.html.md#liaise.legacy.HELD) for every other flow: what agreement compares.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> flow_class("send"), flow_class("delay"), flow_class("approve")
+('sent', 'held', 'held')
+```
+
+### liaise.legacy.leak_kinds(text, , leak_terms=())
+
+The kinds 0.1’s leak scan found in `text`, each once, in the order 0.1 listed them.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
+
+```pycon
+>>> leak_kinds("mail pat" + "@example.com, see /" + "Users" + "/pat/notes")
+('local path', 'email')
+>>> leak_kinds("ghp_" + "a" * 10 + "\n" + "b" * 10)
+('token',)
+>>> leak_kinds("the Orchid launch", leak_terms=["orchid"])
+('leak term',)
+```
+
+### liaise.legacy.legacy_decision(outbound, subject, , in_case, approved=False, shared_diverts=())
+
+What 0.1’s gate would have decided about `outbound` on `subject`.
+
+`in_case` is whether the message belongs to a case; `approved` whether an approval
+of any kind was on the context (0.1 bound it to nothing, so any approval released a
+draft past its reply mode). `shared_diverts` names the filters the gate shares with
+0.1 (the writing card, deslop, the mention) that held this message back today.
+
+* **Return type:**
+  [`Counterfactual`](_autosummary/liaise.legacy.html.md#liaise.legacy.Counterfactual)
 
 
 # _autosummary/liaise.messages.html.md
@@ -8238,9 +8387,13 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   (false diverts over the messages that should have gone as written: those sent as judged
   plus the false diverts);
 - **shadow**: the judged messages of subjects in `policy.mode = "shadow"`. Shadow mode
-  enforces like `enforce` until its sending semantics are decided (liaise #39), so no
-  would-be verdict differs from the decision yet, and shadow agreement and missed findings
-  are not observable: the report says so rather than printing a number that means nothing.
+  enforces like `enforce` (liaise #51: nothing sends that the policy holds back); beside
+  each verdict the gate records what liaise 0.1 would have decided ([`liaise.legacy`](_autosummary/liaise.legacy.html.md#module-liaise.legacy)).
+  **Compared** counts the shadow messages that carry that counterfactual; \*\*shadow
+  agreement\*\* is the share of them where the policy and 0.1 are in the same flow class
+  ([`liaise.legacy.flow_class()`](_autosummary/liaise.legacy.html.md#liaise.legacy.flow_class): sent, or held back), and a **missed finding** is one
+  0.1 would have sent where the policy found severity [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY) or above.
+  Entries recorded before the counterfactual was are shadow but not compared.
 - **hook overrides**: writes the Claude Code hook ([`liaise.hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)) asked the operator
   about and the operator let run, how many of them it could not read, and the rules among
   their reasons; apart from the counts above, since liaise neither held nor sent them.
@@ -8252,13 +8405,13 @@ least [`MIN_SHADOW_MESSAGES`](_autosummary/liaise.report.html.md#liaise.report.M
 
 ### Module Attributes
 
-| [`MIN_SHADOW_MESSAGES`](_autosummary/liaise.report.html.md#liaise.report.MIN_SHADOW_MESSAGES)   | the fewest messages shadow mode must have seen before enforcing.              |
-|------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY)       | a missed finding at this severity or above blocks enforcing.                  |
-| [`MAX_FALSE_DIVERT_RATE`](_autosummary/liaise.report.html.md#liaise.report.MAX_FALSE_DIVERT_RATE) | the highest false-divert rate at which enforcing is recommended (one in ten). |
-| [`MAX_RULE_NAME`](_autosummary/liaise.report.html.md#liaise.report.MAX_RULE_NAME)         | The longest rule name the report prints.                                      |
-| [`GATE_KIND`](_autosummary/liaise.report.html.md#liaise.report.GATE_KIND)             | The entry kind the gate's decisions are recorded as.                          |
-| [`SHADOW_PENDING`](_autosummary/liaise.report.html.md#liaise.report.SHADOW_PENDING)        | Why shadow agreement and missed findings cannot be counted yet.               |
+| [`MIN_SHADOW_MESSAGES`](_autosummary/liaise.report.html.md#liaise.report.MIN_SHADOW_MESSAGES)   | the fewest messages shadow mode must have seen before enforcing.                      |
+|------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY)       | a missed finding at this severity or above blocks enforcing.                          |
+| [`MAX_FALSE_DIVERT_RATE`](_autosummary/liaise.report.html.md#liaise.report.MAX_FALSE_DIVERT_RATE) | the highest false-divert rate at which enforcing is recommended (one in ten).         |
+| [`MAX_RULE_NAME`](_autosummary/liaise.report.html.md#liaise.report.MAX_RULE_NAME)         | The longest rule name the report prints.                                              |
+| [`GATE_KIND`](_autosummary/liaise.report.html.md#liaise.report.GATE_KIND)             | The entry kind the gate's decisions are recorded as.                                  |
+| [`SHADOW_UNOBSERVED`](_autosummary/liaise.report.html.md#liaise.report.SHADOW_UNOBSERVED)     | Why shadow agreement and missed findings cannot be counted when nothing was compared. |
 
 ### Functions
 
@@ -8297,16 +8450,18 @@ a missed finding at this severity or above blocks enforcing.
 * **Type:**
   Decision 11
 
-### liaise.report.SHADOW_PENDING *= 'shadow mode enforces like enforce until its sending semantics are decided (liaise #39), so it records no would-be verdict that differs from the decision'*
+### liaise.report.SHADOW_UNOBSERVED *= "no shadow message carries 0.1's counterfactual, which the gate records since liaise #39"*
 
-Why shadow agreement and missed findings cannot be counted yet.
+Why shadow agreement and missed findings cannot be counted when nothing was compared.
 
 ### liaise.report.enforce_recommended(, shadow_messages, missed_high_severity, false_divert_rate)
 
 Decision 11’s rollout rule: `{"recommended": bool, "reason": str}`.
 
-`missed_high_severity` is how many findings of severity [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY) or
-above shadow mode let through (None: not observable, which never recommends).
+`shadow_messages` counts the shadow messages compared with 0.1’s counterfactual, and
+`missed_high_severity` how many of them 0.1 would have sent with a finding of
+severity [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY) or above (None: not observable, which never
+recommends).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
@@ -8315,7 +8470,7 @@ above shadow mode let through (None: not observable, which never recommends).
 >>> enforce_recommended(shadow_messages=40, missed_high_severity=0, false_divert_rate=0.05)
 {'recommended': True, 'reason': '40 shadow messages, no missed finding of severity 4 or above, false-divert rate 0.05 (at most 0.1)'}
 >>> enforce_recommended(shadow_messages=12, missed_high_severity=0, false_divert_rate=0.0)['reason']
-'only 12 shadow messages, fewer than 30'
+'only 12 shadow messages compared with 0.1, fewer than 30'
 ```
 
 ### liaise.report.gate_report(ledger, , subject=None, since=None, shadow_subjects=())
@@ -8601,9 +8756,9 @@ Who is who on a subject, what each may do, and how liaise answers them.
 > The outbound gate’s policy (liaise ADR 0002) reads four more: `tainted_runs`
 > (`approve`, or `send` to waive the taint rule), `link_allowlist` (hosts a link
 > may point at besides the channel’s own), `canary_terms` (terms planted in private
-> context, never to be sent) and `mode` (`enforce`, or `shadow`, recorded on every
-> verdict, counted by `liaise gate report`, and enforced alike until its sending
-> semantics are decided, liaise #51). `delay_minutes` turns the delay
+> context, never to be sent) and `mode` (`enforce`, or `shadow`, which enforces
+> alike and is compared with liaise 0.1’s would-be answer by `liaise gate report`,
+> liaise #39 and #51). `delay_minutes` turns the delay
 
 outbox on (liaise #38): how long a `delay` verdict (an irreversible send to an
 organisation-wide or public place) waits, cancellable, before the tick sends it; 0 sends
@@ -9892,16 +10047,18 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-09-22 17:33 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/8450876ab3d7d5cad3007f032505b8013008d299"><code>8450876</code></a> on branch <code>main</code>, for **liaise 0.1.14** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-09-24 09:01 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/ed025fa6638153c4800698c5fc46b231a6439ddb"><code>ed025fa</code></a> on branch <code>main</code>, for **liaise 0.1.15** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.1.15) is behind the latest release on PyPI (0.1.16): `pip install liaise` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/8450876ab3d7d5cad3007f032505b8013008d299"><code>8450876ab3d7d5cad3007f032505b8013008d299</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/ed025fa6638153c4800698c5fc46b231a6439ddb"><code>ed025fa6638153c4800698c5fc46b231a6439ddb</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -9912,9 +10069,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35761231918">35761231918</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35978400420">35978400420</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>8450876ab3d7d5cad3007f032505b8013008d299</code> (in the history of the built commit) |
+| Event commit | <code>ed025fa6638153c4800698c5fc46b231a6439ddb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -9939,13 +10096,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.14/">0.1.14</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/liaise/0.1.16/">0.1.16</a>, newer than the documented version (0.1.15).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 8450876ab3d7d5cad3007f032505b8013008d299
+git checkout ed025fa6638153c4800698c5fc46b231a6439ddb
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

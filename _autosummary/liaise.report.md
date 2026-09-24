@@ -27,9 +27,13 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   (false diverts over the messages that should have gone as written: those sent as judged
   plus the false diverts);
 - **shadow**: the judged messages of subjects in `policy.mode = "shadow"`. Shadow mode
-  enforces like `enforce` until its sending semantics are decided (liaise #39), so no
-  would-be verdict differs from the decision yet, and shadow agreement and missed findings
-  are not observable: the report says so rather than printing a number that means nothing.
+  enforces like `enforce` (liaise #51: nothing sends that the policy holds back); beside
+  each verdict the gate records what liaise 0.1 would have decided ([`liaise.legacy`](liaise.legacy.md#module-liaise.legacy)).
+  **Compared** counts the shadow messages that carry that counterfactual; \*\*shadow
+  agreement\*\* is the share of them where the policy and 0.1 are in the same flow class
+  ([`liaise.legacy.flow_class()`](liaise.legacy.md#liaise.legacy.flow_class): sent, or held back), and a **missed finding** is one
+  0.1 would have sent where the policy found severity [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY) or above.
+  Entries recorded before the counterfactual was are shadow but not compared.
 - **hook overrides**: writes the Claude Code hook ([`liaise.hook`](liaise.hook.md#module-liaise.hook)) asked the operator
   about and the operator let run, how many of them it could not read, and the rules among
   their reasons; apart from the counts above, since liaise neither held nor sent them.
@@ -41,13 +45,13 @@ least [`MIN_SHADOW_MESSAGES`](#liaise.report.MIN_SHADOW_MESSAGES) messages, with
 
 ### Module Attributes
 
-| [`MIN_SHADOW_MESSAGES`](#liaise.report.MIN_SHADOW_MESSAGES)   | the fewest messages shadow mode must have seen before enforcing.              |
-|------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY)       | a missed finding at this severity or above blocks enforcing.                  |
-| [`MAX_FALSE_DIVERT_RATE`](#liaise.report.MAX_FALSE_DIVERT_RATE) | the highest false-divert rate at which enforcing is recommended (one in ten). |
-| [`MAX_RULE_NAME`](#liaise.report.MAX_RULE_NAME)         | The longest rule name the report prints.                                      |
-| [`GATE_KIND`](#liaise.report.GATE_KIND)             | The entry kind the gate's decisions are recorded as.                          |
-| [`SHADOW_PENDING`](#liaise.report.SHADOW_PENDING)        | Why shadow agreement and missed findings cannot be counted yet.               |
+| [`MIN_SHADOW_MESSAGES`](#liaise.report.MIN_SHADOW_MESSAGES)   | the fewest messages shadow mode must have seen before enforcing.                      |
+|------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY)       | a missed finding at this severity or above blocks enforcing.                          |
+| [`MAX_FALSE_DIVERT_RATE`](#liaise.report.MAX_FALSE_DIVERT_RATE) | the highest false-divert rate at which enforcing is recommended (one in ten).         |
+| [`MAX_RULE_NAME`](#liaise.report.MAX_RULE_NAME)         | The longest rule name the report prints.                                              |
+| [`GATE_KIND`](#liaise.report.GATE_KIND)             | The entry kind the gate's decisions are recorded as.                                  |
+| [`SHADOW_UNOBSERVED`](#liaise.report.SHADOW_UNOBSERVED)     | Why shadow agreement and missed findings cannot be counted when nothing was compared. |
 
 ### Functions
 
@@ -86,16 +90,18 @@ a missed finding at this severity or above blocks enforcing.
 * **Type:**
   Decision 11
 
-### liaise.report.SHADOW_PENDING *= 'shadow mode enforces like enforce until its sending semantics are decided (liaise #39), so it records no would-be verdict that differs from the decision'*
+### liaise.report.SHADOW_UNOBSERVED *= "no shadow message carries 0.1's counterfactual, which the gate records since liaise #39"*
 
-Why shadow agreement and missed findings cannot be counted yet.
+Why shadow agreement and missed findings cannot be counted when nothing was compared.
 
 ### liaise.report.enforce_recommended(, shadow_messages, missed_high_severity, false_divert_rate)
 
 Decision 11’s rollout rule: `{"recommended": bool, "reason": str}`.
 
-`missed_high_severity` is how many findings of severity [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY) or
-above shadow mode let through (None: not observable, which never recommends).
+`shadow_messages` counts the shadow messages compared with 0.1’s counterfactual, and
+`missed_high_severity` how many of them 0.1 would have sent with a finding of
+severity [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY) or above (None: not observable, which never
+recommends).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
@@ -104,7 +110,7 @@ above shadow mode let through (None: not observable, which never recommends).
 >>> enforce_recommended(shadow_messages=40, missed_high_severity=0, false_divert_rate=0.05)
 {'recommended': True, 'reason': '40 shadow messages, no missed finding of severity 4 or above, false-divert rate 0.05 (at most 0.1)'}
 >>> enforce_recommended(shadow_messages=12, missed_high_severity=0, false_divert_rate=0.0)['reason']
-'only 12 shadow messages, fewer than 30'
+'only 12 shadow messages compared with 0.1, fewer than 30'
 ```
 
 ### liaise.report.gate_report(ledger, , subject=None, since=None, shadow_subjects=())

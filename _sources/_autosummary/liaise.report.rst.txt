@@ -13,7 +13,7 @@ liaise.report
       MAX_FALSE_DIVERT_RATE
       MAX_RULE_NAME
       GATE_KIND
-      SHADOW_PENDING
+      SHADOW_UNOBSERVED
    
    .. rubric:: Functions
 

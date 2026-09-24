@@ -1,0 +1,31 @@
+liaise.legacy
+=============
+
+.. automodule:: liaise.legacy
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      LEGACY_VERSION
+      LEGACY_PUBLIC_CHANNELS
+      SENT
+      HELD
+      OUTSIDE_A_CASE
+      LEAK_SCAN
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      flow_class
+      leak_kinds
+      legacy_decision
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Counterfactual
+   

@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=468bc497"></script>
+    <script src="../../_static/documentation_options.js?v=e2f3408e"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.14" />
+  <meta name="docsearch:version" content="0.1.15" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -738,9 +738,13 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">  (false diverts over the messages that should have gone as written: those sent as judged</span>
 <span class="sd">  plus the false diverts);</span>
 <span class="sd">- **shadow**: the judged messages of subjects in ``policy.mode = "shadow"``. Shadow mode</span>
-<span class="sd">  enforces like ``enforce`` until its sending semantics are decided (liaise #39), so no</span>
-<span class="sd">  would-be verdict differs from the decision yet, and shadow agreement and missed findings</span>
-<span class="sd">  are not observable: the report says so rather than printing a number that means nothing.</span>
+<span class="sd">  enforces like ``enforce`` (liaise #51: nothing sends that the policy holds back); beside</span>
+<span class="sd">  each verdict the gate records what liaise 0.1 would have decided (:mod:`liaise.legacy`).</span>
+<span class="sd">  **Compared** counts the shadow messages that carry that counterfactual; **shadow</span>
+<span class="sd">  agreement** is the share of them where the policy and 0.1 are in the same flow class</span>
+<span class="sd">  (:func:`liaise.legacy.flow_class`: sent, or held back), and a **missed finding** is one</span>
+<span class="sd">  0.1 would have sent where the policy found severity :data:`MISSED_SEVERITY` or above.</span>
+<span class="sd">  Entries recorded before the counterfactual was are shadow but not compared.</span>
 
 <span class="sd">- **hook overrides**: writes the Claude Code hook (:mod:`liaise.hook`) asked the operator</span>
 <span class="sd">  about and the operator let run, how many of them it could not read, and the rules among</span>
@@ -761,6 +765,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.gate</span><span class="w"> </span><span class="kn">import</span> <span class="n">OUTBOX_ACTOR</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.legacy</span><span class="w"> </span><span class="kn">import</span> <span class="n">flow_class</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LedgerEntry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outbox</span><span class="w"> </span><span class="kn">import</span> <span class="n">HOLD</span>
@@ -776,10 +781,10 @@ window.runMermaid = runMermaid;</script>
 <span class="n">MAX_RULE_NAME</span> <span class="o">=</span> <span class="mi">40</span>
 <span class="c1">#: The entry kind the gate's decisions are recorded as.</span>
 <span class="n">GATE_KIND</span> <span class="o">=</span> <span class="s2">"gate"</span>
-<span class="c1">#: Why shadow agreement and missed findings cannot be counted yet.</span>
-<span class="n">SHADOW_PENDING</span> <span class="o">=</span> <span class="p">(</span>
-    <span class="s2">"shadow mode enforces like enforce until its sending semantics are decided "</span>
-    <span class="s2">"(liaise #39), so it records no would-be verdict that differs from the decision"</span>
+<span class="c1">#: Why shadow agreement and missed findings cannot be counted when nothing was compared.</span>
+<span class="n">SHADOW_UNOBSERVED</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"no shadow message carries 0.1's counterfactual, which the gate records since "</span>
+    <span class="s2">"liaise #39"</span>
 <span class="p">)</span>
 
 
@@ -860,6 +865,31 @@ window.runMermaid = runMermaid;</script>
         <span class="k">yield</span> <span class="n">message</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">entries</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_max_severity</span><span class="p">(</span><span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The highest severity of a finding among a gate entry's concerns, 0 when none says."""</span>
+    <span class="n">severities</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"severity"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"concerns"</span><span class="p">,</span> <span class="s2">"settled"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">or</span> <span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concern</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">finding</span> <span class="ow">in</span> <span class="n">concern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"findings"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">finding</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="k">return</span> <span class="nb">max</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">severities</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)),</span>
+        <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_legacy_flow</span><span class="p">(</span><span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""The flow 0.1 would have chosen, as the gate recorded it; None when it did not."""</span>
+    <span class="n">counterfactual</span> <span class="o">=</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"counterfactual"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">counterfactual</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="n">flow</span> <span class="o">=</span> <span class="n">counterfactual</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"flow"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">flow</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">flow</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_empty_rule</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
     <span class="k">return</span> <span class="p">{</span><span class="s2">"fired"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"released"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">"confirmed"</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
 
@@ -908,6 +938,16 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">mode</span> <span class="o">=</span> <span class="n">verdict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mode"</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">verdict</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
                 <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="n">SHADOW</span> <span class="ow">or</span> <span class="p">(</span><span class="n">mode</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">owner</span> <span class="ow">in</span> <span class="n">shadow_now</span><span class="p">):</span>
                     <span class="n">counts</span><span class="p">[</span><span class="s2">"shadow"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">legacy</span> <span class="o">=</span> <span class="n">_legacy_flow</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">legacy</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="s2">"shadow compared"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="s2">"agreed"</span><span class="p">]</span> <span class="o">+=</span> <span class="n">flow_class</span><span class="p">(</span><span class="n">legacy</span><span class="p">)</span> <span class="o">==</span> <span class="n">flow_class</span><span class="p">(</span>
+                            <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"flow"</span><span class="p">)</span>
+                        <span class="p">)</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="s2">"missed"</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
+                            <span class="n">flow_class</span><span class="p">(</span><span class="n">legacy</span><span class="p">)</span> <span class="o">==</span> <span class="n">flow_class</span><span class="p">(</span><span class="n">SEND</span><span class="p">)</span>
+                            <span class="ow">and</span> <span class="n">_max_severity</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MISSED_SEVERITY</span>
+                        <span class="p">)</span>
                 <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">fired</span><span class="p">:</span>
                     <span class="n">rules</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">_empty_rule</span><span class="p">())[</span><span class="s2">"fired"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">elif</span> <span class="n">counted</span> <span class="ow">and</span> <span class="n">_is_outbox_release</span><span class="p">(</span><span class="n">detail</span><span class="p">):</span>
@@ -932,7 +972,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">entry</span><span class="p">[</span><span class="s2">"precision"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
             <span class="kc">None</span> <span class="k">if</span> <span class="n">judged</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="nb">round</span><span class="p">(</span><span class="n">entry</span><span class="p">[</span><span class="s2">"confirmed"</span><span class="p">]</span> <span class="o">/</span> <span class="n">judged</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
         <span class="p">)</span>
-    <span class="n">judged</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"judged"</span><span class="p">]</span>
+    <span class="n">judged</span><span class="p">,</span> <span class="n">compared</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"judged"</span><span class="p">],</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"shadow compared"</span><span class="p">]</span>
     <span class="n">should_send</span> <span class="o">=</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"sent as judged"</span><span class="p">]</span> <span class="o">+</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"false diverts"</span><span class="p">]</span>
     <span class="n">false_divert_rate</span> <span class="o">=</span> <span class="p">(</span>
         <span class="kc">None</span> <span class="k">if</span> <span class="n">should_send</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"false diverts"</span><span class="p">]</span> <span class="o">/</span> <span class="n">should_send</span>
@@ -950,19 +990,20 @@ window.runMermaid = runMermaid;</script>
                 <span class="s2">"false diverts"</span><span class="p">,</span>
                 <span class="s2">"rejected"</span><span class="p">,</span>
                 <span class="s2">"shadow"</span><span class="p">,</span>
+                <span class="s2">"shadow compared"</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">},</span>
         <span class="s2">"override_rate"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">judged</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"released"</span><span class="p">]</span> <span class="o">/</span> <span class="n">judged</span><span class="p">,</span>
         <span class="s2">"false_divert_rate"</span><span class="p">:</span> <span class="n">false_divert_rate</span><span class="p">,</span>
         <span class="s2">"rules"</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">rules</span><span class="o">.</span><span class="n">items</span><span class="p">())),</span>
-        <span class="s2">"shadow_agreement"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">"missed_high_severity"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="s2">"shadow_note"</span><span class="p">:</span> <span class="n">SHADOW_PENDING</span><span class="p">,</span>
+        <span class="s2">"shadow_agreement"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">compared</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"agreed"</span><span class="p">]</span> <span class="o">/</span> <span class="n">compared</span><span class="p">,</span>
+        <span class="s2">"missed_high_severity"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">compared</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">counts</span><span class="p">[</span><span class="s2">"missed"</span><span class="p">],</span>
+        <span class="s2">"shadow_note"</span><span class="p">:</span> <span class="n">SHADOW_UNOBSERVED</span> <span class="k">if</span> <span class="n">compared</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">report</span><span class="p">[</span><span class="s2">"hook"</span><span class="p">]</span> <span class="o">=</span> <span class="n">hook_overrides</span><span class="p">(</span><span class="n">ledger</span><span class="p">,</span> <span class="n">subject</span><span class="o">=</span><span class="n">subject</span><span class="p">,</span> <span class="n">since</span><span class="o">=</span><span class="n">start</span><span class="p">)</span>
     <span class="n">report</span><span class="p">[</span><span class="s2">"enforce"</span><span class="p">]</span> <span class="o">=</span> <span class="n">enforce_recommended</span><span class="p">(</span>
-        <span class="n">shadow_messages</span><span class="o">=</span><span class="n">counts</span><span class="p">[</span><span class="s2">"shadow"</span><span class="p">],</span>
-        <span class="n">missed_high_severity</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">shadow_messages</span><span class="o">=</span><span class="n">compared</span><span class="p">,</span>
+        <span class="n">missed_high_severity</span><span class="o">=</span><span class="n">report</span><span class="p">[</span><span class="s2">"missed_high_severity"</span><span class="p">],</span>
         <span class="n">false_divert_rate</span><span class="o">=</span><span class="n">false_divert_rate</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">report</span></div>
@@ -1044,23 +1085,28 @@ window.runMermaid = runMermaid;</script>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">"""Decision 11's rollout rule: ``{"recommended": bool, "reason": str}``.</span>
 
-<span class="sd">    ``missed_high_severity`` is how many findings of severity :data:`MISSED_SEVERITY` or</span>
-<span class="sd">    above shadow mode let through (None: not observable, which never recommends).</span>
+<span class="sd">    ``shadow_messages`` counts the shadow messages compared with 0.1's counterfactual, and</span>
+<span class="sd">    ``missed_high_severity`` how many of them 0.1 would have sent with a finding of</span>
+<span class="sd">    severity :data:`MISSED_SEVERITY` or above (None: not observable, which never</span>
+<span class="sd">    recommends).</span>
 
 <span class="sd">    &gt;&gt;&gt; enforce_recommended(shadow_messages=40, missed_high_severity=0, false_divert_rate=0.05)</span>
 <span class="sd">    {'recommended': True, 'reason': '40 shadow messages, no missed finding of severity 4 or above, false-divert rate 0.05 (at most 0.1)'}</span>
 <span class="sd">    &gt;&gt;&gt; enforce_recommended(shadow_messages=12, missed_high_severity=0, false_divert_rate=0.0)['reason']</span>
-<span class="sd">    'only 12 shadow messages, fewer than 30'</span>
+<span class="sd">    'only 12 shadow messages compared with 0.1, fewer than 30'</span>
 <span class="sd">    """</span>
     <span class="k">if</span> <span class="n">shadow_messages</span> <span class="o">&lt;</span> <span class="n">MIN_SHADOW_MESSAGES</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">"recommended"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">"reason"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"only </span><span class="si">{</span><span class="n">shadow_messages</span><span class="si">}</span><span class="s2"> shadow messages, fewer than </span><span class="si">{</span><span class="n">MIN_SHADOW_MESSAGES</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="s2">"reason"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"only </span><span class="si">{</span><span class="n">shadow_messages</span><span class="si">}</span><span class="s2"> shadow messages compared with 0.1, fewer than "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">MIN_SHADOW_MESSAGES</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">),</span>
         <span class="p">}</span>
     <span class="k">if</span> <span class="n">missed_high_severity</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">"recommended"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-            <span class="s2">"reason"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"missed findings are not observable yet: </span><span class="si">{</span><span class="n">SHADOW_PENDING</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="s2">"reason"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"missed findings are not observable: </span><span class="si">{</span><span class="n">SHADOW_UNOBSERVED</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
         <span class="p">}</span>
     <span class="k">if</span> <span class="n">missed_high_severity</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
@@ -1102,7 +1148,19 @@ window.runMermaid = runMermaid;</script>
     <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  override rate: </span><span class="si">{</span><span class="n">_rate</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s1">'override_rate'</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  false-divert rate: </span><span class="si">{</span><span class="n">_rate</span><span class="p">(</span><span class="n">report</span><span class="p">[</span><span class="s1">'false_divert_rate'</span><span class="p">])</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-    <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  shadow agreement: n/a (</span><span class="si">{</span><span class="n">report</span><span class="p">[</span><span class="s1">'shadow_note'</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+    <span class="n">agreement</span><span class="p">,</span> <span class="n">missed</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">"shadow_agreement"</span><span class="p">],</span> <span class="n">report</span><span class="p">[</span><span class="s2">"missed_high_severity"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">agreement</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  shadow agreement: n/a (</span><span class="si">{</span><span class="n">report</span><span class="p">[</span><span class="s1">'shadow_note'</span><span class="p">]</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"  missed findings: n/a (nothing compared)"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"  shadow agreement: </span><span class="si">{</span><span class="n">agreement</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> (same flow class as 0.1, of "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="s1">'shadow compared'</span><span class="p">]</span><span class="si">}</span><span class="s2"> compared)"</span>
+        <span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"  missed findings (0.1 would have sent, severity </span><span class="si">{</span><span class="n">MISSED_SEVERITY</span><span class="si">}</span><span class="s2"> or "</span>
+            <span class="sa">f</span><span class="s2">"above): </span><span class="si">{</span><span class="n">missed</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
     <span class="n">rules</span> <span class="o">=</span> <span class="n">report</span><span class="p">[</span><span class="s2">"rules"</span><span class="p">]</span>
     <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
         <span class="sa">f</span><span class="s2">"per rule (fired, released as false positive, confirmed, precision): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">rules</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>

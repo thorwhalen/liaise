@@ -308,7 +308,7 @@ read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`
 without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
 one in the configured state directory).
 
-### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None)
+### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -321,7 +321,9 @@ released it past. `notes` holds every filter’s notes, in order. `diverted_by` 
 the filter of the most restrictive concern, as an operator notification may say it: the
 reason can quote what a filter raised. `verdict` and `consulted` are the policy’s
 verdict and what it consulted. `approval` is the one on the context, and
-`payload_hash` and `audience_hash` what it had to match.
+`payload_hash` and `audience_hash` what it had to match. `counterfactual` is what
+liaise 0.1’s gate would have decided about the same message ([`liaise.legacy`](liaise.legacy.html.md#module-liaise.legacy)),
+recorded beside the verdict so shadow agreement can be counted; it decides nothing.
 
 #### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
 
@@ -342,7 +344,8 @@ What a ledger `gate` entry records of the decision (discussion §5.7).
 The flow and every concern with its findings (kinds, positions and fingerprints,
 never the value), what the approval settled, the policy’s verdict (its audience
 snapshot, the readers’ tiers and clearances, the mode), the labels, seals and
-provenance consulted, and the approval with whether it bound.
+provenance consulted, the approval with whether it bound, and what 0.1 would have
+decided (its flow and the kinds it would have held the message for, no values).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1338,6 +1341,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`holds`](liaise.holds.html.md#module-liaise.holds)           | Holds: stops on work, by scope, set by the operator or by the tick itself.                                           |
 | [`hook`](liaise.hook.html.md#module-liaise.hook)             | The Claude Code hook: every `gh` or `correspond` write from any session is vetted first (discussion 32, §5.8).       |
 | [`ledger`](liaise.ledger.html.md#module-liaise.ledger)         | The ledger: liaise's own record of what it has seen, opened, decided and started.                                    |
+| [`legacy`](liaise.legacy.html.md#module-liaise.legacy)         | What liaise 0.1's gate would have decided: the counterfactual shadow mode measures against (liaise #39, #51).        |
 | [`messages`](liaise.messages.html.md#module-liaise.messages)     | Messages outside a case: what an agent says to a person on its own initiative, through the gate.                     |
 | [`migrate`](liaise.migrate.html.md#module-liaise.migrate)       | Derive 0.1 subject files from a 0.0.x configuration: `liaise migrate-config`.                                        |
 | [`model`](liaise.model.html.md#module-liaise.model)           | The liaise 0.1 data model: cases, ledger entries, outcomes, holds and runs.                                          |

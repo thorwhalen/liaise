@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../../_static/documentation_options.js?v=468bc497"></script>
+    <script src="../../_static/documentation_options.js?v=e2f3408e"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
     <link rel="search" title="Search" href="../../search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.14" />
+  <meta name="docsearch:version" content="0.1.15" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -775,6 +775,7 @@ window.runMermaid = runMermaid;</script>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.access</span><span class="w"> </span><span class="kn">import</span> <span class="n">Resolver</span><span class="p">,</span> <span class="n">resolve_person</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.detect</span><span class="w"> </span><span class="kn">import</span> <span class="n">DFLT_DETECTORS</span><span class="p">,</span> <span class="n">Detector</span><span class="p">,</span> <span class="n">Finding</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.legacy</span><span class="w"> </span><span class="kn">import</span> <span class="n">Counterfactual</span><span class="p">,</span> <span class="n">legacy_decision</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">Approval</span><span class="p">,</span> <span class="n">Case</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outbound</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
     <span class="n">DisclosureSource</span><span class="p">,</span>
@@ -990,7 +991,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    the filter of the most restrictive concern, as an operator notification may say it: the</span>
 <span class="sd">    reason can quote what a filter raised. ``verdict`` and ``consulted`` are the policy's</span>
 <span class="sd">    verdict and what it consulted. ``approval`` is the one on the context, and</span>
-<span class="sd">    ``payload_hash`` and ``audience_hash`` what it had to match.</span>
+<span class="sd">    ``payload_hash`` and ``audience_hash`` what it had to match. ``counterfactual`` is what</span>
+<span class="sd">    liaise 0.1's gate would have decided about the same message (:mod:`liaise.legacy`),</span>
+<span class="sd">    recorded beside the verdict so shadow agreement can be counted; it decides nothing.</span>
 <span class="sd">    """</span>
 
     <span class="n">send</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Outbound</span><span class="p">]</span>
@@ -1005,6 +1008,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">approval</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Approval</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">payload_hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">audience_hash</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">counterfactual</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Counterfactual</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">bound</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -1046,7 +1050,8 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">        The flow and every concern with its findings (kinds, positions and fingerprints,</span>
 <span class="sd">        never the value), what the approval settled, the policy's verdict (its audience</span>
 <span class="sd">        snapshot, the readers' tiers and clearances, the mode), the labels, seals and</span>
-<span class="sd">        provenance consulted, and the approval with whether it bound.</span>
+<span class="sd">        provenance consulted, the approval with whether it bound, and what 0.1 would have</span>
+<span class="sd">        decided (its flow and the kinds it would have held the message for, no values).</span>
 <span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="s2">"flow"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow</span><span class="p">,</span>
@@ -1058,6 +1063,9 @@ window.runMermaid = runMermaid;</script>
             <span class="s2">"approval_bound"</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">approval</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">bound</span><span class="p">,</span>
             <span class="s2">"payload_hash"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">payload_hash</span><span class="p">,</span>
             <span class="s2">"audience_hash"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">audience_hash</span><span class="p">,</span>
+            <span class="s2">"counterfactual"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">counterfactual</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">counterfactual</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
+            <span class="p">),</span>
         <span class="p">}</span></div>
 </div>
 
@@ -1387,6 +1395,35 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span>
 
 
+<span class="c1">#: The filters 0.1's gate had that the gate still runs unchanged: a concern of theirs held</span>
+<span class="c1">#: the message in 0.1 too. Named, not inferred, so a filter added later is never mistaken</span>
+<span class="c1">#: for one 0.1 had (0.1's reply mode and leak scan are replayed by :mod:`liaise.legacy`).</span>
+<span class="n">_SHARED_WITH_LEGACY</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+    <span class="p">{</span><span class="n">writing_card</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">deslop</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">notify_recipient</span><span class="o">.</span><span class="vm">__name__</span><span class="p">}</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_counterfactual</span><span class="p">(</span>
+    <span class="n">outbound</span><span class="p">:</span> <span class="n">Outbound</span><span class="p">,</span> <span class="n">ctx</span><span class="p">:</span> <span class="n">GateContext</span><span class="p">,</span> <span class="n">concerns</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Concern</span><span class="p">]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Counterfactual</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""What 0.1 would have decided about ``outbound`` as written (see :mod:`liaise.legacy`).</span>
+
+<span class="sd">    The filters the gate shares with 0.1 held it back in 0.1 too. None when the replay</span>
+<span class="sd">    itself fails: a counterfactual is a measurement, and never holds up a decision.</span>
+<span class="sd">    """</span>
+    <span class="n">shared</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span><span class="o">.</span><span class="n">filter</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">concerns</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">filter</span> <span class="ow">in</span> <span class="n">_SHARED_WITH_LEGACY</span><span class="p">]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">legacy_decision</span><span class="p">(</span>
+            <span class="n">outbound</span><span class="p">,</span>
+            <span class="n">ctx</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span>
+            <span class="n">in_case</span><span class="o">=</span><span class="n">ctx</span><span class="o">.</span><span class="n">case</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="n">approved</span><span class="o">=</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">approval</span><span class="p">,</span> <span class="n">Approval</span><span class="p">),</span>
+            <span class="n">shared_diverts</span><span class="o">=</span><span class="n">shared</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>  <span class="c1"># an odd subject or message: the report counts it unobservable</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+
 <div class="viewcode-block" id="run_gate">
 <a class="viewcode-back" href="../../_autosummary/liaise.gate.html#liaise.run_gate">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">run_gate</span><span class="p">(</span>
@@ -1405,6 +1442,7 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">    ``approve`` concern naming it.</span>
 <span class="sd">    """</span>
     <span class="n">entry_payload</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">as_written</span> <span class="o">=</span> <span class="n">outbound</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">judged_audience</span> <span class="o">=</span> <span class="n">audience_snapshot</span><span class="p">(</span><span class="n">ctx</span><span class="o">.</span><span class="n">audience</span><span class="p">,</span> <span class="n">outbound</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
         <span class="n">entry_payload</span> <span class="o">=</span> <span class="n">payload_of</span><span class="p">(</span><span class="n">outbound</span><span class="p">)</span>
@@ -1478,6 +1516,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">at</span> <span class="o">=</span> <span class="n">approval</span><span class="o">.</span><span class="n">at</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
         <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"released by </span><span class="si">{</span><span class="n">approval</span><span class="o">.</span><span class="n">by</span><span class="si">}</span><span class="s2"> at </span><span class="si">{</span><span class="n">at</span><span class="si">}</span><span class="s2">, past: </span><span class="si">{</span><span class="n">rules</span><span class="si">}{</span><span class="n">why</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
     <span class="n">flow</span> <span class="o">=</span> <span class="n">most_restrictive</span><span class="p">(</span><span class="n">concern</span><span class="o">.</span><span class="n">flow</span> <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">standing</span><span class="p">)</span>
+    <span class="n">counterfactual</span> <span class="o">=</span> <span class="n">_counterfactual</span><span class="p">(</span><span class="n">as_written</span><span class="p">,</span> <span class="n">ctx</span><span class="p">,</span> <span class="n">concerns</span><span class="p">)</span>
     <span class="n">common</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
         <span class="n">notes</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span>
         <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
@@ -1488,6 +1527,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">approval</span><span class="o">=</span><span class="n">approval</span><span class="p">,</span>
         <span class="n">payload_hash</span><span class="o">=</span><span class="n">hashes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
         <span class="n">audience_hash</span><span class="o">=</span><span class="n">hashes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">counterfactual</span><span class="o">=</span><span class="n">counterfactual</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">flow</span> <span class="o">==</span> <span class="n">SEND</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">GateDecision</span><span class="p">(</span><span class="n">send</span><span class="o">=</span><span class="n">outbound</span><span class="p">,</span> <span class="n">diverted</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">common</span><span class="p">)</span>

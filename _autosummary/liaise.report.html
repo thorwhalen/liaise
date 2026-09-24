@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
-    <script src="../_static/documentation_options.js?v=468bc497"></script>
+    <script src="../_static/documentation_options.js?v=e2f3408e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
     <link rel="prev" title="liaise.release" href="liaise.release.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.14" />
+  <meta name="docsearch:version" content="0.1.15" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -330,6 +330,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.holds.html">liaise.holds</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.hook.html">liaise.hook</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.ledger.html">liaise.ledger</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.legacy.html">liaise.legacy</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.messages.html">liaise.messages</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.migrate.html">liaise.migrate</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.model.html">liaise.model</a></li>
@@ -442,9 +443,13 @@ rejected), with the precision <code class="docutils literal notranslate"><span c
 (false diverts over the messages that should have gone as written: those sent as judged
 plus the false diverts);</p></li>
 <li><p><strong>shadow</strong>: the judged messages of subjects in <code class="docutils literal notranslate"><span class="pre">policy.mode</span> <span class="pre">=</span> <span class="pre">&quot;shadow&quot;</span></code>. Shadow mode
-enforces like <code class="docutils literal notranslate"><span class="pre">enforce</span></code> until its sending semantics are decided (liaise #39), so no
-would-be verdict differs from the decision yet, and shadow agreement and missed findings
-are not observable: the report says so rather than printing a number that means nothing.</p></li>
+enforces like <code class="docutils literal notranslate"><span class="pre">enforce</span></code> (liaise #51: nothing sends that the policy holds back); beside
+each verdict the gate records what liaise 0.1 would have decided (<a class="reference internal" href="liaise.legacy.html#module-liaise.legacy" title="liaise.legacy"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.legacy</span></code></a>).
+<strong>Compared</strong> counts the shadow messages that carry that counterfactual; **shadow
+agreement** is the share of them where the policy and 0.1 are in the same flow class
+(<a class="reference internal" href="liaise.legacy.html#liaise.legacy.flow_class" title="liaise.legacy.flow_class"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.legacy.flow_class()</span></code></a>: sent, or held back), and a <strong>missed finding</strong> is one
+0.1 would have sent where the policy found severity <a class="reference internal" href="#liaise.report.MISSED_SEVERITY" title="liaise.report.MISSED_SEVERITY"><code class="xref py py-data docutils literal notranslate"><span class="pre">MISSED_SEVERITY</span></code></a> or above.
+Entries recorded before the counterfactual was are shadow but not compared.</p></li>
 <li><p><strong>hook overrides</strong>: writes the Claude Code hook (<a class="reference internal" href="liaise.hook.html#module-liaise.hook" title="liaise.hook"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.hook</span></code></a>) asked the operator
 about and the operator let run, how many of them it could not read, and the rules among
 their reasons; apart from the counts above, since liaise neither held nor sent them.</p></li>
@@ -471,8 +476,8 @@ least <a class="reference internal" href="#liaise.report.MIN_SHADOW_MESSAGES" ti
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.report.GATE_KIND" title="liaise.report.GATE_KIND"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GATE_KIND</span></code></a></p></td>
 <td><p>The entry kind the gate's decisions are recorded as.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.report.SHADOW_PENDING" title="liaise.report.SHADOW_PENDING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHADOW_PENDING</span></code></a></p></td>
-<td><p>Why shadow agreement and missed findings cannot be counted yet.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.report.SHADOW_UNOBSERVED" title="liaise.report.SHADOW_UNOBSERVED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHADOW_UNOBSERVED</span></code></a></p></td>
+<td><p>Why shadow agreement and missed findings cannot be counted when nothing was compared.</p></td>
 </tr>
 </tbody>
 </table>
@@ -541,17 +546,19 @@ least <a class="reference internal" href="#liaise.report.MIN_SHADOW_MESSAGES" ti
 </dd></dl>
 
 <dl class="py data">
-<dt class="sig sig-object py" id="liaise.report.SHADOW_PENDING">
-<span class="sig-prename descclassname"><span class="pre">liaise.report.</span></span><span class="sig-name descname"><span class="pre">SHADOW_PENDING</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'shadow</span> <span class="pre">mode</span> <span class="pre">enforces</span> <span class="pre">like</span> <span class="pre">enforce</span> <span class="pre">until</span> <span class="pre">its</span> <span class="pre">sending</span> <span class="pre">semantics</span> <span class="pre">are</span> <span class="pre">decided</span> <span class="pre">(liaise</span> <span class="pre">#39),</span> <span class="pre">so</span> <span class="pre">it</span> <span class="pre">records</span> <span class="pre">no</span> <span class="pre">would-be</span> <span class="pre">verdict</span> <span class="pre">that</span> <span class="pre">differs</span> <span class="pre">from</span> <span class="pre">the</span> <span class="pre">decision'</span></span><a class="headerlink" href="#liaise.report.SHADOW_PENDING" title="Link to this definition">#</a></dt>
-<dd><p>Why shadow agreement and missed findings cannot be counted yet.</p>
+<dt class="sig sig-object py" id="liaise.report.SHADOW_UNOBSERVED">
+<span class="sig-prename descclassname"><span class="pre">liaise.report.</span></span><span class="sig-name descname"><span class="pre">SHADOW_UNOBSERVED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;no</span> <span class="pre">shadow</span> <span class="pre">message</span> <span class="pre">carries</span> <span class="pre">0.1's</span> <span class="pre">counterfactual,</span> <span class="pre">which</span> <span class="pre">the</span> <span class="pre">gate</span> <span class="pre">records</span> <span class="pre">since</span> <span class="pre">liaise</span> <span class="pre">#39&quot;</span></span><a class="headerlink" href="#liaise.report.SHADOW_UNOBSERVED" title="Link to this definition">#</a></dt>
+<dd><p>Why shadow agreement and missed findings cannot be counted when nothing was compared.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.report.enforce_recommended">
 <span class="sig-prename descclassname"><span class="pre">liaise.report.</span></span><span class="sig-name descname"><span class="pre">enforce_recommended</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">shadow_messages</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">missed_high_severity</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">false_divert_rate</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/report.html#enforce_recommended"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.report.enforce_recommended" title="Link to this definition">#</a></dt>
 <dd><p>Decision 11’s rollout rule: <code class="docutils literal notranslate"><span class="pre">{&quot;recommended&quot;:</span> <span class="pre">bool,</span> <span class="pre">&quot;reason&quot;:</span> <span class="pre">str}</span></code>.</p>
-<p><code class="docutils literal notranslate"><span class="pre">missed_high_severity</span></code> is how many findings of severity <a class="reference internal" href="#liaise.report.MISSED_SEVERITY" title="liaise.report.MISSED_SEVERITY"><code class="xref py py-data docutils literal notranslate"><span class="pre">MISSED_SEVERITY</span></code></a> or
-above shadow mode let through (None: not observable, which never recommends).</p>
+<p><code class="docutils literal notranslate"><span class="pre">shadow_messages</span></code> counts the shadow messages compared with 0.1’s counterfactual, and
+<code class="docutils literal notranslate"><span class="pre">missed_high_severity</span></code> how many of them 0.1 would have sent with a finding of
+severity <a class="reference internal" href="#liaise.report.MISSED_SEVERITY" title="liaise.report.MISSED_SEVERITY"><code class="xref py py-data docutils literal notranslate"><span class="pre">MISSED_SEVERITY</span></code></a> or above (None: not observable, which never
+recommends).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a>]</span></p>
@@ -560,7 +567,7 @@ above shadow mode let through (None: not observable, which never recommends).</p
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">enforce_recommended</span><span class="p">(</span><span class="n">shadow_messages</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">missed_high_severity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">false_divert_rate</span><span class="o">=</span><span class="mf">0.05</span><span class="p">)</span>
 <span class="go">{'recommended': True, 'reason': '40 shadow messages, no missed finding of severity 4 or above, false-divert rate 0.05 (at most 0.1)'}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">enforce_recommended</span><span class="p">(</span><span class="n">shadow_messages</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">missed_high_severity</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">false_divert_rate</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)[</span><span class="s1">'reason'</span><span class="p">]</span>
-<span class="go">'only 12 shadow messages, fewer than 30'</span>
+<span class="go">'only 12 shadow messages compared with 0.1, fewer than 30'</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -663,7 +670,7 @@ would measure the hook’s path, not the rule.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.MAX_RULE_NAME"><code class="docutils literal notranslate"><span class="pre">MAX_RULE_NAME</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.MIN_SHADOW_MESSAGES"><code class="docutils literal notranslate"><span class="pre">MIN_SHADOW_MESSAGES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.MISSED_SEVERITY"><code class="docutils literal notranslate"><span class="pre">MISSED_SEVERITY</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.SHADOW_PENDING"><code class="docutils literal notranslate"><span class="pre">SHADOW_PENDING</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.SHADOW_UNOBSERVED"><code class="docutils literal notranslate"><span class="pre">SHADOW_UNOBSERVED</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.enforce_recommended"><code class="docutils literal notranslate"><span class="pre">enforce_recommended()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.gate_report"><code class="docutils literal notranslate"><span class="pre">gate_report()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.report.hook_overrides"><code class="docutils literal notranslate"><span class="pre">hook_overrides()</span></code></a></li>
