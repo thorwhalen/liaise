@@ -31,6 +31,6 @@ Every message liaise sends — a run's outcome, a draft the owner releases, a me
 
 - **`liaise vet`, the `before_send` seam and the Claude Code hook** (issue #37): a draft written outside liaise, or a `gh` command in a coding session, does not meet this gate.
 - **The delay outbox** (issue #38): `delay` is a draft for you until it exists.
-- **A private word inside a link's path** (issue #46) still reaches a wide audience at `approve`: a plain link is shown to you in full rather than refused.
+- **A term glued to an all-capitals run inside a link** (`HERONterms`), or into a link's host, is not found as the term; a glued term in a path or query otherwise is (issue #46).
 - **Returning a `revise` to the processor**: it is a flagged draft for you today.
 - **A semantic pass**: nothing catches a paraphrase that names no term (scenario S7, a known miss).

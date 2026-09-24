@@ -121,3 +121,15 @@ def test_the_exfiltration_row_treats_a_plain_link_as_approve():
         "taint",
         "irreversibility",
     )
+
+
+def test_without_the_link_term_detector_a_term_glued_into_a_link_path_is_approve_again():
+    """Mutation check of liaise #46: the detector alone moves X-link-path off ``approve``."""
+    from liaise.detect import DFLT_DETECTORS, detect_link_terms
+
+    case = prepare(BY_ID["X-link-path"])
+    less = [d for d in DFLT_DETECTORS if d is not detect_link_terms]
+
+    assert case.evaluate().flow == "refuse"
+    assert case.evaluate(detectors=less).flow == "approve"
+    assert prepare(BY_ID["S22"]).evaluate().flow == "approve"  # a plain link still delivers

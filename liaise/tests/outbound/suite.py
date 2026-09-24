@@ -21,7 +21,7 @@ from typing import Any, Optional
 
 import yaml
 
-from liaise.detect import Finding, detect
+from liaise.detect import DFLT_DETECTORS, Detector, Finding, detect
 from liaise.policy import (
     APPROVE,
     FLOWS,
@@ -163,8 +163,10 @@ class Prepared:
     expected: frozenset[str]
     scenario: Mapping[str, Any] = field(repr=False)
 
-    def findings(self) -> tuple[Finding, ...]:
-        """What the detectors find in the text, the title and the attachment names."""
+    def findings(
+        self, *, detectors: Sequence[Detector] = DFLT_DETECTORS
+    ) -> tuple[Finding, ...]:
+        """What ``detectors`` find in the text, the title and the attachment names."""
         parts = [self.message.text, self.message.title or "", *self.message.attachments]
         found: list[Finding] = []
         for part in parts:
@@ -176,16 +178,22 @@ class Prepared:
                     canary_terms=(CANARY,),
                     personal_terms=OPERATOR_TERMS,
                     key=KEY,
+                    detectors=detectors,
                 )
         return tuple(found)
 
-    def evaluate(self, *, rules: Sequence[Rule] = RULES) -> Verdict:
-        """The verdict, through ``rules``."""
+    def evaluate(
+        self,
+        *,
+        rules: Sequence[Rule] = RULES,
+        detectors: Sequence[Detector] = DFLT_DETECTORS,
+    ) -> Verdict:
+        """The verdict, through ``rules``, on what ``detectors`` find."""
         return evaluate(
             self.message,
             audience=self.audience,
             disclosure=self.disclosure,
-            findings=self.findings(),
+            findings=self.findings(detectors=detectors),
             provenance=self.provenance,
             policy=self.policy,
             now=self.now,

@@ -19,6 +19,9 @@ The six kinds (discussion §5.2):
   a whole word after normalisation.
 - ``third_party``: the same for a person's term (entity ``person:<id>``), unless that person
   is a reader, one of ``disclosure["people"]``. A reader is never a third party.
+- ``vocabulary`` and ``third_party`` again, rule ``term-in-link``: either kind of term that a
+  link or image destination spells out in its path, query or fragment glued to other words
+  (``/HeronTerms.pdf``, ``?p=heron2026``), over the whole destination (liaise #46).
 - ``exfiltration``: link and image destinations whose host is not in ``allowlist`` (a host
   or any of its subdomains), read as a browser reads them (Markdown inline and reference
   links and images, HTML attributes, autolinks and bare URLs); base64 runs, wrapped or not,
@@ -1335,8 +1338,35 @@ def _term_severity(scan: Scan, label: str, sealed_from: tuple[str, ...]) -> int:
     return scan.audience_severity
 
 
-def _term_findings(scan: Scan, *, people: bool) -> Iterator[Finding]:
-    kind, rule = ("third_party", "person-name") if people else ("vocabulary", "term")
+@dataclass(frozen=True)
+class _Term:
+    """A disclosure term to look for, with what a finding of it says: its kind, entity,
+    label, the readers it is sealed from, and its severity for this audience."""
+
+    folded: FoldedTerm
+    kind: str
+    entity: Optional[str]
+    label: str
+    sealed_from: tuple[str, ...]
+    severity: int
+
+    def finding(self, scan: Scan, start: int, end: int, *, rule: str) -> Finding:
+        return scan.finding(
+            self.kind,
+            start,
+            end,
+            rule=rule,
+            severity=self.severity,
+            entity=self.entity,
+            label=self.label,
+            sealed_from=self.sealed_from,
+        )
+
+
+def _terms_of(scan: Scan, *, people: bool) -> Iterator[_Term]:
+    """The vocabulary terms of people (``people``) or of other entities, less the readers'
+    own names: a reader is never a third party."""
+    kind = "third_party" if people else "vocabulary"
     for folded, entry in _vocabulary_entries(scan):
         entity = entry.get("entity")
         is_person = isinstance(entity, str) and entity.startswith(PERSON_PREFIX)
@@ -1349,17 +1379,14 @@ def _term_findings(scan: Scan, *, people: bool) -> Iterator[Finding]:
         )
         sealed_from = _ids(entry.get("sealed_from"))
         severity = _term_severity(scan, label, sealed_from)
-        for start, end in scan.spans(folded):
-            yield scan.finding(
-                kind,
-                start,
-                end,
-                rule=rule,
-                severity=severity,
-                entity=entity,
-                label=label,
-                sealed_from=sealed_from,
-            )
+        yield _Term(folded, kind, entity, label, sealed_from, severity)
+
+
+def _term_findings(scan: Scan, *, people: bool) -> Iterator[Finding]:
+    rule = "person-name" if people else "term"
+    for term in _terms_of(scan, people=people):
+        for start, end in scan.spans(term.folded):
+            yield term.finding(scan, start, end, rule=rule)
 
 
 def detect_vocabulary(scan: Scan) -> Iterator[Finding]:
@@ -1372,6 +1399,65 @@ def detect_third_parties(scan: Scan) -> Iterator[Finding]:
     """A ``third_party`` finding for each whole-word occurrence of a person's disclosure
     term, when that person is not a reader."""
     return _term_findings(scan, people=True)
+
+
+#: Where a word inside a link's path or query breaks without a separator: a lower-case
+#: letter before a capital (``heronTerms``), a capital before a capitalised word
+#: (``PDFTerms``), and letters beside digits (``heron2026``).
+_GLUED_WORD_BREAK = re.compile(
+    r"(?<=[^\W\d_])(?=\d)|(?<=\d)(?=[^\W\d_])"
+    r"|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
+)
+#: What separates two words of a link's path or query: anything but a letter or a digit.
+_LINK_SEPARATOR = re.compile(r"[\W_]+")
+#: The scheme and authority a destination starts with; its host is :func:`scan_links`'s.
+_LINK_AUTHORITY = re.compile(
+    r"^\s*(?:[A-Za-z][A-Za-z0-9+.-]{0,31}:)?(?:[/\\]{2,}[^/\\?#]*)?"
+)
+
+
+def link_words(destination: str) -> str:
+    """The words of a link destination's path, query and fragment, one space apart.
+
+    Percent-escapes and character references are decoded, and words glued together by
+    case or by digits are split, so a term a link spells out reads as the term.
+
+    >>> link_words("https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms")
+    'Heron Acquisition terms 2026 pdf p heron Terms'
+    >>> link_words("https://example.org/%48eron&amp;x")
+    'Heron x'
+    """
+    decoded = unquote(html.unescape(destination))
+    rest = _LINK_AUTHORITY.sub("", decoded, count=1)
+    return " ".join(_LINK_SEPARATOR.split(_GLUED_WORD_BREAK.sub(" ", rest))).strip()
+
+
+def detect_link_terms(scan: Scan) -> Iterator[Finding]:
+    """A ``vocabulary`` or ``third_party`` finding, rule ``term-in-link``, for a disclosure
+    term a link or image destination spells out in its path, query or fragment only by
+    gluing it to other words (``/HeronTerms.pdf``, ``?p=heron2026``), which the whole-word
+    readings of :func:`detect_vocabulary` and :func:`detect_third_parties` do not see.
+
+    The destination's words are read with :func:`link_words` and matched as those two
+    match the message, so the finding is the same kind, label and severity as the term's
+    anywhere else; it spans the whole destination. A term those two already found inside
+    the destination is not found again. The host is not read: that is
+    :func:`scan_links`' concern (liaise #46).
+    """
+    spans = _link_spans(scan.text)
+    if not spans:
+        return
+    links = [
+        (start, end, normalise(link_words(scan.text[start:end])))
+        for start, end in spans
+    ]
+    for term in (*_terms_of(scan, people=False), *_terms_of(scan, people=True)):
+        found = scan.spans(term.folded)
+        for start, end, words in links:
+            if any(start <= s and e <= end for s, e in found):
+                continue  # the message reading already found it in this destination
+            if next(iter(words.spans(term.folded)), None) is not None:
+                yield term.finding(scan, start, end, rule="term-in-link")
 
 
 # ---- exfiltration: links and images ----
@@ -1686,6 +1772,13 @@ def link_urls(text: str) -> tuple[str, ...]:
     >>> link_urls("See [the docs](https://example.org/a) and https://example.com/b.")
     ('https://example.org/a', 'https://example.com/b')
     """
+    spans = _link_spans(text)
+    return tuple(dict.fromkeys(text[start:end] for start, end in spans))
+
+
+def _link_spans(text: str) -> list[tuple[int, int]]:
+    """``(start, end)`` of every link and image destination in ``text``, in order, as
+    :func:`link_urls` reads them."""
     found: dict[int, int] = {}
     parsed = chain_iterables(
         _markdown_destinations(text), _html_destinations(text), _text_urls(text)
@@ -1699,7 +1792,7 @@ def link_urls(text: str) -> tuple[str, ...]:
         if index >= 0 and starts[index] <= start < spans[index][1]:
             continue  # inside a URL already found
         found[start] = max(end, found.get(start, end))
-    return tuple(dict.fromkeys(text[start:end] for start, end in sorted(found.items())))
+    return sorted(found.items())
 
 
 # ---- exfiltration: encoded runs ----
@@ -2126,6 +2219,7 @@ DFLT_DETECTORS: tuple[Detector, ...] = (
     detect_exfiltration,
     detect_personal,
     detect_third_parties,
+    detect_link_terms,
 )
 
 
