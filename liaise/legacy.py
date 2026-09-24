@@ -17,9 +17,11 @@ so :func:`legacy_decision` takes what they held back as given rather than runnin
 twice. Its answer is 0.1's own vocabulary: ``send``, or a draft for the operator (recorded
 as the flow ``approve``, which is what a 0.1 divert was).
 
-**Agreement is by flow class** (:func:`flow_class`): a message either goes out with no
-person looking (``send``) or is held back (every other flow). 0.1 could say nothing finer,
-so a ``delay`` or a ``refuse`` the policy chose agrees with a 0.1 divert.
+**Agreement is by flow class** (:func:`flow_class`): a message is either sent at once
+(``send``) or held back (every other flow). 0.1 could say nothing finer, so a ``revise`` or
+a ``refuse`` the policy chose agrees with a 0.1 divert. A ``delay`` counts as held even on a
+subject whose outbox sends it unseen when its window passes, so on such a subject a 0.1
+``send`` against a policy ``delay`` is a disagreement: agreement errs low, never high.
 
 The counterfactual records the kinds 0.1 would have diverted on, never a value or a
 position: it is kept in the ledger beside the verdict, and the report reads counts only.
@@ -43,6 +45,9 @@ from liaise.policy import APPROVE, DRAFT_REPLY_MODE, SEND
 
 #: The version of liaise whose gate :func:`legacy_decision` replays.
 LEGACY_VERSION = "0.1"
+#: The channels 0.1 scanned when a subject named none, kept here so the replay outlives
+#: ``policy.public_channels``, which the policy no longer reads (ADR 0002).
+LEGACY_PUBLIC_CHANNELS = ("github",)
 #: The two flow classes agreement is measured by: out with no person looking, or held back.
 SENT, HELD = "sent", "held"
 #: What 0.1 diverted a message outside a case, or in draft reply mode, for.
@@ -144,7 +149,8 @@ def legacy_decision(
         elif subject.reply_mode_for(outbound.recipient) == DRAFT_REPLY_MODE:
             reasons.append(DRAFT_REPLY)
     policy = subject.policy
-    if outbound.channel in policy.public_channels:
+    public = getattr(policy, "public_channels", LEGACY_PUBLIC_CHANNELS)
+    if outbound.channel in public:
         parts = (outbound.text, getattr(outbound, "title", None) or "")
         kinds = dict.fromkeys(
             kind

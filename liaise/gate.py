@@ -628,10 +628,11 @@ def _void(approval: Approval, hashes: tuple[Optional[str], Optional[str]]) -> Co
     )
 
 
-#: The concerns 0.1's gate had no counterpart for: its policy (0.1's reply mode and leak
-#: scan are replayed instead), and the gate's own (0.1 hashed and bound nothing).
-_NOT_IN_LEGACY = frozenset(
-    {outbound_policy.__name__, outside_a_case.__name__, GATE_CONCERN}
+#: The filters 0.1's gate had that the gate still runs unchanged: a concern of theirs held
+#: the message in 0.1 too. Named, not inferred, so a filter added later is never mistaken
+#: for one 0.1 had (0.1's reply mode and leak scan are replayed by :mod:`liaise.legacy`).
+_SHARED_WITH_LEGACY = frozenset(
+    {writing_card.__name__, deslop.__name__, notify_recipient.__name__}
 )
 
 
@@ -643,7 +644,7 @@ def _counterfactual(
     The filters the gate shares with 0.1 held it back in 0.1 too. None when the replay
     itself fails: a counterfactual is a measurement, and never holds up a decision.
     """
-    shared = [c.filter for c in concerns if c.filter not in _NOT_IN_LEGACY]
+    shared = [c.filter for c in concerns if c.filter in _SHARED_WITH_LEGACY]
     try:
         return legacy_decision(
             outbound,

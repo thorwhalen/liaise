@@ -62,3 +62,10 @@ def test_every_policy_flow_has_a_class():
     assert {flow: flow_class(flow) for flow in FLOWS}["send"] == SENT
     assert all(flow_class(flow) == HELD for flow in FLOWS if flow != "send")
     assert flow_class(None) == HELD
+
+
+def test_the_replay_outlives_public_channels():
+    policy = SimpleNamespace(leak_terms=())
+    subject = SimpleNamespace(policy=policy, reply_mode_for=lambda person: "direct")
+    token = "ghp_" + "a" * 36
+    assert legacy_decision(_message(f"use {token}"), subject, in_case=True).flow == "approve"

@@ -812,3 +812,14 @@ def test_shadow_mode_holds_what_enforce_holds():
 
     assert shadow.send is None and shadow.flow == enforce.flow == "refuse"
     assert shadow.verdict.mode == "shadow"
+
+
+def test_a_filter_0_1_never_had_does_not_count_as_a_0_1_divert():
+    from liaise.gate import DFLT_OUTBOUND_FILTERS
+
+    def later_check(outbound, ctx):
+        return Divert("a later check", flow="refuse")
+
+    decision = run_gate(_outbound(), _context(), outbound_filters=(*DFLT_OUTBOUND_FILTERS, later_check))
+
+    assert decision.flow == "refuse" and decision.counterfactual.flow == "send"

@@ -99,6 +99,7 @@ _AUDIT_KEYS = frozenset(
         "payload_hash",
         "audience_hash",
         "approval_bound",
+        "counterfactual",  # 0.1's would-be answer, for the gate report: not the gate's
     }
 )
 #: How a held message's audience reads when no verdict names it.
