@@ -960,6 +960,12 @@ class Scan:
         return render(self.text)
 
     @cached_property
+    def destinations(self) -> Destinations:
+        """Every link and image destination of the message (:func:`_destinations`), parsed
+        once for the detectors that read them."""
+        return _destinations(self.text)
+
+    @cached_property
     def normalised(self) -> tuple[Normalised, ...]:
         """The readings of the message folded for matching terms: as written, and rendered."""
         readings = (_view_of(self.text), self.rendered)
@@ -1427,10 +1433,19 @@ _LINK_AUTHORITY = re.compile(
 )
 
 
+#: :func:`_glued_word_breaks` for ASCII text, which is most of what links hold.
+_ASCII_GLUED_WORD_BREAK = re.compile(
+    r"(?<=[A-Za-z])(?=[0-9])|(?<=[0-9])(?=[A-Za-z])"
+    r"|(?<=[a-z])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])"
+)
+
+
 def _glued_word_breaks(text: str) -> str:
     """``text`` with a space wherever a word is glued to the next: a lower-case letter before
     a capital (``heronTerms``), a capital before a capitalised word (``PDFTerms``), and a
     letter beside a digit (``heron2026``), in any script."""
+    if text.isascii():
+        return _ASCII_GLUED_WORD_BREAK.sub(" ", text)
     out = []
     for index, char in enumerate(text):
         if index:
@@ -1488,17 +1503,28 @@ def detect_link_terms(scan: Scan) -> Iterator[Finding]:
     (a ``srcset`` candidate) is read once, with the one around it. The host is not read:
     that is :func:`scan_links`' concern (liaise #46).
     """
-    links = []
-    for start, end in _link_spans(scan.text):
-        if links and start < links[-1][1]:
+    terms = [
+        term
+        for people in (False, True)
+        for term in _terms_of(scan, people=people)
+        if len(term.folded.text) >= MIN_LINK_TERM_CHARS
+    ]
+    if not terms:
+        return
+    links, readings, last_end = [], {}, -1
+    for start, end in _link_spans(scan.text, destinations=scan.destinations):
+        if start < last_end:
             continue  # inside the destination before it
-        words = link_words(scan.text[start:end])
-        links.append((start, end, words, normalise(words)))
+        last_end = end
+        destination = scan.text[start:end]
+        if destination not in readings:  # a destination repeated is read once
+            words = link_words(destination)
+            readings[destination] = (words, normalise(words)) if words else None
+        if readings[destination] is not None:
+            links.append((start, end, *readings[destination]))
     if not links:
         return
-    for term in (*_terms_of(scan, people=False), *_terms_of(scan, people=True)):
-        if len(term.folded.text) < MIN_LINK_TERM_CHARS:
-            continue
+    for term in terms:
         found = scan.spans(term.folded)
         for start, end, words, reading in links:
             if any(start <= s and e <= end for s, e in found):
@@ -1768,6 +1794,22 @@ def _loose_urls(text: str) -> Iterator[tuple[int, int, frozenset, bool]]:
             yield match.start(), match.end("authority"), hosts, False
 
 
+#: ``(start, end, hosts, image)`` of one link or image destination.
+Destination = tuple[int, int, frozenset, bool]
+#: What :func:`_destinations` parses: the destinations its parsers read, then every
+#: ``//host`` anywhere (:func:`_loose_urls`), which backs them.
+Destinations = tuple[tuple[Destination, ...], tuple[Destination, ...]]
+
+
+def _destinations(text: str) -> Destinations:
+    """Every link and image destination of ``text``: Markdown (inline and reference), HTML
+    attributes and autolinks, plain URLs; then every ``//host`` anywhere."""
+    parsed = chain_iterables(
+        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
+    )
+    return tuple(parsed), tuple(_loose_urls(text))
+
+
 def scan_links(scan: Scan) -> Iterator[Finding]:
     """An ``exfiltration`` finding for each link or image whose host is not allowlisted.
 
@@ -1788,16 +1830,14 @@ def scan_links(scan: Scan) -> Iterator[Finding]:
             previous_end, previous_image = found.get(start, (end, False))
             found[start] = (max(end, previous_end), image or previous_image)
 
-    parsed = chain_iterables(
-        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
-    )
+    parsed, loose = scan.destinations
     for start, end, hosts, image in parsed:
         if image:
             image_starts.add(start)
         consider(start, end, hosts, image)
     spans = sorted(found.items())
     starts = [start for start, _ in spans]
-    for start, end, hosts, _ in _loose_urls(text):
+    for start, end, hosts, _ in loose:
         index = bisect_right(starts, start) - 1
         if index >= 0 and starts[index] < start < spans[index][1][0]:
             continue  # inside a URL already found
@@ -1827,18 +1867,18 @@ def link_urls(text: str) -> tuple[str, ...]:
     return tuple(dict.fromkeys(text[start:end] for start, end in spans))
 
 
-def _link_spans(text: str) -> list[tuple[int, int]]:
+def _link_spans(
+    text: str, *, destinations: Optional[Destinations] = None
+) -> list[tuple[int, int]]:
     """``(start, end)`` of every link and image destination in ``text``, in order, as
-    :func:`link_urls` reads them."""
+    :func:`link_urls` reads them; from ``destinations`` when they were parsed already."""
+    parsed, loose = destinations or _destinations(text)
     found: dict[int, int] = {}
-    parsed = chain_iterables(
-        _markdown_destinations(text), _html_destinations(text), _text_urls(text)
-    )
     for start, end, _, _ in parsed:
         found[start] = max(end, found.get(start, end))
     spans = sorted(found.items())
     starts = [start for start, _ in spans]
-    for start, end, _, _ in _loose_urls(text):
+    for start, end, _, _ in loose:
         index = bisect_right(starts, start) - 1
         if index >= 0 and starts[index] <= start < spans[index][1]:
             continue  # inside a URL already found
