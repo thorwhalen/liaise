@@ -36,7 +36,15 @@ from liaise.detect import link_urls, visible
 from liaise.gate import DFLT_OUTBOUND_FILTERS, OutboundFilter
 from liaise.holds import DFLT_SET_BY
 from liaise.ledger import Ledger
-from liaise.model import CASE_STATES, PR_STATES, Approval, Case, LedgerEntry, require_one_of, states_for
+from liaise.model import (
+    CASE_STATES,
+    PR_STATES,
+    Approval,
+    Case,
+    LedgerEntry,
+    require_one_of,
+    states_for,
+)
 from liaise.outbox import held_id
 from liaise.policy import audience_in_words
 from liaise.processor import RUNNING

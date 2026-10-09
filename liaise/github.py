@@ -199,9 +199,7 @@ class GitHub(Protocol):
         """The pull request's unified diff against its base, as GitHub computes it."""
         ...
 
-    def post_review(
-        self, repo: str, number: int, body: str, *, event: str
-    ) -> None:
+    def post_review(self, repo: str, number: int, body: str, *, event: str) -> None:
         """Post a review with ``body`` and ``event`` (one of :data:`REVIEW_EVENTS`) on a pull request."""
         ...
 
@@ -487,9 +485,7 @@ class GhCli:
     def pull_diff(self, repo: str, number: int) -> str:
         return self._run("pr", "diff", str(number), "--repo", repo)
 
-    def post_review(
-        self, repo: str, number: int, body: str, *, event: str
-    ) -> None:
+    def post_review(self, repo: str, number: int, body: str, *, event: str) -> None:
         if event not in _REVIEW_FLAGS:
             raise ValueError(
                 f"review event {event!r} is not one of: {', '.join(REVIEW_EVENTS)}"
@@ -594,7 +590,9 @@ class FakeGitHub:
         if pull:
             found = self.get_pull(repo, number)
             new_labels = tuple(dict.fromkeys((*found.labels, *labels)))
-            self._pulls[self._pull_key(repo, number)] = replace(found, labels=new_labels)
+            self._pulls[self._pull_key(repo, number)] = replace(
+                found, labels=new_labels
+            )
             return
         issue = self.get_issue(repo, number)
         new_labels = tuple(dict.fromkeys((*issue.labels, *labels)))
@@ -606,7 +604,9 @@ class FakeGitHub:
         if pull:
             found = self.get_pull(repo, number)
             new_labels = tuple(l for l in found.labels if l not in labels)
-            self._pulls[self._pull_key(repo, number)] = replace(found, labels=new_labels)
+            self._pulls[self._pull_key(repo, number)] = replace(
+                found, labels=new_labels
+            )
             return
         issue = self.get_issue(repo, number)
         new_labels = tuple(l for l in issue.labels if l not in labels)
@@ -655,7 +655,9 @@ class FakeGitHub:
     def list_pulls(
         self, repo: str, *, author: Optional[str] = None, state: str = "open"
     ) -> list[Pull]:
-        result = [p for p in self._pulls.values() if p.repo.casefold() == repo.casefold()]
+        result = [
+            p for p in self._pulls.values() if p.repo.casefold() == repo.casefold()
+        ]
         if state != "all":
             result = [p for p in result if p.state == state]
         if author is not None:
@@ -672,9 +674,7 @@ class FakeGitHub:
         self.get_pull(repo, number)
         return self._diffs.get(self._pull_key(repo, number), "")
 
-    def post_review(
-        self, repo: str, number: int, body: str, *, event: str
-    ) -> None:
+    def post_review(self, repo: str, number: int, body: str, *, event: str) -> None:
         if event not in REVIEW_EVENTS:
             raise ValueError(
                 f"review event {event!r} is not one of: {', '.join(REVIEW_EVENTS)}"

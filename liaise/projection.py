@@ -142,11 +142,15 @@ def project_labels(
     waiting = None if pull else waiting_label(case, subject)
     claims = subject.policy.claim_labels
     candidates = dict.fromkeys((*subject.policy.waiting_labels.values(), *stale))
-    not_waiting = [] if pull else [
-        label
-        for label in candidates
-        if label and label != waiting and label not in claims
-    ]
+    not_waiting = (
+        []
+        if pull
+        else [
+            label
+            for label in candidates
+            if label and label != waiting and label not in claims
+        ]
+    )
     shown = f"{current} and {waiting}" if waiting else current
     removing = f"any other {prefix} {'review' if pull else 'state'} label" + (
         " and waiting label" if not_waiting else ""

@@ -577,7 +577,8 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
     policy = _policy_from(_table(raw, "policy", path=path, dotted="policy"), path=path)
     label_prefix = raw.get("label_prefix", DFLT_LABEL_PREFIX)
     state_labels = {
-        f"{label_prefix}{state}" for state in (*CASE_STATES, *PR_STATES, HOLD_LABEL_SUFFIX)
+        f"{label_prefix}{state}"
+        for state in (*CASE_STATES, *PR_STATES, HOLD_LABEL_SUFFIX)
     }
     clashing = sorted(set(policy.waiting_labels.values()) & state_labels)
     if clashing:
@@ -992,7 +993,10 @@ def _review_from(
         authors=tuple(dict.fromkeys(authors)),
         repos=repos,
         merge=_choice(
-            review.get("merge", DFLT_MERGE), MERGE_MODES, path=path, dotted="review.merge"
+            review.get("merge", DFLT_MERGE),
+            MERGE_MODES,
+            path=path,
+            dotted="review.merge",
         ),
         require_checks=_boolean(
             review,

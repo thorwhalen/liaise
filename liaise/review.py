@@ -568,7 +568,11 @@ def merge_blockers(
     if case.state != APPROVED:
         reasons.append(f"not in {APPROVED} ({case.state})")
     approved_at = posted_at(case, pull.head_sha) if review is not None else None
-    if review is not None and review.detail.get("verdict") == APPROVE and approved_at is None:
+    if (
+        review is not None
+        and review.detail.get("verdict") == APPROVE
+        and approved_at is None
+    ):
         reasons.append("the approval has not been posted yet")
     if pull.state != "open":
         reasons.append(f"the pull request is {pull.state}")
@@ -690,7 +694,9 @@ def compose_review_prompt(
     briefs = ["## Briefs"]
     brief = subject.brief_for(person)
     if brief:
-        setting = f"policy.briefs.{person}" if person in subject.policy.briefs else "brief"
+        setting = (
+            f"policy.briefs.{person}" if person in subject.policy.briefs else "brief"
+        )
         briefs += ["", _read_brief(brief, where=where, setting=setting).strip()]
     if policy.brief:
         briefs += [
@@ -838,7 +844,9 @@ class ReviewStep:
             tick.labeler,
             problem=lambda text: tick.problem(f"review {slug}: {text}"),
         )
-        tick.say(f"review {slug}: {len(pulls)} open pull request(s) by reviewed authors")
+        tick.say(
+            f"review {slug}: {len(pulls)} open pull request(s) by reviewed authors"
+        )
         for pull in sorted(pulls, key=lambda p: (p.repo, p.number)):
             seen.add(pull.ref)
             try:
@@ -857,7 +865,9 @@ class ReviewStep:
             try:
                 self._notice_merged_elsewhere(subject, case)
             except Exception as error:
-                tick.problem(f"reading {case.conversations[0]} failed: {error_text(error)}")
+                tick.problem(
+                    f"reading {case.conversations[0]} failed: {error_text(error)}"
+                )
 
     def collected(
         self, subject: Subject, case: Case, run: RunRecord, result: RunResult
@@ -999,7 +1009,11 @@ class ReviewStep:
         tick = self.tick
         reporter = subject.person_for_login(pull.author) or pull.author
         case = tick.ledger.new_case(
-            subject.slug, pull.ref, reporter=reporter, at=pull.created_at, kind=PULL_KIND
+            subject.slug,
+            pull.ref,
+            reporter=reporter,
+            at=pull.created_at,
+            kind=PULL_KIND,
         )
         entry = LedgerEntry(
             at=pull.created_at,
@@ -1031,7 +1045,9 @@ class ReviewStep:
     ) -> None:
         tick = self.tick
         sha = pull.head_sha
-        in_flight = [r for r in tick.ledger.runs(status=RUNNING) if r.case_id == case.id]
+        in_flight = [
+            r for r in tick.ledger.runs(status=RUNNING) if r.case_id == case.id
+        ]
         if in_flight:
             tick.say(f"{label}: run {in_flight[0].run_id} is still in flight")
             return
@@ -1081,7 +1097,9 @@ class ReviewStep:
         )
         hold = blocking_hold(tick.ledger, scopes, for_="start")
         if hold is not None:
-            tick.say(f"{label}: held by {hold.scope} ({hold.mode}) {hold.reason}".rstrip())
+            tick.say(
+                f"{label}: held by {hold.scope} ({hold.mode}) {hold.reason}".rstrip()
+            )
             return
         # The budget is checked before anything is read or posted: a diff is a request,
         # and a too-large verdict is a post, and neither is free.
@@ -1129,9 +1147,7 @@ class ReviewStep:
             )
             return
         bound = {repo.casefold() for repo in github_repos(subject)}
-        checkout = (
-            tick._workspace(subject) if pull.repo.casefold() in bound else None
-        )
+        checkout = tick._workspace(subject) if pull.repo.casefold() in bound else None
         if checkout is not None:
             conflict = checkout.conflict()
             if conflict is not None:
@@ -1149,7 +1165,10 @@ class ReviewStep:
             )
         except Exception as error:  # a brief that cannot be read
             self._start_failed(
-                subject, case, run_id=run_id, sha=sha,
+                subject,
+                case,
+                run_id=run_id,
+                sha=sha,
                 why=f"composing the prompt: {error_text(error)}",
             )
             return
@@ -1166,7 +1185,9 @@ class ReviewStep:
             disallowed_tools=DISALLOWED_REVIEW_TOOLS,
         )
         if tick.dry_run:
-            tick.say(f"{label}: would dispatch a review of head {sha[:8]} as run {run_id}")
+            tick.say(
+                f"{label}: would dispatch a review of head {sha[:8]} as run {run_id}"
+            )
             self._record_start(subject, case, job, sha)
             return
         if checkout is None:
@@ -1183,7 +1204,9 @@ class ReviewStep:
             if lock is not None or not checkout.acquire(
                 run_id=run_id, pid=os.getpid(), now=tick.now
             ):
-                tick.say(f"{label}: workspace_conflict: {lock or 'the checkout is locked'}")
+                tick.say(
+                    f"{label}: workspace_conflict: {lock or 'the checkout is locked'}"
+                )
                 return
         record, failure = tick._call("start", job)
         if failure is None and not isinstance(record, RunRecord):
@@ -1307,7 +1330,11 @@ class ReviewStep:
                 text=review.for_owner,
                 detail={"head_sha": head_sha, "run_id": run_id, "from": "review"},
             )
-        moved = f"; the head moved to {stale_head[:8]}, posted as a comment" if stale_head else ""
+        moved = (
+            f"; the head moved to {stale_head[:8]}, posted as a comment"
+            if stale_head
+            else ""
+        )
         tick.say(f"  review {case.id}: {review.verdict} on head {head_sha[:8]}{moved}")
         posted = post_verdict(
             subject,
@@ -1338,7 +1365,9 @@ class ReviewStep:
         if posted.sent:
             tick.sent.append(posted.outbound)
             if stale_head is None:
-                tick._transition(case.id, review.state, f"review posted: {review.verdict}")
+                tick._transition(
+                    case.id, review.state, f"review posted: {review.verdict}"
+                )
             noted = ", with a note for you" if review.for_owner else ""
             stale = ", of a commit no longer the head" if stale_head else ""
             tick._notice(
@@ -1362,7 +1391,9 @@ class ReviewStep:
         try:
             fresh = tick.labeler.get_pull(pull.repo, pull.number)
         except GitHubError as error:
-            tick.problem(f"{pull.ref}: reading it before merging failed: {error_text(error)}")
+            tick.problem(
+                f"{pull.ref}: reading it before merging failed: {error_text(error)}"
+            )
             return
         blockers = merge_blockers(
             fresh, case, policy, now=tick.now, hold=hold_label(subject)
@@ -1375,7 +1406,10 @@ class ReviewStep:
             return
         try:
             tick.labeler.merge_pull(
-                pull.repo, pull.number, method=policy.merge, match_head_sha=fresh.head_sha
+                pull.repo,
+                pull.number,
+                method=policy.merge,
+                match_head_sha=fresh.head_sha,
             )
         except Exception as error:
             why = error_text(error)
@@ -1396,7 +1430,11 @@ class ReviewStep:
         tick._entry(
             case.id,
             "run",
-            detail={"event": RUN_MERGED, "head_sha": fresh.head_sha, "method": policy.merge},
+            detail={
+                "event": RUN_MERGED,
+                "head_sha": fresh.head_sha,
+                "method": policy.merge,
+            },
         )
         tick.say(f"{label}: squash-merged head {fresh.head_sha[:8]}")
         tick._transition(case.id, MERGED, f"merged head {fresh.head_sha[:8]}")
@@ -1414,7 +1452,11 @@ class ReviewStep:
             tick._entry(
                 case.id,
                 "run",
-                detail={"event": RUN_MERGED, "head_sha": pull.head_sha, "elsewhere": True},
+                detail={
+                    "event": RUN_MERGED,
+                    "head_sha": pull.head_sha,
+                    "elsewhere": True,
+                },
             )
             tick._transition(case.id, MERGED, "merged outside liaise")
         elif pull.state != "open":
@@ -1512,7 +1554,9 @@ def post_verdict(
                 notes=decision.notes,
                 gate=decision.summary(),
             )
-            draft.update({"verdict": review.verdict, "event": event, "head_sha": head_sha})
+            draft.update(
+                {"verdict": review.verdict, "event": event, "head_sha": head_sha}
+            )
             current = ledger.get_case(case.id) or case
             ledger.save_case(replace(current, drafts=(*current.drafts, draft)))
             ledger.append(
@@ -1544,7 +1588,9 @@ def post_verdict(
                 f"posting the review failed: {why}",
                 extra={"decision": "send", "error": why},
             )
-            return replace(posted, notice=NOTICE_SEND_FAILED, cause=type(error).__name__)
+            return replace(
+                posted, notice=NOTICE_SEND_FAILED, cause=type(error).__name__
+            )
     if not dry_run:
         ledger.append(
             case.id,
@@ -1553,7 +1599,11 @@ def post_verdict(
                 kind="gate",
                 actor=actor,
                 text=passed.text,
-                detail={**detail, "decision": "send", **({"by": actor} if approval else {})},
+                detail={
+                    **detail,
+                    "decision": "send",
+                    **({"by": actor} if approval else {}),
+                },
             ),
         )
     verb = "would post" if dry_run else "posted"
@@ -1728,7 +1778,9 @@ def review_show_lines(ledger: Ledger, ref: str) -> list[str]:
     """What ``liaise review show`` adds before the case: each review, with its findings and note."""
     case = ledger.case_for_conversation(ref)
     if case is None or case.kind != PULL_KIND:
-        raise ValueError(f"no review case for {ref}; liaise review list shows what there is")
+        raise ValueError(
+            f"no review case for {ref}; liaise review list shows what there is"
+        )
     lines = [f"reviews of {ref} ({case.id}, {case.state}): {len(review_entries(case))}"]
     for entry in review_entries(case):
         detail = entry.detail
@@ -1742,7 +1794,9 @@ def review_show_lines(ledger: Ledger, ref: str) -> list[str]:
             where = finding.get("file", "")
             if finding.get("line") is not None:
                 where += f":{finding['line']}"
-            lines.append(f"    - {where} ({finding.get('severity')}): {finding.get('note')}")
+            lines.append(
+                f"    - {where} ({finding.get('severity')}): {finding.get('note')}"
+            )
         if detail.get("for_owner"):
             lines.append("    for you:")
             lines += [f"      {line}" for line in str(detail["for_owner"]).splitlines()]

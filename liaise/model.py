@@ -249,7 +249,9 @@ class Case(_Record):
     kind: str = ISSUE_KIND
 
     def __post_init__(self) -> None:
-        require_one_of(self.state, states_for(self.kind), what=f"{self.kind} case state")
+        require_one_of(
+            self.state, states_for(self.kind), what=f"{self.kind} case state"
+        )
 
     def with_entry(self, entry: LedgerEntry) -> Case:
         """This case with ``entry`` appended, and ``updated_at`` moved forward to it."""

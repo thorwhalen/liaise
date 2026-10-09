@@ -1660,14 +1660,18 @@ def review_post(
     ref = _pull_ref(repo, number)
     case = ledger.case_for_conversation(ref)
     if case is None or case.kind != "pull":
-        raise ValueError(f"no review case for {ref}; liaise review list shows what there is")
+        raise ValueError(
+            f"no review case for {ref}; liaise review list shows what there is"
+        )
     held = review_drafts(case)
     if not held:
         raise ValueError(f"{case.id} holds no verdict for you to post")
     _, draft = held[-1]
     subject = subjects.get(case.subject)
     if subject is None:
-        raise ValueError(f"{case.id} belongs to {case.subject}, which is not configured")
+        raise ValueError(
+            f"{case.id} belongs to {case.subject}, which is not configured"
+        )
     github = labeler if labeler is not None else GhCli()
     at = now if now is not None else datetime.now(timezone.utc)
     options = dict(
@@ -1686,7 +1690,9 @@ def review_post(
         f"audience: {decision.audience_words if decision else cases.AUDIENCE_UNKNOWN}",
     ]
     if decision is not None and decision.settled:
-        lines.append(f"gate: posts once you release it past {len(decision.settled)} concern(s):")
+        lines.append(
+            f"gate: posts once you release it past {len(decision.settled)} concern(s):"
+        )
         lines += [f"  [{c.flow}] {c.rule}: {c.text}" for c in decision.settled]
     else:
         lines.append("gate: passed")
@@ -1707,7 +1713,9 @@ def review_post(
         return "not posted"
     with ExitStack() as between_ticks:
         _hold_run_lock(between_ticks, global_config, case.id, done="posted")
-        posted, _ = release_review_draft(subject, case, draft, approval=approval, **options)
+        posted, _ = release_review_draft(
+            subject, case, draft, approval=approval, **options
+        )
     if not posted.sent:
         raise cw.CommandError(
             f"not posted: {posted.cause or 'the gate holds it back'}",
