@@ -1,0 +1,70 @@
+liaise.review
+=============
+
+.. automodule:: liaise.review
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      VERDICTS
+      SEVERITIES
+      VERDICT_EVENTS
+      REVIEW_PURPOSE
+      REVIEW_RULES_RESOURCE
+      DFLT_REVIEW_SUBDIR
+      MAX_ATTEMPTS_PER_SHA
+      RUN_STARTED
+      PULL_CLOSED
+      PULL_OPENED
+      TOO_LARGE_SUMMARY
+      REVIEW_FOOTER
+      REVIEWED_COMMIT_LINE
+      STALE_HEAD_NOTE
+      DISALLOWED_REVIEW_TOOLS
+      DATA_FRAME_BEFORE
+      MIN_FENCE
+      FINDING_LINE
+      REVIEW_ACTOR
+      OPERATOR_ACTOR
+      REVIEW_SCHEMA
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      attempts_for
+      closed_recorded
+      compose_review_prompt
+      diff_lines
+      fence_for
+      head_sha_of_run
+      latest_review
+      merge_blockers
+      parse_review
+      post_verdict
+      posted_at
+      pull_login
+      release_review_draft
+      review_body
+      review_drafts
+      review_entries
+      review_for
+      review_list_lines
+      review_provenance
+      review_repos
+      review_show_lines
+      run_events
+      scratch_dir
+      wanted_pulls
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Finding
+      Posted
+      Review
+      ReviewStep
+   

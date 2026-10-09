@@ -14,6 +14,11 @@ conversation, so two subjects polling the same one would starve each other:
 [`load_subjects()`](#liaise.subjects.load_subjects) refuses that. Several bindings of one subject may share a
 conversation (see [`poll_ref()`](#liaise.subjects.poll_ref)).
 
+**Reviewing pull requests.** A `[review]` table turns on the review of pull requests
+the subject’s partners open ([`ReviewPolicy`](#liaise.subjects.ReviewPolicy), [`liaise.review`](liaise.review.html.md#module-liaise.review)): whose, in
+which repositories, whether liaise merges them, and how. Without the table, no pull
+request is reviewed.
+
 **An inert subject.** `active = false` declares a subject that no tick acts on. It is
 loaded, validated, shown and used as gate context, but [`liaise.tick.run_once()`](liaise.tick.html.md#liaise.tick.run_once) polls
 none of its bindings and starts, delivers, nudges and labels none of its cases, and
@@ -34,21 +39,29 @@ roles = { pat = "partner" }
 
 ### Module Attributes
 
-| [`TAINTED_RUNS`](#liaise.subjects.TAINTED_RUNS)                  | `approve` (a run that read untrusted input needs the operator for any audience wider than them) or `send` (the subject waives that).                               |
-|--------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`DFLT_DELAY_MINUTES`](#liaise.subjects.DFLT_DELAY_MINUTES)            | Minutes a `delay` verdict holds a message in the outbox before the tick sends it (`policy.delay_minutes`; liaise #38); 0 sends it at once.                         |
-| [`RECOMMENDED_DELAY_MINUTES`](#liaise.subjects.RECOMMENDED_DELAY_MINUTES)     | The window a subject that turns the outbox on is advised to use (liaise ADR 0003).                                                                                 |
-| [`DFLT_DELAY_STALE_MINUTES`](#liaise.subjects.DFLT_DELAY_STALE_MINUTES)      | Minutes past its release after which a held message goes to the operator instead of out (`policy.delay_stale_minutes`): nobody watched the window it relied on.    |
-| [`DFLT_SUBJECTS_SUBDIR`](#liaise.subjects.DFLT_SUBJECTS_SUBDIR)          | Subject files live in this directory under the config root.                                                                                                        |
-| [`REPLY_MODES`](#liaise.subjects.REPLY_MODES)                   | `direct` posts replies to the conversation; `draft` holds them for the operator.                                                                                   |
-| [`DELIVERY_KINDS`](#liaise.subjects.DELIVERY_KINDS)                | `deploy` runs the delivery command; `pr_only` stops at a pull request.                                                                                             |
-| [`DELIVERY_PERS`](#liaise.subjects.DELIVERY_PERS)                 | `batch` once per tick, for every case delivered in it; `issue` for each case, right after that case's outcomes.                                                    |
-| [`WORKSPACE_KINDS`](#liaise.subjects.WORKSPACE_KINDS)               | Where a run works.                                                                                                                                                 |
-| [`GRADES`](#liaise.subjects.GRADES)                        | Authenticity grades, weakest first, as correspond names them.                                                                                                      |
-| [`REF_WILDCARDS`](#liaise.subjects.REF_WILDCARDS)                 | What makes a binding's conversation part a glob, which v0.1 cannot poll ("?" starts a binding's conditions, so it never gets that far).                            |
-| [`CASE_INSENSITIVE_REF_CHANNELS`](#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS) | Channels whose conversation references ignore case, so their bindings load lower-cased (see [`normalize_binding()`](#liaise.subjects.normalize_binding)). |
-| [`DFLT_WAITING_LABEL`](#liaise.subjects.DFLT_WAITING_LABEL)            | Each person's waiting label when a subject sets `policy.waiting_labels = true`.                                                                                    |
-| [`UNBOUND_SLUG`](#liaise.subjects.UNBOUND_SLUG)                  | The slug of [`unbound_subject()`](#liaise.subjects.unbound_subject).                                                                                    |
+| [`TAINTED_RUNS`](#liaise.subjects.TAINTED_RUNS)                  | `approve` (a run that read untrusted input needs the operator for any audience wider than them) or `send` (the subject waives that).                                                                                             |
+|--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_DELAY_MINUTES`](#liaise.subjects.DFLT_DELAY_MINUTES)            | Minutes a `delay` verdict holds a message in the outbox before the tick sends it (`policy.delay_minutes`; liaise #38); 0 sends it at once.                                                                                       |
+| [`RECOMMENDED_DELAY_MINUTES`](#liaise.subjects.RECOMMENDED_DELAY_MINUTES)     | The window a subject that turns the outbox on is advised to use (liaise ADR 0003).                                                                                                                                               |
+| [`DFLT_DELAY_STALE_MINUTES`](#liaise.subjects.DFLT_DELAY_STALE_MINUTES)      | Minutes past its release after which a held message goes to the operator instead of out (`policy.delay_stale_minutes`): nobody watched the window it relied on.                                                                  |
+| [`DFLT_SUBJECTS_SUBDIR`](#liaise.subjects.DFLT_SUBJECTS_SUBDIR)          | Subject files live in this directory under the config root.                                                                                                                                                                      |
+| [`REPLY_MODES`](#liaise.subjects.REPLY_MODES)                   | `direct` posts replies to the conversation; `draft` holds them for the operator.                                                                                                                                                 |
+| [`DELIVERY_KINDS`](#liaise.subjects.DELIVERY_KINDS)                | `deploy` runs the delivery command; `pr_only` stops at a pull request.                                                                                                                                                           |
+| [`DELIVERY_PERS`](#liaise.subjects.DELIVERY_PERS)                 | `batch` once per tick, for every case delivered in it; `issue` for each case, right after that case's outcomes.                                                                                                                  |
+| [`WORKSPACE_KINDS`](#liaise.subjects.WORKSPACE_KINDS)               | Where a run works.                                                                                                                                                                                                               |
+| [`GRADES`](#liaise.subjects.GRADES)                        | Authenticity grades, weakest first, as correspond names them.                                                                                                                                                                    |
+| [`REF_WILDCARDS`](#liaise.subjects.REF_WILDCARDS)                 | What makes a binding's conversation part a glob, which v0.1 cannot poll ("?" starts a binding's conditions, so it never gets that far).                                                                                          |
+| [`CASE_INSENSITIVE_REF_CHANNELS`](#liaise.subjects.CASE_INSENSITIVE_REF_CHANNELS) | Channels whose conversation references ignore case, so their bindings load lower-cased (see [`normalize_binding()`](#liaise.subjects.normalize_binding)).                                                               |
+| [`MERGE_MODES`](#liaise.subjects.MERGE_MODES)                   | `off` (liaise reviews and labels, and nobody merges through it) or `squash` (liaise squash-merges an approved pull request once its checks are green and the veto window has passed).                                            |
+| [`DFLT_REQUIRE_CHECKS`](#liaise.subjects.DFLT_REQUIRE_CHECKS)           | Whether a merge waits for the pull request's checks to pass (`review.require_checks`).                                                                                                                                           |
+| [`DFLT_VETO_MINUTES`](#liaise.subjects.DFLT_VETO_MINUTES)             | the window in which a person can push, or set the hold label, and stop it.                                                                                                                                                       |
+| [`DFLT_MAX_DIFF_LINES`](#liaise.subjects.DFLT_MAX_DIFF_LINES)           | The most lines of diff a review run is handed (`review.max_diff_lines`); a larger pull request gets `changes` and a request to split it, with no run.                                                                            |
+| [`DFLT_RUN_TESTS`](#liaise.subjects.DFLT_RUN_TESTS)                | off, since a partner's code would then run with the owner's credentials and checkout.                                                                                                                                            |
+| [`HOLD_LABEL_SUFFIX`](#liaise.subjects.HOLD_LABEL_SUFFIX)             | The suffix of the label a person sets on a pull request to keep liaise from merging it (`<label_prefix>hold`; see [`liaise.projection.hold_label()`](liaise.projection.html.md#liaise.projection.hold_label)). |
+| [`REVIEW_AUTHOR_PERMISSION`](#liaise.subjects.REVIEW_AUTHOR_PERMISSION)      | The permission whose holders' pull requests are reviewed when `review.authors` is not set: a pull request is a request for work to land.                                                                                         |
+| [`GITHUB_CHANNEL`](#liaise.subjects.GITHUB_CHANNEL)                | The channel whose handles name a pull request's author.                                                                                                                                                                          |
+| [`DFLT_WAITING_LABEL`](#liaise.subjects.DFLT_WAITING_LABEL)            | Each person's waiting label when a subject sets `policy.waiting_labels = true`.                                                                                                                                                  |
+| [`UNBOUND_SLUG`](#liaise.subjects.UNBOUND_SLUG)                  | The slug of [`unbound_subject()`](#liaise.subjects.unbound_subject).                                                                                                                                                  |
 
 ### Functions
 
@@ -65,14 +78,15 @@ roles = { pat = "partner" }
 
 ### Classes
 
-| [`BudgetPolicy`](#liaise.subjects.BudgetPolicy)([concurrent, timeout_minutes, ...])   | Limits on a subject's runs.                                                                                                       |
-|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
-| [`Delivery`](#liaise.subjects.Delivery)([kind, per, command])                     | How finished work reaches the partner.                                                                                            |
-| [`Policy`](#liaise.subjects.Policy)(people, roles[, default_reply_mode, ...])   | Who is who on a subject, what each may do, and how liaise answers them.                                                           |
-| [`ProcessorConfig`](#liaise.subjects.ProcessorConfig)([permission_mode])                 | How the subject's processor runs.                                                                                                 |
-| [`ReadinessPolicy`](#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.html.md#module-liaise.readiness)). |
-| [`Subject`](#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                            |
-| [`Workspace`](#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                             |
+| [`BudgetPolicy`](#liaise.subjects.BudgetPolicy)([concurrent, timeout_minutes, ...])   | Limits on a subject's runs.                                                                                                                      |
+|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Delivery`](#liaise.subjects.Delivery)([kind, per, command])                     | How finished work reaches the partner.                                                                                                           |
+| [`Policy`](#liaise.subjects.Policy)(people, roles[, default_reply_mode, ...])   | Who is who on a subject, what each may do, and how liaise answers them.                                                                          |
+| [`ProcessorConfig`](#liaise.subjects.ProcessorConfig)([permission_mode])                 | How the subject's processor runs.                                                                                                                |
+| [`ReadinessPolicy`](#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.html.md#module-liaise.readiness)).                |
+| [`ReviewPolicy`](#liaise.subjects.ReviewPolicy)([authors, repos, merge, ...])         | How a subject reviews the pull requests its partners open ([`liaise.review`](liaise.review.html.md#module-liaise.review)). |
+| [`Subject`](#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                           |
+| [`Workspace`](#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                                            |
 
 ### Exceptions
 
@@ -114,9 +128,34 @@ waits for the operator as a draft, as it did before the outbox existed.
 Minutes past its release after which a held message goes to the operator instead of out
 (`policy.delay_stale_minutes`): nobody watched the window it relied on. 0 never lapses.
 
+### liaise.subjects.DFLT_MAX_DIFF_LINES *= 4000*
+
+The most lines of diff a review run is handed (`review.max_diff_lines`); a larger pull
+request gets `changes` and a request to split it, with no run.
+
+### liaise.subjects.DFLT_REQUIRE_CHECKS *= True*
+
+Whether a merge waits for the pull request’s checks to pass (`review.require_checks`).
+
+### liaise.subjects.DFLT_RUN_TESTS *= False*
+
+off, since
+a partner’s code would then run with the owner’s credentials and checkout.
+
+* **Type:**
+  Whether a review run may run the pull request’s code (`review.run_tests`)
+
 ### liaise.subjects.DFLT_SUBJECTS_SUBDIR *= 'subjects'*
 
 Subject files live in this directory under the config root.
+
+### liaise.subjects.DFLT_VETO_MINUTES *= 60*
+
+the window in
+which a person can push, or set the hold label, and stop it.
+
+* **Type:**
+  Minutes after an approval before liaise merges (`review.veto_minutes`)
 
 ### liaise.subjects.DFLT_WAITING_LABEL *= 'needs-{person}'*
 
@@ -133,9 +172,27 @@ in it (`per = "batch"`), or for each case right after its outcomes
 (`per = "issue"`). Nothing tells the partner it is live without a run that
 succeeded. `pr_only` stops at a pull request and runs nothing.
 
+### liaise.subjects.GITHUB_CHANNEL *= 'github'*
+
+The channel whose handles name a pull request’s author.
+
 ### liaise.subjects.GRADES *= ('forged', 'claimed', 'platform', 'domain', 'bound', 'crypto')*
 
 Authenticity grades, weakest first, as correspond names them.
+
+### liaise.subjects.HOLD_LABEL_SUFFIX *= 'hold'*
+
+The suffix of the label a person sets on a pull request to keep liaise from merging it
+(`<label_prefix>hold`; see [`liaise.projection.hold_label()`](liaise.projection.html.md#liaise.projection.hold_label)).
+
+### liaise.subjects.MERGE_MODES *= ('off', 'squash')*
+
+`off` (liaise reviews and labels, and
+nobody merges through it) or `squash` (liaise squash-merges an approved pull request
+once its checks are green and the veto window has passed).
+
+* **Type:**
+  What a `[review]` table may say `merge` is
 
 ### *exception* liaise.subjects.NoSubjectBinding
 
@@ -205,13 +262,43 @@ a binding’s conditions, so it never gets that far).
 
 `direct` posts replies to the conversation; `draft` holds them for the operator.
 
+### liaise.subjects.REVIEW_AUTHOR_PERMISSION *= 'request_work'*
+
+The permission whose holders’ pull requests are reviewed when `review.authors` is
+not set: a pull request is a request for work to land.
+
 ### *class* liaise.subjects.ReadinessPolicy(quiet_minutes=10, go_minutes=2, markers=<factory>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.html.md#module-liaise.readiness)).
 
-### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True)
+### *class* liaise.subjects.ReviewPolicy(authors=(), repos=(), merge='off', require_checks=True, veto_minutes=60, brief='', max_diff_lines=4000, run_tests=False)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+How a subject reviews the pull requests its partners open ([`liaise.review`](liaise.review.html.md#module-liaise.review)).
+
+`authors` are the GitHub logins whose pull requests are reviewed (compared without
+regard to case); the loader fills it from the people whose role grants
+[`REVIEW_AUTHOR_PERMISSION`](#liaise.subjects.REVIEW_AUTHOR_PERMISSION) when the table does not say. `repos` are
+repositories reviewed besides the ones the subject binds, such as a public package’s.
+`merge` is one of [`MERGE_MODES`](#liaise.subjects.MERGE_MODES). `require_checks` makes a merge wait for green
+checks (a repository with no checks at all passes). `veto_minutes` is how long after
+an approval a merge waits, and a new push or the hold label in that window stops it.
+`brief` is the path of an extra brief the reviewer reads, if any. `max_diff_lines`
+is the most diff a run is handed. `run_tests` lets the reviewer run the pull
+request’s tests in a temporary worktree: off by default, because that runs a
+partner’s code on the owner’s machine with the owner’s credentials (ADR 0004).
+
+#### reviews(login)
+
+Whether pull requests by the GitHub login `login` are reviewed.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True, review=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -240,6 +327,13 @@ The brief a run on `person`’s case reads: theirs, else the subject’s, else N
 
 * **Return type:**
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+#### github_logins_of(person)
+
+The GitHub logins `person` writes from, in file order, each once.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 #### notify_address_for(person, , channels=None)
 
@@ -271,12 +365,23 @@ The permissions `role` grants on this subject (none for an unknown role).
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
+#### person_for_login(login)
+
+The person id a GitHub `login` resolves to through `policy.people`, or None.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
 #### reply_mode_for(person)
 
 `direct` or `draft`: the person’s override, else the subject’s default.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+#### review *: [ReviewPolicy](#liaise.subjects.ReviewPolicy) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+
+How the subject reviews its partners’ pull requests; None reviews none.
 
 #### source *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
 

@@ -32,32 +32,35 @@ nothing.
 
 ### Classes
 
-| [`Approval`](#liaise.Approval)(by, at[, payload_hash, ...])             | The operator's release of a held message, bound to the message and audience they saw.                                         |
-|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| [`Case`](#liaise.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                                       |
-| [`ClaudeHeadless`](#liaise.ClaudeHeadless)(\*[, claude_bin, runs_dir, ...])   | The default [`Processor`](#liaise.Processor): the `claude` CLI, headless, stream-JSON, detached.    |
-| [`EchoProcessor`](#liaise.EchoProcessor)(\*[, results, default, health])     | A [`Processor`](#liaise.Processor) that runs nothing: it records jobs and returns scripted results. |
-| [`FakeGitHub`](#liaise.FakeGitHub)([issues])                              | In-memory [`GitHub`](#liaise.GitHub), for tests.                                                 |
-| [`GateContext`](#liaise.GateContext)(\*, subject, now[, case, ...])        | What the filters may consult about one message.                                                                               |
-| [`GateDecision`](#liaise.GateDecision)(send, diverted[, notes, ...])        | What [`run_gate()`](#liaise.run_gate) decided: `send` a message, or why it is `diverted`.          |
-| [`GhCli`](#liaise.GhCli)(\*[, gh_bin])                               | The default [`GitHub`](#liaise.GitHub): every call shells out to the `gh` CLI.                   |
-| [`GitHub`](#liaise.GitHub)(\*args, \*\*kwargs)                        | What `liaise` needs from GitHub.                                                                                              |
-| [`GlobalConfig`](#liaise.GlobalConfig)(owner_login, state_dir[, ...])       | `~/.config/liaise/config.toml`: the owner, the state directory, and notifications.                                            |
-| [`Health`](#liaise.Health)(ok[, defer_until, error])                  | Whether a processor can take work now, and if not, until when or why.                                                         |
-| [`Hold`](#liaise.Hold)(scope, mode[, reason, set_by, set_at])       | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                                    |
-| [`IntakeReport`](#liaise.IntakeReport)(subject[, events, new_cases, ...])   | What one [`intake()`](#liaise.intake) of a subject took in.                                      |
-| [`Job`](#liaise.Job)(run_id, case_id, subject, prompt, cwd, ...)   | Everything a [`Processor`](#liaise.Processor) needs to run one case once.                           |
-| [`Ledger`](#liaise.Ledger)(store)                                     | What liaise has seen, its cases, runs and holds, the unrouted queue and the cursors.                                          |
-| [`LedgerEntry`](#liaise.LedgerEntry)(at, kind[, actor, grade, ...])        | One thing that happened on a case: appended, never changed.                                                                   |
-| [`Outbound`](#liaise.Outbound)(\*, ref, channel, recipient, ...[, ...]) | A message liaise would send: `text` for `recipient` (a person id) at `ref`.                                                   |
-| [`Outcome`](#liaise.Outcome)(kind[, text, questions, reason])          | One outcome a processor run reports: `kind` from `OUTCOME_KINDS`.                                                             |
-| [`Processor`](#liaise.Processor)(\*args, \*\*kwargs)                     | What the tick needs to run a case's work: the processor seam (`processor=`).                                                  |
-| [`Provenance`](#liaise.Provenance)([tainted, evidence])                   | What the run that wrote the message read: tainted, clean, or unknown.                                                         |
-| [`RunRecord`](#liaise.RunRecord)(run_id, case_id, subject, mode, ...)    | A processor run started on a case: how it was started, and where it is now.                                                   |
-| [`RunResult`](#liaise.RunResult)(run_id[, outcomes, usage, ...])         | What a finished run returned: its outcomes, what it cost, and how it ended.                                                   |
-| [`Subject`](#liaise.Subject)(slug, bindings, policy[, ...])            | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                        |
-| [`TickReport`](#liaise.TickReport)([plan_lines, dispatched, ...])         | What one [`run_once()`](#liaise.run_once) did or, in a dry run, would do.                          |
-| [`Verdict`](#liaise.Verdict)(\*, flow, route, reasons, axes, ...)      | What the policy decided about one message, and why (discussion §5.1).                                                         |
+| [`Approval`](#liaise.Approval)(by, at[, payload_hash, ...])             | The operator's release of a held message, bound to the message and audience they saw.                                                            |
+|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Case`](#liaise.Case)(id, subject, conversations, reporter, ...)   | One piece of work on a subject, from its first message to its delivery.                                                                          |
+| [`ClaudeHeadless`](#liaise.ClaudeHeadless)(\*[, claude_bin, runs_dir, ...])   | The default [`Processor`](#liaise.Processor): the `claude` CLI, headless, stream-JSON, detached.                       |
+| [`EchoProcessor`](#liaise.EchoProcessor)(\*[, results, default, health])     | A [`Processor`](#liaise.Processor) that runs nothing: it records jobs and returns scripted results.                    |
+| [`FakeGitHub`](#liaise.FakeGitHub)([issues])                              | In-memory [`GitHub`](#liaise.GitHub), for tests.                                                                    |
+| [`GateContext`](#liaise.GateContext)(\*, subject, now[, case, ...])        | What the filters may consult about one message.                                                                                                  |
+| [`GateDecision`](#liaise.GateDecision)(send, diverted[, notes, ...])        | What [`run_gate()`](#liaise.run_gate) decided: `send` a message, or why it is `diverted`.                             |
+| [`GhCli`](#liaise.GhCli)(\*[, gh_bin])                               | The default [`GitHub`](#liaise.GitHub): every call shells out to the `gh` CLI.                                      |
+| [`GitHub`](#liaise.GitHub)(\*args, \*\*kwargs)                        | What `liaise` needs from GitHub.                                                                                                                 |
+| [`GlobalConfig`](#liaise.GlobalConfig)(owner_login, state_dir[, ...])       | `~/.config/liaise/config.toml`: the owner, the state directory, and notifications.                                                               |
+| [`Health`](#liaise.Health)(ok[, defer_until, error])                  | Whether a processor can take work now, and if not, until when or why.                                                                            |
+| [`Hold`](#liaise.Hold)(scope, mode[, reason, set_by, set_at])       | A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, ...).                                                                       |
+| [`IntakeReport`](#liaise.IntakeReport)(subject[, events, new_cases, ...])   | What one [`intake()`](#liaise.intake) of a subject took in.                                                         |
+| [`Job`](#liaise.Job)(run_id, case_id, subject, prompt, cwd, ...)   | Everything a [`Processor`](#liaise.Processor) needs to run one case once.                                              |
+| [`Ledger`](#liaise.Ledger)(store)                                     | What liaise has seen, its cases, runs and holds, the unrouted queue and the cursors.                                                             |
+| [`LedgerEntry`](#liaise.LedgerEntry)(at, kind[, actor, grade, ...])        | One thing that happened on a case: appended, never changed.                                                                                      |
+| [`Outbound`](#liaise.Outbound)(\*, ref, channel, recipient, ...[, ...]) | A message liaise would send: `text` for `recipient` (a person id) at `ref`.                                                                      |
+| [`Outcome`](#liaise.Outcome)(kind[, text, questions, reason])          | One outcome a processor run reports: `kind` from `OUTCOME_KINDS`.                                                                                |
+| [`Processor`](#liaise.Processor)(\*args, \*\*kwargs)                     | What the tick needs to run a case's work: the processor seam (`processor=`).                                                                     |
+| [`Provenance`](#liaise.Provenance)([tainted, evidence])                   | What the run that wrote the message read: tainted, clean, or unknown.                                                                            |
+| [`Pull`](#liaise.Pull)(repo, number, title, author, body, ...)      | One pull request, as a review needs it (see [`liaise.review`](liaise.review.html.md#module-liaise.review)).                |
+| [`Review`](#liaise.Review)(verdict, summary[, findings, for_owner])   | A review run's verdict, as `parse_review()` reads it from the structured result.                                                                 |
+| [`ReviewPolicy`](#liaise.ReviewPolicy)([authors, repos, merge, ...])        | How a subject reviews the pull requests its partners open ([`liaise.review`](liaise.review.html.md#module-liaise.review)). |
+| [`RunRecord`](#liaise.RunRecord)(run_id, case_id, subject, mode, ...)    | A processor run started on a case: how it was started, and where it is now.                                                                      |
+| [`RunResult`](#liaise.RunResult)(run_id[, outcomes, usage, ...])         | What a finished run returned: its outcomes, what it cost, and how it ended.                                                                      |
+| [`Subject`](#liaise.Subject)(slug, bindings, policy[, ...])            | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                           |
+| [`TickReport`](#liaise.TickReport)([plan_lines, dispatched, ...])         | What one [`run_once()`](#liaise.run_once) did or, in a dry run, would do.                                             |
+| [`Verdict`](#liaise.Verdict)(\*, flow, route, reasons, axes, ...)      | What the policy decided about one message, and why (discussion §5.1).                                                                            |
 
 ### Exceptions
 
@@ -100,7 +103,7 @@ True
 False
 ```
 
-### *class* liaise.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None)
+### *class* liaise.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None, kind='issue')
 
 Bases: `_Record`
 
@@ -108,7 +111,9 @@ One piece of work on a subject, from its first message to its delivery.
 
 `id` is `<subject>-<n>`. `conversations` are the encoded refs
 (`github:example/app#12`) whose messages belong to it; `reporter` is the
-person who opened it; `state` is one of `CASE_STATES`. `entries` is the
+person who opened it; `state` is one of `states_for()` its `kind`, an
+`issue` (`CASE_STATES`) unless the case is a pull request under review
+(`pull`, `PR_STATES`; see [`liaise.review`](liaise.review.html.md#module-liaise.review)). `entries` is the
 append-only history and `drafts` the outbound messages diverted to the operator.
 `outbox` holds the messages the gate gave `delay`: each waits, cancellable, until
 its `release_at`, when the tick judges it again and sends it (liaise #38; see
@@ -126,7 +131,7 @@ This case with `entry` appended, and `updated_at` moved forward to it.
 
 This case in `state`, with a `transition` entry recording the change.
 
-Raises `ValueError` for a state outside `CASE_STATES`.
+Raises `ValueError` for a state outside the vocabulary of the case’s kind.
 
 * **Return type:**
   [`Case`](liaise.model.html.md#liaise.model.Case)
@@ -286,9 +291,34 @@ Test helper: labels created (via `create_label()`) for `repo`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
+#### merge_error *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+
+What the next merge fails with, if anything (a test sets it).
+
+#### merges *: [list](https://docs.python.org/3/builtins/stdtypes.html#list)[[tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [int](https://docs.python.org/3/builtins/functions.html#int), [str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]*
+
+`(repo, number, method, match_head_sha)`, in order.
+
+* **Type:**
+  Every merge made
+
+#### reviews *: [list](https://docs.python.org/3/builtins/stdtypes.html#list)[[tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [int](https://docs.python.org/3/builtins/functions.html#int), [str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]*
+
+`(repo, number, body, event)`, in order.
+
+* **Type:**
+  Every review posted
+
 #### seed(issue)
 
 Add or replace an issue, for test setup.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### seed_pull(pull, , diff=None)
+
+Add or replace a pull request, and its diff when given, for test setup.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -372,9 +402,9 @@ Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protoco
 
 What `liaise` needs from GitHub. Implemented by [`GhCli`](#liaise.GhCli) and [`FakeGitHub`](#liaise.FakeGitHub).
 
-#### add_labels(repo, number, labels)
+#### add_labels(repo, number, labels, , pull=False)
 
-Add one or more labels to an issue. No-op for a label already present.
+Add one or more labels to an issue, or with `pull` a pull request. No-op for a label already present.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -407,12 +437,36 @@ Read one issue, with its comments.
 * **Return type:**
   [`Issue`](liaise.github.html.md#liaise.github.Issue)
 
+#### get_pull(repo, number)
+
+Read one pull request, with its head commit, checks and mergeability as of now.
+
+* **Return type:**
+  [`Pull`](liaise.github.html.md#liaise.github.Pull)
+
 #### list_issues(repo, , label=None, author=None, state='open')
 
 List issues in `repo`, optionally filtered by label and/or author.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Issue`](liaise.github.html.md#liaise.github.Issue)]
+
+#### list_pulls(repo, , author=None, state='open')
+
+The pull requests of `repo` in `state` (`open`, `closed`, `merged`, `all`), by `author` when given.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Pull`](liaise.github.html.md#liaise.github.Pull)]
+
+#### merge_pull(repo, number, , method='squash', match_head_sha)
+
+Merge a pull request by `method`, only while its head is still `match_head_sha`.
+
+Raises [`GitHubError`](#liaise.GitHubError) when the head moved, the pull request cannot be
+merged, or GitHub refuses.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 #### post_comment(repo, number, body)
 
@@ -421,9 +475,23 @@ Post a comment on an issue.
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-#### remove_labels(repo, number, labels)
+#### post_review(repo, number, body, , event)
 
-Remove one or more labels from an issue. No-op for a label already absent.
+Post a review with `body` and `event` (one of `REVIEW_EVENTS`) on a pull request.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### pull_diff(repo, number)
+
+The pull request’s unified diff against its base, as GitHub computes it.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+#### remove_labels(repo, number, labels, , pull=False)
+
+Remove one or more labels from an issue, or with `pull` a pull request. No-op for a label already absent.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -473,7 +541,7 @@ One line per event taken in, per case, and per problem, under a summary line.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-### *class* liaise.Job(run_id, case_id, subject, prompt, cwd, permission_mode, timeout_minutes, json_schema, session_id=None)
+### *class* liaise.Job(run_id, case_id, subject, prompt, cwd, permission_mode, timeout_minutes, json_schema, session_id=None, disallowed_tools=())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -485,6 +553,9 @@ the work happens, and `json_schema` is the structured result the run must end
 with. `timeout_minutes` is the wall clock the tick enforces; a processor does not.
 `session_id` is the case’s stored session, if it has one: the tick hands it to
 [`Processor.resume()`](#liaise.Processor.resume), while `start` always opens a new session.
+`disallowed_tools` are Claude Code permission rules (`Bash(gh pr review:*)`) the
+run is denied whatever its permission mode (`claude --disallowedTools`): a review
+run is denied the tools that would post, merge or push (see [`liaise.review`](liaise.review.html.md#module-liaise.review)).
 
 ### *class* liaise.Ledger(store)
 
@@ -537,9 +608,12 @@ The case `encoded_ref` belongs to, or None.
 * **Return type:**
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`Case`](liaise.model.html.md#liaise.model.Case)]
 
-#### cases(, subject=None, state=None)
+#### cases(, subject=None, state=None, kind=None)
 
-Every case, or those of `subject` and/or in `state`, in no set order.
+Every case, or those of `subject`, in `state` and/or of `kind`, in no set order.
+
+`state` is a case state or a pull request’s review state; `kind` is one of
+[`CASE_KINDS`](liaise.model.html.md#liaise.model.CASE_KINDS).
 
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Case`](liaise.model.html.md#liaise.model.Case)]
@@ -662,12 +736,14 @@ Raises `ValueError` for a state outside [`MESSAGE_STATES`](liaise.model.html.md#
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`OutboundMessage`](liaise.model.html.md#liaise.model.OutboundMessage)]
 
-#### new_case(subject, conversation, , reporter, at)
+#### new_case(subject, conversation, , reporter, at, kind='issue', state=None)
 
 Open a case on `conversation` (an encoded ref), numbered `<subject>-<n>`.
 
-The case starts in `intake`. Raises `ValueError`, handing out no number, when
-the conversation already belongs to a case: its messages go to that case.
+The case starts in `intake`, or in `state` when given; a `pull` case (see
+[`liaise.review`](liaise.review.html.md#module-liaise.review)) in the first of [`PR_STATES`](liaise.model.html.md#liaise.model.PR_STATES). Raises
+`ValueError`, handing out no number, when the conversation already belongs to a
+case: its messages go to that case.
 
 * **Return type:**
   [`Case`](liaise.model.html.md#liaise.model.Case)
@@ -760,7 +836,7 @@ Keep what the hook asked the operator about, under `key`, until the tool runs.
 
 Move the case to `state`, recording a `transition` entry.
 
-Raises `ValueError`, writing nothing, for a state outside `CASE_STATES`.
+Raises `ValueError`, writing nothing, for a state outside the case’s vocabulary.
 
 * **Return type:**
   [`Case`](liaise.model.html.md#liaise.model.Case)
@@ -905,6 +981,66 @@ A run nobody can vouch for.
 * **Return type:**
   [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
 
+### *class* liaise.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=<factory>, url='')
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One pull request, as a review needs it (see [`liaise.review`](liaise.review.html.md#module-liaise.review)).
+
+`head_sha` is the commit the review is of; `base` the branch it targets;
+`mergeable` GitHub’s answer (None while it has not computed one); `checks` one of
+`CHECK_STATES`; `state` `open`, `closed` or `merged`.
+
+#### *property* ref *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)*
+
+The encoded conversation reference liaise keys the review case on, lower-cased as GitHub refs compare.
+
+### *class* liaise.Review(verdict, summary, findings=(), for_owner='')
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A review run’s verdict, as `parse_review()` reads it from the structured result.
+
+#### *property* event *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)*
+
+The GitHub review event this verdict is posted as.
+
+#### *property* state *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)*
+
+The review state this verdict moves the case to.
+
+#### to_dict()
+
+This review as JSON-ready data, as a `review` entry’s detail keeps it.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+### *class* liaise.ReviewPolicy(authors=(), repos=(), merge='off', require_checks=True, veto_minutes=60, brief='', max_diff_lines=4000, run_tests=False)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+How a subject reviews the pull requests its partners open ([`liaise.review`](liaise.review.html.md#module-liaise.review)).
+
+`authors` are the GitHub logins whose pull requests are reviewed (compared without
+regard to case); the loader fills it from the people whose role grants
+`REVIEW_AUTHOR_PERMISSION` when the table does not say. `repos` are
+repositories reviewed besides the ones the subject binds, such as a public package’s.
+`merge` is one of `MERGE_MODES`. `require_checks` makes a merge wait for green
+checks (a repository with no checks at all passes). `veto_minutes` is how long after
+an approval a merge waits, and a new push or the hold label in that window stops it.
+`brief` is the path of an extra brief the reviewer reads, if any. `max_diff_lines`
+is the most diff a run is handed. `run_tests` lets the reviewer run the pull
+request’s tests in a temporary worktree: off by default, because that runs a
+partner’s code on the owner’s machine with the owner’s credentials (ADR 0004).
+
+#### reviews(login)
+
+Whether pull requests by the GitHub login `login` are reviewed.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 ### *class* liaise.RunRecord(run_id, case_id, subject, mode, status, started_at, pid=None, heartbeat_at=None, ended_at=None, session_id=None, stream_path=None, cancel_sent_at=None)
 
 Bases: `_Record`
@@ -914,13 +1050,17 @@ A processor run started on a case: how it was started, and where it is now.
 `cancel_sent_at` is when the tick first cancelled the run for passing its wall clock:
 the lost-run deadline counts from it (see [`liaise.tick`](liaise.tick.html.md#module-liaise.tick)).
 
-### *class* liaise.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='')
+### *class* liaise.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=<factory>)
 
 Bases: `_Record`
 
 What a finished run returned: its outcomes, what it cost, and how it ended.
 
-### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True)
+`structured` is the run’s structured output as the processor read it, whatever its
+shape: a case run’s is the outcomes (already in `outcomes`), a review run’s is the
+verdict [`liaise.review`](liaise.review.html.md#module-liaise.review) parses.
+
+### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True, review=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -949,6 +1089,13 @@ The brief a run on `person`’s case reads: theirs, else the subject’s, else N
 
 * **Return type:**
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+#### github_logins_of(person)
+
+The GitHub logins `person` writes from, in file order, each once.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 #### notify_address_for(person, , channels=None)
 
@@ -980,12 +1127,23 @@ The permissions `role` grants on this subject (none for an unknown role).
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
+#### person_for_login(login)
+
+The person id a GitHub `login` resolves to through `policy.people`, or None.
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
 #### reply_mode_for(person)
 
 `direct` or `draft`: the person’s override, else the subject’s default.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+#### review *: [ReviewPolicy](liaise.subjects.html.md#liaise.subjects.ReviewPolicy) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+
+How the subject reviews its partners’ pull requests; None reviews none.
 
 #### source *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
 
@@ -1130,6 +1288,8 @@ delivery id the ledger has already seen (`duplicate`). Otherwise:
   message as its first entry, in `intake`. Otherwise it is unrouted with the reason.
   A closed issue’s opening opens no case.
 - Neither: it is not this subject’s (`ignored`), and it is not marked seen.
+- A message on a pull request (conversation kind `pull_request`) is `ignored`
+  whatever the bindings say: pull requests are [`liaise.review`](liaise.review.html.md#module-liaise.review)’s.
 
 **Legacy adoption.** An issue opening that already carries a
 `<label_prefix><state>` label opens its case in that state rather than `intake`,
@@ -1355,6 +1515,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`readiness`](liaise.readiness.html.md#module-liaise.readiness)   | Readiness: whether a case is ready to dispatch, read off its own ledger entries.                                     |
 | [`release`](liaise.release.html.md#module-liaise.release)       | Releasing a message: through the gate, then through correspond, as one step.                                         |
 | [`report`](liaise.report.html.md#module-liaise.report)         | `liaise gate report`: what the outbound gate did, in counts, and whether to enforce (liaise #39).                    |
+| [`review`](liaise.review.html.md#module-liaise.review)         | Reviewing partner pull requests: the `review` step of the tick, and `liaise review`.                                 |
 | [`schedule`](liaise.schedule.html.md#module-liaise.schedule)     | Scheduling `liaise run --once` (A.7): a launchd agent on macOS, a systemd user timer on Linux.                       |
 | [`subjects`](liaise.subjects.html.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.                                   |
 | [`testing`](liaise.testing.html.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                                        |

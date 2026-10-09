@@ -8,6 +8,14 @@ see at a glance. [`project_labels()`](#liaise.projection.project_labels) makes e
 label: the other state labels come off, then the current one goes on. It is the one place
 a state label changes, so the one-label invariant is kept there.
 
+**Pull requests.** A review case (`kind == "pull"`, [`liaise.review`](liaise.review.md#module-liaise.review)) carries one
+of [`PR_STATES`](liaise.model.md#liaise.model.PR_STATES) instead, as `liaise:pr-approved`, on its pull request.
+The two vocabularies never touch: projecting a pull request’s state removes only the other
+pull-request labels, and projecting an issue’s removes only the other case labels, so a
+label from the wrong vocabulary, however it got there, is left alone. Pull requests get no
+waiting label. `HOLD_LABEL` (`liaise:hold`) is the one label a person sets on a
+pull request: it keeps liaise from merging it.
+
 **Waiting labels.** When a subject sets `policy.waiting_labels`, a case that waits on a
 person ([`WAITING_STATES`](#liaise.projection.WAITING_STATES): its reporter was asked) also carries that person’s label,
 `needs-pat`, and the same function keeps that invariant too: at most one waiting label,
@@ -24,19 +32,21 @@ tests), since correspond has no label operations yet. Only a case’s
 
 ### Module Attributes
 
-| [`GITHUB_CHANNEL`](#liaise.projection.GITHUB_CHANNEL)            | The channel whose conversations carry labels.                                       |
-|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [`LABEL_SPECS_RESOURCE`](#liaise.projection.LABEL_SPECS_RESOURCE)      | Each state label's description and colour, in `liaise/data`.                        |
-| [`DFLT_LABEL_COLOR`](#liaise.projection.DFLT_LABEL_COLOR)          | GitHub's own grey.                                                                  |
-| [`CLAIM_LABEL_DESCRIPTION`](#liaise.projection.CLAIM_LABEL_DESCRIPTION)   | What a claim label says on GitHub, formatted with the person it files an issue for. |
-| [`WAITING_STATES`](#liaise.projection.WAITING_STATES)            | its reporter, asked a question or a proposal.                                       |
-| [`WAITING_LABEL_DESCRIPTION`](#liaise.projection.WAITING_LABEL_DESCRIPTION) | What a waiting label says on GitHub, formatted with the person the case waits on.   |
+| [`GITHUB_CHANNEL`](#liaise.projection.GITHUB_CHANNEL)            | The channel whose conversations carry labels.                                                                                                                                                          |
+|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`LABEL_SPECS_RESOURCE`](#liaise.projection.LABEL_SPECS_RESOURCE)      | Each state label's description and colour, in `liaise/data`.                                                                                                                                           |
+| [`DFLT_LABEL_COLOR`](#liaise.projection.DFLT_LABEL_COLOR)          | GitHub's own grey.                                                                                                                                                                                     |
+| [`CLAIM_LABEL_DESCRIPTION`](#liaise.projection.CLAIM_LABEL_DESCRIPTION)   | What a claim label says on GitHub, formatted with the person it files an issue for.                                                                                                                    |
+| [`WAITING_STATES`](#liaise.projection.WAITING_STATES)            | its reporter, asked a question or a proposal.                                                                                                                                                          |
+| [`WAITING_LABEL_DESCRIPTION`](#liaise.projection.WAITING_LABEL_DESCRIPTION) | What a waiting label says on GitHub, formatted with the person the case waits on.                                                                                                                      |
+| [`HOLD_LABEL_SPEC`](#liaise.projection.HOLD_LABEL_SPEC)           | The spec key, in `labels.json`, of the label a person puts on a pull request to keep liaise from merging it: `<label_prefix>hold` (see [`hold_label()`](#liaise.projection.hold_label)). |
 
 ### Functions
 
 | [`github_issue`](#liaise.projection.github_issue)(conversation)                        | `(owner/repo, number)` for an encoded `github:owner/repo#N`, else None.                      |
 |----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
 | [`github_repos`](#liaise.projection.github_repos)(subject)                             | The `owner/repo` of each GitHub repository `subject` binds, once each, in binding order.     |
+| [`hold_label`](#liaise.projection.hold_label)(subject)                               | The label that keeps liaise from merging a pull request of `subject`: `liaise:hold`.         |
 | [`project_labels`](#liaise.projection.project_labels)(case, subject, \*, labeler[, ...]) | Label each of `case`'s GitHub issues with its state, and with no other state.                |
 | [`setup_labels`](#liaise.projection.setup_labels)(labeler, subject)                    | Create the labels `subject` needs in each GitHub repository it binds; a line per repository. |
 | [`waiting_label`](#liaise.projection.waiting_label)(case, subject)                      | The waiting label `case` carries now: its reporter's while it waits on them, else None.      |
@@ -55,6 +65,11 @@ GitHub’s own grey.
 ### liaise.projection.GITHUB_CHANNEL *= 'github'*
 
 The channel whose conversations carry labels.
+
+### liaise.projection.HOLD_LABEL_SPEC *= 'hold'*
+
+The spec key, in `labels.json`, of the label a person puts on a pull request to keep
+liaise from merging it: `<label_prefix>hold` (see [`hold_label()`](#liaise.projection.hold_label)).
 
 ### liaise.projection.LABEL_SPECS_RESOURCE *= 'labels.json'*
 
@@ -97,6 +112,19 @@ names none. Repositories compare without regard to case, as GitHub’s do.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
+### liaise.projection.hold_label(subject)
+
+The label that keeps liaise from merging a pull request of `subject`: `liaise:hold`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+```pycon
+>>> from liaise.subjects import Policy
+>>> hold_label(Subject("app", ("github:example/app",), Policy(people={}, roles={})))
+'liaise:hold'
+```
+
 ### liaise.projection.project_labels(case, subject, , labeler, dry_run=False, stale=())
 
 Label each of `case`’s GitHub issues with its state, and with no other state.
@@ -118,10 +146,13 @@ calls nothing on `labeler`. A `GitHubError` from `labeler` propagates.
 Create the labels `subject` needs in each GitHub repository it binds; a line per repository.
 
 Those are its `policy.claim_labels`, the routing labels a relay puts on the issues it
-files; its `policy.waiting_labels`, coloured as the state they go with; and one
-`<label_prefix><state>` label per case state, described and coloured as
-`data/labels.json` says. Idempotent, since `create_label` updates a label that
-already exists. A `GitHubError` from `labeler` propagates.
+files; its `policy.waiting_labels`, coloured as the state they go with; one
+`<label_prefix><state>` label per case state and per pull-request review state,
+described and coloured as `data/labels.json` says; and [`hold_label()`](#liaise.projection.hold_label). The
+repositories are the ones the subject binds and, when it reviews pull requests, the
+ones its `[review]` table adds ([`liaise.review.review_repos()`](liaise.review.md#liaise.review.review_repos)). Idempotent,
+since `create_label` updates a label that already exists. A `GitHubError` from
+`labeler` propagates.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]

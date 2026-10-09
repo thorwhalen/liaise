@@ -109,9 +109,12 @@ The case `encoded_ref` belongs to, or None.
 * **Return type:**
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`Case`](liaise.model.md#liaise.model.Case)]
 
-#### cases(, subject=None, state=None)
+#### cases(, subject=None, state=None, kind=None)
 
-Every case, or those of `subject` and/or in `state`, in no set order.
+Every case, or those of `subject`, in `state` and/or of `kind`, in no set order.
+
+`state` is a case state or a pull request’s review state; `kind` is one of
+[`CASE_KINDS`](liaise.model.md#liaise.model.CASE_KINDS).
 
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Case`](liaise.model.md#liaise.model.Case)]
@@ -234,12 +237,14 @@ Raises `ValueError` for a state outside [`MESSAGE_STATES`](liaise.model.md#liais
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`OutboundMessage`](liaise.model.md#liaise.model.OutboundMessage)]
 
-#### new_case(subject, conversation, , reporter, at)
+#### new_case(subject, conversation, , reporter, at, kind='issue', state=None)
 
 Open a case on `conversation` (an encoded ref), numbered `<subject>-<n>`.
 
-The case starts in `intake`. Raises `ValueError`, handing out no number, when
-the conversation already belongs to a case: its messages go to that case.
+The case starts in `intake`, or in `state` when given; a `pull` case (see
+[`liaise.review`](liaise.review.md#module-liaise.review)) in the first of [`PR_STATES`](liaise.model.md#liaise.model.PR_STATES). Raises
+`ValueError`, handing out no number, when the conversation already belongs to a
+case: its messages go to that case.
 
 * **Return type:**
   [`Case`](liaise.model.md#liaise.model.Case)
@@ -332,7 +337,7 @@ Keep what the hook asked the operator about, under `key`, until the tool runs.
 
 Move the case to `state`, recording a `transition` entry.
 
-Raises `ValueError`, writing nothing, for a state outside `CASE_STATES`.
+Raises `ValueError`, writing nothing, for a state outside the case’s vocabulary.
 
 * **Return type:**
   [`Case`](liaise.model.md#liaise.model.Case)

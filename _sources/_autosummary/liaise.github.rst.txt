@@ -4,6 +4,26 @@ liaise.github
 .. automodule:: liaise.github
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      PULL_LIST_LIMIT
+      CHECKS_SUCCESS
+      CHECKS_PENDING
+      CHECKS_FAILURE
+      CHECKS_NONE
+      CHECK_STATES
+      REVIEW_EVENTS
+      MERGE_METHODS
+      MERGED_STATE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      checks_state
+   
    .. rubric:: Classes
 
    .. autosummary::
@@ -13,6 +33,7 @@ liaise.github
       GhCli
       GitHub
       Issue
+      Pull
    
    .. rubric:: Exceptions
 

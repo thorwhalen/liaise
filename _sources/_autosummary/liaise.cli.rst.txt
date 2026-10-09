@@ -46,6 +46,9 @@ liaise.cli
       message_send_draft
       message_show
       migrate_config
+      review_list
+      review_post
+      review_show
       run
       schedule_install
       schedule_status_cmd

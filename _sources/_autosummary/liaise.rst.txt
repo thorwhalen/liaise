@@ -50,6 +50,9 @@
       Outcome
       Processor
       Provenance
+      Pull
+      Review
+      ReviewPolicy
       RunRecord
       RunResult
       Subject
@@ -94,6 +97,7 @@
    readiness
    release
    report
+   review
    schedule
    subjects
    testing

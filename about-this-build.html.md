@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-09-24 09:21 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/dff8da8835ac6e620eb24aff0886167ed50e265e"><code>dff8da8</code></a> on branch <code>main</code>, for **liaise 0.1.16** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-09 13:21 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/05be4b9aaab1a9b68c1e5a47a8ebb328f92414c6"><code>05be4b9</code></a> on branch <code>main</code>, for **liaise 0.1.17** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,7 +11,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/dff8da8835ac6e620eb24aff0886167ed50e265e"><code>dff8da8835ac6e620eb24aff0886167ed50e265e</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/05be4b9aaab1a9b68c1e5a47a8ebb328f92414c6"><code>05be4b9aaab1a9b68c1e5a47a8ebb328f92414c6</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -22,9 +22,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/35980449770">35980449770</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/37935985827">37935985827</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>dff8da8835ac6e620eb24aff0886167ed50e265e</code> (in the history of the built commit) |
+| Event commit | <code>05be4b9aaab1a9b68c1e5a47a8ebb328f92414c6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -33,7 +33,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | epythet  | 0.2.12  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
-| Python   | 3.12.14 |
+| Python   | 3.12.15 |
 
 ## Configuration as resolved
 
@@ -49,13 +49,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.16/">0.1.16</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/liaise/0.1.17/">0.1.17</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout dff8da8835ac6e620eb24aff0886167ed50e265e
+git checkout 05be4b9aaab1a9b68c1e5a47a8ebb328f92414c6
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

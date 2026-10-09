@@ -25,6 +25,9 @@ liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--ti
     [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
 liaise vet --hook
 liaise hook install | uninstall | status [--settings FILE]
+liaise review list [--subject SLUG]
+liaise review show REPO NUMBER
+liaise review post REPO NUMBER [--justification TEXT] [--dry-run]
 liaise subject list
 liaise subject show SLUG
 liaise setup SUBJECT
@@ -86,6 +89,9 @@ traceback.
 | [`message_send_draft`](#liaise.cli.message_send_draft)(message_id, \*[, edit, ...])     | Send a held message you approved, through the gate, as `liaise case send-draft` does.                        |
 | [`message_show`](#liaise.cli.message_show)(message_id, \*[, root, store])         | MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.                     |
 | [`migrate_config`](#liaise.cli.migrate_config)(\*[, root, apply])                   | Derive 0.1 subject files from a 0.0.x configuration, and print the plan.                                     |
+| [`review_list`](#liaise.cli.review_list)(\*[, subject, root, labeler, store])    | The open pull requests each reviewed subject's partners have, with their review state.                       |
+| [`review_post`](#liaise.cli.review_post)(repo, number, \*[, ...])                | Post a verdict the gate held for you, once you confirm it at a terminal.                                     |
+| [`review_show`](#liaise.cli.review_show)(repo, number, \*[, root, store])        | Every review of one pull request, then its case as `liaise case show` prints it.                             |
 | [`run`](#liaise.cli.run)(\*[, root, once, dry_run, subject, ...])        | One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.                     |
 | [`schedule_install`](#liaise.cli.schedule_install)(\*[, root, ...])                   | Install the scheduled `liaise run --once` job (launchd on macOS, systemd on Linux).                          |
 | [`schedule_status_cmd`](#liaise.cli.schedule_status_cmd)()                               | Whether the scheduled job is installed.                                                                      |
@@ -415,6 +421,45 @@ Derive 0.1 subject files from a 0.0.x configuration, and print the plan.
 Writes nothing without `--apply`, which creates each missing
 `subjects/<slug>.toml` and never overwrites one. Nothing else under the config root
 is touched.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.review_list(, subject=None, root=None, labeler=None, store=None)
+
+The open pull requests each reviewed subject’s partners have, with their review state.
+
+One line per subject with a `[review]` table (whose pull requests, in which
+repositories, whether liaise merges), then one per open pull request by a reviewed
+author: its state (`not yet taken in`, or the case’s state, with whether its head
+has been reviewed), whether it is a draft, its checks and its head commit. `--subject`
+lists one subject alone. It reads GitHub and the ledger, and changes nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.review_post(repo, number, , justification='', dry_run=False, root=None, registry=None, labeler=None, store=None, now=None, confirm=None)
+
+Post a verdict the gate held for you, once you confirm it at a terminal.
+
+The held verdict is the pull request’s `review` draft (`liaise review show` lists
+it). It is judged again by the gate, against who can read the pull request now; you
+are shown the audience, what the gate holds it back for, and the exact text; and it is
+posted as the review it was meant to be (approve, request changes, or a comment) only
+once you answer `y`. Your answer is an approval bound to that text and that
+audience, recorded with `--justification`. The case then moves to the verdict’s
+state, and its label follows on the next tick. `--dry-run` judges and shows, asks
+nothing and posts nothing. A verdict the gate diverts again exits 2.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.review_show(repo, number, , root=None, store=None)
+
+Every review of one pull request, then its case as `liaise case show` prints it.
+
+Each review with its head commit, verdict, summary, findings and the note for you;
+the verdicts held for you, with how to post them; then the case. Changes nothing.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

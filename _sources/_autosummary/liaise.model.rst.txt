@@ -10,6 +10,9 @@ liaise.model
    
       CASE_STATES
       INITIAL_CASE_STATE
+      PR_STATES
+      INITIAL_PR_STATE
+      CASE_KINDS
       ENTRY_KINDS
       OUTCOME_KINDS
       PERMISSIONS
@@ -21,6 +24,7 @@ liaise.model
    .. autosummary::
    
       require_one_of
+      states_for
       to_jsonable
    
    .. rubric:: Classes

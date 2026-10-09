@@ -14,6 +14,7 @@ liaise.projection
       CLAIM_LABEL_DESCRIPTION
       WAITING_STATES
       WAITING_LABEL_DESCRIPTION
+      HOLD_LABEL_SPEC
    
    .. rubric:: Functions
 
@@ -21,6 +22,7 @@ liaise.projection
    
       github_issue
       github_repos
+      hold_label
       project_labels
       setup_labels
       waiting_label

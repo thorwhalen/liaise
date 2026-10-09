@@ -18,6 +18,7 @@ liaise.processor
       CHILD_ENV_OVERRIDES
       DFLT_AUTH_CHECK
       DFLT_AUTH_TIMEOUT_S
+      DISALLOWED_TOOLS_FLAG
       PROMPT_POINTER
    
    .. rubric:: Functions

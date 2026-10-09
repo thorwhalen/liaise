@@ -20,6 +20,14 @@ liaise.subjects
       GRADES
       REF_WILDCARDS
       CASE_INSENSITIVE_REF_CHANNELS
+      MERGE_MODES
+      DFLT_REQUIRE_CHECKS
+      DFLT_VETO_MINUTES
+      DFLT_MAX_DIFF_LINES
+      DFLT_RUN_TESTS
+      HOLD_LABEL_SUFFIX
+      REVIEW_AUTHOR_PERMISSION
+      GITHUB_CHANNEL
       DFLT_WAITING_LABEL
       UNBOUND_SLUG
    
@@ -46,6 +54,7 @@ liaise.subjects
       Policy
       ProcessorConfig
       ReadinessPolicy
+      ReviewPolicy
       Subject
       Workspace
    

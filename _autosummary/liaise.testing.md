@@ -92,12 +92,14 @@ comment’s `updated_at`. Raises `ValueError` when that issue was never seeded.
 * **Return type:**
   `Message`
 
-#### add_issue(repo, number, , author, title, body, labels=(), created_at, grade=Grade.PLATFORM, state='open', is_self=False)
+#### add_issue(repo, number, , author, title, body, labels=(), created_at, grade=Grade.PLATFORM, state='open', is_self=False, kind='issue')
 
 Seed the opening post of issue `repo#number`; the next poll yields it.
 
 The message carries `native` `number`, `title`, `labels` and `state`.
-Raises `ValueError` for an issue already seeded.
+`kind` is the conversation’s: `issue`, or `pull_request` for a pull request,
+which correspond’s GitHub adapter reports the same way. Raises `ValueError` for
+an issue already seeded.
 
 * **Return type:**
   `Message`

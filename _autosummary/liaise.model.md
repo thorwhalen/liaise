@@ -20,6 +20,9 @@ are pure and take the time they record as an argument.
 | [`CASE_STATES`](#liaise.model.CASE_STATES)        | \` label vocabulary, unchanged and in its order.                                                                                  |
 |---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|
 | [`INITIAL_CASE_STATE`](#liaise.model.INITIAL_CASE_STATE) | The state a new case opens in.                                                                                                    |
+| [`PR_STATES`](#liaise.model.PR_STATES)          | a review case is never `working` or `needs-partner`, and an issue case is never `pr-approved`.                                    |
+| [`INITIAL_PR_STATE`](#liaise.model.INITIAL_PR_STATE)   | a review is owed.                                                                                                                 |
+| [`CASE_KINDS`](#liaise.model.CASE_KINDS)         | an issue (or a web-inbox report), or a pull request under review.                                                                 |
 | [`ENTRY_KINDS`](#liaise.model.ENTRY_KINDS)        | What a [`LedgerEntry`](#liaise.model.LedgerEntry) records.                                                      |
 | [`OUTCOME_KINDS`](#liaise.model.OUTCOME_KINDS)      | The closed vocabulary a processor run reports its outcomes in.                                                                    |
 | [`PERMISSIONS`](#liaise.model.PERMISSIONS)        | What a role can grant on a subject (see [`liaise.subjects`](liaise.subjects.md#module-liaise.subjects)). |
@@ -28,9 +31,10 @@ are pure and take the time they record as an argument.
 
 ### Functions
 
-| [`require_one_of`](#liaise.model.require_one_of)(value, allowed, \*, what)   | Return `value` when it is in `allowed`; otherwise raise `ValueError` listing them.   |
-|---------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| [`to_jsonable`](#liaise.model.to_jsonable)(value)                         | `value` as plain JSON-ready data.                                                    |
+| [`require_one_of`](#liaise.model.require_one_of)(value, allowed, \*, what)   | Return `value` when it is in `allowed`; otherwise raise `ValueError` listing them.                                                                                    |
+|---------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`states_for`](#liaise.model.states_for)(kind)                           | The state vocabulary of a case of `kind`: [`CASE_STATES`](#liaise.model.CASE_STATES) or [`PR_STATES`](#liaise.model.PR_STATES). |
+| [`to_jsonable`](#liaise.model.to_jsonable)(value)                         | `value` as plain JSON-ready data.                                                                                                                                     |
 
 ### Classes
 
@@ -81,6 +85,14 @@ True
 False
 ```
 
+### liaise.model.CASE_KINDS *= ('issue', 'pull')*
+
+an issue (or a web-inbox report), or a pull request
+under review. Each kind has its own state vocabulary ([`states_for()`](#liaise.model.states_for)).
+
+* **Type:**
+  What a [`Case`](#liaise.model.Case) is about
+
 ### liaise.model.CASE_STATES *= ('intake', 'paused', 'working', 'needs-partner', 'needs-owner', 'deployed', 'budget')*
 
 \` label vocabulary, unchanged and in its
@@ -97,7 +109,7 @@ order. The design’s `delivered` is `deployed` here.
 
   liaise
 
-### *class* liaise.model.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None)
+### *class* liaise.model.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None, kind='issue')
 
 Bases: `_Record`
 
@@ -105,7 +117,9 @@ One piece of work on a subject, from its first message to its delivery.
 
 `id` is `<subject>-<n>`. `conversations` are the encoded refs
 (`github:example/app#12`) whose messages belong to it; `reporter` is the
-person who opened it; `state` is one of [`CASE_STATES`](#liaise.model.CASE_STATES). `entries` is the
+person who opened it; `state` is one of [`states_for()`](#liaise.model.states_for) its `kind`, an
+`issue` ([`CASE_STATES`](#liaise.model.CASE_STATES)) unless the case is a pull request under review
+(`pull`, [`PR_STATES`](#liaise.model.PR_STATES); see [`liaise.review`](liaise.review.md#module-liaise.review)). `entries` is the
 append-only history and `drafts` the outbound messages diverted to the operator.
 `outbox` holds the messages the gate gave `delay`: each waits, cancellable, until
 its `release_at`, when the tick judges it again and sends it (liaise #38; see
@@ -123,15 +137,16 @@ This case with `entry` appended, and `updated_at` moved forward to it.
 
 This case in `state`, with a `transition` entry recording the change.
 
-Raises `ValueError` for a state outside [`CASE_STATES`](#liaise.model.CASE_STATES).
+Raises `ValueError` for a state outside the vocabulary of the case’s kind.
 
 * **Return type:**
   [`Case`](#liaise.model.Case)
 
-### liaise.model.ENTRY_KINDS *= ('message', 'transition', 'outcome', 'gate', 'run', 'hold', 'projection', 'note')*
+### liaise.model.ENTRY_KINDS *= ('message', 'transition', 'outcome', 'gate', 'run', 'hold', 'projection', 'note', 'review')*
 
 What a [`LedgerEntry`](#liaise.model.LedgerEntry) records. A `note` is a line of the operator’s digest,
-which `liaise status` lists.
+which `liaise status` lists; a `review` is a pull request’s verdict
+([`liaise.review`](liaise.review.md#module-liaise.review)).
 
 ### liaise.model.HOLD_MODES *= ('block', 'drain', 'cancel')*
 
@@ -152,6 +167,13 @@ A stop on work in `scope` (`global`, `subject:<slug>`, `repo:<o/r>`, …).
 ### liaise.model.INITIAL_CASE_STATE *= 'intake'*
 
 The state a new case opens in.
+
+### liaise.model.INITIAL_PR_STATE *= 'pr-reviewing'*
+
+a review is owed.
+
+* **Type:**
+  The state a review case opens in
 
 ### *class* liaise.model.IssueCheck(read_at=None, failures=0)
 
@@ -220,6 +242,16 @@ Not validated here: `liaise.outcomes` validates a run’s outcomes as a whole.
 
 What a role can grant on a subject (see [`liaise.subjects`](liaise.subjects.md#module-liaise.subjects)).
 
+### liaise.model.PR_STATES *= ('pr-reviewing', 'pr-approved', 'pr-changes', 'pr-declined', 'pr-merged')*
+
+a
+review case is never `working` or `needs-partner`, and an issue case is never
+`pr-approved`. Labelled `liaise:<state>` like the case states, and kept apart from
+them by [`liaise.projection.project_labels()`](liaise.projection.md#liaise.projection.project_labels).
+
+* **Type:**
+  A pull request’s review states ([`liaise.review`](liaise.review.md#module-liaise.review)), a vocabulary of its own
+
 ### *class* liaise.model.RunRecord(run_id, case_id, subject, mode, status, started_at, pid=None, heartbeat_at=None, ended_at=None, session_id=None, stream_path=None, cancel_sent_at=None)
 
 Bases: `_Record`
@@ -229,11 +261,15 @@ A processor run started on a case: how it was started, and where it is now.
 `cancel_sent_at` is when the tick first cancelled the run for passing its wall clock:
 the lost-run deadline counts from it (see [`liaise.tick`](liaise.tick.md#module-liaise.tick)).
 
-### *class* liaise.model.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='')
+### *class* liaise.model.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=<factory>)
 
 Bases: `_Record`
 
 What a finished run returned: its outcomes, what it cost, and how it ended.
+
+`structured` is the run’s structured output as the processor read it, whatever its
+shape: a case run’s is the outcomes (already in `outcomes`), a review run’s is the
+verdict [`liaise.review`](liaise.review.md#module-liaise.review) parses.
 
 ### liaise.model.require_one_of(value, allowed, , what)
 
@@ -246,6 +282,20 @@ Return `value` when it is in `allowed`; otherwise raise `ValueError` listing the
 >>> require_one_of("paused", CASE_STATES, what="case state")
 'paused'
 ```
+
+### liaise.model.states_for(kind)
+
+The state vocabulary of a case of `kind`: [`CASE_STATES`](#liaise.model.CASE_STATES) or [`PR_STATES`](#liaise.model.PR_STATES).
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
+
+```pycon
+>>> states_for("issue")[0], states_for("pull")[0]
+('intake', 'pr-reviewing')
+```
+
+Raises `ValueError` for a kind outside [`CASE_KINDS`](#liaise.model.CASE_KINDS).
 
 ### liaise.model.to_jsonable(value)
 

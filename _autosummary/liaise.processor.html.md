@@ -31,18 +31,19 @@ by the next. [`EchoProcessor`](#liaise.processor.EchoProcessor) runs nothing and
 
 ### Module Attributes
 
-| [`FRESH`](#liaise.processor.FRESH)               | A run is a new session (`fresh`) or continues a stored one (`resume`).                                                                                                  |
-|----------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`RESUME`](#liaise.processor.RESUME)              | A run is a new session (`fresh`) or continues a stored one (`resume`).                                                                                                  |
-| [`RUN_STATUSES`](#liaise.processor.RUN_STATUSES)        | A run's `status` in its RunRecord.                                                                                                                                      |
-| [`CANCEL_MODES`](#liaise.processor.CANCEL_MODES)        | `graceful` interrupts first and terminates after the grace period; `now` terminates.                                                                                    |
-| [`DFLT_GRACE_S`](#liaise.processor.DFLT_GRACE_S)        | Seconds between a graceful cancel's interrupt and the terminate that may follow it.                                                                                     |
-| [`KILL_GRACE_S`](#liaise.processor.KILL_GRACE_S)        | Seconds a run may go on after a cancel sent it SIGTERM before a later cancel kills it with SIGKILL (POSIX only: on Windows every cancel already ends the run outright). |
-| [`SCRUBBED_ENV_VARS`](#liaise.processor.SCRUBBED_ENV_VARS)   | with either set, claude bills that key instead of the subscription the operator logged in with.                                                                         |
-| [`CHILD_ENV_OVERRIDES`](#liaise.processor.CHILD_ENV_OVERRIDES) | claude retries transient API errors, a bounded number of times, before it gives up and reports them.                                                                    |
-| [`DFLT_AUTH_CHECK`](#liaise.processor.DFLT_AUTH_CHECK)     | `claude auth status`, which exits non-zero once the login is gone.                                                                                                      |
-| [`DFLT_AUTH_TIMEOUT_S`](#liaise.processor.DFLT_AUTH_TIMEOUT_S) | Seconds [`ClaudeHeadless.preflight()`](#liaise.processor.ClaudeHeadless.preflight) gives that check to answer.                                                         |
-| [`PROMPT_POINTER`](#liaise.processor.PROMPT_POINTER)      | The only instruction on the command line; the prompt itself stays in its file.                                                                                          |
+| [`FRESH`](#liaise.processor.FRESH)                 | A run is a new session (`fresh`) or continues a stored one (`resume`).                                                                                                  |
+|------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`RESUME`](#liaise.processor.RESUME)                | A run is a new session (`fresh`) or continues a stored one (`resume`).                                                                                                  |
+| [`RUN_STATUSES`](#liaise.processor.RUN_STATUSES)          | A run's `status` in its RunRecord.                                                                                                                                      |
+| [`CANCEL_MODES`](#liaise.processor.CANCEL_MODES)          | `graceful` interrupts first and terminates after the grace period; `now` terminates.                                                                                    |
+| [`DFLT_GRACE_S`](#liaise.processor.DFLT_GRACE_S)          | Seconds between a graceful cancel's interrupt and the terminate that may follow it.                                                                                     |
+| [`KILL_GRACE_S`](#liaise.processor.KILL_GRACE_S)          | Seconds a run may go on after a cancel sent it SIGTERM before a later cancel kills it with SIGKILL (POSIX only: on Windows every cancel already ends the run outright). |
+| [`SCRUBBED_ENV_VARS`](#liaise.processor.SCRUBBED_ENV_VARS)     | with either set, claude bills that key instead of the subscription the operator logged in with.                                                                         |
+| [`CHILD_ENV_OVERRIDES`](#liaise.processor.CHILD_ENV_OVERRIDES)   | claude retries transient API errors, a bounded number of times, before it gives up and reports them.                                                                    |
+| [`DFLT_AUTH_CHECK`](#liaise.processor.DFLT_AUTH_CHECK)       | `claude auth status`, which exits non-zero once the login is gone.                                                                                                      |
+| [`DFLT_AUTH_TIMEOUT_S`](#liaise.processor.DFLT_AUTH_TIMEOUT_S)   | Seconds [`ClaudeHeadless.preflight()`](#liaise.processor.ClaudeHeadless.preflight) gives that check to answer.                                                         |
+| [`DISALLOWED_TOOLS_FLAG`](#liaise.processor.DISALLOWED_TOOLS_FLAG) | The `claude` flag that denies a run the tools (permission rules) that follow it.                                                                                        |
+| [`PROMPT_POINTER`](#liaise.processor.PROMPT_POINTER)        | The only instruction on the command line; the prompt itself stays in its file.                                                                                          |
 
 ### Functions
 
@@ -197,6 +198,10 @@ Seconds [`ClaudeHeadless.preflight()`](#liaise.processor.ClaudeHeadless.prefligh
 
 Seconds between a graceful cancel’s interrupt and the terminate that may follow it.
 
+### liaise.processor.DISALLOWED_TOOLS_FLAG *= '--disallowedTools'*
+
+The `claude` flag that denies a run the tools (permission rules) that follow it.
+
 ### *class* liaise.processor.EchoProcessor(, results=None, default=None, health=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -213,7 +218,7 @@ calls, for tests to assert on.
 
 A run is a new session (`fresh`) or continues a stored one (`resume`).
 
-### *class* liaise.processor.Job(run_id, case_id, subject, prompt, cwd, permission_mode, timeout_minutes, json_schema, session_id=None)
+### *class* liaise.processor.Job(run_id, case_id, subject, prompt, cwd, permission_mode, timeout_minutes, json_schema, session_id=None, disallowed_tools=())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -225,6 +230,9 @@ the work happens, and `json_schema` is the structured result the run must end
 with. `timeout_minutes` is the wall clock the tick enforces; a processor does not.
 `session_id` is the case’s stored session, if it has one: the tick hands it to
 [`Processor.resume()`](#liaise.processor.Processor.resume), while `start` always opens a new session.
+`disallowed_tools` are Claude Code permission rules (`Bash(gh pr review:*)`) the
+run is denied whatever its permission mode (`claude --disallowedTools`): a review
+run is denied the tools that would post, merge or push (see [`liaise.review`](liaise.review.html.md#module-liaise.review)).
 
 ### liaise.processor.KILL_GRACE_S *= 60.0*
 

@@ -25,9 +25,13 @@ labels:
               authorization, budget, an open GitHub issue, preflight and the workspace
               check, as a detached processor run. A case whose issue was read closed
               has it read again at most once per CLOSED_RECHECK_INTERVAL.
-4. nudge      each deployed case its partner has gone quiet on, once, unless its issue
+4. review     each subject with a [review] table: its partners' open pull requests
+              (liaise.review), a case per pull request, a review run per head commit
+              not yet reviewed, within the same daily and concurrent budgets as the
+              starts, and a squash merge of what may be merged
+5. nudge      each deployed case its partner has gone quiet on, once, unless its issue
               is closed
-5. project    the state label of each case this tick touched, and of each whose state
+6. project    the state label of each case this tick touched, and of each whose state
               is not the one last projected (liaise.projection)
 ```
 

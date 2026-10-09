@@ -137,7 +137,7 @@ What `liaise case list` prints: `<case id>\t<state>\t<conversations>` per case.
 
 Every case in the ledger `store`, or only those in `state`, by subject and then
 oldest first. Reads only. Raises `ValueError` for a state outside
-[`CASE_STATES`](liaise.model.md#liaise.model.CASE_STATES).
+[`CASE_STATES`](liaise.model.md#liaise.model.CASE_STATES) and [`PR_STATES`](liaise.model.md#liaise.model.PR_STATES).
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
@@ -278,8 +278,9 @@ The move is a `transition` entry whose actor is `operator`, with `reason` (or
 already in `state` is returned as it is, and nothing is recorded. Its GitHub labels
 follow on the next tick.
 
-Raises `ValueError`, writing nothing, for a state outside
-[`CASE_STATES`](liaise.model.md#liaise.model.CASE_STATES) or in [`TICK_ONLY_STATES`](#liaise.cases.TICK_ONLY_STATES), for a case the ledger
+Raises `ValueError`, writing nothing, for a state outside the case’s vocabulary
+([`CASE_STATES`](liaise.model.md#liaise.model.CASE_STATES), or [`PR_STATES`](liaise.model.md#liaise.model.PR_STATES) for a pull
+request under review) or in [`TICK_ONLY_STATES`](#liaise.cases.TICK_ONLY_STATES), for a case the ledger
 does not hold, and for a case with a run in flight, whose state the tick sets when it
 collects that run.
 
