@@ -86,6 +86,8 @@ DFLT_AUTH_CHECK = ("auth", "status")
 #: Seconds :meth:`ClaudeHeadless.preflight` gives that check to answer.
 DFLT_AUTH_TIMEOUT_S = 15.0
 
+#: The ``claude`` flag that denies a run the tools (permission rules) that follow it.
+DISALLOWED_TOOLS_FLAG = "--disallowedTools"
 PROMPT_FILE = "prompt.md"
 STREAM_FILE = "stream.jsonl"
 STDERR_FILE = "stderr.log"
@@ -117,6 +119,9 @@ class Job:
     with. ``timeout_minutes`` is the wall clock the tick enforces; a processor does not.
     ``session_id`` is the case's stored session, if it has one: the tick hands it to
     :meth:`Processor.resume`, while ``start`` always opens a new session.
+    ``disallowed_tools`` are Claude Code permission rules (``Bash(gh pr review:*)``) the
+    run is denied whatever its permission mode (``claude --disallowedTools``): a review
+    run is denied the tools that would post, merge or push (see :mod:`liaise.review`).
     """
 
     run_id: str
@@ -128,6 +133,7 @@ class Job:
     timeout_minutes: int
     json_schema: Mapping[str, Any]
     session_id: Optional[str] = None
+    disallowed_tools: tuple[str, ...] = ()
 
 
 @runtime_checkable
@@ -533,6 +539,11 @@ class ClaudeHeadless:
             job.permission_mode,
             "--json-schema",
             json.dumps(job.json_schema),
+            *(
+                [DISALLOWED_TOOLS_FLAG, *job.disallowed_tools]
+                if job.disallowed_tools
+                else []
+            ),
             _SESSION_FLAGS[mode],
             session_id,
         ]

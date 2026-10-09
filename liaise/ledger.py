@@ -44,9 +44,12 @@ from urllib.parse import quote, unquote
 from uuid import uuid4
 
 from liaise.model import (
+    CASE_KINDS,
     CASE_STATES,
     INITIAL_CASE_STATE,
+    ISSUE_KIND,
     MESSAGE_STATES,
+    PR_STATES,
     Case,
     Hold,
     IssueCheck,
@@ -186,13 +189,25 @@ class Ledger:
     # ---- cases ----
 
     def new_case(
-        self, subject: str, conversation: str, *, reporter: str, at: datetime
+        self,
+        subject: str,
+        conversation: str,
+        *,
+        reporter: str,
+        at: datetime,
+        kind: str = ISSUE_KIND,
+        state: Optional[str] = None,
     ) -> Case:
         """Open a case on ``conversation`` (an encoded ref), numbered ``<subject>-<n>``.
 
-        The case starts in ``intake``. Raises ``ValueError``, handing out no number, when
-        the conversation already belongs to a case: its messages go to that case.
+        The case starts in ``intake``, or in ``state`` when given; a ``pull`` case (see
+        :mod:`liaise.review`) in the first of :data:`~liaise.model.PR_STATES`. Raises
+        ``ValueError``, handing out no number, when the conversation already belongs to a
+        case: its messages go to that case.
         """
+        require_one_of(kind, CASE_KINDS, what="case kind")
+        if state is None:
+            state = INITIAL_CASE_STATE if kind == ISSUE_KIND else PR_STATES[0]
         owner = self._get(_key("conversation", conversation))
         if owner is not None:
             raise ValueError(
@@ -208,9 +223,10 @@ class Ledger:
             subject=subject,
             conversations=(conversation,),
             reporter=reporter,
-            state=INITIAL_CASE_STATE,
+            state=state,
             created_at=at,
             updated_at=at,
+            kind=kind,
         )
         self.save_case(case)
         return case
@@ -240,16 +256,27 @@ class Ledger:
             self.store[_key("conversation", ref)] = case.id
 
     def cases(
-        self, *, subject: Optional[str] = None, state: Optional[str] = None
+        self,
+        *,
+        subject: Optional[str] = None,
+        state: Optional[str] = None,
+        kind: Optional[str] = None,
     ) -> Iterator[Case]:
-        """Every case, or those of ``subject`` and/or in ``state``, in no set order."""
+        """Every case, or those of ``subject``, in ``state`` and/or of ``kind``, in no set order.
+
+        ``state`` is a case state or a pull request's review state; ``kind`` is one of
+        :data:`~liaise.model.CASE_KINDS`.
+        """
         if state is not None:
-            require_one_of(state, CASE_STATES, what="case state")
+            require_one_of(state, (*CASE_STATES, *PR_STATES), what="case state")
+        if kind is not None:
+            require_one_of(kind, CASE_KINDS, what="case kind")
         return (
             case
             for case in map(Case.from_dict, self._values("case"))
             if (subject is None or case.subject == subject)
             and (state is None or case.state == state)
+            and (kind is None or case.kind == kind)
         )
 
     def case_for_conversation(self, encoded_ref: str) -> Optional[Case]:
@@ -282,7 +309,7 @@ class Ledger:
     ) -> Case:
         """Move the case to ``state``, recording a ``transition`` entry.
 
-        Raises ``ValueError``, writing nothing, for a state outside ``CASE_STATES``.
+        Raises ``ValueError``, writing nothing, for a state outside the case's vocabulary.
         """
         case = self._case(case_id).with_state(state, at=at, actor=actor, reason=reason)
         self.save_case(case)

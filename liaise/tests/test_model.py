@@ -94,6 +94,7 @@ def test_closed_vocabularies():
         "hold",
         "projection",
         "note",
+        "review",
     )
 
 

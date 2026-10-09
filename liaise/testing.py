@@ -284,11 +284,14 @@ class FakeGitHubChannel:
         grade: Union[Grade, str] = Grade.PLATFORM,
         state: str = "open",
         is_self: bool = False,
+        kind: str = "issue",
     ) -> Message:
         """Seed the opening post of issue ``repo#number``; the next poll yields it.
 
         The message carries ``native`` ``number``, ``title``, ``labels`` and ``state``.
-        Raises ``ValueError`` for an issue already seeded.
+        ``kind`` is the conversation's: ``issue``, or ``pull_request`` for a pull request,
+        which correspond's GitHub adapter reports the same way. Raises ``ValueError`` for
+        an issue already seeded.
         """
         repository = self._repository(repo)
         if (repository.id, number) in self._openings:
@@ -299,7 +302,7 @@ class FakeGitHubChannel:
             conversation=ConversationRef(
                 channel=self.name,
                 id=f"{repository.id}#{number}",
-                kind="issue",
+                kind=kind,
                 parent=repository,
             ),
             author=self._identity(author, is_self=is_self),

@@ -125,6 +125,8 @@ A conversation a binding takes in becomes a case (`example-app-1`), kept in the 
 | `liaise:deployed` | is delivered, and the partner was asked to try it |
 | `liaise:budget` | is ready, but today's dispatch cap is used up |
 
+A pull request under review carries one of five labels of its own instead (`liaise:pr-reviewing`, `pr-approved`, `pr-changes`, `pr-declined`, `pr-merged`; see [Reviewing partner pull requests](#reviewing-partner-pull-requests)), and the two vocabularies never touch: projecting one never removes a label of the other.
+
 Exactly one state label is on an issue. Labels are projections of the ledger: relabelling an issue by hand changes nothing, and the next tick overwrites the label. To move a case, use `liaise case set-state`, and its label follows on the next tick. `liaise` never closes an issue. A case whose issue someone closed is neither started nor nudged, and starts again once `liaise` sees the issue reopened, which is within the hour: it reads a closed case's issue again at most once an hour.
 
 **Waiting labels.** With `policy.waiting_labels`, a case that waits on its reporter (`needs-partner`) also carries that person's label, such as `needs-pat`, beside its state label, and loses it once the case moves on; at most one is on an issue. Give a table of person to label, or `true` for `needs-<person>` for everyone with a role. With several people on one subject, the state label alone cannot say who is being waited on; a label per person can, and a list filters on it (`label:needs-pat`). It is the mirror of `claim_labels`: liaise reads a claim label as a claim coming in, and writes a waiting label as a fact going out. So the two may not share a label, and no waiting label may be a state label. `liaise setup` creates both kinds, and turning waiting labels on relabels the waiting cases on the next tick.
@@ -248,9 +250,42 @@ A subject's runs share its checkout (`workspace.path`, behind the `workspace=` s
 
 **Scheduling.** `liaise schedule install` sets up a launchd agent on macOS, or a systemd user timer on Linux, that runs `liaise run --once` every 2 minutes (`--interval-minutes` to change it). Both schedulers hand a job a nearly empty environment, so it snapshots `PATH`, `HOME` and the ntfy variable from your shell; install again after moving `gh` or `claude`. The job leaves detached runs alive when its tick exits (launchd's `AbandonProcessGroup`, systemd's `KillMode=process`). One tick runs at a time: the run lock is an operating-system lock on `state_dir/run.lock`, so a tick that finds another holding it does not start, and a lock goes away with the process that held it. `liaise case set-state` takes the lock too. `liaise schedule status` says `installed (outdated: re-run liaise schedule install)` for a job installed before 0.1, which lacks those settings.
 
+### Reviewing partner pull requests
+
+A partner has read access, so when they write code it arrives as a pull request from a fork, and nobody has looked at it. A `[review]` table on a subject has `liaise` review every pull request its partners open, adversarially, as a run on your machine under your `claude` login, and post the verdict on the pull request in plain language. Partners never merge; with `merge = "squash"`, `liaise` does, after approval, green checks and a veto window. The design and its reasons are [ADR 0004](docs/adr/0004-partner-pr-review.md).
+
+```toml
+[review]
+authors = ["pat"]                 # GitHub logins, or person ids of policy.roles; default: everyone whose role grants request_work
+repos = ["example/app-lib"]       # reviewed besides the repositories the subject binds; default: none
+merge = "off"                     # or "squash": liaise squash-merges an approved pull request
+require_checks = true             # a merge waits for green checks (a repository with none passes)
+veto_minutes = 60                 # after an approval, how long a push or the liaise:hold label can still stop the merge
+brief = "~/.config/liaise/briefs/review.md"   # an extra brief the reviewer reads; optional
+max_diff_lines = 4000             # a larger pull request is asked to split, with no run
+run_tests = false                 # true lets the reviewer run the pull request's tests: a partner's code, with your credentials
+```
+
+`liaise setup <slug>` creates the five review labels and `liaise:hold` in each reviewed repository. Then every tick of `liaise run` lists the open pull requests by the reviewed authors, opens a case per pull request (`liaise review list` shows them), and reviews each head commit once: the run reads the repository's `CLAUDE.md` as the contract, the subject's brief and the review brief, the pull request and its diff, and ends with a structured verdict. It runs in the subject's checkout when the pull request is on a repository the subject binds, and never changes the checkout; on another repository it works from the diff and what `gh` lets it read. The run is denied the tools that would post, merge or push (`gh pr review|comment|merge|edit|close`, `gh issue comment`, `git push`), and the pull request's title, description and diff are handed to it fenced and framed as untrusted data. **It runs nothing from the pull request unless `run_tests = true`:** that lets it run the tests in a temporary worktree of the pull request's head, which means a partner's code runs on your machine with your credentials and the subject's permission mode; leave it off for a partner you would not hand a shell to. Reviews count against the subject's `daily_dispatches` and `concurrent` like any run, and a pull request over `max_diff_lines` counts too.
+
+**What the partner sees.** A review on their pull request, `@`-mentioning them: a summary in plain language, the findings as a list (`file:line (block|should|nit): what and how to fix it`), the commit it reviewed, and a line saying it was written by the maintainer's review assistant. A verdict of `changes` is posted as "request changes", `approve` as an approval, and `decline` as a comment, since a decline is yours to decide. Every push gets a new review; the same commit is never reviewed twice. A push while a review was running makes its verdict stale: it is posted as a comment naming the commit it reviewed, and the new head is reviewed next. A pull request over `max_diff_lines` is asked to be split instead, with no run. Drafts get nothing, not even a case, until they are ready.
+
+| Label | The pull request |
+|---|---|
+| `liaise:pr-reviewing` | has a review owed, or in progress |
+| `liaise:pr-approved` | was approved; with `merge = "squash"`, it merges once the checks are green and the veto window has passed |
+| `liaise:pr-changes` | had changes requested; a new push gets a new review |
+| `liaise:pr-declined` | should not be merged as it is, says the reviewer; you decide |
+| `liaise:pr-merged` | was merged by `liaise` (or found merged by someone else) |
+| `liaise:hold` | is yours to set: it keeps `liaise` from merging |
+
+**What you see.** A notification per review (`example-app-3 reviewed`, with the verdict and whether the reviewer left a note for you), one per merge, and one per merge that failed; never the text. `liaise review show example/app 7` prints each review of the pull request with its findings and the note for you, then the case. The verdict goes through the outbound gate like every message, so with the defaults (draft reply mode, and the tainted-run rule on a public repository) it waits for you as a draft, the pull request stays `pr-reviewing`, and `liaise review post example/app 7` posts it once you have read it at a terminal; `reply_modes = { pat = "direct" }` and `tainted_runs = "send"` let verdicts on a trusted partner's pull requests post by themselves. A review that crashed or timed out, or could not start (a brief that cannot be read), is yours (`liaise review show` has it), told once, and that commit is not reviewed again; a rate limit or an outage retries, without counting.
+
+**Merging.** With `merge = "squash"`, a pull request is merged on a later tick, once all of these hold: the review of its current head commit said `approve` (the label alone never merges: `liaise case set-state ... pr-approved` moves the label, not the verdict), at least one check ran and every one concluded success (a repository with no checks at all must say `require_checks = false`; a stale, pending or failed check blocks), it is not a draft, GitHub finds it mergeable, `veto_minutes` have passed since the approval was *posted* (a verdict held as a draft for hours starts its window when you post it), and `liaise:hold` is not on it. The merge is bound to that commit, so a push in between fails it rather than merging what was not reviewed. A merge that fails is a notification, recorded on the case, and not retried for that commit.
+
 ## Commands
 
-- `liaise run [--once] [--dry-run] [--subject SLUG]`: one tick: take in what arrived, collect finished runs and carry out their outcomes through the gate, deploy, start ready cases, nudge quiet deliveries once, and set labels. `--dry-run` prints the plan and changes nothing. Without `--once` or `--dry-run`, it ticks every minute until interrupted.
+- `liaise run [--once] [--dry-run] [--subject SLUG]`: one tick: take in what arrived, collect finished runs and carry out their outcomes through the gate, deploy, start ready cases, review partner pull requests and merge what may be merged, nudge quiet deliveries once, and set labels. `--dry-run` prints the plan and changes nothing. Without `--once` or `--dry-run`, it ticks every minute until interrupted.
 - `liaise status`: the last tick (`running`, `interrupted` if its process died first, or `finished`), the holds, the runs in flight, each subject's cases by state and dispatches today, the unrouted queue, the drafts waiting for you, and the latest digest notes. It changes nothing.
 - `liaise hold SCOPE [--mode block|drain|cancel] [--reason TEXT]` and `liaise unhold SCOPE`: stop and resume work in a scope.
 - `liaise case list [--state STATE]`: every case, or those in one state, with its conversations. It changes nothing.
@@ -264,8 +299,11 @@ A subject's runs share its checkout (`workspace.path`, behind the `workspace=` s
 - `liaise gate report [--subject SLUG] [--since TIME]`: what the outbound gate did, in counts. It lists the messages judged, sent as judged, held, released by you (a release you did not edit is a false divert) and rejected. For each rule it shows how often the rule fired, how often you released its findings as false positives, how often you confirmed them by rejecting the draft, and its precision. It also gives the override and false-divert rates and, for subjects in shadow mode, the shadow agreement (how often the policy and liaise 0.1 would both have sent, or both held back) and the missed findings (messages 0.1 would have sent where the policy found severity 4 or above). It ends with the rollout rule of discussion 32 (enforce after 30 shadow messages compared with 0.1, with no missed finding and at most one false divert in ten). The outbox's own releases are not counted as your overrides. It never prints a message's text, a value or a fingerprint, and it changes nothing.
 - `liaise vet --ref REF [--to PERSON...] [--cc ...] [--bcc ...] [--project P] [--title T] [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]`: put a draft through the gate outside any case, sending and recording nothing. It prints the verdict, the audience in words, each reader's tier and clearance, and the reasons. The exit code is the route of a post made at once: 0 send, 2 draft for you (a `delay` too), 3 block, 1 cannot vet. The draft is read from standard input by default. What its author read counts as tainted unless `--untainted` says otherwise. For correspond, `before_send = "liaise.vet:before_send"` in its config runs the same check on every write.
 - `liaise hook install | uninstall | status [--settings FILE]`: add or remove a Claude Code PreToolUse hook and a PostToolUse hook (`liaise vet --hook`) in `~/.claude/settings.json`. They vet every `gh` or `correspond` write a session makes: a block is denied and anything for you is asked, with the reasons. The hook never answers allow, so your own permission rules still decide the rest. What it cannot read is asked, and a yes to an ask is recorded as an override. Installing is your choice, per machine.
+- `liaise review list [--subject SLUG]`: each reviewed subject's open pull requests by its partners, with their review state, checks and head commit. It reads GitHub and changes nothing.
+- `liaise review show REPO NUMBER`: every review of one pull request (verdict, summary, findings, the note for you), the verdicts held for you, then its case. It changes nothing.
+- `liaise review post REPO NUMBER [--justification TEXT] [--dry-run]`: post a verdict the gate held for you, once you confirm it at a terminal; the case moves to the verdict's state. `--dry-run` shows and asks nothing.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
-- `liaise setup SUBJECT`: create the subject's claim labels and every state label in each repository it binds. Safe to run again.
+- `liaise setup SUBJECT`: create the subject's claim labels, every state and review label and `liaise:hold` in each repository it binds or reviews. Safe to run again.
 - `liaise migrate-config [--apply]`: derive subject files from a 0.0.x configuration; a dry run unless `--apply`.
 - `liaise schedule install`, `liaise schedule uninstall` and `liaise schedule status`: manage the scheduled job. `status` says `installed (outdated: re-run liaise schedule install)` for a job installed by 0.0.x, which kills the runs its ticks start.
 
@@ -318,4 +356,4 @@ What the migration does:
 
 ## Design
 
-The seams, the decisions behind 0.1 and what comes next: [docs/adr/0001-liaise-0.1-seams.md](docs/adr/0001-liaise-0.1-seams.md).
+The seams, the decisions behind 0.1 and what comes next: [docs/adr/0001-liaise-0.1-seams.md](docs/adr/0001-liaise-0.1-seams.md). The outbound policy: [ADR 0002](docs/adr/0002-outbound-policy.md); the delay outbox: [ADR 0003](docs/adr/0003-delay-outbox.md); reviewing partner pull requests: [ADR 0004](docs/adr/0004-partner-pr-review.md).

@@ -26,5 +26,29 @@
   "budget": {
     "description": "Today's dispatch limit was reached. This will resume tomorrow.",
     "color": "5319e7"
+  },
+  "pr-reviewing": {
+    "description": "A review of this pull request is owed, or in progress.",
+    "color": "1d76db"
+  },
+  "pr-approved": {
+    "description": "Reviewed and approved. It may be merged once the checks pass and the veto window closes.",
+    "color": "0e8a16"
+  },
+  "pr-changes": {
+    "description": "Reviewed: changes were requested. A new push gets a new review.",
+    "color": "d93f0b"
+  },
+  "pr-declined": {
+    "description": "Reviewed: the reviewer thinks this should not be merged as it is. The owner decides.",
+    "color": "b60205"
+  },
+  "pr-merged": {
+    "description": "Merged by liaise after its review.",
+    "color": "6f42c1"
+  },
+  "hold": {
+    "description": "Keeps liaise from merging this pull request. Remove it to let the merge go ahead.",
+    "color": "fbca04"
   }
 }

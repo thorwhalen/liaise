@@ -20,7 +20,7 @@ import pytest
 from liaise import cli
 from liaise.github import FakeGitHub
 from liaise.ledger import Ledger
-from liaise.model import CASE_STATES, LedgerEntry, RunRecord
+from liaise.model import CASE_STATES, PR_STATES, LedgerEntry, RunRecord
 from liaise.outcomes import make_draft
 from liaise.processor import EchoProcessor
 from liaise.testing import FakeGitHubChannel, demo_registry
@@ -91,9 +91,10 @@ def _fakes(root: Path, **overrides) -> dict:
 def test_the_command_tree_is_the_0_1_one():
     commands = cli._dispatch_funcs
     assert set(commands) == {
-        "run", "status", "hold", "unhold", "case", "message", "subject", "gate", "vet", "hook", "setup", "migrate-config", "schedule"
+        "run", "status", "hold", "unhold", "case", "message", "subject", "review", "gate", "vet", "hook", "setup", "migrate-config", "schedule"
     }
     assert set(commands["gate"]) == {"report"}
+    assert set(commands["review"]) == {"list", "show", "post"}
     assert set(commands["case"]) == {"list", "show", "set-state", "send-draft", "reject-draft", "cancel-send"}
     assert set(commands["message"]) == {"send", "list", "show", "send-draft", "reject-draft"}
     assert set(commands["subject"]) == {"list", "show"}
@@ -264,8 +265,10 @@ def test_setup_creates_the_subjects_labels(root):
     """Ported from 0.0.x test_state's `liaise setup` test."""
     labeler = FakeGitHub()
     output = cli.setup(SLUG, root=str(root), labeler=labeler)
-    assert set(labeler.labels_created(REPO)) == {"partner:pat", *(f"liaise:{state}" for state in CASE_STATES)}
-    assert output.startswith(f"{REPO}: created 1 claim label(s) and {len(CASE_STATES)} state labels")
+    # the case states, the review states, and liaise:hold (a hold label, not a state)
+    liaise_labels = {"liaise:hold", *(f"liaise:{state}" for state in (*CASE_STATES, *PR_STATES))}
+    assert set(labeler.labels_created(REPO)) == {"partner:pat", *liaise_labels}
+    assert output.startswith(f"{REPO}: created 1 claim label(s) and {len(liaise_labels)} state labels")
 
 
 def test_migrate_config_prints_the_plan_and_writes_nothing_without_apply(config_root):

@@ -22,6 +22,9 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
         [--text TEXT | --text-file FILE] [--tainted | --untainted] [--json]
     liaise vet --hook
     liaise hook install | uninstall | status [--settings FILE]
+    liaise review list [--subject SLUG]
+    liaise review show REPO NUMBER
+    liaise review post REPO NUMBER [--justification TEXT] [--dry-run]
     liaise subject list
     liaise subject show SLUG
     liaise setup SUBJECT
@@ -56,7 +59,7 @@ import time
 from collections import ChainMap
 from collections.abc import Callable, Mapping, MutableMapping, Sequence
 from contextlib import ExitStack
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, NamedTuple, Optional
 
@@ -77,6 +80,12 @@ from liaise.model import HOLD_MODES, require_one_of
 from liaise.notify import notify
 from liaise.processor import ClaudeHeadless
 from liaise.projection import setup_labels
+from liaise.review import (
+    release_review_draft,
+    review_drafts,
+    review_list_lines,
+    review_show_lines,
+)
 from liaise.release import UNCONFIRMED_KIND, DraftSentNotRecorded, default_send_store
 from liaise.schedule import (
     DFLT_INTERVAL_MINUTES,
@@ -1560,6 +1569,153 @@ def gate_report(
     return "\n".join(report.report_lines(found))
 
 
+# ---- reviews of partner pull requests ----
+
+
+def _pull_ref(repo: str, number: int) -> str:
+    """``github:owner/repo#N``, lower-cased as liaise keys a pull request's case."""
+    return f"github:{repo}#{number}".lower()
+
+
+@_expected_errors(ConfigError)
+def review_list(
+    *,
+    subject: Optional[str] = None,
+    root: Optional[str] = None,
+    labeler: Optional[GitHub] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """The open pull requests each reviewed subject's partners have, with their review state.
+
+    One line per subject with a ``[review]`` table (whose pull requests, in which
+    repositories, whether liaise merges), then one per open pull request by a reviewed
+    author: its state (``not yet taken in``, or the case's state, with whether its head
+    has been reviewed), whether it is a draft, its checks and its head commit. ``--subject``
+    lists one subject alone. It reads GitHub and the ledger, and changes nothing.
+    """
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    subjects = load_subjects(config_root)
+    if subject is not None:
+        subjects = {subject: _subject_named(subjects, subject)}
+    ledger = Ledger(_ledger_store(global_config, store, create=False))
+    github = labeler if labeler is not None else GhCli()
+    return "\n".join(review_list_lines(subjects, ledger, github))
+
+
+@_expected_errors(ConfigError, ValueError)
+def review_show(
+    repo: str,
+    number: int,
+    *,
+    root: Optional[str] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+) -> str:
+    """Every review of one pull request, then its case as ``liaise case show`` prints it.
+
+    Each review with its head commit, verdict, summary, findings and the note for you;
+    the verdicts held for you, with how to post them; then the case. Changes nothing.
+    """
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    ledger_store = _ledger_store(global_config, store, create=False)
+    ledger = Ledger(ledger_store)
+    ref = _pull_ref(repo, number)
+    lines = review_show_lines(ledger, ref)
+    case = ledger.case_for_conversation(ref)
+    lines += cases.case_show_lines(ledger_store, case.id)
+    return "\n".join(lines)
+
+
+@_expected_errors(ConfigError, ValueError)
+def review_post(
+    repo: str,
+    number: int,
+    *,
+    justification: str = "",
+    dry_run: bool = False,
+    root: Optional[str] = None,
+    registry: Optional[Mapping[str, Any]] = None,
+    labeler: Optional[GitHub] = None,
+    store: Optional[MutableMapping[str, Any]] = None,
+    now: Optional[datetime] = None,
+    confirm: Optional[Callable[[str], bool]] = None,
+) -> str:
+    """Post a verdict the gate held for you, once you confirm it at a terminal.
+
+    The held verdict is the pull request's ``review`` draft (``liaise review show`` lists
+    it). It is judged again by the gate, against who can read the pull request now; you
+    are shown the audience, what the gate holds it back for, and the exact text; and it is
+    posted as the review it was meant to be (approve, request changes, or a comment) only
+    once you answer ``y``. Your answer is an approval bound to that text and that
+    audience, recorded with ``--justification``. The case then moves to the verdict's
+    state, and its label follows on the next tick. ``--dry-run`` judges and shows, asks
+    nothing and posts nothing. A verdict the gate diverts again exits 2.
+    """
+    config_root = _root(root)
+    global_config = load_global_config(config_root)
+    subjects = load_subjects(config_root)
+    ledger_store = _ledger_store(global_config, store, create=not dry_run)
+    ledger = Ledger(ledger_store)
+    ref = _pull_ref(repo, number)
+    case = ledger.case_for_conversation(ref)
+    if case is None or case.kind != "pull":
+        raise ValueError(f"no review case for {ref}; liaise review list shows what there is")
+    held = review_drafts(case)
+    if not held:
+        raise ValueError(f"{case.id} holds no verdict for you to post")
+    _, draft = held[-1]
+    subject = subjects.get(case.subject)
+    if subject is None:
+        raise ValueError(f"{case.id} belongs to {case.subject}, which is not configured")
+    github = labeler if labeler is not None else GhCli()
+    at = now if now is not None else datetime.now(timezone.utc)
+    options = dict(
+        ledger=ledger,
+        github=github,
+        now=at,
+        registry=registry,
+        fingerprint_key=_key_for(global_config, dry_run=dry_run),
+    )
+    shown, approval = release_review_draft(
+        subject, case, draft, approve_shown=True, justification=justification, **options
+    )
+    decision = shown.decision
+    lines = [
+        f"{case.id}: {draft.get('event')} on {ref} for {draft.get('recipient')}",
+        f"audience: {decision.audience_words if decision else cases.AUDIENCE_UNKNOWN}",
+    ]
+    if decision is not None and decision.settled:
+        lines.append(f"gate: posts once you release it past {len(decision.settled)} concern(s):")
+        lines += [f"  [{c.flow}] {c.rule}: {c.text}" for c in decision.settled]
+    else:
+        lines.append("gate: passed")
+    lines += [f"  note: {note}" for note in decision.notes] if decision else []
+    if not shown.sent:
+        lines += [f"not posted: {shown.cause or 'the gate holds it back'}"]
+        raise cw.CommandError("\n".join(lines), code=DIVERTED_EXIT_CODE)
+    text = shown.outbound.text if shown.outbound else draft.get("text", "")
+    lines += [
+        "--- the review, as it would be posted (invisible characters as <U+XXXX>) ---",
+        visible(text),
+        "---",
+    ]
+    if dry_run:
+        return "\n".join((*lines, "dry run: nothing posted"))
+    ask = confirm if confirm is not None else confirm_at_terminal
+    if not ask("\n".join(lines)):
+        return "not posted"
+    with ExitStack() as between_ticks:
+        _hold_run_lock(between_ticks, global_config, case.id, done="posted")
+        posted, _ = release_review_draft(subject, case, draft, approval=approval, **options)
+    if not posted.sent:
+        raise cw.CommandError(
+            f"not posted: {posted.cause or 'the gate holds it back'}",
+            code=DIVERTED_EXIT_CODE,
+        )
+    return f"posted {draft.get('event')} on {ref}; {case.id} is now {ledger.get_case(case.id).state}"
+
+
 #: SSOT command tree consumed by ``__main__.py`` and any later surface (MCP, HTTP). Named
 #: explicitly, so the commands read ``liaise subject show`` and ``liaise migrate-config``.
 _dispatch_funcs = {
@@ -1583,6 +1739,7 @@ _dispatch_funcs = {
         "reject-draft": message_reject_draft,
     },
     "subject": {"list": subject_list, "show": subject_show},
+    "review": {"list": review_list, "show": review_show, "post": review_post},
     "gate": {"report": gate_report},
     "vet": vet,
     "hook": {
@@ -1633,6 +1790,11 @@ _SEAMS = {
         "send-draft": ("registry", "store", "now", "editor", "confirm", "sends"),
         "reject-draft": ("store", "now"),
     },
+    "review": {
+        "list": ("labeler", "store"),
+        "show": ("store",),
+        "post": ("registry", "labeler", "store", "now", "confirm"),
+    },
     "gate": {"report": ("store",)},
     "vet": ("registry", "now", "disclosure", "store", "repo_of"),
     "setup": ("labeler",),
@@ -1660,6 +1822,10 @@ _ARGUMENTS = {
         "send-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "reject-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "cancel-send": {"index": {"type": str, "metavar": "ID|INDEX"}},
+    },
+    "review": {
+        "show": {"number": {"type": int, "metavar": "NUMBER"}},
+        "post": {"number": {"type": int, "metavar": "NUMBER"}},
     },
 }
 

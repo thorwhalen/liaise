@@ -12,6 +12,11 @@ conversation, so two subjects polling the same one would starve each other:
 :func:`load_subjects` refuses that. Several bindings of one subject may share a
 conversation (see :func:`poll_ref`).
 
+**Reviewing pull requests.** A ``[review]`` table turns on the review of pull requests
+the subject's partners open (:class:`ReviewPolicy`, :mod:`liaise.review`): whose, in
+which repositories, whether liaise merges them, and how. Without the table, no pull
+request is reviewed.
+
 **An inert subject.** ``active = false`` declares a subject that no tick acts on. It is
 loaded, validated, shown and used as gate context, but :func:`liaise.tick.run_once` polls
 none of its bindings and starts, delivers, nudges and labels none of its cases, and
@@ -57,7 +62,7 @@ from liaise.config import (
     EscalateConfig,
     Markers,
 )
-from liaise.model import CASE_STATES, PERMISSIONS, require_one_of
+from liaise.model import CASE_STATES, PERMISSIONS, PR_STATES, require_one_of
 from liaise.policy import ENFORCE, MODES, TAINTED_RUNS_APPROVE, TAINTED_RUNS_SEND
 
 #: What ``policy.tainted_runs`` may say: ``approve`` (a run that read untrusted input needs
@@ -94,6 +99,32 @@ REF_WILDCARDS = frozenset("*[")
 #: Channels whose conversation references ignore case, so their bindings load lower-cased
 #: (see :func:`normalize_binding`).
 CASE_INSENSITIVE_REF_CHANNELS = ("github",)
+
+#: What a ``[review]`` table may say ``merge`` is: ``off`` (liaise reviews and labels, and
+#: nobody merges through it) or ``squash`` (liaise squash-merges an approved pull request
+#: once its checks are green and the veto window has passed).
+MERGE_MODES = ("off", "squash")
+MERGE_OFF, MERGE_SQUASH = MERGE_MODES
+DFLT_MERGE = MERGE_OFF
+#: Whether a merge waits for the pull request's checks to pass (``review.require_checks``).
+DFLT_REQUIRE_CHECKS = True
+#: Minutes after an approval before liaise merges (``review.veto_minutes``): the window in
+#: which a person can push, or set the hold label, and stop it.
+DFLT_VETO_MINUTES = 60
+#: The most lines of diff a review run is handed (``review.max_diff_lines``); a larger pull
+#: request gets ``changes`` and a request to split it, with no run.
+DFLT_MAX_DIFF_LINES = 4000
+#: Whether a review run may run the pull request's code (``review.run_tests``): off, since
+#: a partner's code would then run with the owner's credentials and checkout.
+DFLT_RUN_TESTS = False
+#: The suffix of the label a person sets on a pull request to keep liaise from merging it
+#: (``<label_prefix>hold``; see :func:`liaise.projection.hold_label`).
+HOLD_LABEL_SUFFIX = "hold"
+#: The permission whose holders' pull requests are reviewed when ``review.authors`` is
+#: not set: a pull request is a request for work to land.
+REVIEW_AUTHOR_PERMISSION = "request_work"
+#: The channel whose handles name a pull request's author.
+GITHUB_CHANNEL = "github"
 
 DFLT_WORKSPACE_KIND = "shared"
 DFLT_DELIVERY_KIND = "deploy"
@@ -169,6 +200,37 @@ class ProcessorConfig:
     """How the subject's processor runs."""
 
     permission_mode: str = DFLT_PERMISSION_MODE
+
+
+@dataclass(frozen=True)
+class ReviewPolicy:
+    """How a subject reviews the pull requests its partners open (:mod:`liaise.review`).
+
+    ``authors`` are the GitHub logins whose pull requests are reviewed (compared without
+    regard to case); the loader fills it from the people whose role grants
+    :data:`REVIEW_AUTHOR_PERMISSION` when the table does not say. ``repos`` are
+    repositories reviewed besides the ones the subject binds, such as a public package's.
+    ``merge`` is one of :data:`MERGE_MODES`. ``require_checks`` makes a merge wait for green
+    checks (a repository with no checks at all passes). ``veto_minutes`` is how long after
+    an approval a merge waits, and a new push or the hold label in that window stops it.
+    ``brief`` is the path of an extra brief the reviewer reads, if any. ``max_diff_lines``
+    is the most diff a run is handed. ``run_tests`` lets the reviewer run the pull
+    request's tests in a temporary worktree: off by default, because that runs a
+    partner's code on the owner's machine with the owner's credentials (ADR 0004).
+    """
+
+    authors: tuple[str, ...] = ()
+    repos: tuple[str, ...] = ()
+    merge: str = DFLT_MERGE
+    require_checks: bool = DFLT_REQUIRE_CHECKS
+    veto_minutes: int = DFLT_VETO_MINUTES
+    brief: str = ""
+    max_diff_lines: int = DFLT_MAX_DIFF_LINES
+    run_tests: bool = DFLT_RUN_TESTS
+
+    def reviews(self, login: str) -> bool:
+        """Whether pull requests by the GitHub login ``login`` are reviewed."""
+        return login.casefold() in {author.casefold() for author in self.authors}
 
 
 @dataclass(frozen=True)
@@ -375,6 +437,21 @@ class Subject:
     #: False for a subject declared but inert: loaded, shown and used as gate context, but
     #: no tick polls, starts, delivers, nudges or labels anything of it.
     active: bool = True
+    #: How the subject reviews its partners' pull requests; None reviews none.
+    review: Optional[ReviewPolicy] = None
+
+    def github_logins_of(self, person: str) -> tuple[str, ...]:
+        """The GitHub logins ``person`` writes from, in file order, each once."""
+        handles = self.notify_addresses_for(person, channels=GITHUB_CHANNEL)
+        return tuple(dict.fromkeys(address.partition(":")[2] for address in handles))
+
+    def person_for_login(self, login: str) -> Optional[str]:
+        """The person id a GitHub ``login`` resolves to through ``policy.people``, or None."""
+        wanted = address_key(f"{GITHUB_CHANNEL}:{login}")
+        for address, person in self.policy.people.items():
+            if address_key(address) == wanted:
+                return person
+        return None
 
     def reply_mode_for(self, person: Optional[str]) -> str:
         """``direct`` or ``draft``: the person's override, else the subject's default."""
@@ -499,7 +576,9 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
     processor = _table(raw, "processor", path=path, dotted="processor")
     policy = _policy_from(_table(raw, "policy", path=path, dotted="policy"), path=path)
     label_prefix = raw.get("label_prefix", DFLT_LABEL_PREFIX)
-    state_labels = {f"{label_prefix}{state}" for state in CASE_STATES}
+    state_labels = {
+        f"{label_prefix}{state}" for state in (*CASE_STATES, *PR_STATES, HOLD_LABEL_SUFFIX)
+    }
     clashing = sorted(set(policy.waiting_labels.values()) & state_labels)
     if clashing:
         raise ConfigError(
@@ -544,6 +623,7 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
         ),
         source=str(path),
         active=_boolean(raw, "active", default=True, path=path, dotted="active"),
+        review=_review_from(raw, policy=policy, path=path),
     )
 
 
@@ -839,6 +919,98 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
         mode=_choice(raw.get("mode", ENFORCE), MODES, path=path, dotted="policy.mode"),
         delay_minutes=delay_minutes,
         delay_stale_minutes=delay_stale_minutes,
+    )
+
+
+def _review_from(
+    raw: Mapping[str, Any], *, policy: Policy, path: Path
+) -> Optional[ReviewPolicy]:
+    """The subject's ``[review]`` table as a :class:`ReviewPolicy`, or None without one.
+
+    ``authors`` entries are GitHub logins, or person ids of ``policy.roles``, which stand
+    for every ``github:`` address ``policy.people`` gives them. Without ``authors``, the
+    people whose role grants :data:`REVIEW_AUTHOR_PERMISSION` are the authors. Each
+    ``repos`` entry is ``owner/repo``. Raises :class:`ConfigError`, naming the file and
+    the fix, for a value outside its vocabulary or shape.
+    """
+    if "review" not in raw:
+        return None
+    review = _table(raw, "review", path=path, dotted="review")
+    people_of = {
+        person: [
+            address.partition(":")[2]
+            for address, who in policy.people.items()
+            if who == person and address.partition(":")[0] == GITHUB_CHANNEL
+        ]
+        for person in policy.roles
+    }
+    if "authors" in review:
+        named = _strings(review, "authors", path=path, dotted="review.authors")
+        authors: list[str] = []
+        for entry in named:
+            authors += people_of.get(entry) or [entry]
+    else:
+        authors = [
+            login
+            for person, role in policy.roles.items()
+            if REVIEW_AUTHOR_PERMISSION in policy.permissions.get(role, ())
+            for login in people_of.get(person, ())
+        ]
+    if not authors:
+        raise ConfigError(
+            f"{path}: [review] names nobody whose pull requests to review: give "
+            f'review.authors = ["pat"] (a GitHub login, or a person of policy.roles '
+            f"with a github: address in policy.people)."
+        )
+    repos = _strings(review, "repos", path=path, dotted="review.repos")
+    for repo in repos:
+        owner, slash, name = repo.partition("/")
+        if not (owner and slash and name) or "/" in name or "#" in repo:
+            raise ConfigError(
+                f"{path}: review.repos names {repo!r}, which is not owner/repo, as in "
+                f'repos = ["example/app-package"].'
+            )
+    # Lower-cased, as GitHub references compare and as the review cases are keyed.
+    repos = tuple(dict.fromkeys(repo.lower() for repo in repos))
+
+    def whole(key: str, default: int, *, least: int) -> int:
+        value = review.get(key, default)
+        if isinstance(value, bool) or not isinstance(value, int) or value < least:
+            raise ConfigError(
+                f"{path}: review.{key} must be a whole number, {least} or more, as in "
+                f"{key} = {default}; got {value!r}."
+            )
+        return value
+
+    brief = review.get("brief", "")
+    if not isinstance(brief, str):
+        raise ConfigError(
+            f"{path}: review.brief must be the path of a file, as in "
+            f'brief = "~/.config/liaise/briefs/review.md"; got {brief!r}.'
+        )
+    return ReviewPolicy(
+        authors=tuple(dict.fromkeys(authors)),
+        repos=repos,
+        merge=_choice(
+            review.get("merge", DFLT_MERGE), MERGE_MODES, path=path, dotted="review.merge"
+        ),
+        require_checks=_boolean(
+            review,
+            "require_checks",
+            default=DFLT_REQUIRE_CHECKS,
+            path=path,
+            dotted="review.require_checks",
+        ),
+        veto_minutes=whole("veto_minutes", DFLT_VETO_MINUTES, least=0),
+        brief=brief,
+        max_diff_lines=whole("max_diff_lines", DFLT_MAX_DIFF_LINES, least=1),
+        run_tests=_boolean(
+            review,
+            "run_tests",
+            default=DFLT_RUN_TESTS,
+            path=path,
+            dotted="review.run_tests",
+        ),
     )
 
 

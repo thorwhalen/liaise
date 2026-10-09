@@ -38,8 +38,26 @@ CASE_STATES = (
 )
 #: The state a new case opens in.
 INITIAL_CASE_STATE = CASE_STATES[0]
+#: A pull request's review states (:mod:`liaise.review`), a vocabulary of its own: a
+#: review case is never ``working`` or ``needs-partner``, and an issue case is never
+#: ``pr-approved``. Labelled ``liaise:<state>`` like the case states, and kept apart from
+#: them by :func:`liaise.projection.project_labels`.
+PR_STATES = (
+    "pr-reviewing",
+    "pr-approved",
+    "pr-changes",
+    "pr-declined",
+    "pr-merged",
+)
+#: The state a review case opens in: a review is owed.
+INITIAL_PR_STATE = PR_STATES[0]
+#: What a :class:`Case` is about: an issue (or a web-inbox report), or a pull request
+#: under review. Each kind has its own state vocabulary (:func:`states_for`).
+CASE_KINDS = ("issue", "pull")
+ISSUE_KIND, PULL_KIND = CASE_KINDS
 #: What a :class:`LedgerEntry` records. A ``note`` is a line of the operator's digest,
-#: which ``liaise status`` lists.
+#: which ``liaise status`` lists; a ``review`` is a pull request's verdict
+#: (:mod:`liaise.review`).
 ENTRY_KINDS = (
     "message",
     "transition",
@@ -49,6 +67,7 @@ ENTRY_KINDS = (
     "hold",
     "projection",
     "note",
+    "review",
 )
 #: The closed vocabulary a processor run reports its outcomes in. Validating an
 #: :class:`Outcome` (and treating `decline` as `escalate`) is `liaise.outcomes`'s job.
@@ -80,6 +99,18 @@ def require_one_of(value: Any, allowed: tuple[str, ...], *, what: str) -> Any:
     if value not in allowed:
         raise ValueError(f"{what} {value!r} is not one of: {', '.join(allowed)}")
     return value
+
+
+def states_for(kind: str) -> tuple[str, ...]:
+    """The state vocabulary of a case of ``kind``: :data:`CASE_STATES` or :data:`PR_STATES`.
+
+    >>> states_for("issue")[0], states_for("pull")[0]
+    ('intake', 'pr-reviewing')
+
+    Raises ``ValueError`` for a kind outside :data:`CASE_KINDS`.
+    """
+    require_one_of(kind, CASE_KINDS, what="case kind")
+    return PR_STATES if kind == PULL_KIND else CASE_STATES
 
 
 def to_jsonable(value: Any) -> Any:
@@ -193,7 +224,9 @@ class Case(_Record):
 
     ``id`` is ``<subject>-<n>``. ``conversations`` are the encoded refs
     (``github:example/app#12``) whose messages belong to it; ``reporter`` is the
-    person who opened it; ``state`` is one of :data:`CASE_STATES`. ``entries`` is the
+    person who opened it; ``state`` is one of :func:`states_for` its ``kind``, an
+    ``issue`` (:data:`CASE_STATES`) unless the case is a pull request under review
+    (``pull``, :data:`PR_STATES`; see :mod:`liaise.review`). ``entries`` is the
     append-only history and ``drafts`` the outbound messages diverted to the operator.
     ``outbox`` holds the messages the gate gave ``delay``: each waits, cancellable, until
     its ``release_at``, when the tick judges it again and sends it (liaise #38; see
@@ -213,9 +246,10 @@ class Case(_Record):
     drafts: tuple[Mapping[str, Any], ...] = ()
     outbox: tuple[Mapping[str, Any], ...] = ()
     defer_until: Optional[datetime] = None
+    kind: str = ISSUE_KIND
 
     def __post_init__(self) -> None:
-        require_one_of(self.state, CASE_STATES, what="case state")
+        require_one_of(self.state, states_for(self.kind), what=f"{self.kind} case state")
 
     def with_entry(self, entry: LedgerEntry) -> Case:
         """This case with ``entry`` appended, and ``updated_at`` moved forward to it."""
@@ -235,9 +269,9 @@ class Case(_Record):
     ) -> Case:
         """This case in ``state``, with a ``transition`` entry recording the change.
 
-        Raises ``ValueError`` for a state outside :data:`CASE_STATES`.
+        Raises ``ValueError`` for a state outside the vocabulary of the case's kind.
         """
-        require_one_of(state, CASE_STATES, what="case state")
+        require_one_of(state, states_for(self.kind), what=f"{self.kind} case state")
         entry = LedgerEntry(
             at=at,
             kind="transition",
@@ -392,7 +426,12 @@ class RunRecord(_Record):
 
 @dataclass(frozen=True)
 class RunResult(_Record):
-    """What a finished run returned: its outcomes, what it cost, and how it ended."""
+    """What a finished run returned: its outcomes, what it cost, and how it ended.
+
+    ``structured`` is the run's structured output as the processor read it, whatever its
+    shape: a case run's is the outcomes (already in ``outcomes``), a review run's is the
+    verdict :mod:`liaise.review` parses.
+    """
 
     run_id: str
     outcomes: tuple[Outcome, ...] = ()
@@ -402,6 +441,7 @@ class RunResult(_Record):
     error: Optional[str] = None
     session_id: Optional[str] = None
     summary: str = ""
+    structured: Mapping[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

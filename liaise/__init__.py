@@ -18,7 +18,7 @@ from liaise.gate import (
     outbound_policy,
     run_gate,
 )
-from liaise.github import FakeGitHub, GhCli, GitHub, GitHubError
+from liaise.github import FakeGitHub, GhCli, GitHub, GitHubError, Pull
 from liaise.holds import hold, unhold
 from liaise.intake import IntakeReport, intake
 from liaise.ledger import Ledger, default_ledger_store
@@ -37,6 +37,7 @@ from liaise.notify import notify
 from liaise.outcomes import OUTCOME_SCHEMA, parse_outcomes, plan_outcomes
 from liaise.policy import Provenance, Verdict, evaluate
 from liaise.processor import ClaudeHeadless, EchoProcessor, Job, Processor
+from liaise.review import REVIEW_SCHEMA, Review, ReviewPolicy
 from liaise.subjects import Subject, load_subjects
 from liaise.tick import TickReport, run_once, status_lines
 
@@ -65,6 +66,10 @@ __all__ = [
     "Outcome",
     "Processor",
     "Provenance",
+    "Pull",
+    "REVIEW_SCHEMA",
+    "Review",
+    "ReviewPolicy",
     "RunRecord",
     "RunResult",
     "Subject",
