@@ -137,7 +137,8 @@ def test_setup_creates_the_waiting_labels_with_the_state_they_go_with():
 
     created = fake.labels_created(REPO)
     assert {"needs-pat", "needs-sam"} <= set(created) and "sam" in created["needs-sam"]
-    assert lines == [f"{REPO}: created 1 claim label(s), 2 waiting label(s) and 7 state labels (liaise:<state>)"]
+    # the seven case states, the five review states and liaise:hold
+    assert lines == [f"{REPO}: created 1 claim label(s), 2 waiting label(s) and 13 state labels (liaise:<state>)"]
 
 
 # ---- the subject file ----

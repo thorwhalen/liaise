@@ -1,6 +1,6 @@
 ---
 name: liaise
-description: Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, or explaining what a liaise label on a GitHub issue means. Triggers on "add a partner to liaise", "onboard <name> to liaise", "add a subject to liaise", "check liaise status", "what is liaise waiting on", "hold liaise", "pause liaise for <subject>", "unhold", "why is this issue unrouted", "migrate my liaise config", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue", "send the liaise draft", "approve this draft", "reject a draft", "message someone through liaise", "ask the partner a question outside a case", "liaise message send".
+description: Use when running liaise as its owner, such as onboarding a partner or a subject, reading liaise status, holding and unholding work, looking into the unrouted queue, migrating a 0.0.x liaise config to 0.1, turning on reviews of a partner's pull requests, posting a held review verdict, or explaining what a liaise label on a GitHub issue or pull request means. Triggers on "review pat's pull requests", "let liaise merge", "liaise review", "what does liaise:pr-approved mean", "post the review", "add a partner to liaise", "onboard <name> to liaise", "add a subject to liaise", "check liaise status", "what is liaise waiting on", "hold liaise", "pause liaise for <subject>", "unhold", "why is this issue unrouted", "migrate my liaise config", "what does liaise:needs-owner mean", "why hasn't liaise picked up this issue", "send the liaise draft", "approve this draft", "reject a draft", "message someone through liaise", "ask the partner a question outside a case", "liaise message send".
 ---
 
 # liaise: the owner's agent skill
@@ -216,6 +216,37 @@ liaise vet --ref github:example/app#12 --to ada --text-file reply.md --untainted
 - It reads only plain commands: `gh` and `correspond` commands joined by `&&`, `;`, `|` or newlines, a `cat <<'EOF' |` feeding one, a gh read piped into `jq`/`head`/`grep`. Anything else in a command that names `gh` or `correspond` is ask: `cd … && gh …`, `git commit -m "… gh …"`, a `$` or backtick, `GH_REPO=… gh`, subshells, redirections (other than `2>&1`, `>/dev/null`), two heredocs, flag clusters (`-sb`), gh aliases, and gh commands outside its table that change something (`gh pr merge`, `gh label create`). To be vetted rather than asked, run the write on its own, with a literal body, a body file, or one quoted heredoc.
 - It watches correspond's MCP tools under a server name holding `correspond`; a server registered under another name is not watched (correspond's own `before_send` still is).
 - When you answer yes to an ask, the PostToolUse hook records an override in liaise's ledger (the rules and hashes, never the text).
+
+## Reviewing a partner's pull requests
+
+A `[review]` table on the subject file turns it on; without one, no pull request is reviewed. The review is a run on the owner's machine, under their `claude` login, and `liaise` posts the verdict through the gate; the run itself never posts, labels or merges.
+
+```toml
+[review]
+authors = ["pat"]          # GitHub logins or person ids; default: everyone whose role grants request_work
+repos = ["example/lib"]    # reviewed besides the bound repositories; optional
+merge = "off"              # "squash" lets liaise merge approved pull requests after the veto window
+require_checks = true
+veto_minutes = 60
+brief = "~/.config/liaise/briefs/review.md"   # optional
+max_diff_lines = 4000
+```
+
+```
+liaise setup example-app                 # also creates the review labels and liaise:hold
+liaise review list                       # open partner pull requests and their state
+liaise review show example/app 7         # each review, its findings, the note for the owner, the case
+liaise review post example/app 7 --dry-run
+liaise review post example/app 7         # the owner, at a terminal
+```
+
+- `liaise run` does the reviewing: one review per head commit, within the subject's `daily_dispatches` and `concurrent`. A new push gets a new review; the same commit is never reviewed twice. Drafts wait until they are ready; a pull request over `max_diff_lines` is asked to split, with no run.
+- **What the labels mean:** `liaise:pr-reviewing` (a review is owed or running), `liaise:pr-approved` (approved; merges later if `merge = "squash"`), `liaise:pr-changes` (changes requested; the next push is reviewed), `liaise:pr-declined` (the reviewer says no; the owner decides), `liaise:pr-merged` (merged). `liaise:hold` is the one label a person sets: it keeps `liaise` from merging. Pull-request labels and issue labels are separate vocabularies, and projecting one never removes the other.
+- **A merge** needs all of: `merge = "squash"`, `pr-approved`, green checks (or none, or `require_checks = false`), not a draft, mergeable, the head still the approved commit, `veto_minutes` passed, no `liaise:hold`, and a later tick than the approval. It is bound to the approved commit. A failed merge is a notification and is not retried for that commit; see `liaise review show`.
+- **A held verdict.** With draft reply mode, or the tainted-run rule on a public repository, the verdict waits as a draft and the pull request stays `pr-reviewing`; the owner reads it with `liaise review show` and posts it with `liaise review post`, which asks at their terminal. Never run `review post` on the owner's behalf. `reply_modes = { pat = "direct" }` and `tainted_runs = "send"` let a trusted partner's verdicts post by themselves.
+- **The owner's note.** The reviewer's `for_owner` is a note on the case (`liaise review show`, `liaise status` digest notes), never posted; the notification says there is one.
+- A review that `crashed`, `timed_out` or returned no valid verdict is the owner's: that commit is not reviewed again until the partner pushes. A rate limit or an outage retries without counting.
+- A `partner:pat` label on a pull request opens no issue case: pull requests are the review's.
 
 ## Migrating from 0.0.x
 

@@ -91,9 +91,10 @@ def _fakes(root: Path, **overrides) -> dict:
 def test_the_command_tree_is_the_0_1_one():
     commands = cli._dispatch_funcs
     assert set(commands) == {
-        "run", "status", "hold", "unhold", "case", "message", "subject", "gate", "vet", "hook", "setup", "migrate-config", "schedule"
+        "run", "status", "hold", "unhold", "case", "message", "subject", "review", "gate", "vet", "hook", "setup", "migrate-config", "schedule"
     }
     assert set(commands["gate"]) == {"report"}
+    assert set(commands["review"]) == {"list", "show", "post"}
     assert set(commands["case"]) == {"list", "show", "set-state", "send-draft", "reject-draft", "cancel-send"}
     assert set(commands["message"]) == {"send", "list", "show", "send-draft", "reject-draft"}
     assert set(commands["subject"]) == {"list", "show"}

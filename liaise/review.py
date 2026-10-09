@@ -455,8 +455,9 @@ def merge_blockers(
 
     In words the plan prints: merging off, not approved, the head moved since the
     approval, a draft, not open, conflicts or mergeability unknown, checks not green
-    (unless the repository has none), the hold label, the veto window still open, or a
-    merge of this head that already failed.
+    (unless the repository has none), the hold label, the approval made this very tick
+    (a merge is always a later tick's, so a person has seen the verdict first), the veto
+    window still open, or a merge of this head that already failed.
     """
     reasons = []
     if policy.merge != MERGE_SQUASH:
@@ -482,10 +483,12 @@ def merge_blockers(
     if hold in pull.labels:
         reasons.append(f"the {hold} label is on it")
     if approval is not None:
+        if approval.at >= now:
+            reasons.append("approved this tick; a later tick merges")
         veto = timedelta(minutes=policy.veto_minutes)
         remaining = approval.at + veto - now
         if remaining > timedelta(0):
-            minutes = int(remaining.total_seconds() // 60) + 1
+            minutes = -(-int(remaining.total_seconds()) // 60)
             reasons.append(f"veto window: {minutes}m to go")
     if any(
         e.kind == "run"
@@ -1361,12 +1364,19 @@ def release_review_draft(
     """Release a held verdict (``liaise review post``): judge it again, post it, move the case on.
 
     The draft is one of :func:`review_drafts`. Its summary and findings are read back
-    from the case's ``review`` entry for the draft's head commit. ``approve_shown`` makes
-    the operator's approval of exactly the decision this call reaches (as ``liaise case
-    send-draft`` does on the dry run it shows), and ``approval`` is that approval on a later
-    call. A dry run posts nothing and records nothing. Once posted, the draft leaves the
-    case and the case moves to the verdict's state. Returns what happened and the approval
-    made, if any.
+    from the case's ``review`` entry for the draft's head commit, so what is posted is
+    what the reviewer wrote, and the audience is asked of the channel now.
+
+    ``approve_shown`` is how a caller that shows the operator a decision and asks them
+    releases it, as ``liaise case send-draft`` does: the verdict is judged once as it
+    stands, the operator's :class:`~liaise.model.Approval` of exactly that decision is
+    made (with ``justification``), and the verdict is judged again with it on the context,
+    posting nothing. What comes back is that second judgement, which is what the operator
+    is shown, and the approval to pass back as ``approval`` once they have said yes. With
+    ``approval`` the verdict is judged with it and, when the gate lets it through, posted;
+    a text or a readership that changed since voids it. Without either, or with
+    ``dry_run``, it is judged and nothing is posted or recorded. Once posted, the draft
+    leaves the case and the case moves to the verdict's state.
     """
     head_sha = str(draft.get("head_sha") or "")
     entry = review_for(case, head_sha)
@@ -1378,28 +1388,37 @@ def release_review_draft(
     review = parse_review(
         {k: v for k, v in entry.detail.items() if k in REVIEW_SCHEMA["properties"]}
     )
-    judged = post_verdict(
-        subject,
-        case,
-        review,
-        head_sha=head_sha,
-        ledger=ledger,
-        github=github,
-        now=now,
-        provenance=review_provenance(subject, pull_login(case)),
-        registry=registry,
-        outbound_filters=outbound_filters,
-        fingerprint_key=fingerprint_key,
-        dry_run=dry_run or approve_shown,
-        actor=OPERATOR_ACTOR,
-        approval=approval,
-    )
-    made = None
-    if approve_shown and judged.decision is not None:
-        made = approval_for(judged.decision, by=OPERATOR_ACTOR, at=now, justification=justification)
-    if judged.sent and not (dry_run or approve_shown):
+
+    def judge(*, approval: Optional[Approval], dry_run: bool) -> Posted:
+        return post_verdict(
+            subject,
+            case,
+            review,
+            head_sha=head_sha,
+            ledger=ledger,
+            github=github,
+            now=now,
+            provenance=review_provenance(subject, pull_login(case)),
+            registry=registry,
+            outbound_filters=outbound_filters,
+            fingerprint_key=fingerprint_key,
+            dry_run=dry_run,
+            actor=OPERATOR_ACTOR,
+            approval=approval,
+        )
+
+    if approve_shown:
+        first = judge(approval=None, dry_run=True)
+        if first.decision is None:
+            return first, None
+        made = approval_for(
+            first.decision, by=OPERATOR_ACTOR, at=now, justification=justification
+        )
+        return judge(approval=made, dry_run=True), made
+    posted = judge(approval=approval, dry_run=dry_run or approval is None)
+    if posted.sent and not dry_run and approval is not None:
         current = ledger.get_case(case.id) or case
-        kept = tuple(d for d in current.drafts if d is not draft and d != draft)
+        kept = tuple(d for d in current.drafts if d != draft)
         ledger.save_case(replace(current, drafts=kept))
         ledger.transition(
             case.id,
@@ -1408,7 +1427,7 @@ def release_review_draft(
             actor=OPERATOR_ACTOR,
             reason=f"review posted by the operator: {review.verdict}",
         )
-    return judged, made
+    return posted, None
 
 
 def review_list_lines(
