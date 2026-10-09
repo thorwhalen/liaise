@@ -22,9 +22,13 @@ labels::
                   authorization, budget, an open GitHub issue, preflight and the workspace
                   check, as a detached processor run. A case whose issue was read closed
                   has it read again at most once per CLOSED_RECHECK_INTERVAL.
-    4. nudge      each deployed case its partner has gone quiet on, once, unless its issue
+    4. review     each subject with a [review] table: its partners' open pull requests
+                  (liaise.review), a case per pull request, a review run per head commit
+                  not yet reviewed, within the same daily and concurrent budgets as the
+                  starts, and a squash merge of what may be merged
+    5. nudge      each deployed case its partner has gone quiet on, once, unless its issue
                   is closed
-    5. project    the state label of each case this tick touched, and of each whose state
+    6. project    the state label of each case this tick touched, and of each whose state
                   is not the one last projected (liaise.projection)
 
 The tick keeps its own clock: ``now`` stamps every entry, and a run's wall clock counts
@@ -113,7 +117,10 @@ from liaise.outbound import case_provenance
 from liaise.policy import Provenance
 from liaise.model import (
     CASE_STATES,
+    ISSUE_KIND,
     MESSAGE_HELD,
+    PR_STATES,
+    PULL_KIND,
     Case,
     Hold,
     IssueCheck,
@@ -158,6 +165,7 @@ from liaise.processor import FINISHED, FRESH, RESUME, RUNNING, ClaudeHeadless, J
 from liaise.projection import github_issue, project_labels, waiting_label
 from liaise.prompt import compose_case_prompt
 from liaise.readiness import compute_readiness, last_partner_activity
+from liaise.review import ReviewStep
 from liaise.release import error_text as _error_text
 from liaise.release import (
     default_send_store,
@@ -609,6 +617,7 @@ def run_once(
         lost_run_deadline=lost_run_deadline,
         closed_recheck_interval=closed_recheck_interval,
         sends=sends if sends is not None else default_send_store(state_dir),
+        state_dir=state_dir,
     )
     lock = nullcontext() if dry_run else run_lock(run_lock_path(state_dir))
     stamps = nullcontext() if dry_run else _stamp_run(store, now=now)
@@ -627,6 +636,7 @@ def run_once(
         tick.release_all()
         tick.reconcile()
         tick.start_all()
+        tick.review_all()
         tick.nudge_all()
         tick.project()
     return tick.report()
@@ -911,7 +921,7 @@ def status_lines(
         lines.append(
             f"subject {slug}: {len(mine)} case(s), {today}/{cap} dispatches today{inert}"
         )
-        for state in CASE_STATES:
+        for state in (*CASE_STATES, *PR_STATES):
             ids = [case.id for case in mine if case.state == state]
             if ids:
                 lines.append(f"  {state}: {', '.join(ids)}")
@@ -1007,6 +1017,7 @@ class _Tick:
         closed_recheck_interval: timedelta,
         fingerprint_key: Optional[Callable[[], bytes]] = None,
         sends: Optional[MutableMapping[str, Any]] = None,
+        state_dir: Optional[Path] = None,
     ):
         self.subjects = subjects
         self.ledger = ledger
@@ -1027,6 +1038,10 @@ class _Tick:
         self.closed_recheck_interval = closed_recheck_interval
         self.fingerprint_key = fingerprint_key
         self.sends = sends
+        #: Where a review with no checkout runs (see :func:`liaise.review.scratch_dir`).
+        self.state_dir = state_dir if state_dir is not None else lock_dir.parent
+        #: The review step, over this tick's plumbing.
+        self.review = ReviewStep(self)
         #: Per case, whether its GitHub issue was read closed this tick (None: unreadable).
         self.issue_closed: dict[str, Optional[bool]] = {}
         self.lines: list[str] = []
@@ -1109,6 +1124,9 @@ class _Tick:
     def _add_draft(self, case_id: str, draft: Mapping[str, Any]) -> None:
         case = self._case(case_id)
         self._save(replace(case, drafts=(*case.drafts, dict(draft))))
+
+    def _record_diversion(self, outbound: Outbound, reason: str) -> None:
+        self.diverted.append(Diversion(outbound, reason))
 
     def _notify(
         self, title: str, body: str, *, priority: str = DFLT_OPERATOR_PRIORITY
@@ -1456,6 +1474,9 @@ class _Tick:
                 f"counted as {_CRASHED}, and its outcomes are not carried out"
             )
             result = replace(result, error=_CRASHED, outcomes=())
+        if case.kind == PULL_KIND:
+            self.review.collected(subject, case, run, result)
+            return
         if result.session_id and result.session_id != case.session_id:
             self._save(replace(self._case(case.id), session_id=result.session_id))
         error = result.error or (None if result.outcomes else _NEEDS_HUMAN)
@@ -1537,7 +1558,9 @@ class _Tick:
         reason = f"{source}: {error}"
         if defer is not None:
             self._defer(case_id, defer)
-        if action.state is not None:
+        # A review case keeps its own vocabulary: an error leaves it where it is, and
+        # liaise.review decides whether that head commit gets another run.
+        if action.state is not None and self._case(case_id).kind == ISSUE_KIND:
             self._transition(case_id, action.state, reason)
         if action.auto_hold:
             placed, created = auto_hold(
@@ -2814,7 +2837,16 @@ class _Tick:
         self.ledger.increment_daily(subject.slug, day)
         self.dispatched.append(job.run_id)
 
-    # ---- 4. nudge ----
+    # ---- 4. review ----
+
+    def review_all(self) -> None:
+        for slug in self.slugs:
+            try:
+                self.review.run(slug)
+            except Exception as error:  # one subject's failure is not the tick's
+                self.problem(f"reviewing {slug} failed: {_error_text(error)}")
+
+    # ---- 5. nudge ----
 
     def nudge_all(self) -> None:
         for slug in self.slugs:
@@ -2850,7 +2882,7 @@ class _Tick:
         self._send_own(subject, case, NUDGE_MESSAGE, purpose=NUDGE_PURPOSE)
         self._entry(case.id, "gate", detail={"purpose": NUDGE_PURPOSE, "nudged": True})
 
-    # ---- 5. labels ----
+    # ---- 6. labels ----
 
     def project(self) -> None:
         """Show each case's state on its GitHub issues, as their one state label.

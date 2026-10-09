@@ -6,6 +6,14 @@ see at a glance. :func:`project_labels` makes each issue carry exactly the curre
 label: the other state labels come off, then the current one goes on. It is the one place
 a state label changes, so the one-label invariant is kept there.
 
+**Pull requests.** A review case (``kind == "pull"``, :mod:`liaise.review`) carries one
+of :data:`~liaise.model.PR_STATES` instead, as ``liaise:pr-approved``, on its pull request.
+The two vocabularies never touch: projecting a pull request's state removes only the other
+pull-request labels, and projecting an issue's removes only the other case labels, so a
+label from the wrong vocabulary, however it got there, is left alone. Pull requests get no
+waiting label. :data:`HOLD_LABEL` (``liaise:hold``) is the one label a person sets on a
+pull request: it keeps liaise from merging it.
+
 **Waiting labels.** When a subject sets ``policy.waiting_labels``, a case that waits on a
 person (:data:`WAITING_STATES`: its reporter was asked) also carries that person's label,
 ``needs-pat``, and the same function keeps that invariant too: at most one waiting label,
@@ -31,8 +39,8 @@ from typing import Optional
 from correspond.channels.github import REF_RE
 
 from liaise.github import GitHub
-from liaise.model import CASE_STATES, Case
-from liaise.subjects import Subject, poll_ref
+from liaise.model import CASE_STATES, PR_STATES, PULL_KIND, Case
+from liaise.subjects import HOLD_LABEL_SUFFIX, Subject, poll_ref
 
 #: The channel whose conversations carry labels.
 GITHUB_CHANNEL = "github"
@@ -49,6 +57,19 @@ CLAIM_LABEL_DESCRIPTION = (
 WAITING_STATES = ("needs-partner",)
 #: What a waiting label says on GitHub, formatted with the person the case waits on.
 WAITING_LABEL_DESCRIPTION = "Waiting on {person} to answer. liaise sets and removes it."
+#: The spec key, in ``labels.json``, of the label a person puts on a pull request to keep
+#: liaise from merging it: ``<label_prefix>hold`` (see :func:`hold_label`).
+HOLD_LABEL_SPEC = HOLD_LABEL_SUFFIX
+
+
+def hold_label(subject: Subject) -> str:
+    """The label that keeps liaise from merging a pull request of ``subject``: ``liaise:hold``.
+
+    >>> from liaise.subjects import Policy
+    >>> hold_label(Subject("app", ("github:example/app",), Policy(people={}, roles={})))
+    'liaise:hold'
+    """
+    return f"{subject.label_prefix}{HOLD_LABEL_SUFFIX}"
 
 
 def github_issue(conversation: str) -> Optional[tuple[str, int]]:
@@ -114,18 +135,20 @@ def project_labels(
     calls nothing on ``labeler``. A ``GitHubError`` from ``labeler`` propagates.
     """
     prefix = subject.label_prefix
+    pull = case.kind == PULL_KIND
+    vocabulary = PR_STATES if pull else CASE_STATES
     current = f"{prefix}{case.state}"
-    others = [f"{prefix}{state}" for state in CASE_STATES if state != case.state]
-    waiting = waiting_label(case, subject)
+    others = [f"{prefix}{state}" for state in vocabulary if state != case.state]
+    waiting = None if pull else waiting_label(case, subject)
     claims = subject.policy.claim_labels
     candidates = dict.fromkeys((*subject.policy.waiting_labels.values(), *stale))
-    not_waiting = [
+    not_waiting = [] if pull else [
         label
         for label in candidates
         if label and label != waiting and label not in claims
     ]
     shown = f"{current} and {waiting}" if waiting else current
-    removing = f"any other {prefix} state label" + (
+    removing = f"any other {prefix} {'review' if pull else 'state'} label" + (
         " and waiting label" if not_waiting else ""
     )
     lines = []
@@ -137,8 +160,10 @@ def project_labels(
             lines.append(f"would label {conversation} {shown}, removing {removing}")
             continue
         repo, number = issue
-        labeler.remove_labels(repo, number, [*others, *not_waiting])
-        labeler.add_labels(repo, number, [current, *([waiting] if waiting else [])])
+        labeler.remove_labels(repo, number, [*others, *not_waiting], pull=pull)
+        labeler.add_labels(
+            repo, number, [current, *([waiting] if waiting else [])], pull=pull
+        )
         lines.append(f"labelled {conversation} {shown}")
     return lines
 
@@ -147,12 +172,18 @@ def setup_labels(labeler: GitHub, subject: Subject) -> list[str]:
     """Create the labels ``subject`` needs in each GitHub repository it binds; a line per repository.
 
     Those are its ``policy.claim_labels``, the routing labels a relay puts on the issues it
-    files; its ``policy.waiting_labels``, coloured as the state they go with; and one
-    ``<label_prefix><state>`` label per case state, described and coloured as
-    ``data/labels.json`` says. Idempotent, since ``create_label`` updates a label that
-    already exists. A ``GitHubError`` from ``labeler`` propagates.
+    files; its ``policy.waiting_labels``, coloured as the state they go with; one
+    ``<label_prefix><state>`` label per case state and per pull-request review state,
+    described and coloured as ``data/labels.json`` says; and :func:`hold_label`. The
+    repositories are the ones the subject binds and, when it reviews pull requests, the
+    ones its ``[review]`` table adds (:func:`liaise.review.review_repos`). Idempotent,
+    since ``create_label`` updates a label that already exists. A ``GitHubError`` from
+    ``labeler`` propagates.
     """
     repos = github_repos(subject)
+    for extra in subject.review.repos if subject.review is not None else ():
+        if extra.casefold() not in {repo.casefold() for repo in repos}:
+            repos.append(extra)
     if not repos:
         where = subject.source or subject.slug
         return [f"{where} binds no GitHub repository: no labels to create"]
@@ -176,7 +207,7 @@ def setup_labels(labeler: GitHub, subject: Subject) -> list[str]:
             specs.get(state, {}).get("color", DFLT_LABEL_COLOR),
             specs.get(state, {}).get("description", ""),
         )
-        for state in CASE_STATES
+        for state in (*CASE_STATES, *PR_STATES, HOLD_LABEL_SPEC)
     ]
     counted = f", {len(waiting)} waiting label(s)" if waiting else ""
     lines = []

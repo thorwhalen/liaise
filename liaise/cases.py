@@ -36,7 +36,7 @@ from liaise.detect import link_urls, visible
 from liaise.gate import DFLT_OUTBOUND_FILTERS, OutboundFilter
 from liaise.holds import DFLT_SET_BY
 from liaise.ledger import Ledger
-from liaise.model import CASE_STATES, Approval, Case, LedgerEntry, require_one_of
+from liaise.model import CASE_STATES, PR_STATES, Approval, Case, LedgerEntry, require_one_of, states_for
 from liaise.outbox import held_id
 from liaise.policy import audience_in_words
 from liaise.processor import RUNNING
@@ -202,10 +202,10 @@ def case_lines(
 
     Every case in the ledger ``store``, or only those in ``state``, by subject and then
     oldest first. Reads only. Raises ``ValueError`` for a state outside
-    :data:`~liaise.model.CASE_STATES`.
+    :data:`~liaise.model.CASE_STATES` and :data:`~liaise.model.PR_STATES`.
     """
     if state is not None:
-        require_one_of(state, CASE_STATES, what="case state")
+        require_one_of(state, (*CASE_STATES, *PR_STATES), what="case state")
     cases = sorted(
         Ledger(store).cases(state=state),
         key=lambda case: (case.subject, case.created_at, case.id),
@@ -312,12 +312,13 @@ def set_case_state(
     already in ``state`` is returned as it is, and nothing is recorded. Its GitHub labels
     follow on the next tick.
 
-    Raises ``ValueError``, writing nothing, for a state outside
-    :data:`~liaise.model.CASE_STATES` or in :data:`TICK_ONLY_STATES`, for a case the ledger
+    Raises ``ValueError``, writing nothing, for a state outside the case's vocabulary
+    (:data:`~liaise.model.CASE_STATES`, or :data:`~liaise.model.PR_STATES` for a pull
+    request under review) or in :data:`TICK_ONLY_STATES`, for a case the ledger
     does not hold, and for a case with a run in flight, whose state the tick sets when it
     collects that run.
     """
-    require_one_of(state, CASE_STATES, what="case state")
+    require_one_of(state, (*CASE_STATES, *PR_STATES), what="case state")
     if state in TICK_ONLY_STATES:
         raise ValueError(
             f"a case cannot be set to {state}: {state} means a run is in flight, and only "
@@ -327,6 +328,11 @@ def set_case_state(
     case = ledger.get_case(case_id)
     if case is None:
         raise ValueError(_no_case(case_id))
+    if state not in states_for(case.kind):
+        raise ValueError(
+            f"case {case_id} is a {case.kind} case, whose states are: "
+            f"{', '.join(states_for(case.kind))}; {state} is not one of them"
+        )
     in_flight = _runs_in_flight(ledger, case_id)
     if in_flight:
         raise ValueError(

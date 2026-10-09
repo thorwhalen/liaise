@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import pytest
 
 from liaise.github import FakeGitHub, Issue
-from liaise.model import CASE_STATES, Case
+from liaise.model import CASE_STATES, PR_STATES, Case
 from liaise.projection import github_issue, github_repos, project_labels, setup_labels
 from liaise.subjects import Policy, Subject
 
@@ -150,7 +150,11 @@ def test_setup_creates_the_claim_labels_and_every_state_label_in_each_bound_repo
     assert github_repos(subject) == ["example/app", "example/site"]
     for repo in ("example/app", "example/site"):
         created = fake.labels_created(repo)
-        assert set(created) == {"partner:pat", *(f"liaise:{state}" for state in CASE_STATES)}
+        assert set(created) == {
+            "partner:pat",
+            "liaise:hold",
+            *(f"liaise:{state}" for state in (*CASE_STATES, *PR_STATES)),
+        }
         assert all(created.values())  # each says what it is for
         assert "pat" in created["partner:pat"]
     assert [line.split(":")[0] for line in lines] == ["example/app", "example/site"]

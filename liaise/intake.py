@@ -68,6 +68,10 @@ PER_MESSAGE_CONVERSATION_KINDS = ("inbox",)
 ADOPTING_CHANNELS = ("github",)
 #: The kind of conversation whose open issues are read for adoption.
 ADOPTING_CONVERSATION_KIND = "repository"
+#: The kind of conversation a pull request is: it opens no case here, and its comments
+#: are not taken in. :mod:`liaise.review` reads pull requests on its own.
+PULL_REQUEST_KIND = "pull_request"
+PULL_REQUEST_REASON = "a pull request is not taken in; liaise review reads it"
 #: The most open issues one adoption read asks for: one page of GitHub's issue list.
 ADOPTION_READ_LIMIT = 100
 #: The ``native`` state of an open issue, and how the id of its opening post starts.
@@ -289,6 +293,8 @@ def intake(
       message as its first entry, in ``intake``. Otherwise it is unrouted with the reason.
       A closed issue's opening opens no case.
     - Neither: it is not this subject's (``ignored``), and it is not marked seen.
+    - A message on a pull request (conversation kind ``pull_request``) is ``ignored``
+      whatever the bindings say: pull requests are :mod:`liaise.review`'s.
 
     **Legacy adoption.** An issue opening that already carries a
     ``<label_prefix><state>`` label opens its case in that state rather than ``intake``,
@@ -428,6 +434,9 @@ def intake(
             return
         if ledger.seen(event.delivery_id):
             record(event, "duplicate")
+            return
+        if message.conversation.kind == PULL_REQUEST_KIND:
+            record(event, "ignored", reason=PULL_REQUEST_REASON)
             return
         case = ledger.case_for_conversation(case_conversation(message))
         if case is not None and case.subject != subject.slug:

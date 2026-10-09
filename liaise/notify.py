@@ -50,6 +50,9 @@ NOTICE_DAILY_CAP = "daily cap reached"
 NOTICE_ISSUE_UNREADABLE = "issue state unreadable"
 NOTICE_MESSAGE_HELD = "message outside a case held"
 NOTICE_SEND_DELAYED = "message held in the outbox"
+NOTICE_REVIEW_POSTED = "review posted"
+NOTICE_PR_MERGED = "pull request merged"
+NOTICE_MERGE_FAILED = "merge failed"
 NOTICE_EVENTS = (
     NOTICE_ESCALATION,
     NOTICE_NO_CHANNEL,
@@ -66,6 +69,9 @@ NOTICE_EVENTS = (
     NOTICE_ISSUE_UNREADABLE,
     NOTICE_MESSAGE_HELD,
     NOTICE_SEND_DELAYED,
+    NOTICE_REVIEW_POSTED,
+    NOTICE_PR_MERGED,
+    NOTICE_MERGE_FAILED,
 )
 #: Each event's notification title, in :func:`notice_title`'s fields: ``{cases}`` (the case
 #: ids, else the subject's slug), ``{subject}`` (the slug) and, for an error alone,
@@ -87,6 +93,9 @@ NOTICE_TITLES = MappingProxyType(
         NOTICE_ISSUE_UNREADABLE: "liaise: {cases}'s issue cannot be read",
         NOTICE_MESSAGE_HELD: "liaise: a message on {subject} waits for you",
         NOTICE_SEND_DELAYED: "liaise: a message for {cases} is held before it sends",
+        NOTICE_REVIEW_POSTED: "liaise: {cases} reviewed",
+        NOTICE_PR_MERGED: "liaise: {cases} merged",
+        NOTICE_MERGE_FAILED: "liaise: {cases} did not merge",
     }
 )
 #: Where a notification points the operator for what it leaves out: each case it names,
