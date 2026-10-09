@@ -265,9 +265,10 @@ def test_setup_creates_the_subjects_labels(root):
     """Ported from 0.0.x test_state's `liaise setup` test."""
     labeler = FakeGitHub()
     output = cli.setup(SLUG, root=str(root), labeler=labeler)
-    every_label = {"liaise:hold", *(f"liaise:{state}" for state in (*CASE_STATES, *PR_STATES))}
-    assert set(labeler.labels_created(REPO)) == {"partner:pat", *every_label}
-    assert output.startswith(f"{REPO}: created 1 claim label(s) and {len(every_label)} state labels")
+    # the case states, the review states, and liaise:hold (a hold label, not a state)
+    liaise_labels = {"liaise:hold", *(f"liaise:{state}" for state in (*CASE_STATES, *PR_STATES))}
+    assert set(labeler.labels_created(REPO)) == {"partner:pat", *liaise_labels}
+    assert output.startswith(f"{REPO}: created 1 claim label(s) and {len(liaise_labels)} state labels")
 
 
 def test_migrate_config_prints_the_plan_and_writes_nothing_without_apply(config_root):

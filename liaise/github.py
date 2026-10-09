@@ -52,6 +52,9 @@ MERGE_METHODS = ("squash", "merge", "rebase")
 _FAILED_CONCLUSIONS = frozenset(
     {"FAILURE", "TIMED_OUT", "CANCELLED", "ACTION_REQUIRED", "ERROR", "STARTUP_FAILURE"}
 )
+#: A check run's conclusion, or a status context's state, that counts as a success. A
+#: ``STALE`` conclusion (the commit moved on under the check) is neither: it blocks.
+_PASSED_CONCLUSIONS = frozenset({"SUCCESS", "NEUTRAL", "SKIPPED"})
 #: ``gh``'s word for a pull request that is merged, in ``state``.
 MERGED_STATE = "merged"
 
@@ -124,8 +127,8 @@ class Pull:
 
     @property
     def ref(self) -> str:
-        """The encoded conversation reference liaise keys the review case on."""
-        return f"github:{self.repo}#{self.number}"
+        """The encoded conversation reference liaise keys the review case on, lower-cased as GitHub refs compare."""
+        return f"github:{self.repo}#{self.number}".lower()
 
 
 class GitHub(Protocol):
@@ -250,18 +253,22 @@ def _issue_from_json(repo: str, raw: dict) -> Issue:
 def checks_state(rollup: Any) -> str:
     """One of :data:`CHECK_STATES` for a ``statusCheckRollup`` as ``gh pr view`` gives it.
 
-    A check run counts by its ``conclusion`` once completed; a commit status by its
-    ``state``. Any failure makes the whole ``failure``; otherwise anything not finished
-    makes it ``pending``; a skipped or neutral check is as good as a success.
+    A check run (``__typename`` ``CheckRun``) counts by its ``conclusion`` once its
+    ``status`` is ``COMPLETED``; a commit status (``StatusContext``) by its ``state``.
+    Any failure makes the whole ``failure``. Otherwise ``success`` only when every item
+    concluded success, neutral or skipped; anything else (running, queued, expected, a
+    ``STALE`` conclusion, an unknown word) is ``pending``, which never merges.
 
     >>> checks_state([])
     'none'
-    >>> checks_state([{"status": "COMPLETED", "conclusion": "SUCCESS"}])
+    >>> checks_state([{"__typename": "CheckRun", "status": "COMPLETED", "conclusion": "SUCCESS"}])
     'success'
-    >>> checks_state([{"status": "COMPLETED", "conclusion": "SUCCESS"}, {"state": "PENDING"}])
+    >>> checks_state([{"status": "COMPLETED", "conclusion": "SUCCESS"}, {"__typename": "StatusContext", "state": "PENDING"}])
     'pending'
     >>> checks_state([{"status": "IN_PROGRESS"}, {"state": "FAILURE"}])
     'failure'
+    >>> checks_state([{"status": "COMPLETED", "conclusion": "STALE"}])
+    'pending'
     """
     items = [item for item in (rollup or []) if isinstance(item, dict)]
     if not items:
@@ -276,9 +283,9 @@ def checks_state(rollup: Any) -> str:
             verdicts.append("PENDING")
     if any(verdict in _FAILED_CONCLUSIONS for verdict in verdicts):
         return CHECKS_FAILURE
-    if any(verdict in ("PENDING", "EXPECTED", "QUEUED", "") for verdict in verdicts):
-        return CHECKS_PENDING
-    return CHECKS_SUCCESS
+    if all(verdict in _PASSED_CONCLUSIONS for verdict in verdicts):
+        return CHECKS_SUCCESS
+    return CHECKS_PENDING
 
 
 def _mergeable(value: Any) -> Optional[bool]:
@@ -550,9 +557,13 @@ class FakeGitHub:
 
     def seed_pull(self, pull: Pull, *, diff: Optional[str] = None) -> None:
         """Add or replace a pull request, and its diff when given, for test setup."""
-        self._pulls[(pull.repo, pull.number)] = pull
+        self._pulls[self._pull_key(pull.repo, pull.number)] = pull
         if diff is not None:
-            self._diffs[(pull.repo, pull.number)] = diff
+            self._diffs[self._pull_key(pull.repo, pull.number)] = diff
+
+    @staticmethod
+    def _pull_key(repo: str, number: int) -> tuple[str, int]:
+        return repo.casefold(), number
 
     def list_issues(
         self,
@@ -583,7 +594,7 @@ class FakeGitHub:
         if pull:
             found = self.get_pull(repo, number)
             new_labels = tuple(dict.fromkeys((*found.labels, *labels)))
-            self._pulls[(repo, number)] = replace(found, labels=new_labels)
+            self._pulls[self._pull_key(repo, number)] = replace(found, labels=new_labels)
             return
         issue = self.get_issue(repo, number)
         new_labels = tuple(dict.fromkeys((*issue.labels, *labels)))
@@ -595,7 +606,7 @@ class FakeGitHub:
         if pull:
             found = self.get_pull(repo, number)
             new_labels = tuple(l for l in found.labels if l not in labels)
-            self._pulls[(repo, number)] = replace(found, labels=new_labels)
+            self._pulls[self._pull_key(repo, number)] = replace(found, labels=new_labels)
             return
         issue = self.get_issue(repo, number)
         new_labels = tuple(l for l in issue.labels if l not in labels)
@@ -644,7 +655,7 @@ class FakeGitHub:
     def list_pulls(
         self, repo: str, *, author: Optional[str] = None, state: str = "open"
     ) -> list[Pull]:
-        result = [p for p in self._pulls.values() if p.repo == repo]
+        result = [p for p in self._pulls.values() if p.repo.casefold() == repo.casefold()]
         if state != "all":
             result = [p for p in result if p.state == state]
         if author is not None:
@@ -653,13 +664,13 @@ class FakeGitHub:
 
     def get_pull(self, repo: str, number: int) -> Pull:
         try:
-            return self._pulls[(repo, number)]
+            return self._pulls[self._pull_key(repo, number)]
         except KeyError:
             raise GitHubError(f"no such pull request: {repo}#{number}") from None
 
     def pull_diff(self, repo: str, number: int) -> str:
         self.get_pull(repo, number)
-        return self._diffs.get((repo, number), "")
+        return self._diffs.get(self._pull_key(repo, number), "")
 
     def post_review(
         self, repo: str, number: int, body: str, *, event: str
@@ -684,4 +695,4 @@ class FakeGitHub:
         if found.state != "open" or found.mergeable is False:
             raise GitHubError(f"{repo}#{number} cannot be merged")
         self.merges.append((repo, number, method, match_head_sha))
-        self._pulls[(repo, number)] = replace(found, state=MERGED_STATE)
+        self._pulls[self._pull_key(repo, number)] = replace(found, state=MERGED_STATE)

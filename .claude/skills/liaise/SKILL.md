@@ -230,6 +230,7 @@ require_checks = true
 veto_minutes = 60
 brief = "~/.config/liaise/briefs/review.md"   # optional
 max_diff_lines = 4000
+run_tests = false          # true runs the partner's tests on the owner's machine with their credentials: ask first
 ```
 
 ```
@@ -242,7 +243,8 @@ liaise review post example/app 7         # the owner, at a terminal
 
 - `liaise run` does the reviewing: one review per head commit, within the subject's `daily_dispatches` and `concurrent`. A new push gets a new review; the same commit is never reviewed twice. Drafts wait until they are ready; a pull request over `max_diff_lines` is asked to split, with no run.
 - **What the labels mean:** `liaise:pr-reviewing` (a review is owed or running), `liaise:pr-approved` (approved; merges later if `merge = "squash"`), `liaise:pr-changes` (changes requested; the next push is reviewed), `liaise:pr-declined` (the reviewer says no; the owner decides), `liaise:pr-merged` (merged). `liaise:hold` is the one label a person sets: it keeps `liaise` from merging. Pull-request labels and issue labels are separate vocabularies, and projecting one never removes the other.
-- **A merge** needs all of: `merge = "squash"`, `pr-approved`, green checks (or none, or `require_checks = false`), not a draft, mergeable, the head still the approved commit, `veto_minutes` passed, no `liaise:hold`, and a later tick than the approval. It is bound to the approved commit. A failed merge is a notification and is not retried for that commit; see `liaise review show`.
+- **A merge** needs all of: `merge = "squash"`, a recorded `approve` of the current head (the `pr-approved` label alone never merges), at least one check run and all green (`none` blocks unless `require_checks = false`; stale or pending blocks), not a draft, mergeable, `veto_minutes` passed since the approval was posted, no `liaise:hold`, and a later tick than the posting. It is bound to the approved commit. A failed merge is a notification and is not retried for that commit; see `liaise review show`.
+- **Never set `run_tests = true` on the owner's behalf:** it runs a partner's code with the owner's credentials. The reviewer is denied `gh pr review|comment|merge|edit|close`, `gh issue comment` and `git push`, and the pull request's text and diff are handed to it fenced as untrusted data.
 - **A held verdict.** With draft reply mode, or the tainted-run rule on a public repository, the verdict waits as a draft and the pull request stays `pr-reviewing`; the owner reads it with `liaise review show` and posts it with `liaise review post`, which asks at their terminal. Never run `review post` on the owner's behalf. `reply_modes = { pat = "direct" }` and `tainted_runs = "send"` let a trusted partner's verdicts post by themselves.
 - **The owner's note.** The reviewer's `for_owner` is a note on the case (`liaise review show`, `liaise status` digest notes), never posted; the notification says there is one.
 - A review that `crashed`, `timed_out` or returned no valid verdict is the owner's: that commit is not reviewed again until the partner pushes. A rate limit or an outage retries without counting.

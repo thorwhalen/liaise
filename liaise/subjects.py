@@ -114,6 +114,9 @@ DFLT_VETO_MINUTES = 60
 #: The most lines of diff a review run is handed (``review.max_diff_lines``); a larger pull
 #: request gets ``changes`` and a request to split it, with no run.
 DFLT_MAX_DIFF_LINES = 4000
+#: Whether a review run may run the pull request's code (``review.run_tests``): off, since
+#: a partner's code would then run with the owner's credentials and checkout.
+DFLT_RUN_TESTS = False
 #: The suffix of the label a person sets on a pull request to keep liaise from merging it
 #: (``<label_prefix>hold``; see :func:`liaise.projection.hold_label`).
 HOLD_LABEL_SUFFIX = "hold"
@@ -211,7 +214,9 @@ class ReviewPolicy:
     checks (a repository with no checks at all passes). ``veto_minutes`` is how long after
     an approval a merge waits, and a new push or the hold label in that window stops it.
     ``brief`` is the path of an extra brief the reviewer reads, if any. ``max_diff_lines``
-    is the most diff a run is handed.
+    is the most diff a run is handed. ``run_tests`` lets the reviewer run the pull
+    request's tests in a temporary worktree: off by default, because that runs a
+    partner's code on the owner's machine with the owner's credentials (ADR 0004).
     """
 
     authors: tuple[str, ...] = ()
@@ -221,6 +226,7 @@ class ReviewPolicy:
     veto_minutes: int = DFLT_VETO_MINUTES
     brief: str = ""
     max_diff_lines: int = DFLT_MAX_DIFF_LINES
+    run_tests: bool = DFLT_RUN_TESTS
 
     def reviews(self, login: str) -> bool:
         """Whether pull requests by the GitHub login ``login`` are reviewed."""
@@ -964,6 +970,8 @@ def _review_from(
                 f"{path}: review.repos names {repo!r}, which is not owner/repo, as in "
                 f'repos = ["example/app-package"].'
             )
+    # Lower-cased, as GitHub references compare and as the review cases are keyed.
+    repos = tuple(dict.fromkeys(repo.lower() for repo in repos))
 
     def whole(key: str, default: int, *, least: int) -> int:
         value = review.get(key, default)
@@ -996,6 +1004,13 @@ def _review_from(
         veto_minutes=whole("veto_minutes", DFLT_VETO_MINUTES, least=0),
         brief=brief,
         max_diff_lines=whole("max_diff_lines", DFLT_MAX_DIFF_LINES, least=1),
+        run_tests=_boolean(
+            review,
+            "run_tests",
+            default=DFLT_RUN_TESTS,
+            path=path,
+            dotted="review.run_tests",
+        ),
     )
 
 
