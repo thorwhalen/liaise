@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=71734efd"></script>
+    <script src="../../_static/documentation_options.js?v=9969ed3f"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.17" />
+  <meta name="docsearch:version" content="0.1.18" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -1331,7 +1331,11 @@ window.runMermaid = runMermaid;</script>
     <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">APPROVED</span><span class="p">:</span>
         <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not in </span><span class="si">{</span><span class="n">APPROVED</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
     <span class="n">approved_at</span> <span class="o">=</span> <span class="n">posted_at</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">pull</span><span class="o">.</span><span class="n">head_sha</span><span class="p">)</span> <span class="k">if</span> <span class="n">review</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
-    <span class="k">if</span> <span class="n">review</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">review</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"verdict"</span><span class="p">)</span> <span class="o">==</span> <span class="n">APPROVE</span> <span class="ow">and</span> <span class="n">approved_at</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">review</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="ow">and</span> <span class="n">review</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"verdict"</span><span class="p">)</span> <span class="o">==</span> <span class="n">APPROVE</span>
+        <span class="ow">and</span> <span class="n">approved_at</span> <span class="ow">is</span> <span class="kc">None</span>
+    <span class="p">):</span>
         <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"the approval has not been posted yet"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">pull</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s2">"open"</span><span class="p">:</span>
         <span class="n">reasons</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the pull request is </span><span class="si">{</span><span class="n">pull</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -1465,7 +1469,9 @@ window.runMermaid = runMermaid;</script>
     <span class="n">briefs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"## Briefs"</span><span class="p">]</span>
     <span class="n">brief</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">brief_for</span><span class="p">(</span><span class="n">person</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">brief</span><span class="p">:</span>
-        <span class="n">setting</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"policy.briefs.</span><span class="si">{</span><span class="n">person</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">briefs</span> <span class="k">else</span> <span class="s2">"brief"</span>
+        <span class="n">setting</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"policy.briefs.</span><span class="si">{</span><span class="n">person</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">person</span> <span class="ow">in</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">briefs</span> <span class="k">else</span> <span class="s2">"brief"</span>
+        <span class="p">)</span>
         <span class="n">briefs</span> <span class="o">+=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="n">_read_brief</span><span class="p">(</span><span class="n">brief</span><span class="p">,</span> <span class="n">where</span><span class="o">=</span><span class="n">where</span><span class="p">,</span> <span class="n">setting</span><span class="o">=</span><span class="n">setting</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
     <span class="k">if</span> <span class="n">policy</span><span class="o">.</span><span class="n">brief</span><span class="p">:</span>
         <span class="n">briefs</span> <span class="o">+=</span> <span class="p">[</span>
@@ -1621,7 +1627,9 @@ window.runMermaid = runMermaid;</script>
             <span class="n">tick</span><span class="o">.</span><span class="n">labeler</span><span class="p">,</span>
             <span class="n">problem</span><span class="o">=</span><span class="k">lambda</span> <span class="n">text</span><span class="p">:</span> <span class="n">tick</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span><span class="sa">f</span><span class="s2">"review </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span><span class="p">),</span>
         <span class="p">)</span>
-        <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"review </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pulls</span><span class="p">)</span><span class="si">}</span><span class="s2"> open pull request(s) by reviewed authors"</span><span class="p">)</span>
+        <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"review </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">pulls</span><span class="p">)</span><span class="si">}</span><span class="s2"> open pull request(s) by reviewed authors"</span>
+        <span class="p">)</span>
         <span class="k">for</span> <span class="n">pull</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">pulls</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">p</span><span class="p">:</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">number</span><span class="p">)):</span>
             <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">pull</span><span class="o">.</span><span class="n">ref</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
@@ -1640,7 +1648,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">try</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_notice_merged_elsewhere</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
-                <span class="n">tick</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span><span class="sa">f</span><span class="s2">"reading </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">conversations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span></div>
+                <span class="n">tick</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"reading </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">conversations</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> failed: </span><span class="si">{</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ReviewStep.collected">
@@ -1786,7 +1796,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">tick</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tick</span>
         <span class="n">reporter</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">person_for_login</span><span class="p">(</span><span class="n">pull</span><span class="o">.</span><span class="n">author</span><span class="p">)</span> <span class="ow">or</span> <span class="n">pull</span><span class="o">.</span><span class="n">author</span>
         <span class="n">case</span> <span class="o">=</span> <span class="n">tick</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">new_case</span><span class="p">(</span>
-            <span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span> <span class="n">pull</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span> <span class="n">reporter</span><span class="o">=</span><span class="n">reporter</span><span class="p">,</span> <span class="n">at</span><span class="o">=</span><span class="n">pull</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span> <span class="n">kind</span><span class="o">=</span><span class="n">PULL_KIND</span>
+            <span class="n">subject</span><span class="o">.</span><span class="n">slug</span><span class="p">,</span>
+            <span class="n">pull</span><span class="o">.</span><span class="n">ref</span><span class="p">,</span>
+            <span class="n">reporter</span><span class="o">=</span><span class="n">reporter</span><span class="p">,</span>
+            <span class="n">at</span><span class="o">=</span><span class="n">pull</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span>
+            <span class="n">kind</span><span class="o">=</span><span class="n">PULL_KIND</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">entry</span> <span class="o">=</span> <span class="n">LedgerEntry</span><span class="p">(</span>
             <span class="n">at</span><span class="o">=</span><span class="n">pull</span><span class="o">.</span><span class="n">created_at</span><span class="p">,</span>
@@ -1818,7 +1832,9 @@ window.runMermaid = runMermaid;</script>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">tick</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tick</span>
         <span class="n">sha</span> <span class="o">=</span> <span class="n">pull</span><span class="o">.</span><span class="n">head_sha</span>
-        <span class="n">in_flight</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">tick</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">RUNNING</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">case_id</span> <span class="o">==</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">]</span>
+        <span class="n">in_flight</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">tick</span><span class="o">.</span><span class="n">ledger</span><span class="o">.</span><span class="n">runs</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">RUNNING</span><span class="p">)</span> <span class="k">if</span> <span class="n">r</span><span class="o">.</span><span class="n">case_id</span> <span class="o">==</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span>
+        <span class="p">]</span>
         <span class="k">if</span> <span class="n">in_flight</span><span class="p">:</span>
             <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: run </span><span class="si">{</span><span class="n">in_flight</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">run_id</span><span class="si">}</span><span class="s2"> is still in flight"</span><span class="p">)</span>
             <span class="k">return</span>
@@ -1868,7 +1884,9 @@ window.runMermaid = runMermaid;</script>
         <span class="p">)</span>
         <span class="n">hold</span> <span class="o">=</span> <span class="n">blocking_hold</span><span class="p">(</span><span class="n">tick</span><span class="o">.</span><span class="n">ledger</span><span class="p">,</span> <span class="n">scopes</span><span class="p">,</span> <span class="n">for_</span><span class="o">=</span><span class="s2">"start"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">hold</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: held by </span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">) </span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">rstrip</span><span class="p">())</span>
+            <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: held by </span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">scope</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">) </span><span class="si">{</span><span class="n">hold</span><span class="o">.</span><span class="n">reason</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span>
+            <span class="p">)</span>
             <span class="k">return</span>
         <span class="c1"># The budget is checked before anything is read or posted: a diff is a request,</span>
         <span class="c1"># and a too-large verdict is a post, and neither is free.</span>
@@ -1916,9 +1934,7 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
             <span class="k">return</span>
         <span class="n">bound</span> <span class="o">=</span> <span class="p">{</span><span class="n">repo</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="k">for</span> <span class="n">repo</span> <span class="ow">in</span> <span class="n">github_repos</span><span class="p">(</span><span class="n">subject</span><span class="p">)}</span>
-        <span class="n">checkout</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">tick</span><span class="o">.</span><span class="n">_workspace</span><span class="p">(</span><span class="n">subject</span><span class="p">)</span> <span class="k">if</span> <span class="n">pull</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="ow">in</span> <span class="n">bound</span> <span class="k">else</span> <span class="kc">None</span>
-        <span class="p">)</span>
+        <span class="n">checkout</span> <span class="o">=</span> <span class="n">tick</span><span class="o">.</span><span class="n">_workspace</span><span class="p">(</span><span class="n">subject</span><span class="p">)</span> <span class="k">if</span> <span class="n">pull</span><span class="o">.</span><span class="n">repo</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="ow">in</span> <span class="n">bound</span> <span class="k">else</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="n">checkout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">conflict</span> <span class="o">=</span> <span class="n">checkout</span><span class="o">.</span><span class="n">conflict</span><span class="p">()</span>
             <span class="k">if</span> <span class="n">conflict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -1936,7 +1952,10 @@ window.runMermaid = runMermaid;</script>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># a brief that cannot be read</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_start_failed</span><span class="p">(</span>
-                <span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">,</span> <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">sha</span><span class="o">=</span><span class="n">sha</span><span class="p">,</span>
+                <span class="n">subject</span><span class="p">,</span>
+                <span class="n">case</span><span class="p">,</span>
+                <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span>
+                <span class="n">sha</span><span class="o">=</span><span class="n">sha</span><span class="p">,</span>
                 <span class="n">why</span><span class="o">=</span><span class="sa">f</span><span class="s2">"composing the prompt: </span><span class="si">{</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">return</span>
@@ -1953,7 +1972,9 @@ window.runMermaid = runMermaid;</script>
             <span class="n">disallowed_tools</span><span class="o">=</span><span class="n">DISALLOWED_REVIEW_TOOLS</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">tick</span><span class="o">.</span><span class="n">dry_run</span><span class="p">:</span>
-            <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: would dispatch a review of head </span><span class="si">{</span><span class="n">sha</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2"> as run </span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: would dispatch a review of head </span><span class="si">{</span><span class="n">sha</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2"> as run </span><span class="si">{</span><span class="n">run_id</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_record_start</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">,</span> <span class="n">job</span><span class="p">,</span> <span class="n">sha</span><span class="p">)</span>
             <span class="k">return</span>
         <span class="k">if</span> <span class="n">checkout</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1970,7 +1991,9 @@ window.runMermaid = runMermaid;</script>
             <span class="k">if</span> <span class="n">lock</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">checkout</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span>
                 <span class="n">run_id</span><span class="o">=</span><span class="n">run_id</span><span class="p">,</span> <span class="n">pid</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">(),</span> <span class="n">now</span><span class="o">=</span><span class="n">tick</span><span class="o">.</span><span class="n">now</span>
             <span class="p">):</span>
-                <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: workspace_conflict: </span><span class="si">{</span><span class="n">lock</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'the checkout is locked'</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: workspace_conflict: </span><span class="si">{</span><span class="n">lock</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'the checkout is locked'</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">)</span>
                 <span class="k">return</span>
         <span class="n">record</span><span class="p">,</span> <span class="n">failure</span> <span class="o">=</span> <span class="n">tick</span><span class="o">.</span><span class="n">_call</span><span class="p">(</span><span class="s2">"start"</span><span class="p">,</span> <span class="n">job</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">failure</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">RunRecord</span><span class="p">):</span>
@@ -2094,7 +2117,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">text</span><span class="o">=</span><span class="n">review</span><span class="o">.</span><span class="n">for_owner</span><span class="p">,</span>
                 <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="s2">"head_sha"</span><span class="p">:</span> <span class="n">head_sha</span><span class="p">,</span> <span class="s2">"run_id"</span><span class="p">:</span> <span class="n">run_id</span><span class="p">,</span> <span class="s2">"from"</span><span class="p">:</span> <span class="s2">"review"</span><span class="p">},</span>
             <span class="p">)</span>
-        <span class="n">moved</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"; the head moved to </span><span class="si">{</span><span class="n">stale_head</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">, posted as a comment"</span> <span class="k">if</span> <span class="n">stale_head</span> <span class="k">else</span> <span class="s2">""</span>
+        <span class="n">moved</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"; the head moved to </span><span class="si">{</span><span class="n">stale_head</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">, posted as a comment"</span>
+            <span class="k">if</span> <span class="n">stale_head</span>
+            <span class="k">else</span> <span class="s2">""</span>
+        <span class="p">)</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  review </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">review</span><span class="o">.</span><span class="n">verdict</span><span class="si">}</span><span class="s2"> on head </span><span class="si">{</span><span class="n">head_sha</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}{</span><span class="n">moved</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">posted</span> <span class="o">=</span> <span class="n">post_verdict</span><span class="p">(</span>
             <span class="n">subject</span><span class="p">,</span>
@@ -2125,7 +2152,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">if</span> <span class="n">posted</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
             <span class="n">tick</span><span class="o">.</span><span class="n">sent</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">posted</span><span class="o">.</span><span class="n">outbound</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">stale_head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">tick</span><span class="o">.</span><span class="n">_transition</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">review</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"review posted: </span><span class="si">{</span><span class="n">review</span><span class="o">.</span><span class="n">verdict</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+                <span class="n">tick</span><span class="o">.</span><span class="n">_transition</span><span class="p">(</span>
+                    <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">review</span><span class="o">.</span><span class="n">state</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"review posted: </span><span class="si">{</span><span class="n">review</span><span class="o">.</span><span class="n">verdict</span><span class="si">}</span><span class="s2">"</span>
+                <span class="p">)</span>
             <span class="n">noted</span> <span class="o">=</span> <span class="s2">", with a note for you"</span> <span class="k">if</span> <span class="n">review</span><span class="o">.</span><span class="n">for_owner</span> <span class="k">else</span> <span class="s2">""</span>
             <span class="n">stale</span> <span class="o">=</span> <span class="s2">", of a commit no longer the head"</span> <span class="k">if</span> <span class="n">stale_head</span> <span class="k">else</span> <span class="s2">""</span>
             <span class="n">tick</span><span class="o">.</span><span class="n">_notice</span><span class="p">(</span>
@@ -2149,7 +2178,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">fresh</span> <span class="o">=</span> <span class="n">tick</span><span class="o">.</span><span class="n">labeler</span><span class="o">.</span><span class="n">get_pull</span><span class="p">(</span><span class="n">pull</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">pull</span><span class="o">.</span><span class="n">number</span><span class="p">)</span>
         <span class="k">except</span> <span class="n">GitHubError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
-            <span class="n">tick</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">pull</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">: reading it before merging failed: </span><span class="si">{</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">tick</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">pull</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">: reading it before merging failed: </span><span class="si">{</span><span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
             <span class="k">return</span>
         <span class="n">blockers</span> <span class="o">=</span> <span class="n">merge_blockers</span><span class="p">(</span>
             <span class="n">fresh</span><span class="p">,</span> <span class="n">case</span><span class="p">,</span> <span class="n">policy</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">tick</span><span class="o">.</span><span class="n">now</span><span class="p">,</span> <span class="n">hold</span><span class="o">=</span><span class="n">hold_label</span><span class="p">(</span><span class="n">subject</span><span class="p">)</span>
@@ -2162,7 +2193,10 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">tick</span><span class="o">.</span><span class="n">labeler</span><span class="o">.</span><span class="n">merge_pull</span><span class="p">(</span>
-                <span class="n">pull</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span> <span class="n">pull</span><span class="o">.</span><span class="n">number</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">merge</span><span class="p">,</span> <span class="n">match_head_sha</span><span class="o">=</span><span class="n">fresh</span><span class="o">.</span><span class="n">head_sha</span>
+                <span class="n">pull</span><span class="o">.</span><span class="n">repo</span><span class="p">,</span>
+                <span class="n">pull</span><span class="o">.</span><span class="n">number</span><span class="p">,</span>
+                <span class="n">method</span><span class="o">=</span><span class="n">policy</span><span class="o">.</span><span class="n">merge</span><span class="p">,</span>
+                <span class="n">match_head_sha</span><span class="o">=</span><span class="n">fresh</span><span class="o">.</span><span class="n">head_sha</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
             <span class="n">why</span> <span class="o">=</span> <span class="n">error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
@@ -2183,7 +2217,11 @@ window.runMermaid = runMermaid;</script>
         <span class="n">tick</span><span class="o">.</span><span class="n">_entry</span><span class="p">(</span>
             <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
             <span class="s2">"run"</span><span class="p">,</span>
-            <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="n">RUN_MERGED</span><span class="p">,</span> <span class="s2">"head_sha"</span><span class="p">:</span> <span class="n">fresh</span><span class="o">.</span><span class="n">head_sha</span><span class="p">,</span> <span class="s2">"method"</span><span class="p">:</span> <span class="n">policy</span><span class="o">.</span><span class="n">merge</span><span class="p">},</span>
+            <span class="n">detail</span><span class="o">=</span><span class="p">{</span>
+                <span class="s2">"event"</span><span class="p">:</span> <span class="n">RUN_MERGED</span><span class="p">,</span>
+                <span class="s2">"head_sha"</span><span class="p">:</span> <span class="n">fresh</span><span class="o">.</span><span class="n">head_sha</span><span class="p">,</span>
+                <span class="s2">"method"</span><span class="p">:</span> <span class="n">policy</span><span class="o">.</span><span class="n">merge</span><span class="p">,</span>
+            <span class="p">},</span>
         <span class="p">)</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: squash-merged head </span><span class="si">{</span><span class="n">fresh</span><span class="o">.</span><span class="n">head_sha</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="n">tick</span><span class="o">.</span><span class="n">_transition</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">MERGED</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"merged head </span><span class="si">{</span><span class="n">fresh</span><span class="o">.</span><span class="n">head_sha</span><span class="p">[:</span><span class="mi">8</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
@@ -2201,7 +2239,11 @@ window.runMermaid = runMermaid;</script>
             <span class="n">tick</span><span class="o">.</span><span class="n">_entry</span><span class="p">(</span>
                 <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
                 <span class="s2">"run"</span><span class="p">,</span>
-                <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="n">RUN_MERGED</span><span class="p">,</span> <span class="s2">"head_sha"</span><span class="p">:</span> <span class="n">pull</span><span class="o">.</span><span class="n">head_sha</span><span class="p">,</span> <span class="s2">"elsewhere"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="n">detail</span><span class="o">=</span><span class="p">{</span>
+                    <span class="s2">"event"</span><span class="p">:</span> <span class="n">RUN_MERGED</span><span class="p">,</span>
+                    <span class="s2">"head_sha"</span><span class="p">:</span> <span class="n">pull</span><span class="o">.</span><span class="n">head_sha</span><span class="p">,</span>
+                    <span class="s2">"elsewhere"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+                <span class="p">},</span>
             <span class="p">)</span>
             <span class="n">tick</span><span class="o">.</span><span class="n">_transition</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">MERGED</span><span class="p">,</span> <span class="s2">"merged outside liaise"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">pull</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="s2">"open"</span><span class="p">:</span>
@@ -2305,7 +2347,9 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">notes</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">notes</span><span class="p">,</span>
                 <span class="n">gate</span><span class="o">=</span><span class="n">decision</span><span class="o">.</span><span class="n">summary</span><span class="p">(),</span>
             <span class="p">)</span>
-            <span class="n">draft</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">"verdict"</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">verdict</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">:</span> <span class="n">event</span><span class="p">,</span> <span class="s2">"head_sha"</span><span class="p">:</span> <span class="n">head_sha</span><span class="p">})</span>
+            <span class="n">draft</span><span class="o">.</span><span class="n">update</span><span class="p">(</span>
+                <span class="p">{</span><span class="s2">"verdict"</span><span class="p">:</span> <span class="n">review</span><span class="o">.</span><span class="n">verdict</span><span class="p">,</span> <span class="s2">"event"</span><span class="p">:</span> <span class="n">event</span><span class="p">,</span> <span class="s2">"head_sha"</span><span class="p">:</span> <span class="n">head_sha</span><span class="p">}</span>
+            <span class="p">)</span>
             <span class="n">current</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">get_case</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">)</span> <span class="ow">or</span> <span class="n">case</span>
             <span class="n">ledger</span><span class="o">.</span><span class="n">save_case</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">drafts</span><span class="o">=</span><span class="p">(</span><span class="o">*</span><span class="n">current</span><span class="o">.</span><span class="n">drafts</span><span class="p">,</span> <span class="n">draft</span><span class="p">)))</span>
             <span class="n">ledger</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -2337,7 +2381,9 @@ window.runMermaid = runMermaid;</script>
                 <span class="sa">f</span><span class="s2">"posting the review failed: </span><span class="si">{</span><span class="n">why</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="n">extra</span><span class="o">=</span><span class="p">{</span><span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="n">why</span><span class="p">},</span>
             <span class="p">)</span>
-            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">posted</span><span class="p">,</span> <span class="n">notice</span><span class="o">=</span><span class="n">NOTICE_SEND_FAILED</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span>
+                <span class="n">posted</span><span class="p">,</span> <span class="n">notice</span><span class="o">=</span><span class="n">NOTICE_SEND_FAILED</span><span class="p">,</span> <span class="n">cause</span><span class="o">=</span><span class="nb">type</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span>
+            <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">dry_run</span><span class="p">:</span>
         <span class="n">ledger</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
@@ -2346,7 +2392,11 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">kind</span><span class="o">=</span><span class="s2">"gate"</span><span class="p">,</span>
                 <span class="n">actor</span><span class="o">=</span><span class="n">actor</span><span class="p">,</span>
                 <span class="n">text</span><span class="o">=</span><span class="n">passed</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>
-                <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="n">detail</span><span class="p">,</span> <span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span> <span class="o">**</span><span class="p">({</span><span class="s2">"by"</span><span class="p">:</span> <span class="n">actor</span><span class="p">}</span> <span class="k">if</span> <span class="n">approval</span> <span class="k">else</span> <span class="p">{})},</span>
+                <span class="n">detail</span><span class="o">=</span><span class="p">{</span>
+                    <span class="o">**</span><span class="n">detail</span><span class="p">,</span>
+                    <span class="s2">"decision"</span><span class="p">:</span> <span class="s2">"send"</span><span class="p">,</span>
+                    <span class="o">**</span><span class="p">({</span><span class="s2">"by"</span><span class="p">:</span> <span class="n">actor</span><span class="p">}</span> <span class="k">if</span> <span class="n">approval</span> <span class="k">else</span> <span class="p">{}),</span>
+                <span class="p">},</span>
             <span class="p">),</span>
         <span class="p">)</span>
     <span class="n">verb</span> <span class="o">=</span> <span class="s2">"would post"</span> <span class="k">if</span> <span class="n">dry_run</span> <span class="k">else</span> <span class="s2">"posted"</span>
@@ -2533,7 +2583,9 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""What ``liaise review show`` adds before the case: each review, with its findings and note."""</span>
     <span class="n">case</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">case_for_conversation</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">case</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="n">PULL_KIND</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no review case for </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">; liaise review list shows what there is"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"no review case for </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">; liaise review list shows what there is"</span>
+        <span class="p">)</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"reviews of </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">review_entries</span><span class="p">(</span><span class="n">case</span><span class="p">))</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span>
     <span class="k">for</span> <span class="n">entry</span> <span class="ow">in</span> <span class="n">review_entries</span><span class="p">(</span><span class="n">case</span><span class="p">):</span>
         <span class="n">detail</span> <span class="o">=</span> <span class="n">entry</span><span class="o">.</span><span class="n">detail</span>
@@ -2547,7 +2599,9 @@ window.runMermaid = runMermaid;</script>
             <span class="n">where</span> <span class="o">=</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"file"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"line"</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">where</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">":</span><span class="si">{</span><span class="n">finding</span><span class="p">[</span><span class="s1">'line'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
-            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"    - </span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'severity'</span><span class="p">)</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'note'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"    - </span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'severity'</span><span class="p">)</span><span class="si">}</span><span class="s2">): </span><span class="si">{</span><span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'note'</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+            <span class="p">)</span>
         <span class="k">if</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"for_owner"</span><span class="p">):</span>
             <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"    for you:"</span><span class="p">)</span>
             <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"      </span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">detail</span><span class="p">[</span><span class="s2">"for_owner"</span><span class="p">])</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()]</span>

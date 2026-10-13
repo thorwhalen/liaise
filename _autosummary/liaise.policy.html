@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=71734efd"></script>
+    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.17" />
+  <meta name="docsearch:version" content="0.1.18" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -595,7 +595,7 @@ recipient, the copies and the audience’s listed readers.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.Facts">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">Facts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">findings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">provenance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">policy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recipients</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unresolved</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">least_cleared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resumable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Facts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.Facts" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Everything a rule may look at, computed once from the inputs of <a class="reference internal" href="#liaise.policy.evaluate" title="liaise.policy.evaluate"><code class="xref py py-func docutils literal notranslate"><span class="pre">evaluate()</span></code></a>.</p>
 <dl class="field-list simple">
 </dl>
@@ -605,7 +605,7 @@ recipient, the copies and the audience’s listed readers.</p>
 <dd><p>The disclosure’s entry for <code class="docutils literal notranslate"><span class="pre">person</span></code> (<code class="docutils literal notranslate"><span class="pre">{}</span></code> when it has none).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Mapping</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -616,14 +616,14 @@ recipient, the copies and the audience’s listed readers.</p>
 <dd><p>Whether a permissive tier is past its review date, by the entry or by <code class="docutils literal notranslate"><span class="pre">now</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.policy.Facts.leaks">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">leaks</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="liaise.detect.html#liaise.detect.Finding" title="liaise.detect.Finding"><span class="pre">Finding</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.policy.Facts.leaks" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">leaks</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="liaise.detect.html#liaise.detect.Finding" title="liaise.detect.Finding"><span class="pre">Finding</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.policy.Facts.leaks" title="Link to this definition">#</a></dt>
 <dd><p>The findings that name something a reader is not cleared for, or sealed from.</p>
 </dd></dl>
 
@@ -633,20 +633,20 @@ recipient, the copies and the audience’s listed readers.</p>
 <dd><p>The findings whose kind is one of <code class="docutils literal notranslate"><span class="pre">kinds</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference internal" href="liaise.detect.html#liaise.detect.Finding" title="liaise.detect.Finding"><code class="xref py py-class docutils literal notranslate"><span class="pre">Finding</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference internal" href="liaise.detect.html#liaise.detect.Finding" title="liaise.detect.Finding"><code class="xref py py-class docutils literal notranslate"><span class="pre">Finding</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.policy.Facts.ref">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ref</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#liaise.policy.Facts.ref" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ref</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#liaise.policy.Facts.ref" title="Link to this definition">#</a></dt>
 <dd><p>The destination, for the operator’s sentence.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.policy.Facts.scope">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scope</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><a class="headerlink" href="#liaise.policy.Facts.scope" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">scope</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><a class="headerlink" href="#liaise.policy.Facts.scope" title="Link to this definition">#</a></dt>
 <dd><p>The audience’s scope.</p>
 </dd></dl>
 
@@ -656,14 +656,14 @@ recipient, the copies and the audience’s listed readers.</p>
 <dd><p>The resolved readers the finding’s entity is sealed from.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.policy.Facts.tainted">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tainted</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.policy.Facts.tainted" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tainted</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.policy.Facts.tainted" title="Link to this definition">#</a></dt>
 <dd><p>Whether the run is tainted; <code class="docutils literal notranslate"><span class="pre">None</span></code> when unknown.</p>
 </dd></dl>
 
@@ -672,7 +672,7 @@ recipient, the copies and the audience’s listed readers.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.Hit">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">Hit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Hit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.Hit" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One thing a rule found: its sentence, the finding and reader concerned, and the flow
 the rule asks for (<code class="docutils literal notranslate"><span class="pre">None</span></code>: the rule’s declared minimum).</p>
 <dl class="field-list simple">
@@ -682,7 +682,7 @@ the rule asks for (<code class="docutils literal notranslate"><span class="pre">
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.OutboundPolicy">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">OutboundPolicy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">reply_mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'direct'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tainted_runs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'approve'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resumable</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ai_tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure_decision</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'enforce'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#OutboundPolicy"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.OutboundPolicy" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>The subject’s policy as it applies to one message (discussion §5.4).</p>
 <p><code class="docutils literal notranslate"><span class="pre">reply_mode</span></code> is the mode in force for the recipient (<code class="docutils literal notranslate"><span class="pre">draft</span></code> waits for the
 operator). <code class="docutils literal notranslate"><span class="pre">tainted_runs</span></code> is <code class="docutils literal notranslate"><span class="pre">approve</span></code> (the taint rule applies) or <code class="docutils literal notranslate"><span class="pre">send</span></code> (the
@@ -715,7 +715,7 @@ to <code class="docutils literal notranslate"><span class="pre">draft</span></co
 <dd><p>JSON-ready.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -725,7 +725,7 @@ to <code class="docutils literal notranslate"><span class="pre">draft</span></co
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.Provenance">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">Provenance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tainted</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Provenance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.Provenance" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What the run that wrote the message read: tainted, clean, or unknown.</p>
 <p><code class="docutils literal notranslate"><span class="pre">tainted</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> when nobody can say (the hook path), which counts as tainted
 (decision 10). <code class="docutils literal notranslate"><span class="pre">evidence</span></code> says why: the messages read and the grades and roles that
@@ -771,7 +771,7 @@ the subject does not trust, in words.</p>
 <dd><p>JSON-ready.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -797,7 +797,7 @@ the subject does not trust, in words.</p>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.policy.RULES">
-<span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">RULES</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#liaise.policy.Rule" title="liaise.policy.Rule"><span class="pre">Rule</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(Rule(name='secrets',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">secrets&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='seals',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">seals&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='exfiltration',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">exfiltration&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='personal,</span> <span class="pre">public',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">personal_public&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='no</span> <span class="pre">write-down',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">no_write_down&gt;,</span> <span class="pre">flow='revise'),</span> <span class="pre">Rule(name='co-ownership',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">co_ownership&gt;,</span> <span class="pre">flow='revise'),</span> <span class="pre">Rule(name='personal,</span> <span class="pre">private',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">personal_private&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='tier',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">tier&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='stranger',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">stranger&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='disclosure</span> <span class="pre">stance',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">disclosure_stance&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='taint',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">taint&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='reply</span> <span class="pre">mode',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">reply_mode&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='irreversibility',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">irreversibility&gt;,</span> <span class="pre">flow='delay'),</span> <span class="pre">Rule(name='unknown</span> <span class="pre">audience',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">unknown_audience&gt;,</span> <span class="pre">flow='send'))</span></span><a class="headerlink" href="#liaise.policy.RULES" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">RULES</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#liaise.policy.Rule" title="liaise.policy.Rule"><span class="pre">Rule</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(Rule(name='secrets',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">secrets&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='seals',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">seals&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='exfiltration',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">exfiltration&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='personal,</span> <span class="pre">public',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">personal_public&gt;,</span> <span class="pre">flow='refuse'),</span> <span class="pre">Rule(name='no</span> <span class="pre">write-down',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">no_write_down&gt;,</span> <span class="pre">flow='revise'),</span> <span class="pre">Rule(name='co-ownership',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">co_ownership&gt;,</span> <span class="pre">flow='revise'),</span> <span class="pre">Rule(name='personal,</span> <span class="pre">private',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">personal_private&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='tier',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">tier&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='stranger',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">stranger&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='disclosure</span> <span class="pre">stance',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">disclosure_stance&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='taint',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">taint&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='reply</span> <span class="pre">mode',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">reply_mode&gt;,</span> <span class="pre">flow='approve'),</span> <span class="pre">Rule(name='irreversibility',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">irreversibility&gt;,</span> <span class="pre">flow='delay'),</span> <span class="pre">Rule(name='unknown</span> <span class="pre">audience',</span> <span class="pre">predicate=&lt;function</span> <span class="pre">unknown_audience&gt;,</span> <span class="pre">flow='send'))</span></span><a class="headerlink" href="#liaise.policy.RULES" title="Link to this definition">#</a></dt>
 <dd><p>the rows and their flows
 are the design; <code class="docutils literal notranslate"><span class="pre">evaluate(rules=...)</span></code> exists so a test can remove or weaken one row
 and show that a scenario then gets a less restrictive verdict.</p>
@@ -811,7 +811,7 @@ and show that a scenario then gets a less restrictive verdict.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.Reader">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">Reader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">clearance</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">who</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">person</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Reader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.Reader" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A reader the ceiling is judged on: their clearance (<code class="docutils literal notranslate"><span class="pre">None</span></code>: no ceiling), in words.</p>
 <p><code class="docutils literal notranslate"><span class="pre">person</span></code> is the person id when the reader is one; a class of readers (“anyone”) has
 none.</p>
@@ -823,7 +823,7 @@ none.</p>
 <dd><p>JSON-ready.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -833,7 +833,7 @@ none.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.Reason">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">Reason</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">finding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Reason"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.Reason" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One rule that fired: the finding and the reader it concerns, and a sentence.</p>
 <p><code class="docutils literal notranslate"><span class="pre">flow</span></code> is the minimum flow this hit asks for. <code class="docutils literal notranslate"><span class="pre">text</span></code> is what the operator reads;
 it never holds the matched text.</p>
@@ -845,7 +845,7 @@ it never holds the matched text.</p>
 <dd><p>JSON-ready.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -855,7 +855,7 @@ it never holds the matched text.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.Rule">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">Rule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Rule"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.Rule" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>One row of the table: a name, what it looks for, and its minimum flow.</p>
 <dl class="field-list simple">
 </dl>
@@ -865,7 +865,7 @@ it never holds the matched text.</p>
 <dd><p>The reasons this rule contributes for <code class="docutils literal notranslate"><span class="pre">facts</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#liaise.policy.Reason" title="liaise.policy.Reason"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reason</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#liaise.policy.Reason" title="liaise.policy.Reason"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reason</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -887,7 +887,7 @@ it never holds the matched text.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.policy.Verdict">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">Verdict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">flow</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">route</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reasons</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">least_cleared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">findings</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">payload_hash</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience_hash</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audience</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">readers</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">as_of</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#Verdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.Verdict" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What the policy decided about one message, and why (discussion §5.1).</p>
 <p><code class="docutils literal notranslate"><span class="pre">flow</span></code> is one of <a class="reference internal" href="#liaise.policy.FLOWS" title="liaise.policy.FLOWS"><code class="xref py py-data docutils literal notranslate"><span class="pre">FLOWS</span></code></a> and <code class="docutils literal notranslate"><span class="pre">route</span></code> its <a class="reference internal" href="#liaise.policy.ROUTES" title="liaise.policy.ROUTES"><code class="xref py py-data docutils literal notranslate"><span class="pre">ROUTES</span></code></a> entry. <code class="docutils literal notranslate"><span class="pre">reasons</span></code>
 are every rule that fired, most restrictive first. <code class="docutils literal notranslate"><span class="pre">axes</span></code> are the values the decision
@@ -905,7 +905,7 @@ exists (<code class="docutils literal notranslate"><span class="pre">OutboundPol
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.policy.Verdict.rules">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">rules</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.policy.Verdict.rules" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">rules</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.policy.Verdict.rules" title="Link to this definition">#</a></dt>
 <dd><p>The names of the rules that fired, most restrictive first, each once.</p>
 </dd></dl>
 
@@ -915,7 +915,7 @@ exists (<code class="docutils literal notranslate"><span class="pre">OutboundPol
 <dd><p>JSON-ready: what the ledger records for a gated message.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -928,7 +928,7 @@ exists (<code class="docutils literal notranslate"><span class="pre">OutboundPol
 <dd><p>Whether <code class="docutils literal notranslate"><span class="pre">label</span></code> is more restrictive than <code class="docutils literal notranslate"><span class="pre">clearance</span></code> (<code class="docutils literal notranslate"><span class="pre">None</span></code>: no ceiling).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">above</span><span class="p">(</span><span class="s2">"amber"</span><span class="p">,</span> <span class="s2">"clear"</span><span class="p">),</span> <span class="n">above</span><span class="p">(</span><span class="s2">"amber"</span><span class="p">,</span> <span class="s2">"amber"</span><span class="p">),</span> <span class="n">above</span><span class="p">(</span><span class="s2">"red"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -945,7 +945,7 @@ exists (<code class="docutils literal notranslate"><span class="pre">OutboundPol
 an approval binds to.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -956,7 +956,7 @@ an approval binds to.</p>
 <dd><p>The audience in one line, as correspond’s <code class="docutils literal notranslate"><span class="pre">Audience.in_words</span></code> says it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -970,7 +970,7 @@ with every reason in its evidence. A defaulted audience is public whatever its
 <code class="docutils literal notranslate"><span class="pre">scope</span></code> says, as correspond’s constructor insists. Unknown keys are dropped.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -981,7 +981,7 @@ with every reason in its evidence. A defaulted audience is public whatever its
 <dd><p>The canonical JSON both hashes are taken over: sorted keys, no spaces, ASCII.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1031,7 +1031,7 @@ table by name.</p>
 <dd><p>Where <code class="docutils literal notranslate"><span class="pre">flow</span></code> stands in <a class="reference internal" href="#liaise.policy.FLOWS" title="liaise.policy.FLOWS"><code class="xref py py-data docutils literal notranslate"><span class="pre">FLOWS</span></code></a>; a <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for an unknown flow.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1066,7 +1066,7 @@ for the operator alone, and <code class="docutils literal notranslate"><span cla
 <dd><p>The highest of <code class="docutils literal notranslate"><span class="pre">flows</span></code>, or <code class="docutils literal notranslate"><span class="pre">send</span></code> when there are none.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1077,7 +1077,7 @@ for the operator alone, and <code class="docutils literal notranslate"><span cla
 <dd><p>SHA-256, in hex, of the canonical JSON of <a class="reference internal" href="#liaise.policy.payload_of" title="liaise.policy.payload_of"><code class="xref py py-func docutils literal notranslate"><span class="pre">payload_of()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -1090,7 +1090,7 @@ for the operator alone, and <code class="docutils literal notranslate"><span cla
 message that differs in any of them does.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">payload_of</span><span class="p">({</span><span class="s2">"ref"</span><span class="p">:</span> <span class="s2">"github:example/app#12"</span><span class="p">,</span> <span class="s2">"recipient"</span><span class="p">:</span> <span class="s2">"ada"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"hi"</span><span class="p">})</span>

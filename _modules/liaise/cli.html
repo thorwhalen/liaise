@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=71734efd"></script>
+    <script src="../../_static/documentation_options.js?v=9969ed3f"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.17" />
+  <meta name="docsearch:version" content="0.1.18" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -2468,14 +2468,18 @@ window.runMermaid = runMermaid;</script>
     <span class="n">ref</span> <span class="o">=</span> <span class="n">_pull_ref</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
     <span class="n">case</span> <span class="o">=</span> <span class="n">ledger</span><span class="o">.</span><span class="n">case_for_conversation</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">case</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">case</span><span class="o">.</span><span class="n">kind</span> <span class="o">!=</span> <span class="s2">"pull"</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no review case for </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">; liaise review list shows what there is"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"no review case for </span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2">; liaise review list shows what there is"</span>
+        <span class="p">)</span>
     <span class="n">held</span> <span class="o">=</span> <span class="n">review_drafts</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">held</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> holds no verdict for you to post"</span><span class="p">)</span>
     <span class="n">_</span><span class="p">,</span> <span class="n">draft</span> <span class="o">=</span> <span class="n">held</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">subject</span> <span class="o">=</span> <span class="n">subjects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">subject</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> belongs to </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">, which is not configured"</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> belongs to </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">subject</span><span class="si">}</span><span class="s2">, which is not configured"</span>
+        <span class="p">)</span>
     <span class="n">github</span> <span class="o">=</span> <span class="n">labeler</span> <span class="k">if</span> <span class="n">labeler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">GhCli</span><span class="p">()</span>
     <span class="n">at</span> <span class="o">=</span> <span class="n">now</span> <span class="k">if</span> <span class="n">now</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">(</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
     <span class="n">options</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
@@ -2494,7 +2498,9 @@ window.runMermaid = runMermaid;</script>
         <span class="sa">f</span><span class="s2">"audience: </span><span class="si">{</span><span class="n">decision</span><span class="o">.</span><span class="n">audience_words</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">decision</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="n">cases</span><span class="o">.</span><span class="n">AUDIENCE_UNKNOWN</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
     <span class="p">]</span>
     <span class="k">if</span> <span class="n">decision</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">decision</span><span class="o">.</span><span class="n">settled</span><span class="p">:</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"gate: posts once you release it past </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">settled</span><span class="p">)</span><span class="si">}</span><span class="s2"> concern(s):"</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"gate: posts once you release it past </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">decision</span><span class="o">.</span><span class="n">settled</span><span class="p">)</span><span class="si">}</span><span class="s2"> concern(s):"</span>
+        <span class="p">)</span>
         <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  [</span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">flow</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">rule</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">c</span><span class="o">.</span><span class="n">text</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">decision</span><span class="o">.</span><span class="n">settled</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"gate: passed"</span><span class="p">)</span>
@@ -2515,7 +2521,9 @@ window.runMermaid = runMermaid;</script>
         <span class="k">return</span> <span class="s2">"not posted"</span>
     <span class="k">with</span> <span class="n">ExitStack</span><span class="p">()</span> <span class="k">as</span> <span class="n">between_ticks</span><span class="p">:</span>
         <span class="n">_hold_run_lock</span><span class="p">(</span><span class="n">between_ticks</span><span class="p">,</span> <span class="n">global_config</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">done</span><span class="o">=</span><span class="s2">"posted"</span><span class="p">)</span>
-        <span class="n">posted</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">release_review_draft</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">,</span> <span class="n">draft</span><span class="p">,</span> <span class="n">approval</span><span class="o">=</span><span class="n">approval</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">)</span>
+        <span class="n">posted</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">release_review_draft</span><span class="p">(</span>
+            <span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="p">,</span> <span class="n">draft</span><span class="p">,</span> <span class="n">approval</span><span class="o">=</span><span class="n">approval</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">posted</span><span class="o">.</span><span class="n">sent</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">cw</span><span class="o">.</span><span class="n">CommandError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"not posted: </span><span class="si">{</span><span class="n">posted</span><span class="o">.</span><span class="n">cause</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'the gate holds it back'</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>

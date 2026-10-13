@@ -40,7 +40,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=71734efd"></script>
+    <script src="../../_static/documentation_options.js?v=9969ed3f"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +410,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.17" />
+  <meta name="docsearch:version" content="0.1.18" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -1367,7 +1367,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">policy</span> <span class="o">=</span> <span class="n">_policy_from</span><span class="p">(</span><span class="n">_table</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="s2">"policy"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy"</span><span class="p">),</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
     <span class="n">label_prefix</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_prefix"</span><span class="p">,</span> <span class="n">DFLT_LABEL_PREFIX</span><span class="p">)</span>
     <span class="n">state_labels</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label_prefix</span><span class="si">}{</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">CASE_STATES</span><span class="p">,</span> <span class="o">*</span><span class="n">PR_STATES</span><span class="p">,</span> <span class="n">HOLD_LABEL_SUFFIX</span><span class="p">)</span>
+        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label_prefix</span><span class="si">}{</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="p">(</span><span class="o">*</span><span class="n">CASE_STATES</span><span class="p">,</span> <span class="o">*</span><span class="n">PR_STATES</span><span class="p">,</span> <span class="n">HOLD_LABEL_SUFFIX</span><span class="p">)</span>
     <span class="p">}</span>
     <span class="n">clashing</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">policy</span><span class="o">.</span><span class="n">waiting_labels</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">&amp;</span> <span class="n">state_labels</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">clashing</span><span class="p">:</span>
@@ -1786,7 +1787,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">authors</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">authors</span><span class="p">)),</span>
         <span class="n">repos</span><span class="o">=</span><span class="n">repos</span><span class="p">,</span>
         <span class="n">merge</span><span class="o">=</span><span class="n">_choice</span><span class="p">(</span>
-            <span class="n">review</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"merge"</span><span class="p">,</span> <span class="n">DFLT_MERGE</span><span class="p">),</span> <span class="n">MERGE_MODES</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"review.merge"</span>
+            <span class="n">review</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"merge"</span><span class="p">,</span> <span class="n">DFLT_MERGE</span><span class="p">),</span>
+            <span class="n">MERGE_MODES</span><span class="p">,</span>
+            <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span>
+            <span class="n">dotted</span><span class="o">=</span><span class="s2">"review.merge"</span><span class="p">,</span>
         <span class="p">),</span>
         <span class="n">require_checks</span><span class="o">=</span><span class="n">_boolean</span><span class="p">(</span>
             <span class="n">review</span><span class="p">,</span>

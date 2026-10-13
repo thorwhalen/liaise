@@ -43,7 +43,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=71734efd"></script>
+    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +57,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.17" />
+  <meta name="docsearch:version" content="0.1.18" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -630,7 +630,7 @@ tick’s are.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.release.DraftOutcome">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">DraftOutcome</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">attempt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edited</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#DraftOutcome"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.DraftOutcome" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What <a class="reference internal" href="#liaise.release.release_draft" title="liaise.release.release_draft"><code class="xref py py-func docutils literal notranslate"><span class="pre">release_draft()</span></code></a> did with one held message, for its caller to record.</p>
 <p><code class="docutils literal notranslate"><span class="pre">attempt</span></code> is the gate’s decision and the send, <code class="docutils literal notranslate"><span class="pre">filters</span></code> how many filters the gate
 ran it through, and <code class="docutils literal notranslate"><span class="pre">edited</span></code> whether the operator’s text replaced the draft’s.
@@ -645,7 +645,7 @@ are None for a plan (<code class="docutils literal notranslate"><span class="pre
 <dl class="py exception">
 <dt class="sig sig-object py" id="liaise.release.DraftSentNotRecorded">
 <span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">DraftSentNotRecorded</span></span><a class="reference internal" href="../_modules/liaise/release.html#DraftSentNotRecorded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.DraftSentNotRecorded" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#RuntimeError" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#RuntimeError" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">RuntimeError</span></code></a></p>
 <p>A released message went out, and the ledger then failed to record that it did.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="liaise.release.DraftSentNotRecorded.after">
@@ -705,7 +705,7 @@ or None when there is no record to take it off.</p>
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">SendAttempt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">result</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">failure_kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disclosure_failure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#SendAttempt"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.SendAttempt" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>What <a class="reference internal" href="#liaise.release.gate_and_send" title="liaise.release.gate_and_send"><code class="xref py py-func docutils literal notranslate"><span class="pre">gate_and_send()</span></code></a> did with one message.</p>
 <p><code class="docutils literal notranslate"><span class="pre">decision</span></code> is the gate’s. Once the gate has passed the message, <code class="docutils literal notranslate"><span class="pre">result</span></code> is
 correspond’s <code class="docutils literal notranslate"><span class="pre">SendResult</span></code>, or None when sending raised. <code class="docutils literal notranslate"><span class="pre">failure</span></code> says why the
@@ -718,25 +718,25 @@ disclosure could not be written to its recipients’ acquaint records; None othe
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt.outbound">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outbound</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><span class="pre">Outbound</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.outbound" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outbound</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><span class="pre">Outbound</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.outbound" title="Link to this definition">#</a></dt>
 <dd><p>The message as the gate’s filters left it, or None when the gate diverted it.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt.replayed">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">replayed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.replayed" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">replayed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.replayed" title="Link to this definition">#</a></dt>
 <dd><p>Whether the message went out on an earlier attempt, and this one posted nothing.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt.sent">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sent</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.sent" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">sent</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.sent" title="Link to this definition">#</a></dt>
 <dd><p>Whether the channel took the message; in a dry run, whether it would have.</p>
 </dd></dl>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt.unconfirmed">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">unconfirmed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.unconfirmed" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">unconfirmed</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.unconfirmed" title="Link to this definition">#</a></dt>
 <dd><p>Whether nothing was sent because an earlier attempt with the key may have gone out.</p>
 <p>That is correspond’s <code class="docutils literal notranslate"><span class="pre">unconfirmed</span></code>, and its refusal of a key an earlier attempt
 used for a different text (a message edited since): either way the operator checks
@@ -784,7 +784,7 @@ fails before it can ask. Nothing is cached, so a release asks again at send time
 <dd><p><code class="docutils literal notranslate"><span class="pre">key</span></code>, or, when too long for correspond (a long subject slug), its head and a digest of it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bounded_key</span><span class="p">(</span><span class="s2">"c/h1"</span><span class="p">)</span>
@@ -816,7 +816,7 @@ gets <code class="docutils literal notranslate"><span class="pre">&lt;owner&gt;/
 stores that key on whatever draft stays, so a second release reuses it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -827,7 +827,7 @@ stores that key on whatever draft stays, so a second release reuses it.</p>
 <dd><p>How liaise names an exception it recovered from: its class, then its message.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">error_text</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">"no such channel"</span><span class="p">))</span>
@@ -843,7 +843,7 @@ stores that key on whatever draft stays, so a second release reuses it.</p>
 <p>An <a class="reference internal" href="#liaise.release.SendAttempt.unconfirmed" title="liaise.release.SendAttempt.unconfirmed"><code class="xref py py-attr docutils literal notranslate"><span class="pre">unconfirmed</span></code></a> one says to check <code class="docutils literal notranslate"><span class="pre">ref</span></code> before a new attempt.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -879,7 +879,7 @@ unkeyed, as before, and liaise never writes correspond’s own data root.</p>
 <dd><p><code class="docutils literal notranslate"><span class="pre">owner/repo</span></code>, lower-cased, of the repository a GitHub reference names: itself or one of its issues.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.14)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">github_repo</span><span class="p">(</span><span class="s2">"github:Example/App#12"</span><span class="p">),</span> <span class="n">github_repo</span><span class="p">(</span><span class="s2">"github:example/app"</span><span class="p">)</span>
@@ -896,7 +896,7 @@ unkeyed, as before, and liaise never writes correspond’s own data root.</p>
 <dd><p><code class="docutils literal notranslate"><span class="pre">key</span></code> for the message’s next attempt: <code class="docutils literal notranslate"><span class="pre">~2</span></code> added, or its attempt number raised.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12"</span><span class="p">),</span> <span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12~2"</span><span class="p">))</span>
@@ -911,7 +911,7 @@ unkeyed, as before, and liaise never writes correspond’s own data root.</p>
 <dd><p>The key of an outbox item’s release: <code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;held</span> <span class="pre">id&gt;</span></code>, the same on every try.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">outbox_key</span><span class="p">(</span><span class="s2">"example"</span><span class="p">,</span> <span class="s2">"h3f9a0c12"</span><span class="p">))</span>
@@ -969,7 +969,7 @@ command that takes it off.</p>
 <dd><p><code class="docutils literal notranslate"><span class="pre">ref</span></code> as a GitHub issue or repository reference, stripped and lower-cased.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sendable_ref</span><span class="p">(</span><span class="s2">" github:Example/App#12 "</span><span class="p">)</span>
@@ -989,7 +989,7 @@ of the same text on one case differ, while a tick that runs again over the same
 entries (after a crash) reuses the key and never posts twice.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">key</span> <span class="o">=</span> <span class="n">tick_send_key</span><span class="p">(</span><span class="s2">"app3"</span><span class="p">,</span> <span class="s2">"github:example/app#3"</span><span class="p">,</span> <span class="s2">"Fixed."</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
@@ -1008,7 +1008,7 @@ fresh key lets the message change (an operator’s edit) without being refused a
 used for another message. A key with no record, or one that sent or may have, is kept.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
