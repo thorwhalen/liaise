@@ -203,6 +203,19 @@ class ProcessorConfig:
 
 
 @dataclass(frozen=True)
+class TriageConfig:
+    """Whether and how a subject triages the cases that become ready together (:mod:`liaise.triage`).
+
+    Off by default. ``label_prefix`` goes before the ``kind:`` / ``size:`` / ``priority:``
+    labels; ``max_turns`` caps the triage call.
+    """
+
+    enabled: bool = False
+    label_prefix: str = ""
+    max_turns: int = 3
+
+
+@dataclass(frozen=True)
 class ReviewPolicy:
     """How a subject reviews the pull requests its partners open (:mod:`liaise.review`).
 
@@ -439,6 +452,8 @@ class Subject:
     active: bool = True
     #: How the subject reviews its partners' pull requests; None reviews none.
     review: Optional[ReviewPolicy] = None
+    #: Triage of the cases that become ready together (off unless ``triage = true``).
+    triage: TriageConfig = field(default_factory=TriageConfig)
 
     def github_logins_of(self, person: str) -> tuple[str, ...]:
         """The GitHub logins ``person`` writes from, in file order, each once."""
@@ -625,6 +640,7 @@ def load_subject(path: Union[str, os.PathLike]) -> Subject:
         source=str(path),
         active=_boolean(raw, "active", default=True, path=path, dotted="active"),
         review=_review_from(raw, policy=policy, path=path),
+        triage=_triage_from(raw, path=path),
     )
 
 
@@ -920,6 +936,28 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
         mode=_choice(raw.get("mode", ENFORCE), MODES, path=path, dotted="policy.mode"),
         delay_minutes=delay_minutes,
         delay_stale_minutes=delay_stale_minutes,
+    )
+
+
+def _triage_from(raw: Mapping[str, Any], *, path: Path) -> TriageConfig:
+    """``triage = true`` or a ``[triage]`` table (``enabled``, ``label_prefix``, ``max_turns``)."""
+    value = raw.get("triage", False)
+    if isinstance(value, bool):
+        return TriageConfig(enabled=value)
+    table = _table(raw, "triage", path=path, dotted="triage")
+    turns = table.get("max_turns", TriageConfig.max_turns)
+    if isinstance(turns, bool) or not isinstance(turns, int) or turns < 1:
+        raise ConfigError(
+            f"{path}: triage.max_turns must be a whole number, 1 or more, as in "
+            f"max_turns = 3; got {turns!r}."
+        )
+    prefix = table.get("label_prefix", "")
+    if not isinstance(prefix, str):
+        raise ConfigError(f'{path}: triage.label_prefix must be text, as in label_prefix = "t:".')
+    return TriageConfig(
+        enabled=_boolean(table, "enabled", default=True, path=path, dotted="triage.enabled"),
+        label_prefix=prefix,
+        max_turns=turns,
     )
 
 

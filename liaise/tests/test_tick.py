@@ -2032,3 +2032,132 @@ def test_a_filter_is_named_by_the_check_it_runs_so_what_it_is_bound_to_stays_out
     ((_, body, _),) = [note for note in world.notes if "waits for you" in note[0]]
     assert "cause: refuse_by_rules" in body
     assert all(rules_path not in title and rules_path not in body for title, body, _ in world.notes)
+
+
+# ---- #19: triage — one job per group, verdicts shown on the issues ----
+
+
+def _verdicts(*rows):
+    keys = ("id", "kind", "duplicate_of", "group", "size", "priority")
+    return {"verdicts": [dict(zip(keys, row)) for row in rows]}
+
+
+def _triage_world(world, ask, **triage):
+    from liaise.subjects import TriageConfig
+
+    world.subject = replace(
+        world.subject,
+        triage=TriageConfig(enabled=True, **triage),
+        policy=replace(world.subject.policy, budget=BudgetPolicy(concurrent=4)),
+    )
+    return lambda **kwargs: world.tick(triage_ask=ask, **kwargs)
+
+
+def test_triage_dispatches_three_issues_of_one_bug_as_one_job_and_links_the_duplicates(world):
+    for number in (12, 13, 14):
+        world.issue(number, minutes=number - 12)
+    world.issue(15, minutes=3)
+    prompts = []
+
+    def ask(prompt):
+        prompts.append(prompt)
+        return _verdicts(
+            ("example-app-1", "problem", None, "export-row", "small", "blocking"),
+            ("example-app-2", "problem", "example-app-1", "export-row", "small", "blocking"),
+            ("example-app-3", "problem", "example-app-1", "export-row", "small", "important"),
+            ("example-app-4", "question", None, "why-csv", "small", "nice"),
+        )
+
+    tick = _triage_world(world, ask)
+    report = tick()
+
+    assert report.problems == ()
+    assert len(prompts) == 1 and "example-app-4" in prompts[0]
+    # one job for the bug (lead example-app-1, carrying 2 and 3); the checkout runs one at a time
+    (lead,) = world.processor.jobs
+    assert lead.case_id == "example-app-1"
+    assert "Grouped cases" in lead.prompt and "example-app-2" in lead.prompt and "example-app-3" in lead.prompt
+    assert f"  triage {SLUG}: example-app-1+example-app-2+example-app-3, example-app-4" in report.plan_lines
+    # the verdict is visible on the issues
+    assert {"kind:problem", "size:small", "priority:blocking"} <= set(world.labels(12))
+    assert "duplicate" in world.labels(13) and "duplicate" in world.labels(14)
+    assert "kind:question" in world.labels(15)
+    duplicates = [draft.text for ref, draft in world.github.sent if ref.encoded in ("github:example/app#13", "github:example/app#14")]
+    assert len(duplicates) == 2 and all("same thing as #12" in text for text in duplicates)
+    # the duplicates wait for the lead rather than starting their own runs
+    again = world.tick(NOW + timedelta(minutes=1), triage_ask=ask)
+    assert [job.case_id for job in world.processor.jobs] == ["example-app-1"]
+    assert any("grouped under example-app-1" in line for line in again.plan_lines)
+
+
+def test_a_question_is_dispatched_with_the_answer_dont_build_guidance(world):
+    world.issue(12)
+    ask = lambda prompt: _verdicts(("example-app-1", "question", None, "why", "small", "nice"))  # noqa: E731
+    _triage_world(world, ask)()
+    (job,) = world.processor.jobs
+    assert "This is a question" in job.prompt and "Grouped cases" not in job.prompt
+
+
+def test_triage_orders_groups_by_priority_then_age(world):
+    world.issue(12)
+    world.issue(13, minutes=1)
+    ask = lambda prompt: _verdicts(  # noqa: E731
+        ("example-app-1", "request", None, "a", "small", "nice"),
+        ("example-app-2", "problem", None, "b", "small", "blocking"),
+    )
+    report = _triage_world(world, ask)()
+    assert f"  triage {SLUG}: example-app-2, example-app-1" in report.plan_lines
+
+
+def test_a_failed_triage_falls_back_to_one_issue_at_a_time_and_says_so(world):
+    world.issue(12)
+    world.issue(13, minutes=1)
+
+    def broken(prompt):
+        raise RuntimeError("no claude here")
+
+    report = _triage_world(world, broken)()
+    assert any("triage of example-app failed" in problem for problem in report.problems)
+    assert [job.case_id for job in world.processor.jobs] == ["example-app-1"]  # the tick's own order
+    assert "duplicate" not in world.labels(12)
+
+
+def test_draft_reply_mode_suppresses_the_duplicate_comment_but_keeps_the_labels(world):
+    world.subject = _subject(world.workspace, reply_mode="draft")
+    world.issue(12)
+    world.issue(13, minutes=1)
+    ask = lambda prompt: _verdicts(  # noqa: E731
+        ("example-app-1", "problem", None, "x", "small", "important"),
+        ("example-app-2", "problem", "example-app-1", "x", "small", "important"),
+    )
+    _triage_world(world, ask)()
+    assert world.github.sent == []
+    assert world.case("example-app-2").drafts == ()
+    assert "duplicate" in world.labels(13)
+
+
+def test_triage_is_off_by_default_and_skipped_in_a_dry_run(world):
+    world.issue(12)
+    called = []
+    report = world.tick(triage_ask=lambda prompt: called.append(prompt))
+    assert called == [] and report.dispatched
+    dry = _triage_world(world, lambda prompt: called.append(prompt))(dry_run=True)
+    assert called == [] and any("skipped (dry run)" in line for line in dry.plan_lines)
+
+
+def test_a_grouped_case_is_told_and_settled_once_its_lead_is_live(world):
+    world.issue(12)
+    world.issue(13, minutes=1)
+    ask = lambda prompt: _verdicts(  # noqa: E731
+        ("example-app-1", "problem", None, "x", "small", "important"),
+        ("example-app-2", "problem", "example-app-1", "x", "small", "important"),
+    )
+    tick = _triage_world(world, ask)
+    tick()
+    tick(now=LATER)  # collects the lead's run
+    set_case_state(world.ledger, CASE_1, "deployed", reason="live", now=LATER)
+    report = tick(now=LATER + timedelta(minutes=10))
+    assert world.case("example-app-2").state == "deployed"
+    assert any("handled together with" in d.text for ref, d in world.github.sent if ref.encoded.endswith("#13"))
+    assert [job.case_id for job in world.processor.jobs] == ["example-app-1"]
+    assert report.problems == ()
