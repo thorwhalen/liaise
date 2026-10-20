@@ -2161,3 +2161,35 @@ def test_a_grouped_case_is_told_and_settled_once_its_lead_is_live(world):
     assert any("handled together with" in d.text for ref, d in world.github.sent if ref.encoded.endswith("#13"))
     assert [job.case_id for job in world.processor.jobs] == ["example-app-1"]
     assert report.problems == ()
+
+
+def test_a_duplicate_of_an_already_open_case_waits_for_it_instead_of_its_own_run(world):
+    """liaise#64: a duplicate of an open case outside the batch rides with that case."""
+    world.issue(12)
+    ask_first = lambda prompt: _verdicts(("example-app-1", "problem", None, "x", "small", "important"))  # noqa: E731
+    tick = _triage_world(world, ask_first)
+    tick()
+    tick(now=LATER)  # collects the run
+    set_case_state(world.ledger, CASE_1, "needs-partner", reason="asked", now=LATER)
+    world.issue(13, minutes=10)
+    ask = lambda prompt: _verdicts(("example-app-2", "problem", "example-app-1", "", "small", "important"))  # noqa: E731
+    jobs_before = len(world.processor.jobs)
+    report = world.tick(LATER + timedelta(hours=1), triage_ask=ask)
+    assert len(world.processor.jobs) == jobs_before  # no run of its own
+    assert any("duplicates open case example-app-1" in line for line in report.plan_lines)
+    assert "duplicate" in world.labels(13)
+    set_case_state(world.ledger, CASE_1, "deployed", reason="live", now=LATER + timedelta(hours=1))
+    world.tick(LATER + timedelta(hours=2), triage_ask=ask)
+    assert world.case("example-app-2").state == "deployed"
+
+
+def test_triage_labels_take_their_colours_from_labels_json():
+    import json
+    from importlib import resources
+
+    from liaise.triage import label_specs
+
+    specs = json.loads(resources.files("liaise.data").joinpath("labels.json").read_text())
+    colors = {name: color for name, color, _ in label_specs("t/")}
+    assert colors["t/kind:problem"] == specs["triage-kind"]["color"]
+    assert colors["t/duplicate"] == specs["triage-duplicate"]["color"]

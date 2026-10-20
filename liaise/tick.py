@@ -173,6 +173,7 @@ from liaise.triage import (
     TriageVerdict,
     headless_ask,
     label_specs,
+    riding_with_open,
 )
 from liaise.readiness import compute_readiness, last_partner_activity
 from liaise.review import ReviewStep
@@ -272,7 +273,6 @@ GROUP_LIVE_MESSAGE = (
     "This was handled together with {ref}, and it is live now. Please try it and tell "
     "me if anything is still off."
 )
-TRIAGE_LABEL_COLOR = "c5def5"
 NUDGE_PURPOSE = "nudge"
 #: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.
 DAILY_CAP_PRIORITY = "default"
@@ -2394,9 +2394,10 @@ class _Tick:
         by_id = {case.id: (case, why) for case, why in ready}
         merging = getattr(triage, "merges_groups", False)
         fresh = [case for case, _ in ready if not self._triaged_before(case)]
+        context = self._open_context(slug, ready) if merging else []
         try:
             if merging:
-                called = triage(tuple(fresh), context=self._open_context(slug, ready))
+                called = triage(tuple(fresh), context=context)
                 groups = [list(group) for group in called]
                 groups += [[case] for case, _ in ready if case not in fresh]
             else:
@@ -2408,10 +2409,14 @@ class _Tick:
                 f"the tick's own order"
             )
             return alone
+        riding: dict[str, str] = {}
         if merging:
-            self._apply_verdicts(subject, getattr(triage, "verdicts", {}))
+            verdicts = getattr(triage, "verdicts", {})
+            self._apply_verdicts(subject, verdicts)
+            riding = self._ride_with_open(verdicts, context)
         kept = [
-            [by_id[case.id] for case in group if case.id in by_id] for group in groups
+            [by_id[case.id] for case in group if case.id in by_id and case.id not in riding]
+            for group in groups
         ]
         kept = [group for group in kept if group]
         if not merging:  # the seam's order, one case at a time
@@ -2510,12 +2515,27 @@ class _Tick:
         repo, number = parsed
         try:
             if repo not in self.triage_labelled:
-                for name, description in label_specs(prefix):
-                    self.labeler.create_label(repo, name, color=TRIAGE_LABEL_COLOR, description=description)
+                for name, color, description in label_specs(prefix):
+                    self.labeler.create_label(repo, name, color=color, description=description)
                 self.triage_labelled.add(repo)
             self.labeler.add_labels(repo, number, list(labels))
         except Exception as error:  # a label that cannot be written is not the tick's
             self.problem(f"labelling {case.id} with its triage failed: {_error_text(error)}")
+
+    def _ride_with_open(
+        self, verdicts: Mapping[str, TriageVerdict], context: Sequence[Case]
+    ) -> dict[str, str]:
+        """Group each case that duplicates an already-open case under it, so it waits for it.
+
+        The open case (waiting on the partner, or deployed) carries it as a lead carries a
+        grouped case: it is not started on its own, and settles once that case is live.
+        """
+        riding = riding_with_open(verdicts, (case.id for case in context))
+        for case_id, lead_id in riding.items():
+            self.say(f"  case {case_id}: duplicates open case {lead_id}; it waits for that one")
+            if not self.dry_run:
+                self._entry(case_id, "note", detail={"event": GROUPED_EVENT, "lead": lead_id})
+        return riding
 
     def _record_group(
         self, subject: Subject, lead: Case, also: Sequence[Case]

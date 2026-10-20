@@ -50,5 +50,21 @@
   "hold": {
     "description": "Keeps liaise from merging this pull request. Remove it to let the merge go ahead.",
     "color": "fbca04"
+  },
+  "triage-kind": {
+    "description": "Triage: what kind of case this is.",
+    "color": "c5def5"
+  },
+  "triage-size": {
+    "description": "Triage: how big a piece of work this is.",
+    "color": "bfd4f2"
+  },
+  "triage-priority": {
+    "description": "Triage: how urgent this is.",
+    "color": "f9d0c4"
+  },
+  "triage-duplicate": {
+    "description": "Triage: the same thing as another issue.",
+    "color": "cfd3d7"
   }
 }
