@@ -2198,10 +2198,32 @@ def test_a_riding_duplicate_is_released_when_its_lead_needs_the_owner(world):
 
 
 def test_a_riding_duplicate_is_released_after_the_wait_cap(world):
-    from liaise.tick import RIDE_MAX_WAIT
-
     ask, jobs_before, _ = _riding_world(world)
-    world.tick(LATER + timedelta(hours=1) + RIDE_MAX_WAIT + timedelta(hours=1), triage_ask=ask)
+    wait = world.subject.triage.ride_max_wait
+    world.tick(LATER + timedelta(hours=1) + wait + timedelta(hours=1), triage_ask=ask)
+    assert [job.case_id for job in world.processor.jobs[jobs_before:]] == ["example-app-2"]
+
+
+def test_the_wait_cap_and_wait_states_are_subject_settings(world):
+    ask, jobs_before, _ = _riding_world(world)
+    world.subject = replace(
+        world.subject,
+        triage=replace(world.subject.triage, ride_max_wait_days=1, ride_wait_states=("needs-partner",)),
+    )
+    world.tick(LATER + timedelta(days=1, hours=2), triage_ask=ask)
+    assert [job.case_id for job in world.processor.jobs[jobs_before:]] == ["example-app-2"]
+
+
+def test_a_riding_duplicate_is_released_when_the_partner_writes_on_it(world):
+    ask, jobs_before, _ = _riding_world(world)
+    world.github.add_comment(
+        REPO, 13, author="pat", body="Still broken here.", created_at=LATER + timedelta(hours=2)
+    )
+    report = world.tick(LATER + timedelta(hours=3), triage_ask=ask)
+    assert any(
+        "no longer waits for example-app-1: the partner wrote on it since" in line
+        for line in report.plan_lines
+    )
     assert [job.case_id for job in world.processor.jobs[jobs_before:]] == ["example-app-2"]
 
 

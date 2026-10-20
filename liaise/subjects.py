@@ -39,6 +39,7 @@ from __future__ import annotations
 import os
 import tomllib
 from dataclasses import dataclass, field
+from datetime import timedelta
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Collection, Iterable, Mapping, Optional, Union
@@ -207,12 +208,21 @@ class TriageConfig:
     """Whether and how a subject triages the cases that become ready together (:mod:`liaise.triage`).
 
     Off by default. ``label_prefix`` goes before the ``kind:`` / ``size:`` / ``priority:``
-    labels; ``max_turns`` caps the triage call.
+    labels; ``max_turns`` caps the triage call. A case found to duplicate an open case
+    rides with it (waits for it instead of running) while that case is in one of
+    ``ride_wait_states``, and for at most ``ride_max_wait_days``.
     """
 
     enabled: bool = False
     label_prefix: str = ""
     max_turns: int = 3
+    ride_wait_states: tuple[str, ...] = ("needs-partner", "intake", "working", "paused")
+    ride_max_wait_days: int = 7
+
+    @property
+    def ride_max_wait(self) -> timedelta:
+        """How long a riding case waits for its lead before it is started on its own."""
+        return timedelta(days=self.ride_max_wait_days)
 
 
 @dataclass(frozen=True)
@@ -940,7 +950,11 @@ def _policy_from(raw: Mapping[str, Any], *, path: Path) -> Policy:
 
 
 def _triage_from(raw: Mapping[str, Any], *, path: Path) -> TriageConfig:
-    """``triage = true`` or a ``[triage]`` table (``enabled``, ``label_prefix``, ``max_turns``)."""
+    """``triage = true`` or a ``[triage]`` table.
+
+    The table's keys are ``enabled``, ``label_prefix``, ``max_turns``,
+    ``ride_wait_states`` and ``ride_max_wait_days``.
+    """
     value = raw.get("triage", False)
     if isinstance(value, bool):
         return TriageConfig(enabled=value)
@@ -950,6 +964,20 @@ def _triage_from(raw: Mapping[str, Any], *, path: Path) -> TriageConfig:
         raise ConfigError(
             f"{path}: triage.max_turns must be a whole number, 1 or more, as in "
             f"max_turns = 3; got {turns!r}."
+        )
+    wait_days = table.get("ride_max_wait_days", TriageConfig.ride_max_wait_days)
+    if isinstance(wait_days, bool) or not isinstance(wait_days, int) or wait_days < 0:
+        raise ConfigError(
+            f"{path}: triage.ride_max_wait_days must be a whole number, 0 or more, as in "
+            f"ride_max_wait_days = 7; got {wait_days!r}."
+        )
+    wait_states = table.get("ride_wait_states", TriageConfig.ride_wait_states)
+    if isinstance(wait_states, str) or not all(
+        state in CASE_STATES for state in wait_states
+    ):
+        raise ConfigError(
+            f"{path}: triage.ride_wait_states must be a list of case states, from "
+            f"{list(CASE_STATES)}; got {wait_states!r}."
         )
     prefix = table.get("label_prefix", "")
     if not isinstance(prefix, str):
@@ -962,6 +990,8 @@ def _triage_from(raw: Mapping[str, Any], *, path: Path) -> TriageConfig:
         ),
         label_prefix=prefix,
         max_turns=turns,
+        ride_wait_states=tuple(wait_states),
+        ride_max_wait_days=wait_days,
     )
 
 

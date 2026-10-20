@@ -519,3 +519,21 @@ def test_a_github_binding_loads_lower_cased_and_keeps_its_conditions(tmp_path):
         created_at="2026-09-11T09:00:00Z",
     )
     assert binding_matches(subject.bindings[0], message)
+
+
+def test_triage_table_reads_the_ride_settings(tmp_path):
+    from datetime import timedelta
+
+    text = MINIMAL_TOML + '\n[triage]\nride_max_wait_days = 2\nride_wait_states = ["needs-partner"]\n'
+    triage = _load(tmp_path, text).triage
+    assert triage.ride_wait_states == ("needs-partner",)
+    assert triage.ride_max_wait == timedelta(days=2)
+
+
+@pytest.mark.parametrize(
+    "line, key",
+    [("ride_max_wait_days = -1", "ride_max_wait_days"), ('ride_wait_states = ["asleep"]', "ride_wait_states")],
+)
+def test_triage_table_rejects_bad_ride_settings(tmp_path, line, key):
+    _, message = _config_error(tmp_path, MINIMAL_TOML + f"\n[triage]\n{line}\n")
+    assert f"triage.{key}" in message
