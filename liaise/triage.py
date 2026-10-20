@@ -116,13 +116,37 @@ class TriageVerdict:
         return tuple(names)
 
 
-def label_specs(prefix: str = "") -> list[tuple[str, str]]:
-    """Every label a verdict can carry, as ``(name, description)``, so they can be created."""
-    specs = [(f"{prefix}kind:{k}", f"Triage: this is a {k}.") for k in KINDS]
-    specs += [(f"{prefix}size:{s}", f"Triage: {s} piece of work.") for s in SIZES]
-    specs += [(f"{prefix}priority:{p}", f"Triage: {p}.") for p in PRIORITIES]
+#: The ``data/labels.json`` key holding each triage label family's colour.
+TRIAGE_LABEL_SPEC_KEYS = {
+    "kind": "triage-kind",
+    "size": "triage-size",
+    "priority": "triage-priority",
+    DUPLICATE_LABEL: "triage-duplicate",
+}
+DFLT_TRIAGE_LABEL_COLOR = "ededed"
+
+
+def _triage_label_colors() -> dict[str, str]:
+    specs = json.loads(
+        resources.files("liaise.data").joinpath("labels.json").read_text(encoding="utf-8")
+    )
+    return {
+        family: specs.get(key, {}).get("color", DFLT_TRIAGE_LABEL_COLOR)
+        for family, key in TRIAGE_LABEL_SPEC_KEYS.items()
+    }
+
+
+def label_specs(prefix: str = "") -> list[tuple[str, str, str]]:
+    """Every label a verdict can carry, as ``(name, color, description)``, so they can be created.
+
+    Each family's colour is the one ``data/labels.json`` gives it, as for the state labels.
+    """
+    color = _triage_label_colors()
+    specs = [(f"{prefix}kind:{k}", color["kind"], f"Triage: this is a {k}.") for k in KINDS]
+    specs += [(f"{prefix}size:{s}", color["size"], f"Triage: {s} piece of work.") for s in SIZES]
+    specs += [(f"{prefix}priority:{p}", color["priority"], f"Triage: {p}.") for p in PRIORITIES]
     specs.append(
-        (f"{prefix}{DUPLICATE_LABEL}", "Triage: the same thing as another issue.")
+        (f"{prefix}{DUPLICATE_LABEL}", color[DUPLICATE_LABEL], "Triage: the same thing as another issue.")
     )
     return specs
 
@@ -204,6 +228,29 @@ def _root(case_id: str, verdicts: Mapping[str, TriageVerdict]) -> str:
         case_id = target
 
 
+def riding_with_open(
+    verdicts: Mapping[str, TriageVerdict], open_ids: Iterable[str]
+) -> dict[str, str]:
+    """Each batch case that duplicates an already-open case, mapped to that open case.
+
+    A case counts when it names an open case outside the batch as ``duplicate_of``, or when
+    its duplicate chain inside the batch ends at one that does. Such a case is not
+    dispatched on its own: it waits for the open case and settles with it.
+
+    >>> v = {"a": TriageVerdict("a", duplicate_of="old"), "b": TriageVerdict("b", duplicate_of="a"),
+    ...      "c": TriageVerdict("c")}
+    >>> riding_with_open(v, ["old"])
+    {'a': 'old', 'b': 'old'}
+    """
+    open_set = set(open_ids)
+    riding = {}
+    for case_id in verdicts:
+        target = verdicts[_root(case_id, verdicts)].duplicate_of
+        if target in open_set:
+            riding[case_id] = target
+    return riding
+
+
 def group_cases(
     cases: Sequence[Case], verdicts: Mapping[str, TriageVerdict]
 ) -> list[list[Case]]:
@@ -239,11 +286,7 @@ def group_cases(
 
     def order(case: Case) -> tuple[int, Any, str]:
         verdict = verdicts.get(case.id)
-        return (
-            rank.get(verdict.priority if verdict else DFLT_PRIORITY, 1),
-            case.created_at,
-            case.id,
-        )
+        return (rank.get(verdict.priority if verdict else DFLT_PRIORITY, 1), case.created_at, case.id)
 
     members: dict[str, list[Case]] = {}
     for case in cases:
@@ -265,14 +308,9 @@ def compose_triage_prompt(
     excerpt_chars: int = DFLT_EXCERPT_CHARS,
 ) -> str:
     """The prompt: the packaged text, the batch, and the partner's open cases as context."""
-    rules = (
-        resources.files("liaise.data")
-        .joinpath(PROMPT_RESOURCE)
-        .read_text(encoding="utf-8")
-    )
+    rules = resources.files("liaise.data").joinpath(PROMPT_RESOURCE).read_text(encoding="utf-8")
     batch = "\n".join(
-        f"- id: {case.id}\n  text: {json.dumps(_excerpt(case, excerpt_chars))}"
-        for case in cases
+        f"- id: {case.id}\n  text: {json.dumps(_excerpt(case, excerpt_chars))}" for case in cases
     )
     parts = [rules.strip(), "## Batch\n\n" + batch]
     if context:
@@ -357,9 +395,7 @@ def headless_ask(
         env=child_env(os.environ),
     )
     if done.returncode != 0:
-        raise RuntimeError(
-            f"the triage call exited {done.returncode}: {done.stderr[-200:]}"
-        )
+        raise RuntimeError(f"the triage call exited {done.returncode}: {done.stderr[-200:]}")
     try:
         result = json.loads(done.stdout)
     except json.JSONDecodeError as error:

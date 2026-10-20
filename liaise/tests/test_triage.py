@@ -68,4 +68,5 @@ def test_labels_take_a_prefix_and_a_duplicate_label():
     v = TriageVerdict("s-1", kind="problem", size="small", priority="nice", duplicate_of="s-2")
     assert v.labels("t:") == ("t:kind:problem", "t:size:small", "t:priority:nice", "t:duplicate")
     assert len(label_specs()) == 11
+    assert all(len(spec) == 3 for spec in label_specs())
     assert "verdicts" in TRIAGE_SCHEMA["properties"]
