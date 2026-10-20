@@ -275,10 +275,6 @@ GROUP_LIVE_MESSAGE = (
 )
 #: The grouping-note key marking a case that rides with an already-open duplicate.
 RIDES_OPEN_KEY = "rides_open"
-#: The lead states a riding case keeps waiting through; any other (but deployed) releases it.
-RIDE_WAIT_STATES = (NEEDS_PARTNER, INTAKE, WORKING, PAUSED)
-#: How long a riding case waits for its lead before it is started on its own.
-RIDE_MAX_WAIT = timedelta(days=7)
 NUDGE_PURPOSE = "nudge"
 #: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.
 DAILY_CAP_PRIORITY = "default"
@@ -2563,6 +2559,8 @@ class _Tick:
                     detail={
                         "event": GROUPED_EVENT,
                         "lead": lead_id,
+                        # Same shape as an in-batch group note; no run carries it yet.
+                        "run_started_with": None,
                         RIDES_OPEN_KEY: True,
                     },
                 )
@@ -2595,22 +2593,24 @@ class _Tick:
             return None
         return notes[-1]
 
-    def _ride_released(self, case: Case, lead: Case) -> Optional[str]:
+    def _ride_released(self, subject: Subject, case: Case, lead: Case) -> Optional[str]:
         """Why a case riding with an open duplicate stops waiting for it, or None.
 
-        It waits only while the lead may still go live: not once the lead needs the
-        owner or is out of budget, not once the partner has written on the rider itself,
-        and not past :data:`RIDE_MAX_WAIT`.
+        It waits only while the lead may still go live: while the lead is in one of the
+        subject's ``triage.ride_wait_states`` (so not once it needs the owner or is out of
+        budget), not once the partner has written on the rider itself, and not past
+        ``triage.ride_max_wait``.
         """
         note = self._group_note(case)
         if note is None or not note.detail.get(RIDES_OPEN_KEY):
             return None
-        if lead.state not in RIDE_WAIT_STATES:
+        triage = subject.triage
+        if lead.state not in triage.ride_wait_states:
             return f"{lead.id} is {lead.state}"
         if last_partner_activity(case, partner_persons={case.reporter}) > note.at:
             return "the partner wrote on it since"
-        if self.now - note.at > RIDE_MAX_WAIT:
-            return f"it waited longer than {RIDE_MAX_WAIT.days} days"
+        if self.now - note.at > triage.ride_max_wait:
+            return f"it waited longer than {triage.ride_max_wait_days} days"
         return None
 
     def _group_lead(self, case: Case) -> Optional[Case]:
@@ -2665,7 +2665,7 @@ class _Tick:
             return None
         lead = self._group_lead(case)
         if lead is not None and lead.state != DEPLOYED:
-            released = self._ride_released(case, lead)
+            released = self._ride_released(subject, case, lead)
             if released is None:
                 self.say(
                     f"{label}: grouped under {lead.id} ({lead.state}), which carries it"
