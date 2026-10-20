@@ -164,6 +164,16 @@ from liaise.outcomes import (
 from liaise.processor import FINISHED, FRESH, RESUME, RUNNING, ClaudeHeadless, Job
 from liaise.projection import github_issue, project_labels, waiting_label
 from liaise.prompt import compose_case_prompt
+from liaise.triage import (
+    DUPLICATE_COMMENT,
+    DUPLICATE_PURPOSE,
+    GROUPED_EVENT,
+    Ask,
+    LlmTriage,
+    TriageVerdict,
+    headless_ask,
+    label_specs,
+)
 from liaise.readiness import compute_readiness, last_partner_activity
 from liaise.review import ReviewStep
 from liaise.release import error_text as _error_text
@@ -252,6 +262,17 @@ NUDGE_MESSAGE = (
 )
 #: The ``purpose`` of those messages, as the gate and the ledger see it.
 BUDGET_PURPOSE = "budget"
+#: Ledger ``note`` events of triage (liaise #19): a verdict applied; a case grouped under a
+#: lead; a grouped case settled once its lead is live.
+TRIAGED_EVENT = "triaged"
+GROUP_SETTLED_EVENT = "group_settled"
+GROUP_PURPOSE = "triage_group"
+#: What a grouped case is told once the case carrying it is live; ``{ref}`` names that case.
+GROUP_LIVE_MESSAGE = (
+    "This was handled together with {ref}, and it is live now. Please try it and tell "
+    "me if anything is still off."
+)
+TRIAGE_LABEL_COLOR = "c5def5"
 NUDGE_PURPOSE = "nudge"
 #: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.
 DAILY_CAP_PRIORITY = "default"
@@ -550,6 +571,7 @@ def run_once(
     only: Optional[Union[str, Collection[str]]] = None,
     outbound_filters: Iterable[OutboundFilter] = DFLT_OUTBOUND_FILTERS,
     triage: Optional[Triage] = None,
+    triage_ask: Optional[Ask] = None,
     lost_run_deadline: timedelta = LOST_RUN_DEADLINE,
     closed_recheck_interval: timedelta = CLOSED_RECHECK_INTERVAL,
     sends: Optional[MutableMapping[str, Any]] = None,
@@ -614,6 +636,7 @@ def run_once(
         outbound_filters=tuple(outbound_filters),
         fingerprint_key=key_source(state_dir, create=not dry_run),
         triage=triage,
+        triage_ask=triage_ask,
         lost_run_deadline=lost_run_deadline,
         closed_recheck_interval=closed_recheck_interval,
         sends=sends if sends is not None else default_send_store(state_dir),
@@ -1015,6 +1038,7 @@ class _Tick:
         triage: Optional[Triage],
         lost_run_deadline: timedelta,
         closed_recheck_interval: timedelta,
+        triage_ask: Optional[Ask] = None,
         fingerprint_key: Optional[Callable[[], bytes]] = None,
         sends: Optional[MutableMapping[str, Any]] = None,
         state_dir: Optional[Path] = None,
@@ -1034,6 +1058,9 @@ class _Tick:
         self.dry_run = dry_run
         self.outbound_filters = outbound_filters
         self.triage = triage
+        self.triage_ask = triage_ask
+        #: Repos whose triage labels this tick already created.
+        self.triage_labelled: set[str] = set()
         self.lost_run_deadline = lost_run_deadline
         self.closed_recheck_interval = closed_recheck_interval
         self.fingerprint_key = fingerprint_key
@@ -2304,6 +2331,10 @@ class _Tick:
             cases = sorted(
                 self.ledger.cases(subject=slug), key=lambda c: (c.created_at, c.id)
             )
+            self._settle_groups(subject, cases)
+            cases = sorted(
+                self.ledger.cases(subject=slug), key=lambda c: (c.created_at, c.id)
+            )
             eligible = [case for case in cases if case.state in ELIGIBLE_STATES]
             self.say(f"start {slug}: {len(eligible)} eligible case(s)")
             ready: list[tuple[Case, str]] = []
@@ -2315,42 +2346,219 @@ class _Tick:
                     continue
                 if why_ready is not None:
                     ready.append((case, why_ready))
-            for case, why_ready in self._triaged(slug, ready):
+            for group in self._triaged(subject, ready):
+                lead, why_ready = group[0]
+                before = len(self.dispatched)
+                also = tuple(case for case, _ in group[1:])
                 try:
-                    self._consider(subject, self._case(case.id), why_ready)
+                    self._consider(
+                        subject, self._case(lead.id), why_ready, also=also
+                    )
                 except Exception as error:  # one case's failure is not the tick's
-                    self.problem(f"starting {case.id} failed: {_error_text(error)}")
+                    self.problem(f"starting {lead.id} failed: {_error_text(error)}")
+                    continue
+                if also and len(self.dispatched) > before:
+                    self._record_group(subject, lead, also)
+
+    def _triage_for(self, subject: Subject) -> Optional[Triage]:
+        """The explicit seam, else the subject's own LLM triage when it asks for one."""
+        if self.triage is not None:
+            return self.triage
+        if not subject.triage.enabled:
+            return None
+        if self.dry_run:
+            self.say(f"  triage {subject.slug}: skipped (dry run)")
+            return None
+        ask = self.triage_ask or functools.partial(
+            headless_ask, max_turns=subject.triage.max_turns
+        )
+        return LlmTriage(ask)
 
     def _triaged(
-        self, slug: str, ready: list[tuple[Case, str]]
-    ) -> list[tuple[Case, str]]:
-        """``ready`` in the order the triage seam gives it; as it is without one.
+        self, subject: Subject, ready: list[tuple[Case, str]]
+    ) -> list[list[tuple[Case, str]]]:
+        """``ready`` as groups to start, in order; one single-case group each without a triage.
 
         The triage gets the ready cases in the tick's order and returns them in groups. A
         case it leaves out is not started this tick; one it names that is not ready, or
         names twice, is started once at most. A triage that raises is a problem line, and
-        the cases start in the tick's own order.
+        the cases start one at a time in the tick's own order. A seam that
+        ``merges_groups`` (:class:`~liaise.triage.LlmTriage`) has each multi-case group
+        started as one job, its lead carrying the rest; any other starts every case alone.
         """
-        if self.triage is None or not ready:
-            return ready
+        slug = subject.slug
+        alone = [[item] for item in ready]
+        triage = self._triage_for(subject)
+        if triage is None or not ready:
+            return alone
         by_id = {case.id: (case, why) for case, why in ready}
+        merging = getattr(triage, "merges_groups", False)
+        fresh = [case for case, _ in ready if not self._triaged_before(case)]
         try:
-            groups = self.triage(tuple(case for case, _ in ready))
+            if merging:
+                called = triage(tuple(fresh), context=self._open_context(slug, ready))
+                groups = [list(group) for group in called]
+                groups += [[case] for case, _ in ready if case not in fresh]
+            else:
+                groups = [list(group) for group in triage(tuple(case for case, _ in ready))]
             named = dict.fromkeys(case.id for group in groups for case in group)
         except Exception as error:  # a triage that fails must not stop every start
             self.problem(
                 f"triage of {slug} failed: {_error_text(error)}; the cases start in "
                 f"the tick's own order"
             )
-            return ready
-        kept = [by_id[case_id] for case_id in named if case_id in by_id]
+            return alone
+        if merging:
+            self._apply_verdicts(subject, getattr(triage, "verdicts", {}))
+        kept = [
+            [by_id[case.id] for case in group if case.id in by_id] for group in groups
+        ]
+        kept = [group for group in kept if group]
+        if not merging:  # the seam's order, one case at a time
+            kept = [[item] for group in kept for item in group]
         left_out = [case_id for case_id in by_id if case_id not in named]
-        order = ", ".join(case.id for case, _ in kept) or "none"
+        order = ", ".join(
+            "+".join(case.id for case, _ in group) for group in kept
+        ) or "none"
         self.say(
             f"  triage {slug}: {order}"
             + (f"; left out this tick: {', '.join(left_out)}" if left_out else "")
         )
         return kept
+
+    @staticmethod
+    def _triage_entry(case: Case) -> Optional[LedgerEntry]:
+        """The case's latest triage verdict entry, or None when it was never triaged."""
+        found = [
+            e
+            for e in case.entries
+            if e.kind == "note" and e.detail.get("event") == TRIAGED_EVENT
+        ]
+        return found[-1] if found else None
+
+    def _triaged_before(self, case: Case) -> bool:
+        return self._triage_entry(self._case(case.id)) is not None
+
+    def _open_context(
+        self, slug: str, ready: list[tuple[Case, str]]
+    ) -> list[Case]:
+        """The partner's open cases (waiting on them, or deployed), for spotting duplicates."""
+        batch = {case.id for case, _ in ready}
+        return [
+            case
+            for case in self.ledger.cases(subject=slug)
+            if case.state in (NEEDS_PARTNER, DEPLOYED) and case.id not in batch
+        ]
+
+    def _apply_verdicts(
+        self, subject: Subject, verdicts: Mapping[str, TriageVerdict]
+    ) -> None:
+        """Show each verdict on its issue: labels, and one comment on a duplicate; then record it."""
+        prefix = subject.triage.label_prefix
+        for case_id, verdict in verdicts.items():
+            case = self._case(case_id)
+            self.say(
+                f"  triage {case_id}: {verdict.kind}, {verdict.size}, {verdict.priority}"
+                + (f", duplicate of {verdict.duplicate_of}" if verdict.duplicate_of else "")
+                + f", group {verdict.group}"
+            )
+            if self.dry_run:
+                continue
+            self._label_issue(case, verdict.labels(prefix), prefix)
+            comment = (
+                subject.reply_mode_for(case.reporter) != "draft"
+                and verdict.duplicate_of
+            )
+            if comment:
+                target = self.ledger.get_case(verdict.duplicate_of)
+                ref = self._issue_mention(case, target) if target else None
+                if ref:
+                    self._send_own(
+                        subject,
+                        self._case(case_id),
+                        DUPLICATE_COMMENT.format(ref=ref),
+                        purpose=DUPLICATE_PURPOSE,
+                    )
+            self._entry(
+                case_id,
+                "note",
+                detail={
+                    "event": TRIAGED_EVENT,
+                    "kind": verdict.kind,
+                    "size": verdict.size,
+                    "priority": verdict.priority,
+                    "group": verdict.group,
+                    "duplicate_of": verdict.duplicate_of,
+                },
+            )
+
+    @staticmethod
+    def _issue_mention(case: Case, other: Case) -> Optional[str]:
+        """``#N`` (or ``owner/repo#N``) for ``other``'s first GitHub issue, as seen from ``case``."""
+        ref = _github_issue_ref(other)
+        parsed = github_issue(ref) if ref else None
+        if parsed is None:
+            return None
+        repo, number = parsed
+        return f"#{number}" if repo == _github_repo(case) else f"{repo}#{number}"
+
+    def _label_issue(self, case: Case, labels: Sequence[str], prefix: str) -> None:
+        ref = _github_issue_ref(case)
+        parsed = github_issue(ref) if ref else None
+        if parsed is None:
+            return
+        repo, number = parsed
+        try:
+            if repo not in self.triage_labelled:
+                for name, description in label_specs(prefix):
+                    self.labeler.create_label(repo, name, color=TRIAGE_LABEL_COLOR, description=description)
+                self.triage_labelled.add(repo)
+            self.labeler.add_labels(repo, number, list(labels))
+        except Exception as error:  # a label that cannot be written is not the tick's
+            self.problem(f"labelling {case.id} with its triage failed: {_error_text(error)}")
+
+    def _record_group(
+        self, subject: Subject, lead: Case, also: Sequence[Case]
+    ) -> None:
+        """Note on each grouped case which case carries it, so it waits for that one."""
+        for other in also:
+            self._entry(
+                other.id,
+                "note",
+                detail={"event": GROUPED_EVENT, "lead": lead.id, "run_started_with": lead.id},
+            )
+            self.say(f"  case {other.id}: grouped under {lead.id}, which carries it")
+
+    def _group_lead(self, case: Case) -> Optional[Case]:
+        """The case carrying ``case`` while the grouping holds; None once it is settled."""
+        notes = [
+            e
+            for e in case.entries
+            if e.kind == "note"
+            and e.detail.get("event") in (GROUPED_EVENT, GROUP_SETTLED_EVENT)
+        ]
+        if not notes or notes[-1].detail.get("event") != GROUPED_EVENT:
+            return None
+        return self.ledger.get_case(str(notes[-1].detail.get("lead")))
+
+    def _settle_groups(self, subject: Subject, cases: Sequence[Case]) -> None:
+        """Tell a grouped case its lead is live, and move it there, once the lead is deployed."""
+        for case in cases:
+            lead = self._group_lead(case)
+            if lead is None or lead.state != DEPLOYED or case.state not in ELIGIBLE_STATES:
+                continue
+            ref = self._issue_mention(case, lead) or lead.id
+            self._entry(case.id, "note", detail={"event": GROUP_SETTLED_EVENT, "lead": lead.id})
+            if self.dry_run:
+                self.say(f"  case {case.id}: would settle with {lead.id}, now live")
+                continue
+            self._send_own(
+                subject,
+                self._case(case.id),
+                GROUP_LIVE_MESSAGE.format(ref=ref),
+                purpose=GROUP_PURPOSE,
+            )
+            self._transition(case.id, DEPLOYED, f"handled together with {lead.id}")
 
     def _readiness(self, subject: Subject, case: Case) -> Optional[str]:
         """Why ``case`` is ready to start, or None, after a plan line saying why it is not."""
@@ -2364,6 +2572,10 @@ class _Tick:
             return None
         if case.defer_until is not None and case.defer_until > self.now:
             self.say(f"{label}: deferred until {case.defer_until.isoformat()}")
+            return None
+        lead = self._group_lead(case)
+        if lead is not None and lead.state != DEPLOYED:
+            self.say(f"{label}: grouped under {lead.id} ({lead.state}), which carries it")
             return None
         partners = {case.reporter}
         handover = _last_handover(case)
@@ -2397,7 +2609,14 @@ class _Tick:
             return None
         return readiness.reason
 
-    def _consider(self, subject: Subject, case: Case, why_ready: str) -> None:
+    def _consider(
+        self,
+        subject: Subject,
+        case: Case,
+        why_ready: str,
+        *,
+        also: Sequence[Case] = (),
+    ) -> None:
         """Start ``case``, ready for ``why_ready``, if it passes every other check."""
         label = f"  case {case.id} ({case.state})"
         budget = subject.policy.budget
@@ -2483,7 +2702,9 @@ class _Tick:
                 run_id=run_id,
                 case_id=case.id,
                 subject=subject.slug,
-                prompt=compose_case_prompt(subject, case, mode),
+                prompt=compose_case_prompt(
+                    subject, case, mode, also=also, kind=self._triage_kind(case)
+                ),
                 cwd=str(checkout.path),
                 permission_mode=subject.processor.permission_mode,
                 timeout_minutes=budget.timeout_minutes,
@@ -2521,6 +2742,10 @@ class _Tick:
         passed.append("workspace free")
         self.say(f"{label}: {', '.join(passed)}")
         self._dispatch(subject, case, job, checkout, mode=mode)
+
+    def _triage_kind(self, case: Case) -> Optional[str]:
+        entry = self._triage_entry(case)
+        return str(entry.detail.get("kind")) if entry is not None else None
 
     def _preflight_passes(
         self,

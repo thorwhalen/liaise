@@ -13,6 +13,7 @@ import re
 from importlib import resources
 from pathlib import Path
 from types import MappingProxyType
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Optional
 
 from liaise.config import ConfigError
@@ -151,6 +152,32 @@ def _case_pointer(case: Case, mode: str, *, runs_dir_note: Optional[str]) -> str
     return "\n".join(lines)
 
 
+def _triage_sections(also: Sequence[Case], kind: Optional[str]) -> list[str]:
+    sections = []
+    if also:
+        lines = [
+            "## Grouped cases",
+            "",
+            "Triage found that these cases belong with the one above. Read them too and "
+            "do the work once for all of them. Reply on the case above only: liaise tells "
+            "the others once it is live.",
+            "",
+        ]
+        for other in also:
+            lines.append(f"- case `{other.id}`:")
+            lines += [f"  - {conversation_link(ref)}" for ref in other.conversations]
+        sections.append("\n".join(lines))
+    if kind == "question":
+        sections.append(
+            "## This is a question\n\n"
+            "Triage read this as a question, not a request for a change. Answer it: "
+            "report a `reply` with the answer. Do not build, change or deploy anything "
+            "for it; if answering shows something should change, say so in the answer "
+            "and let the partner decide."
+        )
+    return sections
+
+
 def _outcomes(subject: Subject) -> str:
     escalate = subject.policy.escalate
     lines = [
@@ -226,6 +253,8 @@ def compose_case_prompt(
     mode: str,
     *,
     runs_dir_note: Optional[str] = None,
+    also: Sequence[Case] = (),
+    kind: Optional[str] = None,
 ) -> str:
     """Build the prompt for one run on ``case``, in the fixed section order.
 
@@ -245,6 +274,7 @@ def compose_case_prompt(
         _packaged_text(OPERATING_RULES_RESOURCE),
         _brief(subject, case.reporter),
         _case_pointer(case, mode, runs_dir_note=runs_dir_note),
+        *_triage_sections(also, kind),
         _outcomes(subject),
         _case_commands(subject),
         _case_budget(subject),
