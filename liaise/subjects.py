@@ -953,9 +953,13 @@ def _triage_from(raw: Mapping[str, Any], *, path: Path) -> TriageConfig:
         )
     prefix = table.get("label_prefix", "")
     if not isinstance(prefix, str):
-        raise ConfigError(f'{path}: triage.label_prefix must be text, as in label_prefix = "t:".')
+        raise ConfigError(
+            f'{path}: triage.label_prefix must be text, as in label_prefix = "t:".'
+        )
     return TriageConfig(
-        enabled=_boolean(table, "enabled", default=True, path=path, dotted="triage.enabled"),
+        enabled=_boolean(
+            table, "enabled", default=True, path=path, dotted="triage.enabled"
+        ),
         label_prefix=prefix,
         max_turns=turns,
     )

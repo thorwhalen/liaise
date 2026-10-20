@@ -2351,9 +2351,7 @@ class _Tick:
                 before = len(self.dispatched)
                 also = tuple(case for case, _ in group[1:])
                 try:
-                    self._consider(
-                        subject, self._case(lead.id), why_ready, also=also
-                    )
+                    self._consider(subject, self._case(lead.id), why_ready, also=also)
                 except Exception as error:  # one case's failure is not the tick's
                     self.problem(f"starting {lead.id} failed: {_error_text(error)}")
                     continue
@@ -2400,7 +2398,9 @@ class _Tick:
                 groups = [list(group) for group in called]
                 groups += [[case] for case, _ in ready if case not in fresh]
             else:
-                groups = [list(group) for group in triage(tuple(case for case, _ in ready))]
+                groups = [
+                    list(group) for group in triage(tuple(case for case, _ in ready))
+                ]
             named = dict.fromkeys(case.id for group in groups for case in group)
         except Exception as error:  # a triage that fails must not stop every start
             self.problem(
@@ -2417,9 +2417,10 @@ class _Tick:
         if not merging:  # the seam's order, one case at a time
             kept = [[item] for group in kept for item in group]
         left_out = [case_id for case_id in by_id if case_id not in named]
-        order = ", ".join(
-            "+".join(case.id for case, _ in group) for group in kept
-        ) or "none"
+        order = (
+            ", ".join("+".join(case.id for case, _ in group) for group in kept)
+            or "none"
+        )
         self.say(
             f"  triage {slug}: {order}"
             + (f"; left out this tick: {', '.join(left_out)}" if left_out else "")
@@ -2439,9 +2440,7 @@ class _Tick:
     def _triaged_before(self, case: Case) -> bool:
         return self._triage_entry(self._case(case.id)) is not None
 
-    def _open_context(
-        self, slug: str, ready: list[tuple[Case, str]]
-    ) -> list[Case]:
+    def _open_context(self, slug: str, ready: list[tuple[Case, str]]) -> list[Case]:
         """The partner's open cases (waiting on them, or deployed), for spotting duplicates."""
         batch = {case.id for case, _ in ready}
         return [
@@ -2459,7 +2458,11 @@ class _Tick:
             case = self._case(case_id)
             self.say(
                 f"  triage {case_id}: {verdict.kind}, {verdict.size}, {verdict.priority}"
-                + (f", duplicate of {verdict.duplicate_of}" if verdict.duplicate_of else "")
+                + (
+                    f", duplicate of {verdict.duplicate_of}"
+                    if verdict.duplicate_of
+                    else ""
+                )
                 + f", group {verdict.group}"
             )
             if self.dry_run:
@@ -2511,21 +2514,27 @@ class _Tick:
         try:
             if repo not in self.triage_labelled:
                 for name, description in label_specs(prefix):
-                    self.labeler.create_label(repo, name, color=TRIAGE_LABEL_COLOR, description=description)
+                    self.labeler.create_label(
+                        repo, name, color=TRIAGE_LABEL_COLOR, description=description
+                    )
                 self.triage_labelled.add(repo)
             self.labeler.add_labels(repo, number, list(labels))
         except Exception as error:  # a label that cannot be written is not the tick's
-            self.problem(f"labelling {case.id} with its triage failed: {_error_text(error)}")
+            self.problem(
+                f"labelling {case.id} with its triage failed: {_error_text(error)}"
+            )
 
-    def _record_group(
-        self, subject: Subject, lead: Case, also: Sequence[Case]
-    ) -> None:
+    def _record_group(self, subject: Subject, lead: Case, also: Sequence[Case]) -> None:
         """Note on each grouped case which case carries it, so it waits for that one."""
         for other in also:
             self._entry(
                 other.id,
                 "note",
-                detail={"event": GROUPED_EVENT, "lead": lead.id, "run_started_with": lead.id},
+                detail={
+                    "event": GROUPED_EVENT,
+                    "lead": lead.id,
+                    "run_started_with": lead.id,
+                },
             )
             self.say(f"  case {other.id}: grouped under {lead.id}, which carries it")
 
@@ -2545,10 +2554,16 @@ class _Tick:
         """Tell a grouped case its lead is live, and move it there, once the lead is deployed."""
         for case in cases:
             lead = self._group_lead(case)
-            if lead is None or lead.state != DEPLOYED or case.state not in ELIGIBLE_STATES:
+            if (
+                lead is None
+                or lead.state != DEPLOYED
+                or case.state not in ELIGIBLE_STATES
+            ):
                 continue
             ref = self._issue_mention(case, lead) or lead.id
-            self._entry(case.id, "note", detail={"event": GROUP_SETTLED_EVENT, "lead": lead.id})
+            self._entry(
+                case.id, "note", detail={"event": GROUP_SETTLED_EVENT, "lead": lead.id}
+            )
             if self.dry_run:
                 self.say(f"  case {case.id}: would settle with {lead.id}, now live")
                 continue
@@ -2575,7 +2590,9 @@ class _Tick:
             return None
         lead = self._group_lead(case)
         if lead is not None and lead.state != DEPLOYED:
-            self.say(f"{label}: grouped under {lead.id} ({lead.state}), which carries it")
+            self.say(
+                f"{label}: grouped under {lead.id} ({lead.state}), which carries it"
+            )
             return None
         partners = {case.reporter}
         handover = _last_handover(case)
