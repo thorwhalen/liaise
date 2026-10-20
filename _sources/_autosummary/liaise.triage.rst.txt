@@ -17,6 +17,7 @@ liaise.triage
       DUPLICATE_PURPOSE
       GROUPED_EVENT
       Ask
+      TRIAGE_LABEL_SPEC_KEYS
    
    .. rubric:: Functions
 
@@ -27,6 +28,7 @@ liaise.triage
       headless_ask
       label_specs
       parse_verdicts
+      riding_with_open
    
    .. rubric:: Classes
 

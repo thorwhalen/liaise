@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=3d116926"></script>
+    <script src="../../_static/documentation_options.js?v=17aaaefc"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -411,7 +411,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.19" />
+  <meta name="docsearch:version" content="0.1.20" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -887,6 +887,7 @@ window.runMermaid = runMermaid;</script>
     <span class="n">TriageVerdict</span><span class="p">,</span>
     <span class="n">headless_ask</span><span class="p">,</span>
     <span class="n">label_specs</span><span class="p">,</span>
+    <span class="n">riding_with_open</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.readiness</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_readiness</span><span class="p">,</span> <span class="n">last_partner_activity</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.review</span><span class="w"> </span><span class="kn">import</span> <span class="n">ReviewStep</span>
@@ -986,7 +987,12 @@ window.runMermaid = runMermaid;</script>
     <span class="s2">"This was handled together with </span><span class="si">{ref}</span><span class="s2">, and it is live now. Please try it and tell "</span>
     <span class="s2">"me if anything is still off."</span>
 <span class="p">)</span>
-<span class="n">TRIAGE_LABEL_COLOR</span> <span class="o">=</span> <span class="s2">"c5def5"</span>
+<span class="c1">#: The grouping-note key marking a case that rides with an already-open duplicate.</span>
+<span class="n">RIDES_OPEN_KEY</span> <span class="o">=</span> <span class="s2">"rides_open"</span>
+<span class="c1">#: The lead states a riding case keeps waiting through; any other (but deployed) releases it.</span>
+<span class="n">RIDE_WAIT_STATES</span> <span class="o">=</span> <span class="p">(</span><span class="n">NEEDS_PARTNER</span><span class="p">,</span> <span class="n">INTAKE</span><span class="p">,</span> <span class="n">WORKING</span><span class="p">,</span> <span class="n">PAUSED</span><span class="p">)</span>
+<span class="c1">#: How long a riding case waits for its lead before it is started on its own.</span>
+<span class="n">RIDE_MAX_WAIT</span> <span class="o">=</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
 <span class="n">NUDGE_PURPOSE</span> <span class="o">=</span> <span class="s2">"nudge"</span>
 <span class="c1">#: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.</span>
 <span class="n">DAILY_CAP_PRIORITY</span> <span class="o">=</span> <span class="s2">"default"</span>
@@ -3138,9 +3144,10 @@ window.runMermaid = runMermaid;</script>
         <span class="n">by_id</span> <span class="o">=</span> <span class="p">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">:</span> <span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">why</span><span class="p">)</span> <span class="k">for</span> <span class="n">case</span><span class="p">,</span> <span class="n">why</span> <span class="ow">in</span> <span class="n">ready</span><span class="p">}</span>
         <span class="n">merging</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">triage</span><span class="p">,</span> <span class="s2">"merges_groups"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
         <span class="n">fresh</span> <span class="o">=</span> <span class="p">[</span><span class="n">case</span> <span class="k">for</span> <span class="n">case</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">ready</span> <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_triaged_before</span><span class="p">(</span><span class="n">case</span><span class="p">)]</span>
+        <span class="n">context</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_open_context</span><span class="p">(</span><span class="n">slug</span><span class="p">,</span> <span class="n">ready</span><span class="p">)</span> <span class="k">if</span> <span class="n">merging</span> <span class="k">else</span> <span class="p">[]</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">merging</span><span class="p">:</span>
-                <span class="n">called</span> <span class="o">=</span> <span class="n">triage</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fresh</span><span class="p">),</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_open_context</span><span class="p">(</span><span class="n">slug</span><span class="p">,</span> <span class="n">ready</span><span class="p">))</span>
+                <span class="n">called</span> <span class="o">=</span> <span class="n">triage</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">fresh</span><span class="p">),</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
                 <span class="n">groups</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">group</span><span class="p">)</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">called</span><span class="p">]</span>
                 <span class="n">groups</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">case</span><span class="p">]</span> <span class="k">for</span> <span class="n">case</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">ready</span> <span class="k">if</span> <span class="n">case</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">fresh</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
@@ -3152,10 +3159,14 @@ window.runMermaid = runMermaid;</script>
                 <span class="sa">f</span><span class="s2">"the tick's own order"</span>
             <span class="p">)</span>
             <span class="k">return</span> <span class="n">alone</span>
+        <span class="n">riding</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">merging</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_verdicts</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">triage</span><span class="p">,</span> <span class="s2">"verdicts"</span><span class="p">,</span> <span class="p">{}))</span>
+            <span class="n">verdicts</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">triage</span><span class="p">,</span> <span class="s2">"verdicts"</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">riding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ride_with_open</span><span class="p">(</span><span class="n">verdicts</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_apply_verdicts</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">verdicts</span><span class="p">)</span>
         <span class="n">kept</span> <span class="o">=</span> <span class="p">[</span>
-            <span class="p">[</span><span class="n">by_id</span><span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">group</span> <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">by_id</span><span class="p">]</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span>
+            <span class="p">[</span><span class="n">by_id</span><span class="p">[</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="p">]</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">group</span> <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span> <span class="ow">in</span> <span class="n">by_id</span> <span class="ow">and</span> <span class="n">case</span><span class="o">.</span><span class="n">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">riding</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">groups</span>
         <span class="p">]</span>
         <span class="n">kept</span> <span class="o">=</span> <span class="p">[</span><span class="n">group</span> <span class="k">for</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">kept</span> <span class="k">if</span> <span class="n">group</span><span class="p">]</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">merging</span><span class="p">:</span>  <span class="c1"># the seam's order, one case at a time</span>
@@ -3167,6 +3178,7 @@ window.runMermaid = runMermaid;</script>
         <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"  triage </span><span class="si">{</span><span class="n">slug</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">order</span><span class="si">}</span><span class="s2">"</span>
             <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"; left out this tick: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">left_out</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">left_out</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
+            <span class="o">+</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"; waiting for open duplicates: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">riding</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">riding</span> <span class="k">else</span> <span class="s2">""</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="n">kept</span>
 
@@ -3254,12 +3266,34 @@ window.runMermaid = runMermaid;</script>
         <span class="n">repo</span><span class="p">,</span> <span class="n">number</span> <span class="o">=</span> <span class="n">parsed</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">repo</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">triage_labelled</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">description</span> <span class="ow">in</span> <span class="n">label_specs</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">labeler</span><span class="o">.</span><span class="n">create_label</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">TRIAGE_LABEL_COLOR</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">description</span> <span class="ow">in</span> <span class="n">label_specs</span><span class="p">(</span><span class="n">prefix</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">labeler</span><span class="o">.</span><span class="n">create_label</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="n">description</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">triage_labelled</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">repo</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">labeler</span><span class="o">.</span><span class="n">add_labels</span><span class="p">(</span><span class="n">repo</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">labels</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>  <span class="c1"># a label that cannot be written is not the tick's</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">problem</span><span class="p">(</span><span class="sa">f</span><span class="s2">"labelling </span><span class="si">{</span><span class="n">case</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> with its triage failed: </span><span class="si">{</span><span class="n">_error_text</span><span class="p">(</span><span class="n">error</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ride_with_open</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">verdicts</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">TriageVerdict</span><span class="p">],</span> <span class="n">context</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Case</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Group each case that duplicates an already-open case under it, so it waits for it.</span>
+
+<span class="sd">        Only an open case waiting on the partner carries it (a duplicate of a case that is</span>
+<span class="sd">        already live may be a new report that it is still broken, so it runs on its own). It</span>
+<span class="sd">        is not started on its own, and settles once that case is live, unless</span>
+<span class="sd">        :meth:`_ride_released` lets it go first.</span>
+<span class="sd">        """</span>
+        <span class="n">waiting</span> <span class="o">=</span> <span class="p">(</span><span class="n">case</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">case</span> <span class="ow">in</span> <span class="n">context</span> <span class="k">if</span> <span class="n">case</span><span class="o">.</span><span class="n">state</span> <span class="o">==</span> <span class="n">NEEDS_PARTNER</span><span class="p">)</span>
+        <span class="n">riding</span> <span class="o">=</span> <span class="n">riding_with_open</span><span class="p">(</span><span class="n">verdicts</span><span class="p">,</span> <span class="n">waiting</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">case_id</span><span class="p">,</span> <span class="n">lead_id</span> <span class="ow">in</span> <span class="n">riding</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  case </span><span class="si">{</span><span class="n">case_id</span><span class="si">}</span><span class="s2">: duplicates open case </span><span class="si">{</span><span class="n">lead_id</span><span class="si">}</span><span class="s2">; it waits for that one"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dry_run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_entry</span><span class="p">(</span>
+                    <span class="n">case_id</span><span class="p">,</span>
+                    <span class="s2">"note"</span><span class="p">,</span>
+                    <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="n">GROUPED_EVENT</span><span class="p">,</span> <span class="s2">"lead"</span><span class="p">:</span> <span class="n">lead_id</span><span class="p">,</span> <span class="n">RIDES_OPEN_KEY</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                <span class="p">)</span>
+        <span class="k">return</span> <span class="n">riding</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_record_group</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">,</span> <span class="n">lead</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">also</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Case</span><span class="p">]</span>
@@ -3272,6 +3306,37 @@ window.runMermaid = runMermaid;</script>
                 <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="n">GROUPED_EVENT</span><span class="p">,</span> <span class="s2">"lead"</span><span class="p">:</span> <span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">"run_started_with"</span><span class="p">:</span> <span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="p">},</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"  case </span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: grouped under </span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">, which carries it"</span><span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_group_note</span><span class="p">(</span><span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LedgerEntry</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""The grouping note in force on ``case``, or None once it is settled."""</span>
+        <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">e</span>
+            <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">case</span><span class="o">.</span><span class="n">entries</span>
+            <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">kind</span> <span class="o">==</span> <span class="s2">"note"</span>
+            <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"event"</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="n">GROUPED_EVENT</span><span class="p">,</span> <span class="n">GROUP_SETTLED_EVENT</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">notes</span> <span class="ow">or</span> <span class="n">notes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"event"</span><span class="p">)</span> <span class="o">!=</span> <span class="n">GROUPED_EVENT</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">notes</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_ride_released</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">,</span> <span class="n">lead</span><span class="p">:</span> <span class="n">Case</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""Why a case riding with an open duplicate stops waiting for it, or None.</span>
+
+<span class="sd">        It waits only while the lead may still go live: not once the lead needs the</span>
+<span class="sd">        owner or is out of budget, not once the partner has written on the rider itself,</span>
+<span class="sd">        and not past :data:`RIDE_MAX_WAIT`.</span>
+<span class="sd">        """</span>
+        <span class="n">note</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group_note</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">note</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">note</span><span class="o">.</span><span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">RIDES_OPEN_KEY</span><span class="p">):</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">lead</span><span class="o">.</span><span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RIDE_WAIT_STATES</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> is </span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">"</span>
+        <span class="k">if</span> <span class="n">last_partner_activity</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">partner_persons</span><span class="o">=</span><span class="p">{</span><span class="n">case</span><span class="o">.</span><span class="n">reporter</span><span class="p">})</span> <span class="o">&gt;</span> <span class="n">note</span><span class="o">.</span><span class="n">at</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">"the partner wrote on it since"</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">now</span> <span class="o">-</span> <span class="n">note</span><span class="o">.</span><span class="n">at</span> <span class="o">&gt;</span> <span class="n">RIDE_MAX_WAIT</span><span class="p">:</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"it waited longer than </span><span class="si">{</span><span class="n">RIDE_MAX_WAIT</span><span class="o">.</span><span class="n">days</span><span class="si">}</span><span class="s2"> days"</span>
+        <span class="k">return</span> <span class="kc">None</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_group_lead</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">case</span><span class="p">:</span> <span class="n">Case</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Case</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">"""The case carrying ``case`` while the grouping holds; None once it is settled."""</span>
@@ -3319,8 +3384,17 @@ window.runMermaid = runMermaid;</script>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="n">lead</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_group_lead</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">lead</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">lead</span><span class="o">.</span><span class="n">state</span> <span class="o">!=</span> <span class="n">DEPLOYED</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: grouped under </span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">), which carries it"</span><span class="p">)</span>
-            <span class="k">return</span> <span class="kc">None</span>
+            <span class="n">released</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ride_released</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">lead</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">released</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: grouped under </span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">state</span><span class="si">}</span><span class="s2">), which carries it"</span><span class="p">)</span>
+                <span class="k">return</span> <span class="kc">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">say</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">: no longer waits for </span><span class="si">{</span><span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">released</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dry_run</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_entry</span><span class="p">(</span>
+                    <span class="k">case</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                    <span class="s2">"note"</span><span class="p">,</span>
+                    <span class="n">detail</span><span class="o">=</span><span class="p">{</span><span class="s2">"event"</span><span class="p">:</span> <span class="n">GROUP_SETTLED_EVENT</span><span class="p">,</span> <span class="s2">"lead"</span><span class="p">:</span> <span class="n">lead</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="s2">"released"</span><span class="p">:</span> <span class="n">released</span><span class="p">},</span>
+                <span class="p">)</span>
         <span class="n">partners</span> <span class="o">=</span> <span class="p">{</span><span class="n">case</span><span class="o">.</span><span class="n">reporter</span><span class="p">}</span>
         <span class="n">handover</span> <span class="o">=</span> <span class="n">_last_handover</span><span class="p">(</span><span class="n">case</span><span class="p">)</span>
         <span class="k">if</span> <span class="p">(</span>

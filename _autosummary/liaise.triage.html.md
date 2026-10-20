@@ -29,16 +29,17 @@ them names a partner, a repository or a product.
 
 ### Module Attributes
 
-| [`DFLT_KIND`](#liaise.triage.DFLT_KIND)             | Verdict applied to a case the pass said nothing usable about.                        |
-|------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
-| [`DFLT_TRIAGE_MAX_TURNS`](#liaise.triage.DFLT_TRIAGE_MAX_TURNS) | it only classifies, so it needs very few.                                            |
-| [`DFLT_TRIAGE_TIMEOUT`](#liaise.triage.DFLT_TRIAGE_TIMEOUT)   | Seconds the triage call may take before it counts as failed.                         |
-| [`DFLT_EXCERPT_CHARS`](#liaise.triage.DFLT_EXCERPT_CHARS)    | Characters of a case's first message shown to the pass.                              |
-| [`DUPLICATE_LABEL`](#liaise.triage.DUPLICATE_LABEL)       | The label every duplicate carries, besides its `kind:` / `size:` / `priority:` ones. |
-| [`DUPLICATE_COMMENT`](#liaise.triage.DUPLICATE_COMMENT)     | The one comment on a duplicate; `{ref}` is the issue it duplicates.                  |
-| [`DUPLICATE_PURPOSE`](#liaise.triage.DUPLICATE_PURPOSE)     | Ledger purpose of that comment.                                                      |
-| [`GROUPED_EVENT`](#liaise.triage.GROUPED_EVENT)         | `{"lead": case_id}`.                                                                 |
-| [`Ask`](#liaise.triage.Ask)                   | the triage call seam.                                                                |
+| [`DFLT_KIND`](#liaise.triage.DFLT_KIND)              | Verdict applied to a case the pass said nothing usable about.                        |
+|-------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`DFLT_TRIAGE_MAX_TURNS`](#liaise.triage.DFLT_TRIAGE_MAX_TURNS)  | it only classifies, so it needs very few.                                            |
+| [`DFLT_TRIAGE_TIMEOUT`](#liaise.triage.DFLT_TRIAGE_TIMEOUT)    | Seconds the triage call may take before it counts as failed.                         |
+| [`DFLT_EXCERPT_CHARS`](#liaise.triage.DFLT_EXCERPT_CHARS)     | Characters of a case's first message shown to the pass.                              |
+| [`DUPLICATE_LABEL`](#liaise.triage.DUPLICATE_LABEL)        | The label every duplicate carries, besides its `kind:` / `size:` / `priority:` ones. |
+| [`DUPLICATE_COMMENT`](#liaise.triage.DUPLICATE_COMMENT)      | The one comment on a duplicate; `{ref}` is the issue it duplicates.                  |
+| [`DUPLICATE_PURPOSE`](#liaise.triage.DUPLICATE_PURPOSE)      | Ledger purpose of that comment.                                                      |
+| [`GROUPED_EVENT`](#liaise.triage.GROUPED_EVENT)          | `{"lead": case_id}`.                                                                 |
+| [`Ask`](#liaise.triage.Ask)                    | the triage call seam.                                                                |
+| [`TRIAGE_LABEL_SPEC_KEYS`](#liaise.triage.TRIAGE_LABEL_SPEC_KEYS) | The `data/labels.json` key holding each triage label family's colour.                |
 
 ### Functions
 
@@ -46,8 +47,9 @@ them names a partner, a repository or a product.
 |-------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
 | [`group_cases`](#liaise.triage.group_cases)(cases, verdicts)                   | The dispatch groups: cases sharing a `group` slug or a duplicate chain, together.         |
 | [`headless_ask`](#liaise.triage.headless_ask)(prompt, \*[, max_turns, ...])     | Run the triage prompt as one headless, turn-capped call and return its structured answer. |
-| [`label_specs`](#liaise.triage.label_specs)([prefix])                          | Every label a verdict can carry, as `(name, description)`, so they can be created.        |
+| [`label_specs`](#liaise.triage.label_specs)([prefix])                          | Every label a verdict can carry, as `(name, color, description)`, so they can be created. |
 | [`parse_verdicts`](#liaise.triage.parse_verdicts)(raw, case_ids)                  | A verdict for each of `case_ids` from the pass's answer; tolerant of bad entries.         |
+| [`riding_with_open`](#liaise.triage.riding_with_open)(verdicts, open_ids)           | Each batch case that duplicates an already-open case, mapped to that open case.           |
 
 ### Classes
 
@@ -121,6 +123,10 @@ The tick passes the partner’s open cases as `context=` to a seam that says so.
 
 The tick starts each multi-case group as one job, its lead carrying the rest.
 
+### liaise.triage.TRIAGE_LABEL_SPEC_KEYS *= {'duplicate': 'triage-duplicate', 'kind': 'triage-kind', 'priority': 'triage-priority', 'size': 'triage-size'}*
+
+The `data/labels.json` key holding each triage label family’s colour.
+
 ### *class* liaise.triage.TriageVerdict(case_id, kind='request', duplicate_of=None, group='', size='medium', priority='important')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
@@ -164,10 +170,12 @@ handed. Raises `RuntimeError` if the call fails or returns nothing structured.
 
 ### liaise.triage.label_specs(prefix='')
 
-Every label a verdict can carry, as `(name, description)`, so they can be created.
+Every label a verdict can carry, as `(name, color, description)`, so they can be created.
+
+Each family’s colour is the one `data/labels.json` gives it, as for the state labels.
 
 * **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
 ### liaise.triage.parse_verdicts(raw, case_ids)
 
@@ -180,3 +188,21 @@ and so is one that would make a cycle.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`TriageVerdict`](#liaise.triage.TriageVerdict)]
+
+### liaise.triage.riding_with_open(verdicts, open_ids)
+
+Each batch case that duplicates an already-open case, mapped to that open case.
+
+A case counts when it names an open case outside the batch as `duplicate_of`, or when
+its duplicate chain inside the batch ends at one that does. Such a case is not
+dispatched on its own: it waits for the open case and settles with it.
+
+```pycon
+>>> v = {"a": TriageVerdict("a", duplicate_of="old"), "b": TriageVerdict("b", duplicate_of="a"),
+...      "c": TriageVerdict("c")}
+>>> riding_with_open(v, ["old"])
+{'a': 'old', 'b': 'old'}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]

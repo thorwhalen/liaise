@@ -79,6 +79,9 @@ tell a running tick from a finished or an interrupted one. [`status_lines()`](#l
 | [`BUDGET_PURPOSE`](#liaise.tick.BUDGET_PURPOSE)           | The `purpose` of those messages, as the gate and the ledger see it.                                                                                                            |
 | [`TRIAGED_EVENT`](#liaise.tick.TRIAGED_EVENT)            | a verdict applied; a case grouped under a lead; a grouped case settled once its lead is live.                                                                                  |
 | [`GROUP_LIVE_MESSAGE`](#liaise.tick.GROUP_LIVE_MESSAGE)       | What a grouped case is told once the case carrying it is live; `{ref}` names that case.                                                                                        |
+| [`RIDES_OPEN_KEY`](#liaise.tick.RIDES_OPEN_KEY)           | The grouping-note key marking a case that rides with an already-open duplicate.                                                                                                |
+| [`RIDE_WAIT_STATES`](#liaise.tick.RIDE_WAIT_STATES)         | The lead states a riding case keeps waiting through; any other (but deployed) releases it.                                                                                     |
+| [`RIDE_MAX_WAIT`](#liaise.tick.RIDE_MAX_WAIT)            | How long a riding case waits for its lead before it is started on its own.                                                                                                     |
 | [`DAILY_CAP_PRIORITY`](#liaise.tick.DAILY_CAP_PRIORITY)       | news for the operator, not a call to act.                                                                                                                                      |
 | [`SEND_REFUSED_CAUSE`](#liaise.tick.SEND_REFUSED_CAUSE)       | What a notification names a failed send by when the channel gave no error kind.                                                                                                |
 | [`RUN_STARTED`](#liaise.tick.RUN_STARTED)              | a start, a start that failed, a collection...                                                                                                                                  |
@@ -234,6 +237,18 @@ A deploy that runs the subject’s command, and a delivery that stops at a pull 
 ### liaise.tick.REQUEST_WORK *= 'request_work'*
 
 The permission a case’s reporter needs for the tick to start work on it.
+
+### liaise.tick.RIDES_OPEN_KEY *= 'rides_open'*
+
+The grouping-note key marking a case that rides with an already-open duplicate.
+
+### liaise.tick.RIDE_MAX_WAIT *= datetime.timedelta(days=7)*
+
+How long a riding case waits for its lead before it is started on its own.
+
+### liaise.tick.RIDE_WAIT_STATES *= ('needs-partner', 'intake', 'working', 'paused')*
+
+The lead states a riding case keeps waiting through; any other (but deployed) releases it.
 
 ### liaise.tick.RUN_DEPLOY_FAILED *= 'deploy_failed'*
 

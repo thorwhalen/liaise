@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=3d116926"></script>
+    <script src="../_static/documentation_options.js?v=17aaaefc"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -58,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.19" />
+  <meta name="docsearch:version" content="0.1.20" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -471,6 +471,9 @@ them names a partner, a repository or a product.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.triage.Ask" title="liaise.triage.Ask"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ask</span></code></a></p></td>
 <td><p>the triage call seam.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.triage.TRIAGE_LABEL_SPEC_KEYS" title="liaise.triage.TRIAGE_LABEL_SPEC_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIAGE_LABEL_SPEC_KEYS</span></code></a></p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">data/labels.json</span></code> key holding each triage label family's colour.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -487,10 +490,13 @@ them names a partner, a repository or a product.</p>
 <td><p>Run the triage prompt as one headless, turn-capped call and return its structured answer.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.triage.label_specs" title="liaise.triage.label_specs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">label_specs</span></code></a>([prefix])</p></td>
-<td><p>Every label a verdict can carry, as <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">description)</span></code>, so they can be created.</p></td>
+<td><p>Every label a verdict can carry, as <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">color,</span> <span class="pre">description)</span></code>, so they can be created.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.triage.parse_verdicts" title="liaise.triage.parse_verdicts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_verdicts</span></code></a>(raw, case_ids)</p></td>
 <td><p>A verdict for each of <code class="docutils literal notranslate"><span class="pre">case_ids</span></code> from the pass's answer; tolerant of bad entries.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.triage.riding_with_open" title="liaise.triage.riding_with_open"><code class="xref py py-obj docutils literal notranslate"><span class="pre">riding_with_open</span></code></a>(verdicts, open_ids)</p></td>
+<td><p>Each batch case that duplicates an already-open case, mapped to that open case.</p></td>
 </tr>
 </tbody>
 </table>
@@ -602,6 +608,12 @@ back to its own order.</p>
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.triage.TRIAGE_LABEL_SPEC_KEYS">
+<span class="sig-prename descclassname"><span class="pre">liaise.triage.</span></span><span class="sig-name descname"><span class="pre">TRIAGE_LABEL_SPEC_KEYS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'duplicate':</span> <span class="pre">'triage-duplicate',</span> <span class="pre">'kind':</span> <span class="pre">'triage-kind',</span> <span class="pre">'priority':</span> <span class="pre">'triage-priority',</span> <span class="pre">'size':</span> <span class="pre">'triage-size'}</span></span><a class="headerlink" href="#liaise.triage.TRIAGE_LABEL_SPEC_KEYS" title="Link to this definition">#</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">data/labels.json</span></code> key holding each triage label family’s colour.</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.triage.TriageVerdict">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.triage.</span></span><span class="sig-name descname"><span class="pre">TriageVerdict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'request'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">duplicate_of</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'medium'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">priority</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'important'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/triage.html#TriageVerdict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.triage.TriageVerdict" title="Link to this definition">#</a></dt>
@@ -663,10 +675,11 @@ handed. Raises <code class="docutils literal notranslate"><span class="pre">Runt
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.triage.label_specs">
 <span class="sig-prename descclassname"><span class="pre">liaise.triage.</span></span><span class="sig-name descname"><span class="pre">label_specs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/triage.html#label_specs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.triage.label_specs" title="Link to this definition">#</a></dt>
-<dd><p>Every label a verdict can carry, as <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">description)</span></code>, so they can be created.</p>
+<dd><p>Every label a verdict can carry, as <code class="docutils literal notranslate"><span class="pre">(name,</span> <span class="pre">color,</span> <span class="pre">description)</span></code>, so they can be created.</p>
+<p>Each family’s colour is the one <code class="docutils literal notranslate"><span class="pre">data/labels.json</span></code> gives it, as for the state labels.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -682,6 +695,26 @@ and so is one that would make a cycle.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference internal" href="#liaise.triage.TriageVerdict" title="liaise.triage.TriageVerdict"><code class="xref py py-class docutils literal notranslate"><span class="pre">TriageVerdict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.triage.riding_with_open">
+<span class="sig-prename descclassname"><span class="pre">liaise.triage.</span></span><span class="sig-name descname"><span class="pre">riding_with_open</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verdicts</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/triage.html#riding_with_open"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.triage.riding_with_open" title="Link to this definition">#</a></dt>
+<dd><p>Each batch case that duplicates an already-open case, mapped to that open case.</p>
+<p>A case counts when it names an open case outside the batch as <code class="docutils literal notranslate"><span class="pre">duplicate_of</span></code>, or when
+its duplicate chain inside the batch ends at one that does. Such a case is not
+dispatched on its own: it waits for the open case and settles with it.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">v</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"a"</span><span class="p">:</span> <span class="n">TriageVerdict</span><span class="p">(</span><span class="s2">"a"</span><span class="p">,</span> <span class="n">duplicate_of</span><span class="o">=</span><span class="s2">"old"</span><span class="p">),</span> <span class="s2">"b"</span><span class="p">:</span> <span class="n">TriageVerdict</span><span class="p">(</span><span class="s2">"b"</span><span class="p">,</span> <span class="n">duplicate_of</span><span class="o">=</span><span class="s2">"a"</span><span class="p">),</span>
+<span class="gp">... </span>     <span class="s2">"c"</span><span class="p">:</span> <span class="n">TriageVerdict</span><span class="p">(</span><span class="s2">"c"</span><span class="p">)}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">riding_with_open</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">[</span><span class="s2">"old"</span><span class="p">])</span>
+<span class="go">{'a': 'old', 'b': 'old'}</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -749,6 +782,7 @@ and so is one that would make a cycle.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.LlmTriage.merges_groups"><code class="docutils literal notranslate"><span class="pre">LlmTriage.merges_groups</span></code></a></li>
 </ul>
 </li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.TRIAGE_LABEL_SPEC_KEYS"><code class="docutils literal notranslate"><span class="pre">TRIAGE_LABEL_SPEC_KEYS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.TriageVerdict"><code class="docutils literal notranslate"><span class="pre">TriageVerdict</span></code></a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.TriageVerdict.labels"><code class="docutils literal notranslate"><span class="pre">TriageVerdict.labels()</span></code></a></li>
 </ul>
@@ -758,6 +792,7 @@ and so is one that would make a cycle.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.headless_ask"><code class="docutils literal notranslate"><span class="pre">headless_ask()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.label_specs"><code class="docutils literal notranslate"><span class="pre">label_specs()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.parse_verdicts"><code class="docutils literal notranslate"><span class="pre">parse_verdicts()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.triage.riding_with_open"><code class="docutils literal notranslate"><span class="pre">riding_with_open()</span></code></a></li>
 </ul>
   </nav></div>
 
