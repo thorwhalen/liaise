@@ -2163,11 +2163,11 @@ def test_a_grouped_case_is_told_and_settled_once_its_lead_is_live(world):
     assert report.problems == ()
 
 
-def test_a_duplicate_of_an_already_open_case_waits_for_it_instead_of_its_own_run(world):
-    """liaise#64: a duplicate of an open case outside the batch rides with that case."""
+def _riding_world(world):
+    """example-app-1 open and waiting on the partner; example-app-2 filed as its duplicate."""
     world.issue(12)
-    ask_first = lambda prompt: _verdicts(("example-app-1", "problem", None, "x", "small", "important"))  # noqa: E731
-    tick = _triage_world(world, ask_first)
+    first = lambda prompt: _verdicts(("example-app-1", "problem", None, "x", "small", "important"))  # noqa: E731
+    tick = _triage_world(world, first)
     tick()
     tick(now=LATER)  # collects the run
     set_case_state(world.ledger, CASE_1, "needs-partner", reason="asked", now=LATER)
@@ -2175,12 +2175,49 @@ def test_a_duplicate_of_an_already_open_case_waits_for_it_instead_of_its_own_run
     ask = lambda prompt: _verdicts(("example-app-2", "problem", "example-app-1", "", "small", "important"))  # noqa: E731
     jobs_before = len(world.processor.jobs)
     report = world.tick(LATER + timedelta(hours=1), triage_ask=ask)
+    return ask, jobs_before, report
+
+
+def test_a_duplicate_of_an_already_open_case_waits_for_it_instead_of_its_own_run(world):
+    """liaise#64: a duplicate of an open case outside the batch rides with that case."""
+    ask, jobs_before, report = _riding_world(world)
     assert len(world.processor.jobs) == jobs_before  # no run of its own
     assert any("duplicates open case example-app-1" in line for line in report.plan_lines)
     assert "duplicate" in world.labels(13)
     set_case_state(world.ledger, CASE_1, "deployed", reason="live", now=LATER + timedelta(hours=1))
     world.tick(LATER + timedelta(hours=2), triage_ask=ask)
     assert world.case("example-app-2").state == "deployed"
+
+
+def test_a_riding_duplicate_is_released_when_its_lead_needs_the_owner(world):
+    ask, jobs_before, _ = _riding_world(world)
+    set_case_state(world.ledger, CASE_1, "needs-owner", reason="stuck", now=LATER + timedelta(hours=1))
+    report = world.tick(LATER + timedelta(hours=2), triage_ask=ask)
+    assert any("no longer waits for example-app-1" in line for line in report.plan_lines)
+    assert [job.case_id for job in world.processor.jobs[jobs_before:]] == ["example-app-2"]
+
+
+def test_a_riding_duplicate_is_released_after_the_wait_cap(world):
+    from liaise.tick import RIDE_MAX_WAIT
+
+    ask, jobs_before, _ = _riding_world(world)
+    world.tick(LATER + timedelta(hours=1) + RIDE_MAX_WAIT + timedelta(hours=1), triage_ask=ask)
+    assert [job.case_id for job in world.processor.jobs[jobs_before:]] == ["example-app-2"]
+
+
+def test_a_duplicate_of_a_case_already_live_runs_on_its_own(world):
+    """It may be a report that the live fix is still broken (review of #64)."""
+    world.issue(12)
+    first = lambda prompt: _verdicts(("example-app-1", "problem", None, "x", "small", "important"))  # noqa: E731
+    tick = _triage_world(world, first)
+    tick()
+    tick(now=LATER)
+    set_case_state(world.ledger, CASE_1, "deployed", reason="live", now=LATER)
+    world.issue(13, minutes=10)
+    ask = lambda prompt: _verdicts(("example-app-2", "problem", "example-app-1", "", "small", "important"))  # noqa: E731
+    jobs_before = len(world.processor.jobs)
+    world.tick(LATER + timedelta(hours=1), triage_ask=ask)
+    assert [job.case_id for job in world.processor.jobs[jobs_before:]] == ["example-app-2"]
 
 
 def test_triage_labels_take_their_colours_from_labels_json():

@@ -273,6 +273,12 @@ GROUP_LIVE_MESSAGE = (
     "This was handled together with {ref}, and it is live now. Please try it and tell "
     "me if anything is still off."
 )
+#: The grouping-note key marking a case that rides with an already-open duplicate.
+RIDES_OPEN_KEY = "rides_open"
+#: The lead states a riding case keeps waiting through; any other (but deployed) releases it.
+RIDE_WAIT_STATES = (NEEDS_PARTNER, INTAKE, WORKING, PAUSED)
+#: How long a riding case waits for its lead before it is started on its own.
+RIDE_MAX_WAIT = timedelta(days=7)
 NUDGE_PURPOSE = "nudge"
 #: The ntfy priority of the daily-cap notice: news for the operator, not a call to act.
 DAILY_CAP_PRIORITY = "default"
@@ -2412,8 +2418,8 @@ class _Tick:
         riding: dict[str, str] = {}
         if merging:
             verdicts = getattr(triage, "verdicts", {})
-            self._apply_verdicts(subject, verdicts)
             riding = self._ride_with_open(verdicts, context)
+            self._apply_verdicts(subject, verdicts)
         kept = [
             [by_id[case.id] for case in group if case.id in by_id and case.id not in riding]
             for group in groups
@@ -2428,6 +2434,7 @@ class _Tick:
         self.say(
             f"  triage {slug}: {order}"
             + (f"; left out this tick: {', '.join(left_out)}" if left_out else "")
+            + (f"; waiting for open duplicates: {', '.join(riding)}" if riding else "")
         )
         return kept
 
@@ -2527,14 +2534,21 @@ class _Tick:
     ) -> dict[str, str]:
         """Group each case that duplicates an already-open case under it, so it waits for it.
 
-        The open case (waiting on the partner, or deployed) carries it as a lead carries a
-        grouped case: it is not started on its own, and settles once that case is live.
+        Only an open case waiting on the partner carries it (a duplicate of a case that is
+        already live may be a new report that it is still broken, so it runs on its own). It
+        is not started on its own, and settles once that case is live, unless
+        :meth:`_ride_released` lets it go first.
         """
-        riding = riding_with_open(verdicts, (case.id for case in context))
+        waiting = (case.id for case in context if case.state == NEEDS_PARTNER)
+        riding = riding_with_open(verdicts, waiting)
         for case_id, lead_id in riding.items():
             self.say(f"  case {case_id}: duplicates open case {lead_id}; it waits for that one")
             if not self.dry_run:
-                self._entry(case_id, "note", detail={"event": GROUPED_EVENT, "lead": lead_id})
+                self._entry(
+                    case_id,
+                    "note",
+                    detail={"event": GROUPED_EVENT, "lead": lead_id, RIDES_OPEN_KEY: True},
+                )
         return riding
 
     def _record_group(
@@ -2548,6 +2562,37 @@ class _Tick:
                 detail={"event": GROUPED_EVENT, "lead": lead.id, "run_started_with": lead.id},
             )
             self.say(f"  case {other.id}: grouped under {lead.id}, which carries it")
+
+    @staticmethod
+    def _group_note(case: Case) -> Optional[LedgerEntry]:
+        """The grouping note in force on ``case``, or None once it is settled."""
+        notes = [
+            e
+            for e in case.entries
+            if e.kind == "note"
+            and e.detail.get("event") in (GROUPED_EVENT, GROUP_SETTLED_EVENT)
+        ]
+        if not notes or notes[-1].detail.get("event") != GROUPED_EVENT:
+            return None
+        return notes[-1]
+
+    def _ride_released(self, case: Case, lead: Case) -> Optional[str]:
+        """Why a case riding with an open duplicate stops waiting for it, or None.
+
+        It waits only while the lead may still go live: not once the lead needs the
+        owner or is out of budget, not once the partner has written on the rider itself,
+        and not past :data:`RIDE_MAX_WAIT`.
+        """
+        note = self._group_note(case)
+        if note is None or not note.detail.get(RIDES_OPEN_KEY):
+            return None
+        if lead.state not in RIDE_WAIT_STATES:
+            return f"{lead.id} is {lead.state}"
+        if last_partner_activity(case, partner_persons={case.reporter}) > note.at:
+            return "the partner wrote on it since"
+        if self.now - note.at > RIDE_MAX_WAIT:
+            return f"it waited longer than {RIDE_MAX_WAIT.days} days"
+        return None
 
     def _group_lead(self, case: Case) -> Optional[Case]:
         """The case carrying ``case`` while the grouping holds; None once it is settled."""
@@ -2595,8 +2640,17 @@ class _Tick:
             return None
         lead = self._group_lead(case)
         if lead is not None and lead.state != DEPLOYED:
-            self.say(f"{label}: grouped under {lead.id} ({lead.state}), which carries it")
-            return None
+            released = self._ride_released(case, lead)
+            if released is None:
+                self.say(f"{label}: grouped under {lead.id} ({lead.state}), which carries it")
+                return None
+            self.say(f"{label}: no longer waits for {lead.id}: {released}")
+            if not self.dry_run:
+                self._entry(
+                    case.id,
+                    "note",
+                    detail={"event": GROUP_SETTLED_EVENT, "lead": lead.id, "released": released},
+                )
         partners = {case.reporter}
         handover = _last_handover(case)
         if (
