@@ -410,7 +410,7 @@ precedes each).
 The severity of any other finding, when the least-cleared reader has clearance
 `clear` (a public or unknown audience), and when not.
 
-### *class* liaise.detect.Scan(text, disclosure=<factory>, allowlist=(), canary_terms=(), personal_terms=(), key=<function fingerprint_key>)
+### *class* liaise.detect.Scan(text, disclosure=dict(), allowlist=(), canary_terms=(), personal_terms=(), key=<function fingerprint_key>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -485,7 +485,7 @@ the readers.
 * **Type:**
   The ids of the people the disclosure was computed for
 
-#### *property* rendered *: [View](#liaise.detect.View) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* rendered *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[View](#liaise.detect.View)]*
 
 The message as a Markdown or HTML reader sees it, when that differs.
 
@@ -602,9 +602,6 @@ own addresses, handles and paths. `key` is the fingerprint key (or a callable th
 returns it); by default [`fingerprint_key()`](#liaise.detect.fingerprint_key) with the configured state directory,
 read only when there is a finding. A caller with a config in hand should pass it.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`Finding`](#liaise.detect.Finding), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
-
 ```pycon
 >>> key = b"k" * 32
 >>> [f.kind for f in detect("Use " + "ghp_" + "a" * 36, disclosure={}, key=key)]
@@ -614,6 +611,9 @@ read only when there is a finding. A caller with a config in hand should pass it
 >>> [(f.kind, f.start, f.end, f.severity) for f in found]
 [('vocabulary', 3, 9, 3)]
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`Finding`](#liaise.detect.Finding), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.detect.detect_canaries(scan)
 
@@ -691,14 +691,14 @@ fingerprint alike, or what the second one flags is not what the first one showed
 `create` false a missing key is a key used once, so asking twice would otherwise
 answer twice.
 
-* **Return type:**
-  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[], [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]
-
 ```pycon
 >>> source = key_source(create=False)
 >>> source() == source()
 True
 ```
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[], [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]
 
 ### liaise.detect.link_urls(text)
 
@@ -709,13 +709,13 @@ URLs, then any `//host` outside those), whatever their host: what the operator r
 before releasing a message, since a link’s title can say one place and its
 destination another.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
-
 ```pycon
 >>> link_urls("See [the docs](https://example.org/a) and https://example.com/b.")
 ('https://example.org/a', 'https://example.com/b')
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.detect.link_words(destination)
 
@@ -726,9 +726,6 @@ Character references and percent-escapes are decoded, compatibility forms folded
 glued together by case or by digits are split, so a term a link spells out reads as
 the term.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> link_words("https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms")
 'Heron Acquisition terms 2026 pdf p heron Terms'
@@ -738,7 +735,10 @@ the term.
 'Heron Terms'
 ```
 
-### liaise.detect.local_path_scanner(rules=(PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:Users|home|root)/'), literals=('/Users/', '/home/', '/root/')), PathRule(rule='local-path', pattern=re.compile('\\\\\\\\b[A-Za-z]:(?:\\\\\\\\\\\\\\\\{1,2}|/)Users(?:\\\\\\\\\\\\\\\\{1,2}|/)', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/mnt/[A-Za-z]/Users/', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:private/var|var/folders)/'), literals=('/private/var/', '/var/folders/')), PathRule(rule='env-file', pattern=re.compile('(?<=[\\\\\\\\\\\\\\\\/])\\\\\\\\.env(?![\\\\\\\\w-]|\\\\\\\\.\\\\\\\\w)'), literals=('.env',))))
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.detect.local_path_scanner(rules=(PathRule(rule='local-path', pattern=re.compile('(?<![\\\\w.~-])/(?:Users|home|root)/'), literals=('/Users/', '/home/', '/root/')), PathRule(rule='local-path', pattern=re.compile('\\\\b[A-Za-z]:(?:\\\\\\\\{1,2}|/)Users(?:\\\\\\\\{1,2}|/)', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\w.~-])/mnt/[A-Za-z]/Users/', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\w.~-])/(?:private/var|var/folders)/'), literals=('/private/var/', '/var/folders/')), PathRule(rule='env-file', pattern=re.compile('(?<=[\\\\\\\\/])\\\\.env(?![\\\\w-]|\\\\.\\\\w)'), literals=('.env',))))
 
 A check for `rules`: an `exfiltration` finding spanning each path, from where
 its rule matched to the end of the path. A match inside a path already found by the
@@ -751,9 +751,6 @@ same rule is part of that path.
 
 Fold `text` for matching, keeping where each folded character came from.
 
-* **Return type:**
-  [`Normalised`](#liaise.detect.Normalised)
-
 ```pycon
 >>> folded = normalise("Ｈｅ\u200b-Ron!")
 >>> folded.text
@@ -761,6 +758,9 @@ Fold `text` for matching, keeping where each folded character came from.
 >>> list(folded.spans(fold_term("Heron")))
 [(0, 7)]
 ```
+
+* **Return type:**
+  [`Normalised`](#liaise.detect.Normalised)
 
 ### liaise.detect.render(text)
 
@@ -771,15 +771,15 @@ instructions, declarations and backslash escapes are removed, a tag of a block
 element or a line break reading as a space; character references and percent-escapes
 are decoded. Each piece of markup is read once, so rendering is linear in the text.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`View`](#liaise.detect.View)]
-
 ```pycon
 >>> render("He<b></b>r&#111;n%21").text
 'Heron!'
 >>> render("on<br>a").text
 'on a'
 ```
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`View`](#liaise.detect.View)]
 
 ### liaise.detect.scan_base64_runs(scan)
 
@@ -849,7 +849,7 @@ An `exfiltration` finding for each IPv4 or IPv6 address in
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Finding`](#liaise.detect.Finding)]
 
-### liaise.detect.secret_detector(rules=(SecretRule(rule='github-token', pattern='gh[pousr]_[A-Za-z0-9]{20,}', literals=('ghp_', 'gho_', 'ghu_', 'ghs_', 'ghr_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='github-fine-grained-token', pattern='github_pat_\\\\\\\\w{20,}', literals=('github_pat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sk-api-key', pattern='sk-[\\\\\\\\w-]{20,}', literals=('sk-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key', pattern='AKIA[0-9A-Z]{16}\\\\\\\\b', literals=('AKIA',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-token', pattern='hf_[A-Za-z0-9]{30,}', literals=('hf_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-token', pattern='xox[baprs]-[A-Za-z0-9-]{10,}', literals=('xoxb-', 'xoxa-', 'xoxp-', 'xoxr-', 'xoxs-'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='private-key', pattern='-----BEGIN (?:(?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----', literals=('-----BEGIN ',), word_start=False, wrappable=False, ignore_case=False), SecretRule(rule='gitlab-token', pattern='glpat-[\\\\\\\\w-]{20}', literals=('glpat-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='google-api-key', pattern='AIza[\\\\\\\\w-]{35}', literals=('AIza',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='npm-token', pattern='(?i:npm_[a-z0-9]{36})', literals=('npm_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='pypi-token', pattern='pypi-AgEIcHlwaS5vcmc[\\\\\\\\w-]{50,1000}', literals=('pypi-AgEIcHlwaS5vcmc',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sendgrid-api-key', pattern='SG\\\\\\\\.[A-Za-z0-9=_.-]{66}', literals=('SG.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='age-secret-key', pattern='AGE-SECRET-KEY-1[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{58}', literals=('AGE-SECRET-KEY-1',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='telegram-bot-token', pattern='[0-9]{5,16}:A[\\\\\\\\w-]{34}(?![\\\\\\\\w-])', literals=(':A',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='stripe-key', pattern='(?:sk|rk)_(?:test|live|prod)_[A-Za-z0-9]{10,99}', literals=('k_test_', 'k_live_', 'k_prod_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='shopify-token', pattern='shpat_[a-fA-F0-9]{32}', literals=('shpat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='digitalocean-token', pattern='dop_v1_[a-f0-9]{64}', literals=('dop_v1_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-webhook', pattern='(?:https?://)?hooks\\\\\\\\.slack\\\\\\\\.com/(?:services|workflows|triggers)/[A-Za-z0-9+/]{43,56}', literals=('hooks.slack.com/',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-app-token', pattern='(?i:xapp-\\\\\\\\d-[A-Z0-9]{1,64}-\\\\\\\\d{1,16}-[a-z0-9]{1,128})', literals=('xapp-',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='doppler-token', pattern='dp\\\\\\\\.pt\\\\\\\\.[A-Za-z0-9]{43}', literals=('dp.pt.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='linear-api-key', pattern='lin_api_[A-Za-z0-9]{40}', literals=('lin_api_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-org-token', pattern='api_org_[A-Za-z]{34}', literals=('api_org_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key-id', pattern='(?:A3T[A-Z0-9]|ASIA|ABIA|ACCA)[A-Z2-7]{16}\\\\\\\\b', literals=('A3T', 'ASIA', 'ABIA', 'ACCA'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='postman-api-key', pattern='PMAK-[A-Fa-f0-9]{24}-[A-Fa-f0-9]{34}', literals=('PMAK-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='grafana-service-account-token', pattern='(?i:glsa_[a-z0-9]{32}_[a-f0-9]{8})', literals=('glsa_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='perplexity-api-key', pattern='pplx-[A-Za-z0-9]{48}', literals=('pplx-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sentry-user-token', pattern='sntryu_[a-f0-9]{64}', literals=('sntryu_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='pulumi-token', pattern='pul-[a-f0-9]{40}', literals=('pul-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='vault-token', pattern='hvs\\\\\\\\.[\\\\\\\\w-]{90,120}', literals=('hvs.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='1password-service-account-token', pattern='ops_eyJ[A-Za-z0-9+/]{250,}={0,3}', literals=('ops_eyJ',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='jwt', pattern='ey[A-Za-z0-9]{17,4096}\\\\\\\\.ey[A-Za-z0-9/\\\\\\\\\\\\\\\\_-]{17,4096}\\\\\\\\.(?:[A-Za-z0-9/\\\\\\\\\\\\\\\\_-]{10,4096}={0,2})?', literals=('.ey',), word_start=True, wrappable=False, ignore_case=False)))
+### liaise.detect.secret_detector(rules=(SecretRule(rule='github-token', pattern='gh[pousr]_[A-Za-z0-9]{20,}', literals=('ghp_', 'gho_', 'ghu_', 'ghs_', 'ghr_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='github-fine-grained-token', pattern='github_pat_\\\\w{20,}', literals=('github_pat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sk-api-key', pattern='sk-[\\\\w-]{20,}', literals=('sk-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key', pattern='AKIA[0-9A-Z]{16}\\\\b', literals=('AKIA',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-token', pattern='hf_[A-Za-z0-9]{30,}', literals=('hf_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-token', pattern='xox[baprs]-[A-Za-z0-9-]{10,}', literals=('xoxb-', 'xoxa-', 'xoxp-', 'xoxr-', 'xoxs-'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='private-key', pattern='-----BEGIN (?:(?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----', literals=('-----BEGIN ',), word_start=False, wrappable=False, ignore_case=False), SecretRule(rule='gitlab-token', pattern='glpat-[\\\\w-]{20}', literals=('glpat-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='google-api-key', pattern='AIza[\\\\w-]{35}', literals=('AIza',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='npm-token', pattern='(?i:npm_[a-z0-9]{36})', literals=('npm_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='pypi-token', pattern='pypi-AgEIcHlwaS5vcmc[\\\\w-]{50,1000}', literals=('pypi-AgEIcHlwaS5vcmc',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sendgrid-api-key', pattern='SG\\\\.[A-Za-z0-9=_.-]{66}', literals=('SG.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='age-secret-key', pattern='AGE-SECRET-KEY-1[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{58}', literals=('AGE-SECRET-KEY-1',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='telegram-bot-token', pattern='[0-9]{5,16}:A[\\\\w-]{34}(?![\\\\w-])', literals=(':A',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='stripe-key', pattern='(?:sk|rk)_(?:test|live|prod)_[A-Za-z0-9]{10,99}', literals=('k_test_', 'k_live_', 'k_prod_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='shopify-token', pattern='shpat_[a-fA-F0-9]{32}', literals=('shpat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='digitalocean-token', pattern='dop_v1_[a-f0-9]{64}', literals=('dop_v1_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-webhook', pattern='(?:https?://)?hooks\\\\.slack\\\\.com/(?:services|workflows|triggers)/[A-Za-z0-9+/]{43,56}', literals=('hooks.slack.com/',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-app-token', pattern='(?i:xapp-\\\\d-[A-Z0-9]{1,64}-\\\\d{1,16}-[a-z0-9]{1,128})', literals=('xapp-',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='doppler-token', pattern='dp\\\\.pt\\\\.[A-Za-z0-9]{43}', literals=('dp.pt.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='linear-api-key', pattern='lin_api_[A-Za-z0-9]{40}', literals=('lin_api_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-org-token', pattern='api_org_[A-Za-z]{34}', literals=('api_org_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key-id', pattern='(?:A3T[A-Z0-9]|ASIA|ABIA|ACCA)[A-Z2-7]{16}\\\\b', literals=('A3T', 'ASIA', 'ABIA', 'ACCA'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='postman-api-key', pattern='PMAK-[A-Fa-f0-9]{24}-[A-Fa-f0-9]{34}', literals=('PMAK-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='grafana-service-account-token', pattern='(?i:glsa_[a-z0-9]{32}_[a-f0-9]{8})', literals=('glsa_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='perplexity-api-key', pattern='pplx-[A-Za-z0-9]{48}', literals=('pplx-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sentry-user-token', pattern='sntryu_[a-f0-9]{64}', literals=('sntryu_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='pulumi-token', pattern='pul-[a-f0-9]{40}', literals=('pul-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='vault-token', pattern='hvs\\\\.[\\\\w-]{90,120}', literals=('hvs.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='1password-service-account-token', pattern='ops_eyJ[A-Za-z0-9+/]{250,}={0,3}', literals=('ops_eyJ',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='jwt', pattern='ey[A-Za-z0-9]{17,4096}\\\\.ey[A-Za-z0-9/\\\\\\\\_-]{17,4096}\\\\.(?:[A-Za-z0-9/\\\\\\\\_-]{10,4096}={0,2})?', literals=('.ey',), word_start=True, wrappable=False, ignore_case=False)))
 
 A detector of `rules`: a `secret` finding for each match, severity 5.
 
@@ -868,12 +868,12 @@ longest match.
 What the operator reads before releasing a message: a zero-width space, a direction
 override or a terminal escape shows as what it is, where it is.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> visible("He" + chr(0x200B) + "ron")
 'He<U+200B>ron'
 >>> visible("two\nlines\tand a tab")
 'two\nlines\tand a tab'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

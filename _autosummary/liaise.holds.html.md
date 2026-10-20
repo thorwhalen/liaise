@@ -147,15 +147,15 @@ a scope outside the accepted forms.
 `scope` as holds are stored and matched: validated, a checkout path resolved, and a
 repository lower-cased, since GitHub’s names ignore case as its references do.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> canonical_scope("repo:Example/App")
 'repo:example/app'
 ```
 
 Raises `ValueError` as [`parse_scope()`](#liaise.holds.parse_scope) does.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.holds.hold(ledger, scope, , mode='block', reason='', set_by='operator', now=None)
 
@@ -171,9 +171,6 @@ mode outside `HOLD_MODES`.
 
 `(kind, value)` for a hold scope; the value is None for `global` and `processor`.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
-
 ```pycon
 >>> parse_scope("effect:deploy")
 ('effect', 'deploy')
@@ -183,6 +180,9 @@ mode outside `HOLD_MODES`.
 
 Only the first `:` separates, so a value may hold more (a Windows checkout path).
 Raises `ValueError` naming the accepted forms for anything else.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
 ### liaise.holds.release_auto_holds(ledger, scope)
 
@@ -201,15 +201,15 @@ The scopes a piece of work falls under, most specific first and `global` last.
 One scope per argument given, plus `processor` unless `processor=False` (for an
 effect the processor has no part in), plus `global`.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
-
 ```pycon
 >>> scopes_for(person="pat", effect="deploy")
 ('person:pat', 'effect:deploy', 'processor', 'global')
 ```
 
 Raises `ValueError` for an empty value.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.holds.unhold(ledger, scope)
 

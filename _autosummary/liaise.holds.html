@@ -34,6 +34,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../_static/documentation_options.js?v=3d116926"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -349,6 +350,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.triage.html">liaise.triage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
@@ -625,16 +627,16 @@ a scope outside the accepted forms.</p>
 <span class="sig-prename descclassname"><span class="pre">liaise.holds.</span></span><span class="sig-name descname"><span class="pre">canonical_scope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scope</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/holds.html#canonical_scope"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.holds.canonical_scope" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">scope</span></code> as holds are stored and matched: validated, a checkout path resolved, and a
 repository lower-cased, since GitHub’s names ignore case as its references do.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">canonical_scope</span><span class="p">(</span><span class="s2">"repo:Example/App"</span><span class="p">)</span>
 <span class="go">'repo:example/app'</span>
 </pre></div>
 </div>
 <p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> as <a class="reference internal" href="#liaise.holds.parse_scope" title="liaise.holds.parse_scope"><code class="xref py py-func docutils literal notranslate"><span class="pre">parse_scope()</span></code></a> does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -654,11 +656,6 @@ mode outside <code class="docutils literal notranslate"><span class="pre">HOLD_M
 <dt class="sig sig-object py" id="liaise.holds.parse_scope">
 <span class="sig-prename descclassname"><span class="pre">liaise.holds.</span></span><span class="sig-name descname"><span class="pre">parse_scope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">scope</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/holds.html#parse_scope"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.holds.parse_scope" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">(kind,</span> <span class="pre">value)</span></code> for a hold scope; the value is None for <code class="docutils literal notranslate"><span class="pre">global</span></code> and <code class="docutils literal notranslate"><span class="pre">processor</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_scope</span><span class="p">(</span><span class="s2">"effect:deploy"</span><span class="p">)</span>
 <span class="go">('effect', 'deploy')</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">parse_scope</span><span class="p">(</span><span class="s2">"global"</span><span class="p">)</span>
@@ -667,6 +664,11 @@ mode outside <code class="docutils literal notranslate"><span class="pre">HOLD_M
 </div>
 <p>Only the first <code class="docutils literal notranslate"><span class="pre">:</span></code> separates, so a value may hold more (a Windows checkout path).
 Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> naming the accepted forms for anything else.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -688,16 +690,16 @@ Raises <code class="docutils literal notranslate"><span class="pre">ValueError</
 <dd><p>The scopes a piece of work falls under, most specific first and <code class="docutils literal notranslate"><span class="pre">global</span></code> last.</p>
 <p>One scope per argument given, plus <code class="docutils literal notranslate"><span class="pre">processor</span></code> unless <code class="docutils literal notranslate"><span class="pre">processor=False</span></code> (for an
 effect the processor has no part in), plus <code class="docutils literal notranslate"><span class="pre">global</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">scopes_for</span><span class="p">(</span><span class="n">person</span><span class="o">=</span><span class="s2">"pat"</span><span class="p">,</span> <span class="n">effect</span><span class="o">=</span><span class="s2">"deploy"</span><span class="p">)</span>
 <span class="go">('person:pat', 'effect:deploy', 'processor', 'global')</span>
 </pre></div>
 </div>
 <p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for an empty value.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

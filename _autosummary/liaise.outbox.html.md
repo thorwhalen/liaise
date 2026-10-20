@@ -297,7 +297,7 @@ carries the time it was written). Among the entries after it, any of these moves
 Raises `ValueError` for anything that is neither.
 
 * **Return type:**
-  `Union`[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### liaise.outbox.pick_held(case, index=None)
 

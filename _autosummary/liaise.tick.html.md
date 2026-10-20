@@ -77,6 +77,8 @@ tell a running tick from a finished or an interrupted one. [`status_lines()`](#l
 | [`RUN_ID_SUFFIX_DIGITS`](#liaise.tick.RUN_ID_SUFFIX_DIGITS)     | How many hex digits of a uuid4 end a run id, so that no two runs share one.                                                                                                    |
 | [`BUDGET_MESSAGE`](#liaise.tick.BUDGET_MESSAGE)           | The messages the tick sends to a partner on its own, through the gate, which adds the mention: when the daily cap trips, when a batch deploy is live, and on a quiet delivery. |
 | [`BUDGET_PURPOSE`](#liaise.tick.BUDGET_PURPOSE)           | The `purpose` of those messages, as the gate and the ledger see it.                                                                                                            |
+| [`TRIAGED_EVENT`](#liaise.tick.TRIAGED_EVENT)            | a verdict applied; a case grouped under a lead; a grouped case settled once its lead is live.                                                                                  |
+| [`GROUP_LIVE_MESSAGE`](#liaise.tick.GROUP_LIVE_MESSAGE)       | What a grouped case is told once the case carrying it is live; `{ref}` names that case.                                                                                        |
 | [`DAILY_CAP_PRIORITY`](#liaise.tick.DAILY_CAP_PRIORITY)       | news for the operator, not a call to act.                                                                                                                                      |
 | [`SEND_REFUSED_CAUSE`](#liaise.tick.SEND_REFUSED_CAUSE)       | What a notification names a failed send by when the channel gave no error kind.                                                                                                |
 | [`RUN_STARTED`](#liaise.tick.RUN_STARTED)              | a start, a start that failed, a collection...                                                                                                                                  |
@@ -180,6 +182,10 @@ The states a case may be started from. `working`, `needs-owner` and `deployed`
 wait on something other than the partner’s clock. `budget` is one, since the cap is
 per day (0.0.x H-4).
 
+### liaise.tick.GROUP_LIVE_MESSAGE *= 'This was handled together with {ref}, and it is live now. Please try it and tell me if anything is still off.'*
+
+What a grouped case is told once the case carrying it is live; `{ref}` names that case.
+
 ### liaise.tick.ISSUE_DELIVERY_PER *= 'issue'*
 
 A deploy that runs once per tick, after every case of the subject has been collected,
@@ -274,7 +280,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 When the latest tick that was not a dry run started and ended.
 
-#### lock_held *: [bool](https://docs.python.org/3/builtins/functions.html#bool) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### lock_held *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[bool](https://docs.python.org/3/builtins/functions.html#bool)]* *= None*
 
 Whether a live process held the run lock when these were read; None when the lock
 was not checked.
@@ -300,6 +306,14 @@ to the owner, who is told once: a deleted or transferred issue never reads again
 ### liaise.tick.TICK_ACTOR *= 'liaise'*
 
 The actor of the entries the tick writes.
+
+### liaise.tick.TRIAGED_EVENT *= 'triaged'*
+
+a verdict applied; a case grouped under a
+lead; a grouped case settled once its lead is live.
+
+* **Type:**
+  Ledger `note` events of triage (liaise #19)
 
 ### *class* liaise.tick.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False, held=())
 
@@ -364,7 +378,7 @@ Where a tick keeps its run lock.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### liaise.tick.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
+### liaise.tick.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, triage_ask=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
 
 One tick over `subjects` (slug to [`Subject`](liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`.
 

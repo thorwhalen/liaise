@@ -56,7 +56,7 @@ The exit code of `liaise vet` for each route.
 
 Why a vetted draft counts as tainted when the caller did not say (decision 10).
 
-### liaise.vet.VET_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](liaise.gate.html.md#liaise.gate.Outbound), [GateContext](liaise.gate.html.md#liaise.gate.GateContext)], [Pass](liaise.gate.html.md#liaise.gate.Pass) | [Divert](liaise.gate.html.md#liaise.gate.Divert)], ...]* *= (<function outbound_policy>, <function writing_card>, <function deslop>)*
+### liaise.vet.VET_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](liaise.gate.html.md#liaise.gate.Outbound), [GateContext](liaise.gate.html.md#liaise.gate.GateContext)], [Union](https://docs.python.org/3/library/typing.html#typing.Union)[[Pass](liaise.gate.html.md#liaise.gate.Pass), [Divert](liaise.gate.html.md#liaise.gate.Divert)]], ...]* *= (<function outbound_policy>, <function writing_card>, <function deslop>)*
 
 every one, in order, but the two that presuppose
 liaise as the sender (see the module docstring). Derived by exclusion, so a filter added
@@ -99,13 +99,13 @@ never the text. A draft that cannot be vetted (a configuration that does not loa
 
 The route of `flow` for a write that happens at once: a `delay` is draft-to-operator.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> immediate_route("delay"), immediate_route("send"), immediate_route("refuse")
 ('draft', 'send', 'block')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.vet.verdict_record(decision, , subject, ref)
 

@@ -1,37 +1,37 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-13T01:36:29Z",
+  "built_at": "2026-10-20T12:31:46Z",
   "package": {
     "name": "liaise",
-    "version": "0.1.18",
+    "version": "0.1.19",
     "display_name": "liaise",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "45ab3a8a5248305f0e8d931089dd157c099c5e86",
-    "short_commit": "45ab3a8",
+    "commit": "62c10150b2c4e0524c7b417b01277e6533d5758b",
+    "short_commit": "62c1015",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/liaise",
-    "commit_url": "https://github.com/thorwhalen/liaise/commit/45ab3a8a5248305f0e8d931089dd157c099c5e86",
+    "commit_url": "https://github.com/thorwhalen/liaise/commit/62c10150b2c4e0524c7b417b01277e6533d5758b",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/liaise",
-    "sha": "45ab3a8a5248305f0e8d931089dd157c099c5e86",
+    "sha": "62c10150b2c4e0524c7b417b01277e6533d5758b",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "38332730128",
-    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/38332730128",
+    "run_id": "39422634544",
+    "run_url": "https://github.com/thorwhalen/liaise/actions/runs/39422634544",
     "server_url": "https://github.com"
   },
   "tools": {
-    "epythet": "0.2.12",
-    "sphinx": "9.1.0",
+    "epythet": "0.2.20",
+    "sphinx": "9.1.1",
     "docutils": "0.22.4",
     "python": "3.12.15"
   },
@@ -55,16 +55,16 @@
     "docs_dir": "docsrc"
   },
   "site": {
-    "modules_documented": 33,
-    "objects_documented": 988
+    "modules_documented": 34,
+    "objects_documented": 1012
   },
   "pypi": {
     "checked": true,
-    "latest": "0.1.18",
+    "latest": "0.1.19",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout 45ab3a8a5248305f0e8d931089dd157c099c5e86\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/liaise && cd liaise\ngit checkout 62c10150b2c4e0524c7b417b01277e6533d5758b\npip install \"epythet==0.2.20\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

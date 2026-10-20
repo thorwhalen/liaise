@@ -226,13 +226,13 @@ route of `send` is `allow`, `draft` (a `delay` included) `ask`, `block`
 
 The key a pending ask is kept under: the tool-use id, else a hash of the call.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> pending_key({"tool_use_id": "toolu_1"})
 'toolu_1'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.hook.post_tool_use(payload, , ledger, now=None)
 

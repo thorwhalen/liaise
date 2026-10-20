@@ -31,6 +31,7 @@
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/epythet.css?v=be2741c3" />
   
@@ -40,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../../_static/documentation_options.js?v=3d116926"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +411,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -726,6 +727,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">importlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">resources</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sequence</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConfigError</span>
@@ -867,6 +869,32 @@ window.runMermaid = runMermaid;</script>
     <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
 
 
+<span class="k">def</span><span class="w"> </span><span class="nf">_triage_sections</span><span class="p">(</span><span class="n">also</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Case</span><span class="p">],</span> <span class="n">kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+    <span class="n">sections</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="n">also</span><span class="p">:</span>
+        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">"## Grouped cases"</span><span class="p">,</span>
+            <span class="s2">""</span><span class="p">,</span>
+            <span class="s2">"Triage found that these cases belong with the one above. Read them too and "</span>
+            <span class="s2">"do the work once for all of them. Reply on the case above only: liaise tells "</span>
+            <span class="s2">"the others once it is live."</span><span class="p">,</span>
+            <span class="s2">""</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="k">for</span> <span class="n">other</span> <span class="ow">in</span> <span class="n">also</span><span class="p">:</span>
+            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"- case `</span><span class="si">{</span><span class="n">other</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">`:"</span><span class="p">)</span>
+            <span class="n">lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"  - </span><span class="si">{</span><span class="n">conversation_link</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">other</span><span class="o">.</span><span class="n">conversations</span><span class="p">]</span>
+        <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"question"</span><span class="p">:</span>
+        <span class="n">sections</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+            <span class="s2">"## This is a question</span><span class="se">\n\n</span><span class="s2">"</span>
+            <span class="s2">"Triage read this as a question, not a request for a change. Answer it: "</span>
+            <span class="s2">"report a `reply` with the answer. Do not build, change or deploy anything "</span>
+            <span class="s2">"for it; if answering shows something should change, say so in the answer "</span>
+            <span class="s2">"and let the partner decide."</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">sections</span>
+
+
 <span class="k">def</span><span class="w"> </span><span class="nf">_outcomes</span><span class="p">(</span><span class="n">subject</span><span class="p">:</span> <span class="n">Subject</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="n">escalate</span> <span class="o">=</span> <span class="n">subject</span><span class="o">.</span><span class="n">policy</span><span class="o">.</span><span class="n">escalate</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span>
@@ -944,6 +972,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">mode</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">runs_dir_note</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">also</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Case</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">"""Build the prompt for one run on ``case``, in the fixed section order.</span>
 
@@ -963,6 +993,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">_packaged_text</span><span class="p">(</span><span class="n">OPERATING_RULES_RESOURCE</span><span class="p">),</span>
         <span class="n">_brief</span><span class="p">(</span><span class="n">subject</span><span class="p">,</span> <span class="n">case</span><span class="o">.</span><span class="n">reporter</span><span class="p">),</span>
         <span class="n">_case_pointer</span><span class="p">(</span><span class="n">case</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">runs_dir_note</span><span class="o">=</span><span class="n">runs_dir_note</span><span class="p">),</span>
+        <span class="o">*</span><span class="n">_triage_sections</span><span class="p">(</span><span class="n">also</span><span class="p">,</span> <span class="n">kind</span><span class="p">),</span>
         <span class="n">_outcomes</span><span class="p">(</span><span class="n">subject</span><span class="p">),</span>
         <span class="n">_case_commands</span><span class="p">(</span><span class="n">subject</span><span class="p">),</span>
         <span class="n">_case_budget</span><span class="p">(</span><span class="n">subject</span><span class="p">),</span>

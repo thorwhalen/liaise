@@ -120,7 +120,7 @@ a subject that turned it on (`policy.delay_minutes`, liaise #38).
 * **Type:**
   What a decision held back as `delay` says
 
-### liaise.gate.DFLT_OUTBOUND_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](#liaise.gate.Outbound), [GateContext](#liaise.gate.GateContext)], [Pass](#liaise.gate.Pass) | [Divert](#liaise.gate.Divert)], ...]* *= (<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>)*
+### liaise.gate.DFLT_OUTBOUND_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](#liaise.gate.Outbound), [GateContext](#liaise.gate.GateContext)], [Union](https://docs.python.org/3/library/typing.html#typing.Union)[[Pass](#liaise.gate.Pass), [Divert](#liaise.gate.Divert)]], ...]* *= (<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>)*
 
 The gate’s filters, in the order they run. The order is part of the design, not a
 setting: the mention, the one rewrite, comes after every filter that judges the text.
@@ -159,7 +159,7 @@ read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`
 without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
 one in the configured state directory).
 
-### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
+### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=dict(), approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -176,7 +176,7 @@ verdict and what it consulted. `approval` is the one on the context, and
 liaise 0.1’s gate would have decided about the same message ([`liaise.legacy`](liaise.legacy.html.md#module-liaise.legacy)),
 recorded beside the verdict so shadow agreement can be counted; it decides nothing.
 
-#### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* audience_words *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 The audience the policy judged, in words; None when the policy did not run.
 
@@ -292,7 +292,7 @@ the message is diverted, with each enforced finding as a note. Without acquaint,
 when acquaint fails, the note says why and the message goes on. It never raises.
 
 * **Return type:**
-  `Union`[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
 
 ### liaise.gate.filter_name(outbound_filter)
 
@@ -335,7 +335,7 @@ prefixed, the one rewrite the gate makes. A recipient with no GitHub address is
 diverted. Other channels pass unchanged.
 
 * **Return type:**
-  `Union`[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
 
 ### liaise.gate.outbound_policy(outbound, ctx, \*, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>), resolver=<function resolve_person>)
 
@@ -349,7 +349,7 @@ other diverts at its flow, one concern per rule that fired. It never redacts: wh
 found is for the operator to fix, and its reasons say where, never what.
 
 * **Return type:**
-  `Union`[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
 
 ### liaise.gate.outside_a_case(outbound, ctx)
 
@@ -360,7 +360,7 @@ Its sender chose where it goes and to whom, so a sender who picks a person in
 naming [`OUTSIDE_A_CASE`](#liaise.gate.OUTSIDE_A_CASE), bound to the message, releases it.
 
 * **Return type:**
-  `Union`[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](#liaise.gate.Pass), [`Divert`](#liaise.gate.Divert)]
 
 ### liaise.gate.run_gate(outbound, ctx, \*, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>))
 

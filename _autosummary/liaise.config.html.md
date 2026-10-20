@@ -97,7 +97,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Thresholds beyond which the agent must route a decision to the owner.
 
-### *class* liaise.config.GlobalConfig(owner_login, state_dir, notify=<factory>, quiet_minutes=10, go_minutes=2, markers=<factory>, label_prefix='liaise:', budget=<factory>, deploy_per='batch', deployed_nudge_days=3)
+### *class* liaise.config.GlobalConfig(owner_login, state_dir, notify=NotifyConfig(), quiet_minutes=10, go_minutes=2, markers=Markers(), label_prefix='liaise:', budget=Budget(), deploy_per='batch', deployed_nudge_days=3)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -118,7 +118,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Where to send owner notifications. See [`liaise.notify`](liaise.html.md#liaise.notify).
 
-### *class* liaise.config.PartnerConfig(slug, display_name, github_logins, repo, brief, label, notify_login, reply_mode='draft', dispatch=<factory>, verify='', deploy='', escalate=<factory>, quiet_minutes=10, go_minutes=2, markers=<factory>, label_prefix='liaise:', budget=<factory>, deploy_per='batch', deployed_nudge_days=3)
+### *class* liaise.config.PartnerConfig(slug, display_name, github_logins, repo, brief, label, notify_login, reply_mode='draft', dispatch=DispatchConfig(), verify='', deploy='', escalate=EscalateConfig(), quiet_minutes=10, go_minutes=2, markers=Markers(), label_prefix='liaise:', budget=Budget(), deploy_per='batch', deployed_nudge_days=3)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 

@@ -191,7 +191,7 @@ gate diverted has none of the three. `disclosure_failure` says why a sent messag
 disclosure could not be written to its recipients’ acquaint records; None otherwise.
 `key` is the idempotency key the send carried, if any.
 
-#### *property* outbound *: [Outbound](liaise.gate.html.md#liaise.gate.Outbound) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* outbound *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[Outbound](liaise.gate.html.md#liaise.gate.Outbound)]*
 
 The message as the gate’s filters left it, or None when the gate diverted it.
 
@@ -239,15 +239,15 @@ fails before it can ask. Nothing is cached, so a release asks again at send time
 
 `key`, or, when too long for correspond (a long subject slug), its head and a digest of it.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> bounded_key("c/h1")
 'c/h1'
 >>> len(bounded_key("s" * 200 + "-1/h1")) <= 128
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.default_send_store(state_dir)
 
@@ -273,13 +273,13 @@ stores that key on whatever draft stays, so a second release reuses it.
 
 How liaise names an exception it recovered from: its class, then its message.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> error_text(ValueError("no such channel"))
 'ValueError: no such channel'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.failure_reason(attempt, ref)
 
@@ -317,9 +317,6 @@ unkeyed, as before, and liaise never writes correspond’s own data root.
 
 `owner/repo`, lower-cased, of the repository a GitHub reference names: itself or one of its issues.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> github_repo("github:Example/App#12"), github_repo("github:example/app")
 ('example/app', 'example/app')
@@ -327,29 +324,32 @@ unkeyed, as before, and liaise never writes correspond’s own data root.
 True
 ```
 
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
 ### liaise.release.next_attempt_key(key)
 
 `key` for the message’s next attempt: `~2` added, or its attempt number raised.
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ```pycon
 >>> print(next_attempt_key("example/h3f9a0c12"), next_attempt_key("example/h3f9a0c12~2"))
 example/h3f9a0c12~2 example/h3f9a0c12~3
 ```
 
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.release.outbox_key(case_id, held)
 
 The key of an outbox item’s release: `<case>/<held id>`, the same on every try.
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ```pycon
 >>> print(outbox_key("example", "h3f9a0c12"))
 example/h3f9a0c12
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.release_draft(draft, \*, subject, ledger, label, reject, by, now, case=None, text=None, title=None, detail=mappingproxy({}), registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None, sends=None, new_attempt=False)
 
@@ -398,9 +398,6 @@ Raises `ValueError`, sending nothing, for any of these:
 
 `ref` as a GitHub issue or repository reference, stripped and lower-cased.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> sendable_ref(" github:Example/App#12 ")
 'github:example/app#12'
@@ -408,6 +405,9 @@ Raises `ValueError`, sending nothing, for any of these:
 
 Raises `ValueError` for anything else: another channel, a malformed reference, or an
 issue number that is not a positive whole number.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.tick_send_key(case_id, ref, text, title, serial)
 
@@ -417,14 +417,14 @@ The key of a message a tick sends: `<case>/<payload digest>/<entry serial>`.
 of the same text on one case differ, while a tick that runs again over the same
 entries (after a crash) reuses the key and never posts twice.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> key = tick_send_key("app3", "github:example/app#3", "Fixed.", None, 7)
 >>> key.startswith("app3/") and key.endswith("/7")
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.usable_key(key, sends)
 

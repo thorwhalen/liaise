@@ -103,15 +103,15 @@ Decision 11’s rollout rule: `{"recommended": bool, "reason": str}`.
 severity [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY) or above (None: not observable, which never
 recommends).
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
-
 ```pycon
 >>> enforce_recommended(shadow_messages=40, missed_high_severity=0, false_divert_rate=0.05)
 {'recommended': True, 'reason': '40 shadow messages, no missed finding of severity 4 or above, false-divert rate 0.05 (at most 0.1)'}
 >>> enforce_recommended(shadow_messages=12, missed_high_severity=0, false_divert_rate=0.0)['reason']
 'only 12 shadow messages compared with 0.1, fewer than 30'
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
 
 ### liaise.report.gate_report(ledger, , subject=None, since=None, shadow_subjects=())
 

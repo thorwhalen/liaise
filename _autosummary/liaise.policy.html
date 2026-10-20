@@ -34,6 +34,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../_static/documentation_options.js?v=3d116926"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -349,6 +350,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.triage.html">liaise.triage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
@@ -663,7 +665,7 @@ recipient, the copies and the audience’s listed readers.</p>
 
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.policy.Facts.tainted">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tainted</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.policy.Facts.tainted" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">tainted</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.policy.Facts.tainted" title="Link to this definition">#</a></dt>
 <dd><p>Whether the run is tainted; <code class="docutils literal notranslate"><span class="pre">None</span></code> when unknown.</p>
 </dd></dl>
 
@@ -926,15 +928,15 @@ exists (<code class="docutils literal notranslate"><span class="pre">OutboundPol
 <dt class="sig sig-object py" id="liaise.policy.above">
 <span class="sig-prename descclassname"><span class="pre">liaise.policy.</span></span><span class="sig-name descname"><span class="pre">above</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clearance</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/policy.html#above"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.policy.above" title="Link to this definition">#</a></dt>
 <dd><p>Whether <code class="docutils literal notranslate"><span class="pre">label</span></code> is more restrictive than <code class="docutils literal notranslate"><span class="pre">clearance</span></code> (<code class="docutils literal notranslate"><span class="pre">None</span></code>: no ceiling).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">above</span><span class="p">(</span><span class="s2">"amber"</span><span class="p">,</span> <span class="s2">"clear"</span><span class="p">),</span> <span class="n">above</span><span class="p">(</span><span class="s2">"amber"</span><span class="p">,</span> <span class="s2">"amber"</span><span class="p">),</span> <span class="n">above</span><span class="p">(</span><span class="s2">"red"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<span class="go">(True, False, False)</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">above</span><span class="p">(</span><span class="s2">"amber"</span><span class="p">,</span> <span class="s2">"clear"</span><span class="p">),</span> <span class="n">above</span><span class="p">(</span><span class="s2">"amber"</span><span class="p">,</span> <span class="s2">"amber"</span><span class="p">),</span> <span class="n">above</span><span class="p">(</span><span class="s2">"red"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-<span class="go">(True, False, False)</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -994,11 +996,6 @@ with every reason in its evidence. A defaulted audience is public whatever its
 See the module docstring for what each input is. <code class="docutils literal notranslate"><span class="pre">_rules</span></code> is for the mutation
 checks of the test suite only (the table is not a seam); it must hold rules of the
 table by name.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.policy.Verdict" title="liaise.policy.Verdict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Verdict</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">now</span> <span class="o">=</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">ada</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"people"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ada"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"tier"</span><span class="p">:</span> <span class="s2">"open"</span><span class="p">,</span> <span class="s2">"clearance"</span><span class="p">:</span> <span class="s2">"amber"</span><span class="p">}}}</span>
@@ -1012,6 +1009,11 @@ table by name.</p>
 <span class="go">('irreversibility', 'unknown audience')</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.policy.Verdict" title="liaise.policy.Verdict"><code class="xref py py-class docutils literal notranslate"><span class="pre">Verdict</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -1043,11 +1045,6 @@ table by name.</p>
 <p><code class="docutils literal notranslate"><span class="pre">recipients</span></code> are the explicit recipients (person ids or addresses) to count among
 the readers, an unresolved one at <code class="docutils literal notranslate"><span class="pre">clear</span></code>. The result’s <code class="docutils literal notranslate"><span class="pre">clearance</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>
 for the operator alone, and <code class="docutils literal notranslate"><span class="pre">clear</span></code> for anything public, defaulted or unresolved.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.policy.Reader" title="liaise.policy.Reader"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reader</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ada</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"people"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"ada"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"tier"</span><span class="p">:</span> <span class="s2">"open"</span><span class="p">,</span> <span class="s2">"clearance"</span><span class="p">:</span> <span class="s2">"amber"</span><span class="p">}}}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">email</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"ref"</span><span class="p">:</span> <span class="s2">"email:ada"</span><span class="p">,</span> <span class="s2">"scope"</span><span class="p">:</span> <span class="s2">"named"</span><span class="p">,</span> <span class="s2">"readers"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"email:ada"</span><span class="p">]}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">least_cleared_reader</span><span class="p">(</span><span class="n">email</span><span class="p">,</span> <span class="n">ada</span><span class="p">,</span> <span class="n">identities</span><span class="o">=</span><span class="p">{</span><span class="s2">"email:ada"</span><span class="p">:</span> <span class="s2">"ada"</span><span class="p">},</span> <span class="n">recipients</span><span class="o">=</span><span class="p">[</span><span class="s2">"ada"</span><span class="p">])</span>
@@ -1058,6 +1055,11 @@ for the operator alone, and <code class="docutils literal notranslate"><span cla
 <span class="go">'clear'</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#liaise.policy.Reader" title="liaise.policy.Reader"><code class="xref py py-class docutils literal notranslate"><span class="pre">Reader</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -1088,15 +1090,15 @@ for the operator alone, and <code class="docutils literal notranslate"><span cla
 <dd><p>The message as the payload hash sees it: recipients, copies, ref, title, text, attachments.</p>
 <p>Copies and attachments are sorted, so a listing order does not void an approval; a
 message that differs in any of them does.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">payload_of</span><span class="p">({</span><span class="s2">"ref"</span><span class="p">:</span> <span class="s2">"github:example/app#12"</span><span class="p">,</span> <span class="s2">"recipient"</span><span class="p">:</span> <span class="s2">"ada"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"hi"</span><span class="p">})</span>
+<span class="go">{'recipients': ['ada'], 'cc': [], 'bcc': [], 'ref': 'github:example/app#12', 'title': None, 'text': 'hi', 'attachments': []}</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">payload_of</span><span class="p">({</span><span class="s2">"ref"</span><span class="p">:</span> <span class="s2">"github:example/app#12"</span><span class="p">,</span> <span class="s2">"recipient"</span><span class="p">:</span> <span class="s2">"ada"</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"hi"</span><span class="p">})</span>
-<span class="go">{'recipients': ['ada'], 'cc': [], 'bcc': [], 'ref': 'github:example/app#12', 'title': None, 'text': 'hi', 'attachments': []}</span>
-</pre></div>
-</div>
 </dd></dl>
 
 </section>

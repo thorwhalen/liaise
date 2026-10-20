@@ -78,15 +78,16 @@ roles = { pat = "partner" }
 
 ### Classes
 
-| [`BudgetPolicy`](#liaise.subjects.BudgetPolicy)([concurrent, timeout_minutes, ...])   | Limits on a subject's runs.                                                                                                                      |
-|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`Delivery`](#liaise.subjects.Delivery)([kind, per, command])                     | How finished work reaches the partner.                                                                                                           |
-| [`Policy`](#liaise.subjects.Policy)(people, roles[, default_reply_mode, ...])   | Who is who on a subject, what each may do, and how liaise answers them.                                                                          |
-| [`ProcessorConfig`](#liaise.subjects.ProcessorConfig)([permission_mode])                 | How the subject's processor runs.                                                                                                                |
-| [`ReadinessPolicy`](#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.html.md#module-liaise.readiness)).                |
-| [`ReviewPolicy`](#liaise.subjects.ReviewPolicy)([authors, repos, merge, ...])         | How a subject reviews the pull requests its partners open ([`liaise.review`](liaise.review.html.md#module-liaise.review)). |
-| [`Subject`](#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                           |
-| [`Workspace`](#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                                            |
+| [`BudgetPolicy`](#liaise.subjects.BudgetPolicy)([concurrent, timeout_minutes, ...])   | Limits on a subject's runs.                                                                                                                                   |
+|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Delivery`](#liaise.subjects.Delivery)([kind, per, command])                     | How finished work reaches the partner.                                                                                                                        |
+| [`Policy`](#liaise.subjects.Policy)(people, roles[, default_reply_mode, ...])   | Who is who on a subject, what each may do, and how liaise answers them.                                                                                       |
+| [`ProcessorConfig`](#liaise.subjects.ProcessorConfig)([permission_mode])                 | How the subject's processor runs.                                                                                                                             |
+| [`ReadinessPolicy`](#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.html.md#module-liaise.readiness)).                             |
+| [`ReviewPolicy`](#liaise.subjects.ReviewPolicy)([authors, repos, merge, ...])         | How a subject reviews the pull requests its partners open ([`liaise.review`](liaise.review.html.md#module-liaise.review)).              |
+| [`Subject`](#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                                        |
+| [`TriageConfig`](#liaise.subjects.TriageConfig)([enabled, label_prefix, max_turns])   | Whether and how a subject triages the cases that become ready together ([`liaise.triage`](liaise.triage.html.md#module-liaise.triage)). |
+| [`Workspace`](#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                                                         |
 
 ### Exceptions
 
@@ -200,7 +201,7 @@ Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueEr
 
 No subject’s bindings take in a reference (see [`subject_for_ref()`](#liaise.subjects.subject_for_ref)).
 
-### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>, tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce', delay_minutes=None, delay_stale_minutes=1440)
+### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=dict(), relays=(), claim_labels=dict(), notify=dict(), leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=ReadinessPolicy(), escalate=EscalateConfig(), budget=BudgetPolicy(), deployed_nudge_days=3, briefs=dict(), waiting_labels=dict(), tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce', delay_minutes=None, delay_stale_minutes=1440)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -267,7 +268,7 @@ a binding’s conditions, so it never gets that far).
 The permission whose holders’ pull requests are reviewed when `review.authors` is
 not set: a pull request is a request for work to land.
 
-### *class* liaise.subjects.ReadinessPolicy(quiet_minutes=10, go_minutes=2, markers=<factory>)
+### *class* liaise.subjects.ReadinessPolicy(quiet_minutes=10, go_minutes=2, markers=Markers())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -298,7 +299,7 @@ Whether pull requests by the GitHub login `login` are reviewed.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True, review=None)
+### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=Workspace(), brief='', verify='', delivery=Delivery(), label_prefix='liaise:', processor=ProcessorConfig(), source=None, active=True, review=None, triage=TriageConfig())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -379,13 +380,17 @@ The person id a GitHub `login` resolves to through `policy.people`, or None.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-#### review *: [ReviewPolicy](#liaise.subjects.ReviewPolicy) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### review *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[ReviewPolicy](#liaise.subjects.ReviewPolicy)]* *= None*
 
 How the subject reviews its partners’ pull requests; None reviews none.
 
-#### source *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### source *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]* *= None*
 
 The file this subject was loaded from, when it was.
+
+#### triage *: [TriageConfig](#liaise.subjects.TriageConfig)*
+
+Triage of the cases that become ready together (off unless `triage = true`).
 
 ### liaise.subjects.TAINTED_RUNS *= ('approve', 'send')*
 
@@ -394,6 +399,15 @@ the operator for any audience wider than them) or `send` (the subject waives tha
 
 * **Type:**
   What `policy.tainted_runs` may say
+
+### *class* liaise.subjects.TriageConfig(enabled=False, label_prefix='', max_turns=3)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Whether and how a subject triages the cases that become ready together ([`liaise.triage`](liaise.triage.html.md#module-liaise.triage)).
+
+Off by default. `label_prefix` goes before the `kind:` / `size:` / `priority:`
+labels; `max_turns` caps the triage call.
 
 ### liaise.subjects.UNBOUND_SLUG *= '(unbound)'*
 
@@ -415,13 +429,13 @@ How two channel addresses compare: without regard to case.
 
 GitHub logins are case-insensitive, so `github:Pat` is `github:pat`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> address_key("github:Pat") == address_key("github:pat")
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.subjects.check_bindings(subject, , registry=None)
 
@@ -468,15 +482,15 @@ conversation case-sensitively with the lower-cased reference its GitHub adapter 
 message, so `github:Example/App` would match nothing. The `?conditions` stay as
 written, and a binding on any other channel is returned unchanged.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> normalize_binding("github:Example/App?labels=partner:Pat")
 'github:example/app?labels=partner:Pat'
 >>> normalize_binding("webinbox:Example-Site")
 'webinbox:Example-Site'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.subjects.poll_ref(binding)
 
@@ -485,15 +499,15 @@ The conversation `binding` is polled on, or None when v0.1 cannot poll it.
 That is the binding without its `?conditions`. A conversation part holding a
 wildcard is a glob, not a conversation, so it gives None.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> poll_ref("github:example/app?labels=partner:pat")
 'github:example/app'
 >>> poll_ref("github:example/*") is None
 True
 ```
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### liaise.subjects.ref_key(ref)
 
@@ -503,13 +517,13 @@ correspond keys a cursor on the reference its adapter normalizes. GitHub’s low
 it, and a web inbox’s site names are lower-case, so `github:Example/App` is polled
 on the cursor of `github:example/app`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> ref_key("github:Example/App") == ref_key("github:example/app")
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.subjects.subject_for_ref(subjects, ref)
 
@@ -526,9 +540,6 @@ closely wins: an issue’s own binding over its repository’s.
 No caller may choose another subject: the subject’s policy is what the gate judges a
 message by, so a message goes only where its subject binds.
 
-* **Return type:**
-  [`Subject`](#liaise.subjects.Subject)
-
 ```pycon
 >>> heron = Subject("heron", ("github:example/heron?labels=partner:pat",),
 ...     Policy(people={}, roles={}))
@@ -540,6 +551,9 @@ Raises [`NoSubjectBinding`](#liaise.subjects.NoSubjectBinding) (a `ValueError`) 
 none takes `ref` in, and `ValueError` naming each when several name it equally
 closely.
 
+* **Return type:**
+  [`Subject`](#liaise.subjects.Subject)
+
 ### liaise.subjects.unbound_subject()
 
 The subject a reference no subject binds is judged under, where one must be (`liaise vet`).
@@ -548,11 +562,11 @@ It is what a subject file with nothing but `[policy]`, `people = {}` and
 `roles = {}` loads to: nobody known, `direct` reply mode, the taint rule in force,
 `enforce` mode. It binds nothing and is inert, so nothing ever polls it.
 
-* **Return type:**
-  [`Subject`](#liaise.subjects.Subject)
-
 ```pycon
 >>> subject = unbound_subject()
 >>> subject.slug, subject.bindings, subject.policy.tainted_runs, subject.active
 ('(unbound)', (), 'approve', False)
 ```
+
+* **Return type:**
+  [`Subject`](#liaise.subjects.Subject)

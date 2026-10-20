@@ -34,6 +34,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../_static/documentation_options.js?v=3d116926"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -349,6 +350,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.triage.html">liaise.triage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
@@ -562,26 +564,21 @@ what the message said.</p>
 <dt class="sig sig-object py" id="liaise.legacy.flow_class">
 <span class="sig-prename descclassname"><span class="pre">liaise.legacy.</span></span><span class="sig-name descname"><span class="pre">flow_class</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flow</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/legacy.html#flow_class"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.legacy.flow_class" title="Link to this definition">#</a></dt>
 <dd><p><a class="reference internal" href="#liaise.legacy.SENT" title="liaise.legacy.SENT"><code class="xref py py-data docutils literal notranslate"><span class="pre">SENT</span></code></a> for <code class="docutils literal notranslate"><span class="pre">send</span></code>, <a class="reference internal" href="#liaise.legacy.HELD" title="liaise.legacy.HELD"><code class="xref py py-data docutils literal notranslate"><span class="pre">HELD</span></code></a> for every other flow: what agreement compares.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flow_class</span><span class="p">(</span><span class="s2">"send"</span><span class="p">),</span> <span class="n">flow_class</span><span class="p">(</span><span class="s2">"delay"</span><span class="p">),</span> <span class="n">flow_class</span><span class="p">(</span><span class="s2">"approve"</span><span class="p">)</span>
+<span class="go">('sent', 'held', 'held')</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">flow_class</span><span class="p">(</span><span class="s2">"send"</span><span class="p">),</span> <span class="n">flow_class</span><span class="p">(</span><span class="s2">"delay"</span><span class="p">),</span> <span class="n">flow_class</span><span class="p">(</span><span class="s2">"approve"</span><span class="p">)</span>
-<span class="go">('sent', 'held', 'held')</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.legacy.leak_kinds">
 <span class="sig-prename descclassname"><span class="pre">liaise.legacy.</span></span><span class="sig-name descname"><span class="pre">leak_kinds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_terms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/legacy.html#leak_kinds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.legacy.leak_kinds" title="Link to this definition">#</a></dt>
 <dd><p>The kinds 0.1’s leak scan found in <code class="docutils literal notranslate"><span class="pre">text</span></code>, each once, in the order 0.1 listed them.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">leak_kinds</span><span class="p">(</span><span class="s2">"mail pat"</span> <span class="o">+</span> <span class="s2">"@example.com, see /"</span> <span class="o">+</span> <span class="s2">"Users"</span> <span class="o">+</span> <span class="s2">"/pat/notes"</span><span class="p">)</span>
 <span class="go">('local path', 'email')</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">leak_kinds</span><span class="p">(</span><span class="s2">"ghp_"</span> <span class="o">+</span> <span class="s2">"a"</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">+</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">"b"</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span>
@@ -590,6 +587,11 @@ what the message said.</p>
 <span class="go">('leak term',)</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

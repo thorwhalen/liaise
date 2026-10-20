@@ -91,9 +91,6 @@ recorded with the send.
 
 Whether this approval was given for the message and audience these hashes name.
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -102,6 +99,9 @@ True
 >>> Approval(by="operator", at=at).binds("p", "a")  # bound to nothing
 False
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### *class* liaise.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None, kind='issue')
 
@@ -291,7 +291,7 @@ Test helper: labels created (via `create_label()`) for `repo`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### merge_error *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### merge_error *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 What the next merge fails with, if anything (a test sets it).
 
@@ -338,7 +338,7 @@ read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`
 without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
 one in the configured state directory).
 
-### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
+### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=dict(), approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -355,7 +355,7 @@ verdict and what it consulted. `approval` is the one on the context, and
 liaise 0.1’s gate would have decided about the same message ([`liaise.legacy`](liaise.legacy.html.md#module-liaise.legacy)),
 recorded beside the verdict so shadow agreement can be counted; it decides nothing.
 
-#### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* audience_words *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 The audience the policy judged, in words; None when the policy did not run.
 
@@ -502,7 +502,7 @@ Bases: [`Exception`](https://docs.python.org/3/builtins/exceptions.html#Exceptio
 
 Raised when the `gh` CLI fails — its stderr is the message.
 
-### *class* liaise.GlobalConfig(owner_login, state_dir, notify=<factory>, quiet_minutes=10, go_minutes=2, markers=<factory>, label_prefix='liaise:', budget=<factory>, deploy_per='batch', deployed_nudge_days=3)
+### *class* liaise.GlobalConfig(owner_login, state_dir, notify=NotifyConfig(), quiet_minutes=10, go_minutes=2, markers=Markers(), label_prefix='liaise:', budget=Budget(), deploy_per='batch', deployed_nudge_days=3)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -848,7 +848,7 @@ Every queued unrouted message, as a fresh dict, in no set order.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
 
-### *class* liaise.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=<factory>)
+### *class* liaise.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=dict())
 
 Bases: `_Record`
 
@@ -981,7 +981,7 @@ A run nobody can vouch for.
 * **Return type:**
   [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
 
-### *class* liaise.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=<factory>, url='')
+### *class* liaise.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=tuple(), url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1050,7 +1050,7 @@ A processor run started on a case: how it was started, and where it is now.
 `cancel_sent_at` is when the tick first cancelled the run for passing its wall clock:
 the lost-run deadline counts from it (see [`liaise.tick`](liaise.tick.html.md#module-liaise.tick)).
 
-### *class* liaise.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=<factory>)
+### *class* liaise.RunResult(run_id, outcomes=(), usage=dict(), cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=dict())
 
 Bases: `_Record`
 
@@ -1060,7 +1060,7 @@ What a finished run returned: its outcomes, what it cost, and how it ended.
 shape: a case run’s is the outcomes (already in `outcomes`), a review run’s is the
 verdict [`liaise.review`](liaise.review.html.md#module-liaise.review) parses.
 
-### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True, review=None)
+### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=Workspace(), brief='', verify='', delivery=Delivery(), label_prefix='liaise:', processor=ProcessorConfig(), source=None, active=True, review=None, triage=TriageConfig())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1141,13 +1141,17 @@ The person id a GitHub `login` resolves to through `policy.people`, or None.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-#### review *: [ReviewPolicy](liaise.subjects.html.md#liaise.subjects.ReviewPolicy) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### review *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[ReviewPolicy](liaise.subjects.html.md#liaise.subjects.ReviewPolicy)]* *= None*
 
 How the subject reviews its partners’ pull requests; None reviews none.
 
-#### source *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### source *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]* *= None*
 
 The file this subject was loaded from, when it was.
+
+#### triage *: [TriageConfig](liaise.subjects.html.md#liaise.subjects.TriageConfig)*
+
+Triage of the cases that become ready together (off unless `triage = true`).
 
 ### *class* liaise.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False, held=())
 
@@ -1219,9 +1223,6 @@ See the module docstring for what each input is. `_rules` is for the mutation
 checks of the test suite only (the table is not a seam); it must hold rules of the
 table by name.
 
-* **Return type:**
-  [`Verdict`](liaise.policy.html.md#liaise.policy.Verdict)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> now = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -1235,6 +1236,9 @@ table by name.
 >>> evaluate(message, audience=None, disclosure=ada, findings=(), provenance=False, now=now).rules
 ('irreversibility', 'unknown audience')
 ```
+
+* **Return type:**
+  [`Verdict`](liaise.policy.html.md#liaise.policy.Verdict)
 
 ### liaise.hold(ledger, scope, , mode='block', reason='', set_by='operator', now=None)
 
@@ -1373,7 +1377,7 @@ other diverts at its flow, one concern per rule that fired. It never redacts: wh
 found is for the operator to fix, and its reasons say where, never what.
 
 * **Return type:**
-  `Union`[[`Pass`](liaise.gate.html.md#liaise.gate.Pass), [`Divert`](liaise.gate.html.md#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](liaise.gate.html.md#liaise.gate.Pass), [`Divert`](liaise.gate.html.md#liaise.gate.Divert)]
 
 ### liaise.parse_outcomes(structured_output)
 
@@ -1402,7 +1406,7 @@ to the reporter’s first notify address on one of `address_channels` (see
 Raises `ValueError` for an outcome kind outside the vocabulary.
 
 * **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[`Union`[[`Send`](liaise.outcomes.html.md#liaise.outcomes.Send), [`Transition`](liaise.outcomes.html.md#liaise.outcomes.Transition), [`NotifyOperator`](liaise.outcomes.html.md#liaise.outcomes.NotifyOperator), [`StoreDraft`](liaise.outcomes.html.md#liaise.outcomes.StoreDraft), [`Deliver`](liaise.outcomes.html.md#liaise.outcomes.Deliver), [`Defer`](liaise.outcomes.html.md#liaise.outcomes.Defer), [`DigestNote`](liaise.outcomes.html.md#liaise.outcomes.DigestNote)]]
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Send`](liaise.outcomes.html.md#liaise.outcomes.Send), [`Transition`](liaise.outcomes.html.md#liaise.outcomes.Transition), [`NotifyOperator`](liaise.outcomes.html.md#liaise.outcomes.NotifyOperator), [`StoreDraft`](liaise.outcomes.html.md#liaise.outcomes.StoreDraft), [`Deliver`](liaise.outcomes.html.md#liaise.outcomes.Deliver), [`Defer`](liaise.outcomes.html.md#liaise.outcomes.Defer), [`DigestNote`](liaise.outcomes.html.md#liaise.outcomes.DigestNote)]]
 
 ### liaise.resolve_person(address, subject)
 
@@ -1429,7 +1433,7 @@ returns anything but a `Pass` (of an [`Outbound`](#liaise.Outbound)) or a `Diver
 * **Return type:**
   [`GateDecision`](liaise.gate.html.md#liaise.gate.GateDecision)
 
-### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
+### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, triage_ask=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
 
 One tick over `subjects` (slug to [`Subject`](liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`.
 
@@ -1520,5 +1524,6 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`subjects`](liaise.subjects.html.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.                                   |
 | [`testing`](liaise.testing.html.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                                        |
 | [`tick`](liaise.tick.html.md#module-liaise.tick)             | The tick: one pass of liaise 0.1's loop (design §3.1).                                                               |
+| [`triage`](liaise.triage.html.md#module-liaise.triage)         | Triage: sort a batch of ready cases before dispatch (liaise #19).                                                    |
 | [`vet`](liaise.vet.html.md#module-liaise.vet)               | Vetting a draft outside any case: the gate's verdict, and nothing sent (discussion 32, §5.8).                        |
 | [`workspace`](liaise.workspace.html.md#module-liaise.workspace)   | The checkout a subject's runs share: one run at a time, and never beside a live session.                             |

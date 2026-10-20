@@ -31,6 +31,7 @@
 <link href="../../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../../_static/epythet.css?v=be2741c3" />
   
@@ -40,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../../_static/documentation_options.js?v=3d116926"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -410,7 +411,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -930,6 +931,22 @@ window.runMermaid = runMermaid;</script>
 
 
 
+<div class="viewcode-block" id="TriageConfig">
+<a class="viewcode-back" href="../../_autosummary/liaise.subjects.html#liaise.TriageConfig">[docs]</a>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">TriageConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Whether and how a subject triages the cases that become ready together (:mod:`liaise.triage`).</span>
+
+<span class="sd">    Off by default. ``label_prefix`` goes before the ``kind:`` / ``size:`` / ``priority:``</span>
+<span class="sd">    labels; ``max_turns`` caps the triage call.</span>
+<span class="sd">    """</span>
+
+    <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">label_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+    <span class="n">max_turns</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span></div>
+
+
+
 <div class="viewcode-block" id="ReviewPolicy">
 <a class="viewcode-back" href="../../_autosummary/liaise.subjects.html#liaise.ReviewPolicy">[docs]</a>
 <span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -1196,6 +1213,8 @@ window.runMermaid = runMermaid;</script>
     <span class="n">active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="c1">#: How the subject reviews its partners' pull requests; None reviews none.</span>
     <span class="n">review</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ReviewPolicy</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1">#: Triage of the cases that become ready together (off unless ``triage = true``).</span>
+    <span class="n">triage</span><span class="p">:</span> <span class="n">TriageConfig</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="n">TriageConfig</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Subject.github_logins_of">
 <a class="viewcode-back" href="../../_autosummary/liaise.subjects.html#liaise.Subject.github_logins_of">[docs]</a>
@@ -1415,6 +1434,7 @@ window.runMermaid = runMermaid;</script>
         <span class="n">source</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
         <span class="n">active</span><span class="o">=</span><span class="n">_boolean</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="s2">"active"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"active"</span><span class="p">),</span>
         <span class="n">review</span><span class="o">=</span><span class="n">_review_from</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">policy</span><span class="o">=</span><span class="n">policy</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">),</span>
+        <span class="n">triage</span><span class="o">=</span><span class="n">_triage_from</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">),</span>
     <span class="p">)</span></div>
 
 
@@ -1714,6 +1734,28 @@ window.runMermaid = runMermaid;</script>
         <span class="n">mode</span><span class="o">=</span><span class="n">_choice</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mode"</span><span class="p">,</span> <span class="n">ENFORCE</span><span class="p">),</span> <span class="n">MODES</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"policy.mode"</span><span class="p">),</span>
         <span class="n">delay_minutes</span><span class="o">=</span><span class="n">delay_minutes</span><span class="p">,</span>
         <span class="n">delay_stale_minutes</span><span class="o">=</span><span class="n">delay_stale_minutes</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_triage_from</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TriageConfig</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""``triage = true`` or a ``[triage]`` table (``enabled``, ``label_prefix``, ``max_turns``)."""</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"triage"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">TriageConfig</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="n">_table</span><span class="p">(</span><span class="n">raw</span><span class="p">,</span> <span class="s2">"triage"</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"triage"</span><span class="p">)</span>
+    <span class="n">turns</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"max_turns"</span><span class="p">,</span> <span class="n">TriageConfig</span><span class="o">.</span><span class="n">max_turns</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">turns</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">turns</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">turns</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: triage.max_turns must be a whole number, 1 or more, as in "</span>
+            <span class="sa">f</span><span class="s2">"max_turns = 3; got </span><span class="si">{</span><span class="n">turns</span><span class="si">!r}</span><span class="s2">."</span>
+        <span class="p">)</span>
+    <span class="n">prefix</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_prefix"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span><span class="sa">f</span><span class="s1">'</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s1">: triage.label_prefix must be text, as in label_prefix = "t:".'</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">TriageConfig</span><span class="p">(</span>
+        <span class="n">enabled</span><span class="o">=</span><span class="n">_boolean</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="s2">"enabled"</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="n">path</span><span class="p">,</span> <span class="n">dotted</span><span class="o">=</span><span class="s2">"triage.enabled"</span><span class="p">),</span>
+        <span class="n">label_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
+        <span class="n">max_turns</span><span class="o">=</span><span class="n">turns</span><span class="p">,</span>
     <span class="p">)</span>
 
 

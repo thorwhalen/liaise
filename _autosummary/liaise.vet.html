@@ -34,6 +34,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../_static/documentation_options.js?v=3d116926"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -53,11 +54,11 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="liaise.workspace" href="liaise.workspace.html" />
-    <link rel="prev" title="liaise.tick" href="liaise.tick.html" />
+    <link rel="prev" title="liaise.triage" href="liaise.triage.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -349,6 +350,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.triage.html">liaise.triage</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
@@ -495,7 +497,7 @@ draft-to-operator, as §5.5 degrades it where the outbox does not exist:
 
 <dl class="py data">
 <dt class="sig sig-object py" id="liaise.vet.VET_FILTERS">
-<span class="sig-prename descclassname"><span class="pre">liaise.vet.</span></span><span class="sig-name descname"><span class="pre">VET_FILTERS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.15)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><span class="pre">Outbound</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.GateContext" title="liaise.gate.GateContext"><span class="pre">GateContext</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.Pass" title="liaise.gate.Pass"><span class="pre">Pass</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.Divert" title="liaise.gate.Divert"><span class="pre">Divert</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">outbound_policy&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">writing_card&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">deslop&gt;)</span></span><a class="headerlink" href="#liaise.vet.VET_FILTERS" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.vet.</span></span><span class="sig-name descname"><span class="pre">VET_FILTERS</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.15)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><span class="pre">Outbound</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.GateContext" title="liaise.gate.GateContext"><span class="pre">GateContext</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.15)"><span class="pre">Union</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="liaise.gate.html#liaise.gate.Pass" title="liaise.gate.Pass"><span class="pre">Pass</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.Divert" title="liaise.gate.Divert"><span class="pre">Divert</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(&lt;function</span> <span class="pre">outbound_policy&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">writing_card&gt;,</span> <span class="pre">&lt;function</span> <span class="pre">deslop&gt;)</span></span><a class="headerlink" href="#liaise.vet.VET_FILTERS" title="Link to this definition">#</a></dt>
 <dd><p>every one, in order, but the two that presuppose
 liaise as the sender (see the module docstring). Derived by exclusion, so a filter added
 to the gate reaches <code class="docutils literal notranslate"><span class="pre">vet</span></code> too.</p>
@@ -536,7 +538,7 @@ never the text. A draft that cannot be vetted (a configuration that does not loa
 <code class="docutils literal notranslate"><span class="pre">NeedsApproval</span></code> with the reason.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -545,15 +547,15 @@ never the text. A draft that cannot be vetted (a configuration that does not loa
 <dt class="sig sig-object py" id="liaise.vet.immediate_route">
 <span class="sig-prename descclassname"><span class="pre">liaise.vet.</span></span><span class="sig-name descname"><span class="pre">immediate_route</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flow</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/vet.html#immediate_route"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.vet.immediate_route" title="Link to this definition">#</a></dt>
 <dd><p>The route of <code class="docutils literal notranslate"><span class="pre">flow</span></code> for a write that happens at once: a <code class="docutils literal notranslate"><span class="pre">delay</span></code> is draft-to-operator.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">immediate_route</span><span class="p">(</span><span class="s2">"delay"</span><span class="p">),</span> <span class="n">immediate_route</span><span class="p">(</span><span class="s2">"send"</span><span class="p">),</span> <span class="n">immediate_route</span><span class="p">(</span><span class="s2">"refuse"</span><span class="p">)</span>
+<span class="go">('draft', 'send', 'block')</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">immediate_route</span><span class="p">(</span><span class="s2">"delay"</span><span class="p">),</span> <span class="n">immediate_route</span><span class="p">(</span><span class="s2">"send"</span><span class="p">),</span> <span class="n">immediate_route</span><span class="p">(</span><span class="s2">"refuse"</span><span class="p">)</span>
-<span class="go">('draft', 'send', 'block')</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -609,12 +611,12 @@ in the state directory, and none is created.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="liaise.tick.html"
+       href="liaise.triage.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">liaise.tick</p>
+        <p class="prev-next-title">liaise.triage</p>
       </div>
     </a>
     <a class="right-next"

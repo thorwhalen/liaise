@@ -45,7 +45,7 @@ The packaged rules every prompt starts with, in `liaise/data`.
 What each outcome kind is for, as the agent reads it. Listed in the order of
 [`liaise.model.OUTCOME_KINDS`](liaise.model.html.md#liaise.model.OUTCOME_KINDS), which must all have an entry.
 
-### liaise.prompt.compose_case_prompt(subject, case, mode, , runs_dir_note=None)
+### liaise.prompt.compose_case_prompt(subject, case, mode, , runs_dir_note=None, also=(), kind=None)
 
 Build the prompt for one run on `case`, in the fixed section order.
 
@@ -70,12 +70,12 @@ Where the conversation that the encoded reference `ref` names can be read.
 A GitHub issue or pull request (`github:owner/repo#N`) becomes its web URL. Any
 other reference is returned as it is.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> conversation_link("github:example/app#12")
 'https://github.com/example/app/issues/12'
 >>> conversation_link("webinbox:example-site")
 'webinbox:example-site'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

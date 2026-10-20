@@ -1,0 +1,37 @@
+liaise.triage
+=============
+
+.. automodule:: liaise.triage
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_KIND
+      DFLT_TRIAGE_MAX_TURNS
+      DFLT_TRIAGE_TIMEOUT
+      DFLT_EXCERPT_CHARS
+      DUPLICATE_LABEL
+      DUPLICATE_COMMENT
+      DUPLICATE_PURPOSE
+      GROUPED_EVENT
+      Ask
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compose_triage_prompt
+      group_cases
+      headless_ask
+      label_specs
+      parse_verdicts
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LlmTriage
+      TriageVerdict
+   

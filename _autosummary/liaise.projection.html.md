@@ -91,15 +91,15 @@ proposal. `needs-owner` waits on the operator, who has no waiting label.
 
 `(owner/repo, number)` for an encoded `github:owner/repo#N`, else None.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]]
-
 ```pycon
 >>> github_issue("github:example/app#12")
 ('example/app', 12)
 >>> github_issue("github:example/app") is None, github_issue("webinbox:example-site") is None
 (True, True)
 ```
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]]
 
 ### liaise.projection.github_repos(subject)
 
@@ -116,14 +116,14 @@ names none. Repositories compare without regard to case, as GitHub’s do.
 
 The label that keeps liaise from merging a pull request of `subject`: `liaise:hold`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> from liaise.subjects import Policy
 >>> hold_label(Subject("app", ("github:example/app",), Policy(people={}, roles={})))
 'liaise:hold'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.projection.project_labels(case, subject, , labeler, dry_run=False, stale=())
 

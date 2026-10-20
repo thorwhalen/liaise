@@ -113,7 +113,7 @@ Test helper: labels created (via `create_label()`) for `repo`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### merge_error *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### merge_error *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 What the next merge fails with, if anything (a test sets it).
 
@@ -260,7 +260,7 @@ Bases: [`Exception`](https://docs.python.org/3/builtins/exceptions.html#Exceptio
 
 Raised when the `gh` CLI fails — its stderr is the message.
 
-### *class* liaise.github.Issue(repo, number, title, author, body, created_at, updated_at, state, labels=<factory>, comments=<factory>)
+### *class* liaise.github.Issue(repo, number, title, author, body, created_at, updated_at, state, labels=tuple(), comments=tuple())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -282,7 +282,7 @@ The merge methods `gh pr merge` offers.
 
 The most open pull requests one `gh pr list` asks for.
 
-### *class* liaise.github.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=<factory>, url='')
+### *class* liaise.github.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=tuple(), url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -310,9 +310,6 @@ Any failure makes the whole `failure`. Otherwise `success` only when every item
 concluded success, neutral or skipped; anything else (running, queued, expected, a
 `STALE` conclusion, an unknown word) is `pending`, which never merges.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> checks_state([])
 'none'
@@ -325,3 +322,6 @@ concluded success, neutral or skipped; anything else (running, queued, expected,
 >>> checks_state([{"status": "COMPLETED", "conclusion": "STALE"}])
 'pending'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

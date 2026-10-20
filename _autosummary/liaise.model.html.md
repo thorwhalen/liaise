@@ -73,9 +73,6 @@ recorded with the send.
 
 Whether this approval was given for the message and audience these hashes name.
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -84,6 +81,9 @@ True
 >>> Approval(by="operator", at=at).binds("p", "a")  # bound to nothing
 False
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### liaise.model.CASE_KINDS *= ('issue', 'pull')*
 
@@ -184,7 +184,7 @@ The tick’s reads of a case’s GitHub issue state: when one last succeeded, an
 `failures` counts the reads that failed in a row; a read that succeeds sets it back
 to 0. With no read yet, `read_at` is None.
 
-### *class* liaise.model.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=<factory>)
+### *class* liaise.model.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=dict())
 
 Bases: `_Record`
 
@@ -261,7 +261,7 @@ A processor run started on a case: how it was started, and where it is now.
 `cancel_sent_at` is when the tick first cancelled the run for passing its wall clock:
 the lost-run deadline counts from it (see [`liaise.tick`](liaise.tick.html.md#module-liaise.tick)).
 
-### *class* liaise.model.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=<factory>)
+### *class* liaise.model.RunResult(run_id, outcomes=(), usage=dict(), cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=dict())
 
 Bases: `_Record`
 
@@ -275,20 +275,17 @@ verdict [`liaise.review`](liaise.review.html.md#module-liaise.review) parses.
 
 Return `value` when it is in `allowed`; otherwise raise `ValueError` listing them.
 
-* **Return type:**
-  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
-
 ```pycon
 >>> require_one_of("paused", CASE_STATES, what="case state")
 'paused'
 ```
 
+* **Return type:**
+  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
+
 ### liaise.model.states_for(kind)
 
 The state vocabulary of a case of `kind`: [`CASE_STATES`](#liaise.model.CASE_STATES) or [`PR_STATES`](#liaise.model.PR_STATES).
-
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ```pycon
 >>> states_for("issue")[0], states_for("pull")[0]
@@ -296,6 +293,9 @@ The state vocabulary of a case of `kind`: [`CASE_STATES`](#liaise.model.CASE_STA
 ```
 
 Raises `ValueError` for a kind outside [`CASE_KINDS`](#liaise.model.CASE_KINDS).
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.model.to_jsonable(value)
 

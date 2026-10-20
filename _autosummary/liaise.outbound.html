@@ -34,6 +34,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../_static/documentation_options.js?v=3d116926"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -349,6 +350,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.triage.html">liaise.triage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
@@ -651,16 +653,16 @@ so the gate flags the message rather than judging it with less than it should kn
 <dt class="sig sig-object py" id="liaise.outbound.audience_snapshot">
 <span class="sig-prename descclassname"><span class="pre">liaise.outbound.</span></span><span class="sig-name descname"><span class="pre">audience_snapshot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">audience</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outbound.html#audience_snapshot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outbound.audience_snapshot" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">audience</span></code> as the policy and the hashes see it; None is the unknown audience of <code class="docutils literal notranslate"><span class="pre">ref</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">snapshot</span> <span class="o">=</span> <span class="n">audience_snapshot</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">"github:example/app#12"</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">snapshot</span><span class="p">[</span><span class="s2">"scope"</span><span class="p">],</span> <span class="n">snapshot</span><span class="p">[</span><span class="s2">"defaulted"</span><span class="p">],</span> <span class="n">snapshot</span><span class="p">[</span><span class="s2">"ref"</span><span class="p">]</span>
 <span class="go">('public', True, 'github:example/app#12')</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -676,11 +678,6 @@ received at.</p>
 refused at intake and queued as unrouted, so it is on the conversation the run reads
 and on no entry of the case. It counts too, which is what makes the rule cover the
 stranger it exists for (liaise discussion 32, §5.3).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.policy.html#liaise.policy.Provenance" title="liaise.policy.Provenance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Provenance</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span><span class="w"> </span><span class="nn">liaise.subjects</span><span class="w"> </span><span class="kn">import</span> <span class="n">Policy</span>
@@ -695,6 +692,11 @@ stranger it exists for (liaise discussion 32, §5.3).</p>
 <span class="go">('a message from obi, whose role observer does not grant request_work',)</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="liaise.policy.html#liaise.policy.Provenance" title="liaise.policy.Provenance"><code class="xref py py-class docutils literal notranslate"><span class="pre">Provenance</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -767,15 +769,15 @@ recipient and copies by name, and the audience’s listed readers through the re
 <dt class="sig sig-object py" id="liaise.outbound.need_to_know_disclosure">
 <span class="sig-prename descclassname"><span class="pre">liaise.outbound.</span></span><span class="sig-name descname"><span class="pre">need_to_know_disclosure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">people</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">today</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outbound.html#need_to_know_disclosure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outbound.need_to_know_disclosure" title="Link to this definition">#</a></dt>
 <dd><p>A disclosure without acquaint: every named reader at <code class="docutils literal notranslate"><span class="pre">need-to-know</span></code>, cleared to <code class="docutils literal notranslate"><span class="pre">clear</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">need_to_know_disclosure</span><span class="p">([</span><span class="s2">"ada"</span><span class="p">])[</span><span class="s2">"people"</span><span class="p">][</span><span class="s2">"ada"</span><span class="p">][</span><span class="s2">"clearance"</span><span class="p">]</span>
+<span class="go">'clear'</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">need_to_know_disclosure</span><span class="p">([</span><span class="s2">"ada"</span><span class="p">])[</span><span class="s2">"people"</span><span class="p">][</span><span class="s2">"ada"</span><span class="p">][</span><span class="s2">"clearance"</span><span class="p">]</span>
-<span class="go">'clear'</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -813,16 +815,16 @@ cannot settle another (liaise ADR 0002).</p>
 <dt class="sig sig-object py" id="liaise.outbound.with_leak_terms">
 <span class="sig-prename descclassname"><span class="pre">liaise.outbound.</span></span><span class="sig-name descname"><span class="pre">with_leak_terms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">disclosure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leak_terms</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/outbound.html#with_leak_terms"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.outbound.with_leak_terms" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">disclosure</span></code> with each of <code class="docutils literal notranslate"><span class="pre">leak_terms</span></code> added to its vocabulary, at <code class="xref py py-data docutils literal notranslate"><span class="pre">LEAK_TERMS_LABEL</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">found</span> <span class="o">=</span> <span class="n">with_leak_terms</span><span class="p">({</span><span class="s2">"vocabulary"</span><span class="p">:</span> <span class="p">[]},</span> <span class="p">[</span><span class="s2">"the-bird-board"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">])[</span><span class="s2">"vocabulary"</span><span class="p">]</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="p">[(</span><span class="n">term</span><span class="p">[</span><span class="s2">"term"</span><span class="p">],</span> <span class="n">term</span><span class="p">[</span><span class="s2">"label"</span><span class="p">])</span> <span class="k">for</span> <span class="n">term</span> <span class="ow">in</span> <span class="n">found</span><span class="p">]</span>
 <span class="go">[('the-bird-board', 'red')]</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 </section>

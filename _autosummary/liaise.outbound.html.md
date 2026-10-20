@@ -148,14 +148,14 @@ The hosts a link in `outbound` may point at: its channel’s own and `policy.lin
 
 `audience` as the policy and the hashes see it; None is the unknown audience of `ref`.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> snapshot = audience_snapshot(None, "github:example/app#12")
 >>> snapshot["scope"], snapshot["defaulted"], snapshot["ref"]
 ('public', True, 'github:example/app#12')
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### liaise.outbound.case_provenance(case, subject, ledger)
 
@@ -172,9 +172,6 @@ refused at intake and queued as unrouted, so it is on the conversation the run r
 and on no entry of the case. It counts too, which is what makes the rule cover the
 stranger it exists for (liaise discussion 32, §5.3).
 
-* **Return type:**
-  [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> from liaise.ledger import Ledger
@@ -189,6 +186,9 @@ False
 >>> case_provenance(case, subject, Ledger({})).evidence
 ('a message from obi, whose role observer does not grant request_work',)
 ```
+
+* **Return type:**
+  [`Provenance`](liaise.policy.html.md#liaise.policy.Provenance)
 
 ### liaise.outbound.consulted_of(disclosure, , identities, provenance)
 
@@ -244,13 +244,13 @@ recipient and copies by name, and the audience’s listed readers through the re
 
 A disclosure without acquaint: every named reader at `need-to-know`, cleared to `clear`.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> need_to_know_disclosure(["ada"])["people"]["ada"]["clearance"]
 'clear'
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### liaise.outbound.record_disclosure(outbound, verdict, consulted)
 
@@ -281,11 +281,11 @@ cannot settle another (liaise ADR 0002).
 
 `disclosure` with each of `leak_terms` added to its vocabulary, at `LEAK_TERMS_LABEL`.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> found = with_leak_terms({"vocabulary": []}, ["the-bird-board", " "])["vocabulary"]
 >>> [(term["term"], term["label"]) for term in found]
 [('the-bird-board', 'red')]
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

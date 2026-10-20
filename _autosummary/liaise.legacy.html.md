@@ -101,20 +101,17 @@ out with no person looking, or held back.
 
 [`SENT`](#liaise.legacy.SENT) for `send`, [`HELD`](#liaise.legacy.HELD) for every other flow: what agreement compares.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> flow_class("send"), flow_class("delay"), flow_class("approve")
 ('sent', 'held', 'held')
 ```
 
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.legacy.leak_kinds(text, , leak_terms=())
 
 The kinds 0.1’s leak scan found in `text`, each once, in the order 0.1 listed them.
-
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ```pycon
 >>> leak_kinds("mail pat" + "@example.com, see /" + "Users" + "/pat/notes")
@@ -124,6 +121,9 @@ The kinds 0.1’s leak scan found in `text`, each once, in the order 0.1 listed 
 >>> leak_kinds("the Orchid launch", leak_terms=["orchid"])
 ('leak term',)
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.legacy.legacy_decision(outbound, subject, , in_case, approved=False, shared_diverts=())
 

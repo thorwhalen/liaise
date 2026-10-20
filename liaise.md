@@ -1,4 +1,4 @@
-> built 2026-10-13 01:36 UTC from 45ab3a8 (main) · liaise 0.1.18. Details: build_info.json
+> built 2026-10-20 12:31 UTC from 62c1015 (main) · liaise 0.1.19. Details: build_info.json
 
 # index.html.md
 
@@ -1449,7 +1449,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Thresholds beyond which the agent must route a decision to the owner.
 
-### *class* liaise.config.GlobalConfig(owner_login, state_dir, notify=<factory>, quiet_minutes=10, go_minutes=2, markers=<factory>, label_prefix='liaise:', budget=<factory>, deploy_per='batch', deployed_nudge_days=3)
+### *class* liaise.config.GlobalConfig(owner_login, state_dir, notify=NotifyConfig(), quiet_minutes=10, go_minutes=2, markers=Markers(), label_prefix='liaise:', budget=Budget(), deploy_per='batch', deployed_nudge_days=3)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1470,7 +1470,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Where to send owner notifications. See [`liaise.notify`](_autosummary/liaise.html.md#liaise.notify).
 
-### *class* liaise.config.PartnerConfig(slug, display_name, github_logins, repo, brief, label, notify_login, reply_mode='draft', dispatch=<factory>, verify='', deploy='', escalate=<factory>, quiet_minutes=10, go_minutes=2, markers=<factory>, label_prefix='liaise:', budget=<factory>, deploy_per='batch', deployed_nudge_days=3)
+### *class* liaise.config.PartnerConfig(slug, display_name, github_logins, repo, brief, label, notify_login, reply_mode='draft', dispatch=DispatchConfig(), verify='', deploy='', escalate=EscalateConfig(), quiet_minutes=10, go_minutes=2, markers=Markers(), label_prefix='liaise:', budget=Budget(), deploy_per='batch', deployed_nudge_days=3)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1926,7 +1926,7 @@ precedes each).
 The severity of any other finding, when the least-cleared reader has clearance
 `clear` (a public or unknown audience), and when not.
 
-### *class* liaise.detect.Scan(text, disclosure=<factory>, allowlist=(), canary_terms=(), personal_terms=(), key=<function fingerprint_key>)
+### *class* liaise.detect.Scan(text, disclosure=dict(), allowlist=(), canary_terms=(), personal_terms=(), key=<function fingerprint_key>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -2001,7 +2001,7 @@ the readers.
 * **Type:**
   The ids of the people the disclosure was computed for
 
-#### *property* rendered *: [View](_autosummary/liaise.detect.html.md#liaise.detect.View) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* rendered *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[View](_autosummary/liaise.detect.html.md#liaise.detect.View)]*
 
 The message as a Markdown or HTML reader sees it, when that differs.
 
@@ -2118,9 +2118,6 @@ own addresses, handles and paths. `key` is the fingerprint key (or a callable th
 returns it); by default [`fingerprint_key()`](_autosummary/liaise.detect.html.md#liaise.detect.fingerprint_key) with the configured state directory,
 read only when there is a finding. A caller with a config in hand should pass it.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`Finding`](_autosummary/liaise.detect.html.md#liaise.detect.Finding), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
-
 ```pycon
 >>> key = b"k" * 32
 >>> [f.kind for f in detect("Use " + "ghp_" + "a" * 36, disclosure={}, key=key)]
@@ -2130,6 +2127,9 @@ read only when there is a finding. A caller with a config in hand should pass it
 >>> [(f.kind, f.start, f.end, f.severity) for f in found]
 [('vocabulary', 3, 9, 3)]
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`Finding`](_autosummary/liaise.detect.html.md#liaise.detect.Finding), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.detect.detect_canaries(scan)
 
@@ -2207,14 +2207,14 @@ fingerprint alike, or what the second one flags is not what the first one showed
 `create` false a missing key is a key used once, so asking twice would otherwise
 answer twice.
 
-* **Return type:**
-  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[], [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]
-
 ```pycon
 >>> source = key_source(create=False)
 >>> source() == source()
 True
 ```
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[], [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]
 
 ### liaise.detect.link_urls(text)
 
@@ -2225,13 +2225,13 @@ URLs, then any `//host` outside those), whatever their host: what the operator r
 before releasing a message, since a link’s title can say one place and its
 destination another.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
-
 ```pycon
 >>> link_urls("See [the docs](https://example.org/a) and https://example.com/b.")
 ('https://example.org/a', 'https://example.com/b')
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.detect.link_words(destination)
 
@@ -2242,9 +2242,6 @@ Character references and percent-escapes are decoded, compatibility forms folded
 glued together by case or by digits are split, so a term a link spells out reads as
 the term.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> link_words("https://files.example.org/HeronAcquisition_terms-2026.pdf?p=heronTerms")
 'Heron Acquisition terms 2026 pdf p heron Terms'
@@ -2254,7 +2251,10 @@ the term.
 'Heron Terms'
 ```
 
-### liaise.detect.local_path_scanner(rules=(PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:Users|home|root)/'), literals=('/Users/', '/home/', '/root/')), PathRule(rule='local-path', pattern=re.compile('\\\\\\\\b[A-Za-z]:(?:\\\\\\\\\\\\\\\\{1,2}|/)Users(?:\\\\\\\\\\\\\\\\{1,2}|/)', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/mnt/[A-Za-z]/Users/', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\\\\\w.~-])/(?:private/var|var/folders)/'), literals=('/private/var/', '/var/folders/')), PathRule(rule='env-file', pattern=re.compile('(?<=[\\\\\\\\\\\\\\\\/])\\\\\\\\.env(?![\\\\\\\\w-]|\\\\\\\\.\\\\\\\\w)'), literals=('.env',))))
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.detect.local_path_scanner(rules=(PathRule(rule='local-path', pattern=re.compile('(?<![\\\\w.~-])/(?:Users|home|root)/'), literals=('/Users/', '/home/', '/root/')), PathRule(rule='local-path', pattern=re.compile('\\\\b[A-Za-z]:(?:\\\\\\\\{1,2}|/)Users(?:\\\\\\\\{1,2}|/)', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\w.~-])/mnt/[A-Za-z]/Users/', re.IGNORECASE), literals=()), PathRule(rule='local-path', pattern=re.compile('(?<![\\\\w.~-])/(?:private/var|var/folders)/'), literals=('/private/var/', '/var/folders/')), PathRule(rule='env-file', pattern=re.compile('(?<=[\\\\\\\\/])\\\\.env(?![\\\\w-]|\\\\.\\\\w)'), literals=('.env',))))
 
 A check for `rules`: an `exfiltration` finding spanning each path, from where
 its rule matched to the end of the path. A match inside a path already found by the
@@ -2267,9 +2267,6 @@ same rule is part of that path.
 
 Fold `text` for matching, keeping where each folded character came from.
 
-* **Return type:**
-  [`Normalised`](_autosummary/liaise.detect.html.md#liaise.detect.Normalised)
-
 ```pycon
 >>> folded = normalise("Ｈｅ\u200b-Ron!")
 >>> folded.text
@@ -2277,6 +2274,9 @@ Fold `text` for matching, keeping where each folded character came from.
 >>> list(folded.spans(fold_term("Heron")))
 [(0, 7)]
 ```
+
+* **Return type:**
+  [`Normalised`](_autosummary/liaise.detect.html.md#liaise.detect.Normalised)
 
 ### liaise.detect.render(text)
 
@@ -2287,15 +2287,15 @@ instructions, declarations and backslash escapes are removed, a tag of a block
 element or a line break reading as a space; character references and percent-escapes
 are decoded. Each piece of markup is read once, so rendering is linear in the text.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`View`](_autosummary/liaise.detect.html.md#liaise.detect.View)]
-
 ```pycon
 >>> render("He<b></b>r&#111;n%21").text
 'Heron!'
 >>> render("on<br>a").text
 'on a'
 ```
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`View`](_autosummary/liaise.detect.html.md#liaise.detect.View)]
 
 ### liaise.detect.scan_base64_runs(scan)
 
@@ -2365,7 +2365,7 @@ An `exfiltration` finding for each IPv4 or IPv6 address in
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Finding`](_autosummary/liaise.detect.html.md#liaise.detect.Finding)]
 
-### liaise.detect.secret_detector(rules=(SecretRule(rule='github-token', pattern='gh[pousr]_[A-Za-z0-9]{20,}', literals=('ghp_', 'gho_', 'ghu_', 'ghs_', 'ghr_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='github-fine-grained-token', pattern='github_pat_\\\\\\\\w{20,}', literals=('github_pat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sk-api-key', pattern='sk-[\\\\\\\\w-]{20,}', literals=('sk-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key', pattern='AKIA[0-9A-Z]{16}\\\\\\\\b', literals=('AKIA',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-token', pattern='hf_[A-Za-z0-9]{30,}', literals=('hf_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-token', pattern='xox[baprs]-[A-Za-z0-9-]{10,}', literals=('xoxb-', 'xoxa-', 'xoxp-', 'xoxr-', 'xoxs-'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='private-key', pattern='-----BEGIN (?:(?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----', literals=('-----BEGIN ',), word_start=False, wrappable=False, ignore_case=False), SecretRule(rule='gitlab-token', pattern='glpat-[\\\\\\\\w-]{20}', literals=('glpat-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='google-api-key', pattern='AIza[\\\\\\\\w-]{35}', literals=('AIza',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='npm-token', pattern='(?i:npm_[a-z0-9]{36})', literals=('npm_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='pypi-token', pattern='pypi-AgEIcHlwaS5vcmc[\\\\\\\\w-]{50,1000}', literals=('pypi-AgEIcHlwaS5vcmc',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sendgrid-api-key', pattern='SG\\\\\\\\.[A-Za-z0-9=_.-]{66}', literals=('SG.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='age-secret-key', pattern='AGE-SECRET-KEY-1[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{58}', literals=('AGE-SECRET-KEY-1',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='telegram-bot-token', pattern='[0-9]{5,16}:A[\\\\\\\\w-]{34}(?![\\\\\\\\w-])', literals=(':A',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='stripe-key', pattern='(?:sk|rk)_(?:test|live|prod)_[A-Za-z0-9]{10,99}', literals=('k_test_', 'k_live_', 'k_prod_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='shopify-token', pattern='shpat_[a-fA-F0-9]{32}', literals=('shpat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='digitalocean-token', pattern='dop_v1_[a-f0-9]{64}', literals=('dop_v1_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-webhook', pattern='(?:https?://)?hooks\\\\\\\\.slack\\\\\\\\.com/(?:services|workflows|triggers)/[A-Za-z0-9+/]{43,56}', literals=('hooks.slack.com/',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-app-token', pattern='(?i:xapp-\\\\\\\\d-[A-Z0-9]{1,64}-\\\\\\\\d{1,16}-[a-z0-9]{1,128})', literals=('xapp-',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='doppler-token', pattern='dp\\\\\\\\.pt\\\\\\\\.[A-Za-z0-9]{43}', literals=('dp.pt.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='linear-api-key', pattern='lin_api_[A-Za-z0-9]{40}', literals=('lin_api_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-org-token', pattern='api_org_[A-Za-z]{34}', literals=('api_org_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key-id', pattern='(?:A3T[A-Z0-9]|ASIA|ABIA|ACCA)[A-Z2-7]{16}\\\\\\\\b', literals=('A3T', 'ASIA', 'ABIA', 'ACCA'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='postman-api-key', pattern='PMAK-[A-Fa-f0-9]{24}-[A-Fa-f0-9]{34}', literals=('PMAK-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='grafana-service-account-token', pattern='(?i:glsa_[a-z0-9]{32}_[a-f0-9]{8})', literals=('glsa_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='perplexity-api-key', pattern='pplx-[A-Za-z0-9]{48}', literals=('pplx-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sentry-user-token', pattern='sntryu_[a-f0-9]{64}', literals=('sntryu_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='pulumi-token', pattern='pul-[a-f0-9]{40}', literals=('pul-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='vault-token', pattern='hvs\\\\\\\\.[\\\\\\\\w-]{90,120}', literals=('hvs.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='1password-service-account-token', pattern='ops_eyJ[A-Za-z0-9+/]{250,}={0,3}', literals=('ops_eyJ',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='jwt', pattern='ey[A-Za-z0-9]{17,4096}\\\\\\\\.ey[A-Za-z0-9/\\\\\\\\\\\\\\\\_-]{17,4096}\\\\\\\\.(?:[A-Za-z0-9/\\\\\\\\\\\\\\\\_-]{10,4096}={0,2})?', literals=('.ey',), word_start=True, wrappable=False, ignore_case=False)))
+### liaise.detect.secret_detector(rules=(SecretRule(rule='github-token', pattern='gh[pousr]_[A-Za-z0-9]{20,}', literals=('ghp_', 'gho_', 'ghu_', 'ghs_', 'ghr_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='github-fine-grained-token', pattern='github_pat_\\\\w{20,}', literals=('github_pat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sk-api-key', pattern='sk-[\\\\w-]{20,}', literals=('sk-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key', pattern='AKIA[0-9A-Z]{16}\\\\b', literals=('AKIA',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-token', pattern='hf_[A-Za-z0-9]{30,}', literals=('hf_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-token', pattern='xox[baprs]-[A-Za-z0-9-]{10,}', literals=('xoxb-', 'xoxa-', 'xoxp-', 'xoxr-', 'xoxs-'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='private-key', pattern='-----BEGIN (?:(?:[A-Z0-9]{1,16} ){0,4}PRIVATE KEY|PGP PRIVATE KEY BLOCK)-----', literals=('-----BEGIN ',), word_start=False, wrappable=False, ignore_case=False), SecretRule(rule='gitlab-token', pattern='glpat-[\\\\w-]{20}', literals=('glpat-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='google-api-key', pattern='AIza[\\\\w-]{35}', literals=('AIza',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='npm-token', pattern='(?i:npm_[a-z0-9]{36})', literals=('npm_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='pypi-token', pattern='pypi-AgEIcHlwaS5vcmc[\\\\w-]{50,1000}', literals=('pypi-AgEIcHlwaS5vcmc',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sendgrid-api-key', pattern='SG\\\\.[A-Za-z0-9=_.-]{66}', literals=('SG.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='age-secret-key', pattern='AGE-SECRET-KEY-1[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{58}', literals=('AGE-SECRET-KEY-1',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='telegram-bot-token', pattern='[0-9]{5,16}:A[\\\\w-]{34}(?![\\\\w-])', literals=(':A',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='stripe-key', pattern='(?:sk|rk)_(?:test|live|prod)_[A-Za-z0-9]{10,99}', literals=('k_test_', 'k_live_', 'k_prod_'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='shopify-token', pattern='shpat_[a-fA-F0-9]{32}', literals=('shpat_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='digitalocean-token', pattern='dop_v1_[a-f0-9]{64}', literals=('dop_v1_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-webhook', pattern='(?:https?://)?hooks\\\\.slack\\\\.com/(?:services|workflows|triggers)/[A-Za-z0-9+/]{43,56}', literals=('hooks.slack.com/',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='slack-app-token', pattern='(?i:xapp-\\\\d-[A-Z0-9]{1,64}-\\\\d{1,16}-[a-z0-9]{1,128})', literals=('xapp-',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='doppler-token', pattern='dp\\\\.pt\\\\.[A-Za-z0-9]{43}', literals=('dp.pt.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='linear-api-key', pattern='lin_api_[A-Za-z0-9]{40}', literals=('lin_api_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='hugging-face-org-token', pattern='api_org_[A-Za-z]{34}', literals=('api_org_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='aws-access-key-id', pattern='(?:A3T[A-Z0-9]|ASIA|ABIA|ACCA)[A-Z2-7]{16}\\\\b', literals=('A3T', 'ASIA', 'ABIA', 'ACCA'), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='postman-api-key', pattern='PMAK-[A-Fa-f0-9]{24}-[A-Fa-f0-9]{34}', literals=('PMAK-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='grafana-service-account-token', pattern='(?i:glsa_[a-z0-9]{32}_[a-f0-9]{8})', literals=('glsa_',), word_start=True, wrappable=True, ignore_case=True), SecretRule(rule='perplexity-api-key', pattern='pplx-[A-Za-z0-9]{48}', literals=('pplx-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='sentry-user-token', pattern='sntryu_[a-f0-9]{64}', literals=('sntryu_',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='pulumi-token', pattern='pul-[a-f0-9]{40}', literals=('pul-',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='vault-token', pattern='hvs\\\\.[\\\\w-]{90,120}', literals=('hvs.',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='1password-service-account-token', pattern='ops_eyJ[A-Za-z0-9+/]{250,}={0,3}', literals=('ops_eyJ',), word_start=True, wrappable=True, ignore_case=False), SecretRule(rule='jwt', pattern='ey[A-Za-z0-9]{17,4096}\\\\.ey[A-Za-z0-9/\\\\\\\\_-]{17,4096}\\\\.(?:[A-Za-z0-9/\\\\\\\\_-]{10,4096}={0,2})?', literals=('.ey',), word_start=True, wrappable=False, ignore_case=False)))
 
 A detector of `rules`: a `secret` finding for each match, severity 5.
 
@@ -2384,15 +2384,15 @@ longest match.
 What the operator reads before releasing a message: a zero-width space, a direction
 override or a terminal escape shows as what it is, where it is.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> visible("He" + chr(0x200B) + "ron")
 'He<U+200B>ron'
 >>> visible("two\nlines\tand a tab")
 'two\nlines\tand a tab'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/liaise.errors.html.md
@@ -2615,7 +2615,7 @@ a subject that turned it on (`policy.delay_minutes`, liaise #38).
 * **Type:**
   What a decision held back as `delay` says
 
-### liaise.gate.DFLT_OUTBOUND_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound), [GateContext](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)], [Pass](_autosummary/liaise.gate.html.md#liaise.gate.Pass) | [Divert](_autosummary/liaise.gate.html.md#liaise.gate.Divert)], ...]* *= (<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>)*
+### liaise.gate.DFLT_OUTBOUND_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound), [GateContext](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)], [Union](https://docs.python.org/3/library/typing.html#typing.Union)[[Pass](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [Divert](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]], ...]* *= (<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>)*
 
 The gate’s filters, in the order they run. The order is part of the design, not a
 setting: the mention, the one rewrite, comes after every filter that judges the text.
@@ -2654,7 +2654,7 @@ read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`
 without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
 one in the configured state directory).
 
-### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
+### *class* liaise.gate.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=dict(), approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -2671,7 +2671,7 @@ verdict and what it consulted. `approval` is the one on the context, and
 liaise 0.1’s gate would have decided about the same message ([`liaise.legacy`](_autosummary/liaise.legacy.html.md#module-liaise.legacy)),
 recorded beside the verdict so shadow agreement can be counted; it decides nothing.
 
-#### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* audience_words *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 The audience the policy judged, in words; None when the policy did not run.
 
@@ -2787,7 +2787,7 @@ the message is diverted, with each enforced finding as a note. Without acquaint,
 when acquaint fails, the note says why and the message goes on. It never raises.
 
 * **Return type:**
-  `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
 
 ### liaise.gate.filter_name(outbound_filter)
 
@@ -2830,7 +2830,7 @@ prefixed, the one rewrite the gate makes. A recipient with no GitHub address is
 diverted. Other channels pass unchanged.
 
 * **Return type:**
-  `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
 
 ### liaise.gate.outbound_policy(outbound, ctx, \*, disclosure=<function acquaint_disclosure>, detectors=(<function secret_detector.<locals>.detect_secrets>, <function detect_canaries>, <function detect_vocabulary>, <function chain.<locals>.chained>, <function chain.<locals>.chained>, <function detect_third_parties>, <function detect_link_terms>), resolver=<function resolve_person>)
 
@@ -2844,7 +2844,7 @@ other diverts at its flow, one concern per rule that fired. It never redacts: wh
 found is for the operator to fix, and its reasons say where, never what.
 
 * **Return type:**
-  `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
 
 ### liaise.gate.outside_a_case(outbound, ctx)
 
@@ -2855,7 +2855,7 @@ Its sender chose where it goes and to whom, so a sender who picks a person in
 naming [`OUTSIDE_A_CASE`](_autosummary/liaise.gate.html.md#liaise.gate.OUTSIDE_A_CASE), bound to the message, releases it.
 
 * **Return type:**
-  `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
 
 ### liaise.gate.run_gate(outbound, ctx, \*, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>))
 
@@ -3000,7 +3000,7 @@ Test helper: labels created (via `create_label()`) for `repo`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### merge_error *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### merge_error *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 What the next merge fails with, if anything (a test sets it).
 
@@ -3147,7 +3147,7 @@ Bases: [`Exception`](https://docs.python.org/3/builtins/exceptions.html#Exceptio
 
 Raised when the `gh` CLI fails — its stderr is the message.
 
-### *class* liaise.github.Issue(repo, number, title, author, body, created_at, updated_at, state, labels=<factory>, comments=<factory>)
+### *class* liaise.github.Issue(repo, number, title, author, body, created_at, updated_at, state, labels=tuple(), comments=tuple())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -3169,7 +3169,7 @@ The merge methods `gh pr merge` offers.
 
 The most open pull requests one `gh pr list` asks for.
 
-### *class* liaise.github.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=<factory>, url='')
+### *class* liaise.github.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=tuple(), url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -3197,9 +3197,6 @@ Any failure makes the whole `failure`. Otherwise `success` only when every item
 concluded success, neutral or skipped; anything else (running, queued, expected, a
 `STALE` conclusion, an unknown word) is `pending`, which never merges.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> checks_state([])
 'none'
@@ -3212,6 +3209,9 @@ concluded success, neutral or skipped; anything else (running, queued, expected,
 >>> checks_state([{"status": "COMPLETED", "conclusion": "STALE"}])
 'pending'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/liaise.holds.html.md
@@ -3365,15 +3365,15 @@ a scope outside the accepted forms.
 `scope` as holds are stored and matched: validated, a checkout path resolved, and a
 repository lower-cased, since GitHub’s names ignore case as its references do.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> canonical_scope("repo:Example/App")
 'repo:example/app'
 ```
 
 Raises `ValueError` as [`parse_scope()`](_autosummary/liaise.holds.html.md#liaise.holds.parse_scope) does.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.holds.hold(ledger, scope, , mode='block', reason='', set_by='operator', now=None)
 
@@ -3389,9 +3389,6 @@ mode outside `HOLD_MODES`.
 
 `(kind, value)` for a hold scope; the value is None for `global` and `processor`.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
-
 ```pycon
 >>> parse_scope("effect:deploy")
 ('effect', 'deploy')
@@ -3401,6 +3398,9 @@ mode outside `HOLD_MODES`.
 
 Only the first `:` separates, so a value may hold more (a Windows checkout path).
 Raises `ValueError` naming the accepted forms for anything else.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
 ### liaise.holds.release_auto_holds(ledger, scope)
 
@@ -3419,15 +3419,15 @@ The scopes a piece of work falls under, most specific first and `global` last.
 One scope per argument given, plus `processor` unless `processor=False` (for an
 effect the processor has no part in), plus `global`.
 
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
-
 ```pycon
 >>> scopes_for(person="pat", effect="deploy")
 ('person:pat', 'effect:deploy', 'processor', 'global')
 ```
 
 Raises `ValueError` for an empty value.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.holds.unhold(ledger, scope)
 
@@ -3669,13 +3669,13 @@ route of `send` is `allow`, `draft` (a `delay` included) `ask`, `block`
 
 The key a pending ask is kept under: the tool-use id, else a hash of the call.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> pending_key({"tool_use_id": "toolu_1"})
 'toolu_1'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.hook.post_tool_use(payload, , ledger, now=None)
 
@@ -3841,9 +3841,6 @@ recorded with the send.
 
 Whether this approval was given for the message and audience these hashes name.
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -3852,6 +3849,9 @@ True
 >>> Approval(by="operator", at=at).binds("p", "a")  # bound to nothing
 False
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### *class* liaise.Case(id, subject, conversations, reporter, state, created_at, updated_at, session_id=None, entries=(), drafts=(), outbox=(), defer_until=None, kind='issue')
 
@@ -4041,7 +4041,7 @@ Test helper: labels created (via `create_label()`) for `repo`.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### merge_error *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### merge_error *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 What the next merge fails with, if anything (a test sets it).
 
@@ -4088,7 +4088,7 @@ read (None: unknown, so tainted). `mode` overrides the subject’s `policy.mode`
 without one. `fingerprint_key` is the key findings are fingerprinted with (None: the
 one in the configured state directory).
 
-### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=<factory>, approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
+### *class* liaise.GateDecision(send, diverted, notes=(), diverted_by=None, flow='send', concerns=(), settled=(), verdict=None, consulted=dict(), approval=None, payload_hash=None, audience_hash=None, counterfactual=None)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -4105,7 +4105,7 @@ verdict and what it consulted. `approval` is the one on the context, and
 liaise 0.1’s gate would have decided about the same message ([`liaise.legacy`](_autosummary/liaise.legacy.html.md#module-liaise.legacy)),
 recorded beside the verdict so shadow agreement can be counted; it decides nothing.
 
-#### *property* audience_words *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* audience_words *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]*
 
 The audience the policy judged, in words; None when the policy did not run.
 
@@ -4252,7 +4252,7 @@ Bases: [`Exception`](https://docs.python.org/3/builtins/exceptions.html#Exceptio
 
 Raised when the `gh` CLI fails — its stderr is the message.
 
-### *class* liaise.GlobalConfig(owner_login, state_dir, notify=<factory>, quiet_minutes=10, go_minutes=2, markers=<factory>, label_prefix='liaise:', budget=<factory>, deploy_per='batch', deployed_nudge_days=3)
+### *class* liaise.GlobalConfig(owner_login, state_dir, notify=NotifyConfig(), quiet_minutes=10, go_minutes=2, markers=Markers(), label_prefix='liaise:', budget=Budget(), deploy_per='batch', deployed_nudge_days=3)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -4598,7 +4598,7 @@ Every queued unrouted message, as a fresh dict, in no set order.
 * **Return type:**
   [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]]
 
-### *class* liaise.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=<factory>)
+### *class* liaise.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=dict())
 
 Bases: `_Record`
 
@@ -4731,7 +4731,7 @@ A run nobody can vouch for.
 * **Return type:**
   [`Provenance`](_autosummary/liaise.policy.html.md#liaise.policy.Provenance)
 
-### *class* liaise.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=<factory>, url='')
+### *class* liaise.Pull(repo, number, title, author, body, head_sha, base, created_at, updated_at, state='open', is_draft=False, mergeable=None, checks='none', labels=tuple(), url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -4800,7 +4800,7 @@ A processor run started on a case: how it was started, and where it is now.
 `cancel_sent_at` is when the tick first cancelled the run for passing its wall clock:
 the lost-run deadline counts from it (see [`liaise.tick`](_autosummary/liaise.tick.html.md#module-liaise.tick)).
 
-### *class* liaise.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=<factory>)
+### *class* liaise.RunResult(run_id, outcomes=(), usage=dict(), cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=dict())
 
 Bases: `_Record`
 
@@ -4810,7 +4810,7 @@ What a finished run returned: its outcomes, what it cost, and how it ended.
 shape: a case run’s is the outcomes (already in `outcomes`), a review run’s is the
 verdict [`liaise.review`](_autosummary/liaise.review.html.md#module-liaise.review) parses.
 
-### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True, review=None)
+### *class* liaise.Subject(slug, bindings, policy, display_name='', workspace=Workspace(), brief='', verify='', delivery=Delivery(), label_prefix='liaise:', processor=ProcessorConfig(), source=None, active=True, review=None, triage=TriageConfig())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -4891,13 +4891,17 @@ The person id a GitHub `login` resolves to through `policy.people`, or None.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-#### review *: [ReviewPolicy](_autosummary/liaise.subjects.html.md#liaise.subjects.ReviewPolicy) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### review *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[ReviewPolicy](_autosummary/liaise.subjects.html.md#liaise.subjects.ReviewPolicy)]* *= None*
 
 How the subject reviews its partners’ pull requests; None reviews none.
 
-#### source *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### source *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]* *= None*
 
 The file this subject was loaded from, when it was.
+
+#### triage *: [TriageConfig](_autosummary/liaise.subjects.html.md#liaise.subjects.TriageConfig)*
+
+Triage of the cases that become ready together (off unless `triage = true`).
 
 ### *class* liaise.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False, held=())
 
@@ -4969,9 +4973,6 @@ See the module docstring for what each input is. `_rules` is for the mutation
 checks of the test suite only (the table is not a seam); it must hold rules of the
 table by name.
 
-* **Return type:**
-  [`Verdict`](_autosummary/liaise.policy.html.md#liaise.policy.Verdict)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> now = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -4985,6 +4986,9 @@ table by name.
 >>> evaluate(message, audience=None, disclosure=ada, findings=(), provenance=False, now=now).rules
 ('irreversibility', 'unknown audience')
 ```
+
+* **Return type:**
+  [`Verdict`](_autosummary/liaise.policy.html.md#liaise.policy.Verdict)
 
 ### liaise.hold(ledger, scope, , mode='block', reason='', set_by='operator', now=None)
 
@@ -5123,7 +5127,7 @@ other diverts at its flow, one concern per rule that fired. It never redacts: wh
 found is for the operator to fix, and its reasons say where, never what.
 
 * **Return type:**
-  `Union`[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Pass`](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [`Divert`](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]
 
 ### liaise.parse_outcomes(structured_output)
 
@@ -5152,7 +5156,7 @@ to the reporter’s first notify address on one of `address_channels` (see
 Raises `ValueError` for an outcome kind outside the vocabulary.
 
 * **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[`Union`[[`Send`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Send), [`Transition`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Transition), [`NotifyOperator`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.NotifyOperator), [`StoreDraft`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.StoreDraft), [`Deliver`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Deliver), [`Defer`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Defer), [`DigestNote`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DigestNote)]]
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Send`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Send), [`Transition`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Transition), [`NotifyOperator`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.NotifyOperator), [`StoreDraft`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.StoreDraft), [`Deliver`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Deliver), [`Defer`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Defer), [`DigestNote`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DigestNote)]]
 
 ### liaise.resolve_person(address, subject)
 
@@ -5179,7 +5183,7 @@ returns anything but a `Pass` (of an [`Outbound`](_autosummary/liaise.html.md#li
 * **Return type:**
   [`GateDecision`](_autosummary/liaise.gate.html.md#liaise.gate.GateDecision)
 
-### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
+### liaise.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, triage_ask=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
 
 One tick over `subjects` (slug to [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`.
 
@@ -5270,6 +5274,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`subjects`](_autosummary/liaise.subjects.html.md#module-liaise.subjects)     | Subjects: the bodies of work liaise runs, each loaded from `subjects/<slug>.toml`.                                   |
 | [`testing`](_autosummary/liaise.testing.html.md#module-liaise.testing)       | Fakes shipped with liaise: for its tests, and for the one-command smoke test.                                        |
 | [`tick`](_autosummary/liaise.tick.html.md#module-liaise.tick)             | The tick: one pass of liaise 0.1's loop (design §3.1).                                                               |
+| [`triage`](_autosummary/liaise.triage.html.md#module-liaise.triage)         | Triage: sort a batch of ready cases before dispatch (liaise #19).                                                    |
 | [`vet`](_autosummary/liaise.vet.html.md#module-liaise.vet)               | Vetting a draft outside any case: the gate's verdict, and nothing sent (discussion 32, §5.8).                        |
 | [`workspace`](_autosummary/liaise.workspace.html.md#module-liaise.workspace)   | The checkout a subject's runs share: one run at a time, and never beside a live session.                             |
 
@@ -5753,20 +5758,17 @@ out with no person looking, or held back.
 
 [`SENT`](_autosummary/liaise.legacy.html.md#liaise.legacy.SENT) for `send`, [`HELD`](_autosummary/liaise.legacy.html.md#liaise.legacy.HELD) for every other flow: what agreement compares.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> flow_class("send"), flow_class("delay"), flow_class("approve")
 ('sent', 'held', 'held')
 ```
 
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.legacy.leak_kinds(text, , leak_terms=())
 
 The kinds 0.1’s leak scan found in `text`, each once, in the order 0.1 listed them.
-
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ```pycon
 >>> leak_kinds("mail pat" + "@example.com, see /" + "Users" + "/pat/notes")
@@ -5776,6 +5778,9 @@ The kinds 0.1’s leak scan found in `text`, each once, in the order 0.1 listed 
 >>> leak_kinds("the Orchid launch", leak_terms=["orchid"])
 ('leak term',)
 ```
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.legacy.legacy_decision(outbound, subject, , in_case, approved=False, shared_diverts=())
 
@@ -6184,9 +6189,6 @@ becomes a `[section]` (dotted, as in `[policy.readiness]`), unless it is an
 bare, such as `github:pat`, is quoted. `None` values are left out, and so is a
 section with nothing left in it.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> print(dumps_toml({
 ...     "bindings": ["github:example/app"],
@@ -6197,6 +6199,9 @@ bindings = ["github:example/app"]
 [policy]
 people = { "github:pat" = "pat" }
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.migrate.migrate_config(root=None, , apply=False, registry=None)
 
@@ -6298,9 +6303,6 @@ recorded with the send.
 
 Whether this approval was given for the message and audience these hashes name.
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> at = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -6309,6 +6311,9 @@ True
 >>> Approval(by="operator", at=at).binds("p", "a")  # bound to nothing
 False
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### liaise.model.CASE_KINDS *= ('issue', 'pull')*
 
@@ -6409,7 +6414,7 @@ The tick’s reads of a case’s GitHub issue state: when one last succeeded, an
 `failures` counts the reads that failed in a row; a read that succeeds sets it back
 to 0. With no read yet, `read_at` is None.
 
-### *class* liaise.model.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=<factory>)
+### *class* liaise.model.LedgerEntry(at, kind, actor=None, grade=None, permission=None, delivery_id=None, text=None, detail=dict())
 
 Bases: `_Record`
 
@@ -6486,7 +6491,7 @@ A processor run started on a case: how it was started, and where it is now.
 `cancel_sent_at` is when the tick first cancelled the run for passing its wall clock:
 the lost-run deadline counts from it (see [`liaise.tick`](_autosummary/liaise.tick.html.md#module-liaise.tick)).
 
-### *class* liaise.model.RunResult(run_id, outcomes=(), usage=<factory>, cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=<factory>)
+### *class* liaise.model.RunResult(run_id, outcomes=(), usage=dict(), cost_usd=None, rate_limit=None, error=None, session_id=None, summary='', structured=dict())
 
 Bases: `_Record`
 
@@ -6500,20 +6505,17 @@ verdict [`liaise.review`](_autosummary/liaise.review.html.md#module-liaise.revie
 
 Return `value` when it is in `allowed`; otherwise raise `ValueError` listing them.
 
-* **Return type:**
-  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
-
 ```pycon
 >>> require_one_of("paused", CASE_STATES, what="case state")
 'paused'
 ```
 
+* **Return type:**
+  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
+
 ### liaise.model.states_for(kind)
 
 The state vocabulary of a case of `kind`: [`CASE_STATES`](_autosummary/liaise.model.html.md#liaise.model.CASE_STATES) or [`PR_STATES`](_autosummary/liaise.model.html.md#liaise.model.PR_STATES).
-
-* **Return type:**
-  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ```pycon
 >>> states_for("issue")[0], states_for("pull")[0]
@@ -6521,6 +6523,9 @@ The state vocabulary of a case of `kind`: [`CASE_STATES`](_autosummary/liaise.mo
 ```
 
 Raises `ValueError` for a kind outside [`CASE_KINDS`](_autosummary/liaise.model.html.md#liaise.model.CASE_KINDS).
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 ### liaise.model.to_jsonable(value)
 
@@ -6686,14 +6691,14 @@ The hosts a link in `outbound` may point at: its channel’s own and `policy.lin
 
 `audience` as the policy and the hashes see it; None is the unknown audience of `ref`.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> snapshot = audience_snapshot(None, "github:example/app#12")
 >>> snapshot["scope"], snapshot["defaulted"], snapshot["ref"]
 ('public', True, 'github:example/app#12')
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### liaise.outbound.case_provenance(case, subject, ledger)
 
@@ -6710,9 +6715,6 @@ refused at intake and queued as unrouted, so it is on the conversation the run r
 and on no entry of the case. It counts too, which is what makes the rule cover the
 stranger it exists for (liaise discussion 32, §5.3).
 
-* **Return type:**
-  [`Provenance`](_autosummary/liaise.policy.html.md#liaise.policy.Provenance)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> from liaise.ledger import Ledger
@@ -6727,6 +6729,9 @@ False
 >>> case_provenance(case, subject, Ledger({})).evidence
 ('a message from obi, whose role observer does not grant request_work',)
 ```
+
+* **Return type:**
+  [`Provenance`](_autosummary/liaise.policy.html.md#liaise.policy.Provenance)
 
 ### liaise.outbound.consulted_of(disclosure, , identities, provenance)
 
@@ -6782,13 +6787,13 @@ recipient and copies by name, and the audience’s listed readers through the re
 
 A disclosure without acquaint: every named reader at `need-to-know`, cleared to `clear`.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> need_to_know_disclosure(["ada"])["people"]["ada"]["clearance"]
 'clear'
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### liaise.outbound.record_disclosure(outbound, verdict, consulted)
 
@@ -6819,14 +6824,14 @@ cannot settle another (liaise ADR 0002).
 
 `disclosure` with each of `leak_terms` added to its vocabulary, at `LEAK_TERMS_LABEL`.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> found = with_leak_terms({"vocabulary": []}, ["the-bird-board", " "])["vocabulary"]
 >>> [(term["term"], term["label"]) for term in found]
 [('the-bird-board', 'red')]
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 
 # _autosummary/liaise.outbox.html.md
@@ -7130,7 +7135,7 @@ carries the time it was written). Among the entries after it, any of these moves
 Raises `ValueError` for anything that is neither.
 
 * **Return type:**
-  `Union`[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### liaise.outbox.pick_held(case, index=None)
 
@@ -7381,7 +7386,7 @@ to the reporter’s first notify address on one of `address_channels` (see
 Raises `ValueError` for an outcome kind outside the vocabulary.
 
 * **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[`Union`[[`Send`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Send), [`Transition`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Transition), [`NotifyOperator`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.NotifyOperator), [`StoreDraft`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.StoreDraft), [`Deliver`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Deliver), [`Defer`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Defer), [`DigestNote`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DigestNote)]]
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Send`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Send), [`Transition`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Transition), [`NotifyOperator`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.NotifyOperator), [`StoreDraft`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.StoreDraft), [`Deliver`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Deliver), [`Defer`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.Defer), [`DigestNote`](_autosummary/liaise.outcomes.html.md#liaise.outcomes.DigestNote)]]
 
 
 # _autosummary/liaise.policy.html.md
@@ -7553,7 +7558,7 @@ The resolved readers the finding’s entity is sealed from.
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
-#### *property* tainted *: [bool](https://docs.python.org/3/builtins/functions.html#bool) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* tainted *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[bool](https://docs.python.org/3/builtins/functions.html#bool)]*
 
 Whether the run is tainted; `None` when unknown.
 
@@ -7743,13 +7748,13 @@ JSON-ready: what the ledger records for a gated message.
 
 Whether `label` is more restrictive than `clearance` (`None`: no ceiling).
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> above("amber", "clear"), above("amber", "amber"), above("red", None)
 (True, False, False)
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### liaise.policy.audience_hash(audience)
 
@@ -7795,9 +7800,6 @@ See the module docstring for what each input is. `_rules` is for the mutation
 checks of the test suite only (the table is not a seam); it must hold rules of the
 table by name.
 
-* **Return type:**
-  [`Verdict`](_autosummary/liaise.policy.html.md#liaise.policy.Verdict)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> now = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -7811,6 +7813,9 @@ table by name.
 >>> evaluate(message, audience=None, disclosure=ada, findings=(), provenance=False, now=now).rules
 ('irreversibility', 'unknown audience')
 ```
+
+* **Return type:**
+  [`Verdict`](_autosummary/liaise.policy.html.md#liaise.policy.Verdict)
 
 ### liaise.policy.facts_of(outbound, , audience, disclosure, findings, provenance, policy=None, now, identities=None)
 
@@ -7834,9 +7839,6 @@ The reader whose clearance is the content ceiling (discussion §4.4).
 the readers, an unresolved one at `clear`. The result’s `clearance` is `None`
 for the operator alone, and `clear` for anything public, defaulted or unresolved.
 
-* **Return type:**
-  [`Reader`](_autosummary/liaise.policy.html.md#liaise.policy.Reader)
-
 ```pycon
 >>> ada = {"people": {"ada": {"tier": "open", "clearance": "amber"}}}
 >>> email = {"ref": "email:ada", "scope": "named", "readers": ["email:ada"]}
@@ -7847,6 +7849,9 @@ Reader(clearance='amber', who='ada', person='ada')
 >>> least_cleared_reader({"ref": "github:example/app#1", "scope": "public"}, ada).clearance
 'clear'
 ```
+
+* **Return type:**
+  [`Reader`](_autosummary/liaise.policy.html.md#liaise.policy.Reader)
 
 ### liaise.policy.most_restrictive(flows)
 
@@ -7869,13 +7874,13 @@ The message as the payload hash sees it: recipients, copies, ref, title, text, a
 Copies and attachments are sorted, so a listing order does not void an approval; a
 message that differs in any of them does.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> payload_of({"ref": "github:example/app#12", "recipient": "ada", "text": "hi"})
 {'recipients': ['ada'], 'cc': [], 'bcc': [], 'ref': 'github:example/app#12', 'title': None, 'text': 'hi', 'attachments': []}
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 
 # _autosummary/liaise.processor.html.md
@@ -8198,14 +8203,14 @@ the subscription the operator logged in with.
 The environment a run gets: `environ` without [`SCRUBBED_ENV_VARS`](_autosummary/liaise.processor.html.md#liaise.processor.SCRUBBED_ENV_VARS), plus
 [`CHILD_ENV_OVERRIDES`](_autosummary/liaise.processor.html.md#liaise.processor.CHILD_ENV_OVERRIDES).
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> env = child_env({"PATH": "/bin", "ANTHROPIC_API_KEY": "k"})
 >>> sorted(env)
 ['CLAUDE_CODE_MAX_RETRIES', 'PATH']
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
 # _autosummary/liaise.projection.html.md
@@ -8303,15 +8308,15 @@ proposal. `needs-owner` waits on the operator, who has no waiting label.
 
 `(owner/repo, number)` for an encoded `github:owner/repo#N`, else None.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]]
-
 ```pycon
 >>> github_issue("github:example/app#12")
 ('example/app', 12)
 >>> github_issue("github:example/app") is None, github_issue("webinbox:example-site") is None
 (True, True)
 ```
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]]
 
 ### liaise.projection.github_repos(subject)
 
@@ -8328,14 +8333,14 @@ names none. Repositories compare without regard to case, as GitHub’s do.
 
 The label that keeps liaise from merging a pull request of `subject`: `liaise:hold`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> from liaise.subjects import Policy
 >>> hold_label(Subject("app", ("github:example/app",), Policy(people={}, roles={})))
 'liaise:hold'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.projection.project_labels(case, subject, , labeler, dry_run=False, stale=())
 
@@ -8429,7 +8434,7 @@ The packaged rules every prompt starts with, in `liaise/data`.
 What each outcome kind is for, as the agent reads it. Listed in the order of
 [`liaise.model.OUTCOME_KINDS`](_autosummary/liaise.model.html.md#liaise.model.OUTCOME_KINDS), which must all have an entry.
 
-### liaise.prompt.compose_case_prompt(subject, case, mode, , runs_dir_note=None)
+### liaise.prompt.compose_case_prompt(subject, case, mode, , runs_dir_note=None, also=(), kind=None)
 
 Build the prompt for one run on `case`, in the fixed section order.
 
@@ -8454,15 +8459,15 @@ Where the conversation that the encoded reference `ref` names can be read.
 A GitHub issue or pull request (`github:owner/repo#N`) becomes its web URL. Any
 other reference is returned as it is.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> conversation_link("github:example/app#12")
 'https://github.com/example/app/issues/12'
 >>> conversation_link("webinbox:example-site")
 'webinbox:example-site'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/liaise.readiness.html.md
@@ -8716,7 +8721,7 @@ gate diverted has none of the three. `disclosure_failure` says why a sent messag
 disclosure could not be written to its recipients’ acquaint records; None otherwise.
 `key` is the idempotency key the send carried, if any.
 
-#### *property* outbound *: [Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* outbound *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound)]*
 
 The message as the gate’s filters left it, or None when the gate diverted it.
 
@@ -8764,15 +8769,15 @@ fails before it can ask. Nothing is cached, so a release asks again at send time
 
 `key`, or, when too long for correspond (a long subject slug), its head and a digest of it.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> bounded_key("c/h1")
 'c/h1'
 >>> len(bounded_key("s" * 200 + "-1/h1")) <= 128
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.default_send_store(state_dir)
 
@@ -8798,13 +8803,13 @@ stores that key on whatever draft stays, so a second release reuses it.
 
 How liaise names an exception it recovered from: its class, then its message.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> error_text(ValueError("no such channel"))
 'ValueError: no such channel'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.failure_reason(attempt, ref)
 
@@ -8842,9 +8847,6 @@ unkeyed, as before, and liaise never writes correspond’s own data root.
 
 `owner/repo`, lower-cased, of the repository a GitHub reference names: itself or one of its issues.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> github_repo("github:Example/App#12"), github_repo("github:example/app")
 ('example/app', 'example/app')
@@ -8852,29 +8854,32 @@ unkeyed, as before, and liaise never writes correspond’s own data root.
 True
 ```
 
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
 ### liaise.release.next_attempt_key(key)
 
 `key` for the message’s next attempt: `~2` added, or its attempt number raised.
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ```pycon
 >>> print(next_attempt_key("example/h3f9a0c12"), next_attempt_key("example/h3f9a0c12~2"))
 example/h3f9a0c12~2 example/h3f9a0c12~3
 ```
 
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### liaise.release.outbox_key(case_id, held)
 
 The key of an outbox item’s release: `<case>/<held id>`, the same on every try.
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ```pycon
 >>> print(outbox_key("example", "h3f9a0c12"))
 example/h3f9a0c12
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.release_draft(draft, \*, subject, ledger, label, reject, by, now, case=None, text=None, title=None, detail=mappingproxy({}), registry=None, send=True, dry_run=False, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), approval=None, approve_shown=False, justification='', fingerprint_key=None, sends=None, new_attempt=False)
 
@@ -8923,9 +8928,6 @@ Raises `ValueError`, sending nothing, for any of these:
 
 `ref` as a GitHub issue or repository reference, stripped and lower-cased.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> sendable_ref(" github:Example/App#12 ")
 'github:example/app#12'
@@ -8933,6 +8935,9 @@ Raises `ValueError`, sending nothing, for any of these:
 
 Raises `ValueError` for anything else: another channel, a malformed reference, or an
 issue number that is not a positive whole number.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.tick_send_key(case_id, ref, text, title, serial)
 
@@ -8942,14 +8947,14 @@ The key of a message a tick sends: `<case>/<payload digest>/<entry serial>`.
 of the same text on one case differ, while a tick that runs again over the same
 entries (after a crash) reuses the key and never posts twice.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> key = tick_send_key("app3", "github:example/app#3", "Fixed.", None, 7)
 >>> key.startswith("app3/") and key.endswith("/7")
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.release.usable_key(key, sends)
 
@@ -9070,15 +9075,15 @@ Decision 11’s rollout rule: `{"recommended": bool, "reason": str}`.
 severity [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY) or above (None: not observable, which never
 recommends).
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
-
 ```pycon
 >>> enforce_recommended(shadow_messages=40, missed_high_severity=0, false_divert_rate=0.05)
 {'recommended': True, 'reason': '40 shadow messages, no missed finding of severity 4 or above, false-divert rate 0.05 (at most 0.1)'}
 >>> enforce_recommended(shadow_messages=12, missed_high_severity=0, false_divert_rate=0.0)['reason']
 'only 12 shadow messages compared with 0.1, fewer than 30'
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
 
 ### liaise.report.gate_report(ledger, , subject=None, since=None, shadow_subjects=())
 
@@ -9418,25 +9423,25 @@ is the diff’s full line count when `diff` was cut. Raises
 
 How many lines `diff` has, as `max_diff_lines` counts them.
 
-* **Return type:**
-  [`int`](https://docs.python.org/3/builtins/functions.html#int)
-
 ```pycon
 >>> diff_lines(""), diff_lines("a\nb\n"), diff_lines("a\nb")
 (0, 2, 2)
 ```
 
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
 ### liaise.review.fence_for(\*texts)
 
 A backtick fence longer than any run of backticks in `texts`, so none can close it.
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ```pycon
 >>> fence_for("plain"), fence_for("a ``` b"), fence_for("````")
 ('```', '````', '`````')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.review.head_sha_of_run(case, run_id)
 
@@ -9474,9 +9479,6 @@ window still open since the posting, or a merge of this head that already failed
 
 The [`Review`](_autosummary/liaise.review.html.md#liaise.review.Review) a run’s structured result holds, or `ValueError` listing every problem.
 
-* **Return type:**
-  [`Review`](_autosummary/liaise.review.html.md#liaise.review.Review)
-
 ```pycon
 >>> parse_review({"verdict": "changes", "summary": "Nearly.",
 ...     "findings": [{"file": "a.py", "line": 3, "severity": "should", "note": "x"}]})
@@ -9486,6 +9488,9 @@ Traceback (most recent call last):
 ...
 ValueError: the review result is not valid: verdict 'maybe' is not one of: approve, changes, decline; summary is missing
 ```
+
+* **Return type:**
+  [`Review`](_autosummary/liaise.review.html.md#liaise.review.Review)
 
 ### liaise.review.post_verdict(subject, case, review, \*, head_sha, ledger, github, now, provenance, registry=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), fingerprint_key=None, dry_run=False, actor='liaise', approval=None, stale_head=None)
 
@@ -9556,9 +9561,6 @@ The text posted on the pull request: the summary, the findings, the commit, and 
 request’s current head when it is no longer `head_sha`: the body then opens with
 [`STALE_HEAD_NOTE`](_autosummary/liaise.review.html.md#liaise.review.STALE_HEAD_NOTE).
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> print(review_body(Review("changes", "Nearly there.",
 ...     (Finding("a.py", "should", "handle an empty list", line=3),)),
@@ -9573,6 +9575,9 @@ Reviewed commit: `abc123`.
 
 (f)
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.review.review_drafts(case)
 
@@ -9621,9 +9626,6 @@ The repositories `subject` reviews pull requests in: the bound ones, then `revie
 Each once, compared without regard to case, in that order; none without a
 `[review]` table.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> from liaise.subjects import Policy
 >>> subject = Subject("app", ("github:example/app?labels=partner:pat",),
@@ -9632,6 +9634,9 @@ Each once, compared without regard to case, in that order; none without a
 >>> review_repos(subject)
 ['example/app', 'example/lib']
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### liaise.review.review_show_lines(ledger, ref)
 
@@ -9651,13 +9656,13 @@ The `run` entries about `run_id`, oldest first.
 
 Where a review of `repo` runs when the subject has no checkout of it: under `state_dir`.
 
-* **Return type:**
-  [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
-
 ```pycon
 >>> scratch_dir("/s", "example/app").as_posix()
 '/s/review/example%2Fapp'
 ```
+
+* **Return type:**
+  [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
 ### liaise.review.wanted_pulls(subject, github, , problem=None)
 
@@ -9837,15 +9842,16 @@ roles = { pat = "partner" }
 
 ### Classes
 
-| [`BudgetPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.BudgetPolicy)([concurrent, timeout_minutes, ...])   | Limits on a subject's runs.                                                                                                                      |
-|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`Delivery`](_autosummary/liaise.subjects.html.md#liaise.subjects.Delivery)([kind, per, command])                     | How finished work reaches the partner.                                                                                                           |
-| [`Policy`](_autosummary/liaise.subjects.html.md#liaise.subjects.Policy)(people, roles[, default_reply_mode, ...])   | Who is who on a subject, what each may do, and how liaise answers them.                                                                          |
-| [`ProcessorConfig`](_autosummary/liaise.subjects.html.md#liaise.subjects.ProcessorConfig)([permission_mode])                 | How the subject's processor runs.                                                                                                                |
-| [`ReadinessPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](_autosummary/liaise.readiness.html.md#module-liaise.readiness)).                |
-| [`ReviewPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.ReviewPolicy)([authors, repos, merge, ...])         | How a subject reviews the pull requests its partners open ([`liaise.review`](_autosummary/liaise.review.html.md#module-liaise.review)). |
-| [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                           |
-| [`Workspace`](_autosummary/liaise.subjects.html.md#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                                            |
+| [`BudgetPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.BudgetPolicy)([concurrent, timeout_minutes, ...])   | Limits on a subject's runs.                                                                                                                                   |
+|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`Delivery`](_autosummary/liaise.subjects.html.md#liaise.subjects.Delivery)([kind, per, command])                     | How finished work reaches the partner.                                                                                                                        |
+| [`Policy`](_autosummary/liaise.subjects.html.md#liaise.subjects.Policy)(people, roles[, default_reply_mode, ...])   | Who is who on a subject, what each may do, and how liaise answers them.                                                                                       |
+| [`ProcessorConfig`](_autosummary/liaise.subjects.html.md#liaise.subjects.ProcessorConfig)([permission_mode])                 | How the subject's processor runs.                                                                                                                             |
+| [`ReadinessPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](_autosummary/liaise.readiness.html.md#module-liaise.readiness)).                             |
+| [`ReviewPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.ReviewPolicy)([authors, repos, merge, ...])         | How a subject reviews the pull requests its partners open ([`liaise.review`](_autosummary/liaise.review.html.md#module-liaise.review)).              |
+| [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                                        |
+| [`TriageConfig`](_autosummary/liaise.subjects.html.md#liaise.subjects.TriageConfig)([enabled, label_prefix, max_turns])   | Whether and how a subject triages the cases that become ready together ([`liaise.triage`](_autosummary/liaise.triage.html.md#module-liaise.triage)). |
+| [`Workspace`](_autosummary/liaise.subjects.html.md#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                                                         |
 
 ### Exceptions
 
@@ -9959,7 +9965,7 @@ Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueEr
 
 No subject’s bindings take in a reference (see [`subject_for_ref()`](_autosummary/liaise.subjects.html.md#liaise.subjects.subject_for_ref)).
 
-### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=<factory>, relays=(), claim_labels=<factory>, notify=<factory>, leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=<factory>, escalate=<factory>, budget=<factory>, deployed_nudge_days=3, briefs=<factory>, waiting_labels=<factory>, tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce', delay_minutes=None, delay_stale_minutes=1440)
+### *class* liaise.subjects.Policy(people, roles, default_reply_mode='draft', reply_modes=dict(), relays=(), claim_labels=dict(), notify=dict(), leak_terms=(), public_channels=('github', ), permissions=<factory>, grades=<factory>, readiness=ReadinessPolicy(), escalate=EscalateConfig(), budget=BudgetPolicy(), deployed_nudge_days=3, briefs=dict(), waiting_labels=dict(), tainted_runs='approve', link_allowlist=(), canary_terms=(), mode='enforce', delay_minutes=None, delay_stale_minutes=1440)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -10026,7 +10032,7 @@ a binding’s conditions, so it never gets that far).
 The permission whose holders’ pull requests are reviewed when `review.authors` is
 not set: a pull request is a request for work to land.
 
-### *class* liaise.subjects.ReadinessPolicy(quiet_minutes=10, go_minutes=2, markers=<factory>)
+### *class* liaise.subjects.ReadinessPolicy(quiet_minutes=10, go_minutes=2, markers=Markers())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -10057,7 +10063,7 @@ Whether pull requests by the GitHub login `login` are reviewed.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=<factory>, brief='', verify='', delivery=<factory>, label_prefix='liaise:', processor=<factory>, source=None, active=True, review=None)
+### *class* liaise.subjects.Subject(slug, bindings, policy, display_name='', workspace=Workspace(), brief='', verify='', delivery=Delivery(), label_prefix='liaise:', processor=ProcessorConfig(), source=None, active=True, review=None, triage=TriageConfig())
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -10138,13 +10144,17 @@ The person id a GitHub `login` resolves to through `policy.people`, or None.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-#### review *: [ReviewPolicy](_autosummary/liaise.subjects.html.md#liaise.subjects.ReviewPolicy) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### review *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[ReviewPolicy](_autosummary/liaise.subjects.html.md#liaise.subjects.ReviewPolicy)]* *= None*
 
 How the subject reviews its partners’ pull requests; None reviews none.
 
-#### source *: [str](https://docs.python.org/3/builtins/stdtypes.html#str) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### source *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[str](https://docs.python.org/3/builtins/stdtypes.html#str)]* *= None*
 
 The file this subject was loaded from, when it was.
+
+#### triage *: [TriageConfig](_autosummary/liaise.subjects.html.md#liaise.subjects.TriageConfig)*
+
+Triage of the cases that become ready together (off unless `triage = true`).
 
 ### liaise.subjects.TAINTED_RUNS *= ('approve', 'send')*
 
@@ -10153,6 +10163,15 @@ the operator for any audience wider than them) or `send` (the subject waives tha
 
 * **Type:**
   What `policy.tainted_runs` may say
+
+### *class* liaise.subjects.TriageConfig(enabled=False, label_prefix='', max_turns=3)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Whether and how a subject triages the cases that become ready together ([`liaise.triage`](_autosummary/liaise.triage.html.md#module-liaise.triage)).
+
+Off by default. `label_prefix` goes before the `kind:` / `size:` / `priority:`
+labels; `max_turns` caps the triage call.
 
 ### liaise.subjects.UNBOUND_SLUG *= '(unbound)'*
 
@@ -10174,13 +10193,13 @@ How two channel addresses compare: without regard to case.
 
 GitHub logins are case-insensitive, so `github:Pat` is `github:pat`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> address_key("github:Pat") == address_key("github:pat")
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.subjects.check_bindings(subject, , registry=None)
 
@@ -10227,15 +10246,15 @@ conversation case-sensitively with the lower-cased reference its GitHub adapter 
 message, so `github:Example/App` would match nothing. The `?conditions` stay as
 written, and a binding on any other channel is returned unchanged.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> normalize_binding("github:Example/App?labels=partner:Pat")
 'github:example/app?labels=partner:Pat'
 >>> normalize_binding("webinbox:Example-Site")
 'webinbox:Example-Site'
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.subjects.poll_ref(binding)
 
@@ -10244,15 +10263,15 @@ The conversation `binding` is polled on, or None when v0.1 cannot poll it.
 That is the binding without its `?conditions`. A conversation part holding a
 wildcard is a glob, not a conversation, so it gives None.
 
-* **Return type:**
-  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> poll_ref("github:example/app?labels=partner:pat")
 'github:example/app'
 >>> poll_ref("github:example/*") is None
 True
 ```
+
+* **Return type:**
+  [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### liaise.subjects.ref_key(ref)
 
@@ -10262,13 +10281,13 @@ correspond keys a cursor on the reference its adapter normalizes. GitHub’s low
 it, and a web inbox’s site names are lower-case, so `github:Example/App` is polled
 on the cursor of `github:example/app`.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> ref_key("github:Example/App") == ref_key("github:example/app")
 True
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.subjects.subject_for_ref(subjects, ref)
 
@@ -10285,9 +10304,6 @@ closely wins: an issue’s own binding over its repository’s.
 No caller may choose another subject: the subject’s policy is what the gate judges a
 message by, so a message goes only where its subject binds.
 
-* **Return type:**
-  [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)
-
 ```pycon
 >>> heron = Subject("heron", ("github:example/heron?labels=partner:pat",),
 ...     Policy(people={}, roles={}))
@@ -10299,6 +10315,9 @@ Raises [`NoSubjectBinding`](_autosummary/liaise.subjects.html.md#liaise.subjects
 none takes `ref` in, and `ValueError` naming each when several name it equally
 closely.
 
+* **Return type:**
+  [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)
+
 ### liaise.subjects.unbound_subject()
 
 The subject a reference no subject binds is judged under, where one must be (`liaise vet`).
@@ -10307,14 +10326,14 @@ It is what a subject file with nothing but `[policy]`, `people = {}` and
 `roles = {}` loads to: nobody known, `direct` reply mode, the taint rule in force,
 `enforce` mode. It binds nothing and is inert, so nothing ever polls it.
 
-* **Return type:**
-  [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)
-
 ```pycon
 >>> subject = unbound_subject()
 >>> subject.slug, subject.bindings, subject.policy.tainted_runs, subject.active
 ('(unbound)', (), 'approve', False)
 ```
+
+* **Return type:**
+  [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)
 
 
 # _autosummary/liaise.testing.html.md
@@ -10624,6 +10643,8 @@ tell a running tick from a finished or an interrupted one. [`status_lines()`](_a
 | [`RUN_ID_SUFFIX_DIGITS`](_autosummary/liaise.tick.html.md#liaise.tick.RUN_ID_SUFFIX_DIGITS)     | How many hex digits of a uuid4 end a run id, so that no two runs share one.                                                                                                    |
 | [`BUDGET_MESSAGE`](_autosummary/liaise.tick.html.md#liaise.tick.BUDGET_MESSAGE)           | The messages the tick sends to a partner on its own, through the gate, which adds the mention: when the daily cap trips, when a batch deploy is live, and on a quiet delivery. |
 | [`BUDGET_PURPOSE`](_autosummary/liaise.tick.html.md#liaise.tick.BUDGET_PURPOSE)           | The `purpose` of those messages, as the gate and the ledger see it.                                                                                                            |
+| [`TRIAGED_EVENT`](_autosummary/liaise.tick.html.md#liaise.tick.TRIAGED_EVENT)            | a verdict applied; a case grouped under a lead; a grouped case settled once its lead is live.                                                                                  |
+| [`GROUP_LIVE_MESSAGE`](_autosummary/liaise.tick.html.md#liaise.tick.GROUP_LIVE_MESSAGE)       | What a grouped case is told once the case carrying it is live; `{ref}` names that case.                                                                                        |
 | [`DAILY_CAP_PRIORITY`](_autosummary/liaise.tick.html.md#liaise.tick.DAILY_CAP_PRIORITY)       | news for the operator, not a call to act.                                                                                                                                      |
 | [`SEND_REFUSED_CAUSE`](_autosummary/liaise.tick.html.md#liaise.tick.SEND_REFUSED_CAUSE)       | What a notification names a failed send by when the channel gave no error kind.                                                                                                |
 | [`RUN_STARTED`](_autosummary/liaise.tick.html.md#liaise.tick.RUN_STARTED)              | a start, a start that failed, a collection...                                                                                                                                  |
@@ -10727,6 +10748,10 @@ The states a case may be started from. `working`, `needs-owner` and `deployed`
 wait on something other than the partner’s clock. `budget` is one, since the cap is
 per day (0.0.x H-4).
 
+### liaise.tick.GROUP_LIVE_MESSAGE *= 'This was handled together with {ref}, and it is live now. Please try it and tell me if anything is still off.'*
+
+What a grouped case is told once the case carrying it is live; `{ref}` names that case.
+
 ### liaise.tick.ISSUE_DELIVERY_PER *= 'issue'*
 
 A deploy that runs once per tick, after every case of the subject has been collected,
@@ -10821,7 +10846,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 When the latest tick that was not a dry run started and ended.
 
-#### lock_held *: [bool](https://docs.python.org/3/builtins/functions.html#bool) | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+#### lock_held *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[bool](https://docs.python.org/3/builtins/functions.html#bool)]* *= None*
 
 Whether a live process held the run lock when these were read; None when the lock
 was not checked.
@@ -10847,6 +10872,14 @@ to the owner, who is told once: a deleted or transferred issue never reads again
 ### liaise.tick.TICK_ACTOR *= 'liaise'*
 
 The actor of the entries the tick writes.
+
+### liaise.tick.TRIAGED_EVENT *= 'triaged'*
+
+a verdict applied; a case grouped under a
+lead; a grouped case settled once its lead is live.
+
+* **Type:**
+  Ledger `note` events of triage (liaise #19)
 
 ### *class* liaise.tick.TickReport(plan_lines=(), dispatched=(), collected=(), sent=(), diverted=(), problems=(), dry_run=False, held=())
 
@@ -10911,7 +10944,7 @@ Where a tick keeps its run lock.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### liaise.tick.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
+### liaise.tick.run_once(subjects, store, \*, global_config, registry=None, processor=None, resolver=<function resolve_person>, workspace=<function workspace_for>, labeler=None, notify_fn=None, sessions_dir=None, now=None, dry_run=False, only=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), triage=None, triage_ask=None, lost_run_deadline=datetime.timedelta(seconds=600), closed_recheck_interval=datetime.timedelta(seconds=3600), sends=None)
 
 One tick over `subjects` (slug to [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)), on the ledger `store`.
 
@@ -10970,6 +11003,192 @@ latest), the drafts waiting for the operator, the messages held in the outbox, a
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+
+# _autosummary/liaise.triage.html.md
+
+# liaise.triage
+
+Triage: sort a batch of ready cases before dispatch (liaise #19).
+
+A cheap headless pass (its own call, a small fixed prompt and a hard turn cap) reads every
+case that became ready in the same run, plus the partner’s open cases for context, and
+returns one verdict per ready case: `kind`, `duplicate_of`, `group`, `size`,
+`priority`. From the verdicts this module builds the *groups* the tick dispatches (one job
+per group, lead first, groups ordered by priority then age) and the labels and the one
+plain-language comment that make the verdict visible on the issues.
+
+The pass is a seam: an [`Ask`](_autosummary/liaise.triage.html.md#liaise.triage.Ask) (`prompt -> structured answer`), so tests use a fake and
+[`headless_ask()`](_autosummary/liaise.triage.html.md#liaise.triage.headless_ask) is the real one. It stays optional and off by default
+(`triage = true` in the subject). A pass that fails never blocks dispatch: the tick falls
+back to one case at a time, in its own order, and says so.
+
+The prompt (`data/triage_prompt.md`) and `TRIAGE_SCHEMA` are generic: nothing in
+them names a partner, a repository or a product.
+
+### Example
+
+```pycon
+>>> verdict = parse_verdicts({"verdicts": [{"id": "a-1", "kind": "problem",
+...     "duplicate_of": None, "group": "login", "size": "small",
+...     "priority": "blocking"}]}, ["a-1"])["a-1"]
+>>> (verdict.kind, verdict.priority)
+('problem', 'blocking')
+```
+
+### Module Attributes
+
+| [`DFLT_KIND`](_autosummary/liaise.triage.html.md#liaise.triage.DFLT_KIND)             | Verdict applied to a case the pass said nothing usable about.                        |
+|------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`DFLT_TRIAGE_MAX_TURNS`](_autosummary/liaise.triage.html.md#liaise.triage.DFLT_TRIAGE_MAX_TURNS) | it only classifies, so it needs very few.                                            |
+| [`DFLT_TRIAGE_TIMEOUT`](_autosummary/liaise.triage.html.md#liaise.triage.DFLT_TRIAGE_TIMEOUT)   | Seconds the triage call may take before it counts as failed.                         |
+| [`DFLT_EXCERPT_CHARS`](_autosummary/liaise.triage.html.md#liaise.triage.DFLT_EXCERPT_CHARS)    | Characters of a case's first message shown to the pass.                              |
+| [`DUPLICATE_LABEL`](_autosummary/liaise.triage.html.md#liaise.triage.DUPLICATE_LABEL)       | The label every duplicate carries, besides its `kind:` / `size:` / `priority:` ones. |
+| [`DUPLICATE_COMMENT`](_autosummary/liaise.triage.html.md#liaise.triage.DUPLICATE_COMMENT)     | The one comment on a duplicate; `{ref}` is the issue it duplicates.                  |
+| [`DUPLICATE_PURPOSE`](_autosummary/liaise.triage.html.md#liaise.triage.DUPLICATE_PURPOSE)     | Ledger purpose of that comment.                                                      |
+| [`GROUPED_EVENT`](_autosummary/liaise.triage.html.md#liaise.triage.GROUPED_EVENT)         | `{"lead": case_id}`.                                                                 |
+| [`Ask`](_autosummary/liaise.triage.html.md#liaise.triage.Ask)                   | the triage call seam.                                                                |
+
+### Functions
+
+| [`compose_triage_prompt`](_autosummary/liaise.triage.html.md#liaise.triage.compose_triage_prompt)(cases[, context, ...])   | The prompt: the packaged text, the batch, and the partner's open cases as context.        |
+|-------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| [`group_cases`](_autosummary/liaise.triage.html.md#liaise.triage.group_cases)(cases, verdicts)                   | The dispatch groups: cases sharing a `group` slug or a duplicate chain, together.         |
+| [`headless_ask`](_autosummary/liaise.triage.html.md#liaise.triage.headless_ask)(prompt, \*[, max_turns, ...])     | Run the triage prompt as one headless, turn-capped call and return its structured answer. |
+| [`label_specs`](_autosummary/liaise.triage.html.md#liaise.triage.label_specs)([prefix])                          | Every label a verdict can carry, as `(name, description)`, so they can be created.        |
+| [`parse_verdicts`](_autosummary/liaise.triage.html.md#liaise.triage.parse_verdicts)(raw, case_ids)                  | A verdict for each of `case_ids` from the pass's answer; tolerant of bad entries.         |
+
+### Classes
+
+| [`LlmTriage`](_autosummary/liaise.triage.html.md#liaise.triage.LlmTriage)(ask, \*[, excerpt_chars])               | The [`Triage`](_autosummary/liaise.tick.html.md#liaise.tick.Triage) seam backed by an [`Ask`](_autosummary/liaise.triage.html.md#liaise.triage.Ask).   |
+|----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`TriageVerdict`](_autosummary/liaise.triage.html.md#liaise.triage.TriageVerdict)(case_id[, kind, duplicate_of, ...]) | What the pass decided about one case.                                                                                                                    |
+
+### liaise.triage.Ask
+
+the triage call seam.
+
+* **Type:**
+  `prompt -> structured answer` (a mapping, or JSON text)
+
+alias of [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+### liaise.triage.DFLT_EXCERPT_CHARS *= 600*
+
+Characters of a case’s first message shown to the pass.
+
+### liaise.triage.DFLT_KIND *= 'request'*
+
+Verdict applied to a case the pass said nothing usable about.
+
+### liaise.triage.DFLT_TRIAGE_MAX_TURNS *= 3*
+
+it only classifies, so it needs very few.
+
+* **Type:**
+  The turn cap of the triage call
+
+### liaise.triage.DFLT_TRIAGE_TIMEOUT *= 300*
+
+Seconds the triage call may take before it counts as failed.
+
+### liaise.triage.DUPLICATE_COMMENT *= "This looks like the same thing as {ref}. I'll handle them together, so there is nothing more you need to do."*
+
+The one comment on a duplicate; `{ref}` is the issue it duplicates.
+
+### liaise.triage.DUPLICATE_LABEL *= 'duplicate'*
+
+The label every duplicate carries, besides its `kind:` / `size:` / `priority:` ones.
+
+### liaise.triage.DUPLICATE_PURPOSE *= 'triage_duplicate'*
+
+Ledger purpose of that comment.
+
+### liaise.triage.GROUPED_EVENT *= 'grouped'*
+
+`{"lead": case_id}`.
+
+* **Type:**
+  Ledger entry kind detail marking a case grouped under a lead
+
+### *class* liaise.triage.LlmTriage(ask, , excerpt_chars=600)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+The [`Triage`](_autosummary/liaise.tick.html.md#liaise.tick.Triage) seam backed by an [`Ask`](_autosummary/liaise.triage.html.md#liaise.triage.Ask).
+
+Calling it with the ready cases returns the dispatch groups (lead first); `verdicts`
+keeps the verdicts of the latest call, which the tick turns into labels and comments.
+An `ask` that raises propagates: the tick treats that as a failed triage and falls
+back to its own order.
+
+#### accepts_context *= True*
+
+The tick passes the partner’s open cases as `context=` to a seam that says so.
+
+#### merges_groups *= True*
+
+The tick starts each multi-case group as one job, its lead carrying the rest.
+
+### *class* liaise.triage.TriageVerdict(case_id, kind='request', duplicate_of=None, group='', size='medium', priority='important')
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What the pass decided about one case. `duplicate_of` and `group` name case ids/slugs.
+
+#### labels(prefix='')
+
+The labels that show this verdict, each `<prefix>kind:...` style, plus `duplicate`.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
+
+### liaise.triage.compose_triage_prompt(cases, context=(), , excerpt_chars=600)
+
+The prompt: the packaged text, the batch, and the partner’s open cases as context.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.triage.group_cases(cases, verdicts)
+
+The dispatch groups: cases sharing a `group` slug or a duplicate chain, together.
+
+Within a group the lead is the highest-priority, then oldest case (it is the one that is
+dispatched; the rest ride along in its prompt). Groups are ordered by their best priority,
+then the age of their lead. Every case is in exactly one group.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Case`](_autosummary/liaise.model.html.md#liaise.model.Case)]]
+
+### liaise.triage.headless_ask(prompt, , max_turns=3, claude_bin='claude', timeout=300, cwd=None)
+
+Run the triage prompt as one headless, turn-capped call and return its structured answer.
+
+No tools are granted beyond what the call needs to answer: it classifies text it was
+handed. Raises `RuntimeError` if the call fails or returns nothing structured.
+
+* **Return type:**
+  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
+
+### liaise.triage.label_specs(prefix='')
+
+Every label a verdict can carry, as `(name, description)`, so they can be created.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
+### liaise.triage.parse_verdicts(raw, case_ids)
+
+A verdict for each of `case_ids` from the pass’s answer; tolerant of bad entries.
+
+An id the pass did not name, or named with unusable values, gets the defaults (a
+`request`, `medium`, `important`, alone in its own group). A `duplicate_of` that
+is not another id of the batch or the open context, or names the case itself, is dropped,
+and so is one that would make a cycle.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`TriageVerdict`](_autosummary/liaise.triage.html.md#liaise.triage.TriageVerdict)]
 
 
 # _autosummary/liaise.vet.html.md
@@ -11032,7 +11251,7 @@ The exit code of `liaise vet` for each route.
 
 Why a vetted draft counts as tainted when the caller did not say (decision 10).
 
-### liaise.vet.VET_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound), [GateContext](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)], [Pass](_autosummary/liaise.gate.html.md#liaise.gate.Pass) | [Divert](_autosummary/liaise.gate.html.md#liaise.gate.Divert)], ...]* *= (<function outbound_policy>, <function writing_card>, <function deslop>)*
+### liaise.vet.VET_FILTERS *: [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[Callable](https://docs.python.org/3/library/typing.html#typing.Callable)[[[Outbound](_autosummary/liaise.gate.html.md#liaise.gate.Outbound), [GateContext](_autosummary/liaise.gate.html.md#liaise.gate.GateContext)], [Union](https://docs.python.org/3/library/typing.html#typing.Union)[[Pass](_autosummary/liaise.gate.html.md#liaise.gate.Pass), [Divert](_autosummary/liaise.gate.html.md#liaise.gate.Divert)]], ...]* *= (<function outbound_policy>, <function writing_card>, <function deslop>)*
 
 every one, in order, but the two that presuppose
 liaise as the sender (see the module docstring). Derived by exclusion, so a filter added
@@ -11075,13 +11294,13 @@ never the text. A draft that cannot be vetted (a configuration that does not loa
 
 The route of `flow` for a write that happens at once: a `delay` is draft-to-operator.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> immediate_route("delay"), immediate_route("send"), immediate_route("refuse")
 ('draft', 'send', 'block')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.vet.verdict_record(decision, , subject, ref)
 
@@ -11321,7 +11540,7 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-10-13 01:36 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/45ab3a8a5248305f0e8d931089dd157c099c5e86"><code>45ab3a8</code></a> on branch <code>main</code>, for **liaise 0.1.18** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 12:31 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/62c10150b2c4e0524c7b417b01277e6533d5758b"><code>62c1015</code></a> on branch <code>main</code>, for **liaise 0.1.19** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11330,7 +11549,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/45ab3a8a5248305f0e8d931089dd157c099c5e86"><code>45ab3a8a5248305f0e8d931089dd157c099c5e86</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/62c10150b2c4e0524c7b417b01277e6533d5758b"><code>62c10150b2c4e0524c7b417b01277e6533d5758b</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -11341,16 +11560,16 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/38332730128">38332730128</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/39422634544">39422634544</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>45ab3a8a5248305f0e8d931089dd157c099c5e86</code> (in the history of the built commit) |
+| Event commit | <code>62c10150b2c4e0524c7b417b01277e6533d5758b</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.12  |
-| Sphinx   | 9.1.0   |
+| epythet  | 0.2.20  |
+| Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
 
@@ -11368,14 +11587,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.18/">0.1.18</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/liaise/0.1.19/">0.1.19</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 45ab3a8a5248305f0e8d931089dd157c099c5e86
-pip install "epythet==0.2.12"
+git checkout 62c10150b2c4e0524c7b417b01277e6533d5758b
+pip install "epythet==0.2.20"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

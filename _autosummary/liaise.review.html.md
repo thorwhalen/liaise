@@ -299,25 +299,25 @@ is the diff’s full line count when `diff` was cut. Raises
 
 How many lines `diff` has, as `max_diff_lines` counts them.
 
-* **Return type:**
-  [`int`](https://docs.python.org/3/builtins/functions.html#int)
-
 ```pycon
 >>> diff_lines(""), diff_lines("a\nb\n"), diff_lines("a\nb")
 (0, 2, 2)
 ```
 
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
 ### liaise.review.fence_for(\*texts)
 
 A backtick fence longer than any run of backticks in `texts`, so none can close it.
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ```pycon
 >>> fence_for("plain"), fence_for("a ``` b"), fence_for("````")
 ('```', '````', '`````')
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.review.head_sha_of_run(case, run_id)
 
@@ -355,9 +355,6 @@ window still open since the posting, or a merge of this head that already failed
 
 The [`Review`](#liaise.review.Review) a run’s structured result holds, or `ValueError` listing every problem.
 
-* **Return type:**
-  [`Review`](#liaise.review.Review)
-
 ```pycon
 >>> parse_review({"verdict": "changes", "summary": "Nearly.",
 ...     "findings": [{"file": "a.py", "line": 3, "severity": "should", "note": "x"}]})
@@ -367,6 +364,9 @@ Traceback (most recent call last):
 ...
 ValueError: the review result is not valid: verdict 'maybe' is not one of: approve, changes, decline; summary is missing
 ```
+
+* **Return type:**
+  [`Review`](#liaise.review.Review)
 
 ### liaise.review.post_verdict(subject, case, review, \*, head_sha, ledger, github, now, provenance, registry=None, outbound_filters=(<function outside_a_case>, <function outbound_policy>, <function writing_card>, <function deslop>, <function notify_recipient>), fingerprint_key=None, dry_run=False, actor='liaise', approval=None, stale_head=None)
 
@@ -437,9 +437,6 @@ The text posted on the pull request: the summary, the findings, the commit, and 
 request’s current head when it is no longer `head_sha`: the body then opens with
 [`STALE_HEAD_NOTE`](#liaise.review.STALE_HEAD_NOTE).
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> print(review_body(Review("changes", "Nearly there.",
 ...     (Finding("a.py", "should", "handle an empty list", line=3),)),
@@ -454,6 +451,9 @@ Reviewed commit: `abc123`.
 
 (f)
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.review.review_drafts(case)
 
@@ -502,9 +502,6 @@ The repositories `subject` reviews pull requests in: the bound ones, then `revie
 Each once, compared without regard to case, in that order; none without a
 `[review]` table.
 
-* **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> from liaise.subjects import Policy
 >>> subject = Subject("app", ("github:example/app?labels=partner:pat",),
@@ -513,6 +510,9 @@ Each once, compared without regard to case, in that order; none without a
 >>> review_repos(subject)
 ['example/app', 'example/lib']
 ```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### liaise.review.review_show_lines(ledger, ref)
 
@@ -532,13 +532,13 @@ The `run` entries about `run_id`, oldest first.
 
 Where a review of `repo` runs when the subject has no checkout of it: under `state_dir`.
 
-* **Return type:**
-  [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
-
 ```pycon
 >>> scratch_dir("/s", "example/app").as_posix()
 '/s/review/example%2Fapp'
 ```
+
+* **Return type:**
+  [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
 ### liaise.review.wanted_pulls(subject, github, , problem=None)
 

@@ -34,6 +34,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../_static/documentation_options.js?v=3d116926"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -52,12 +53,12 @@
     <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="liaise.vet" href="liaise.vet.html" />
+    <link rel="next" title="liaise.triage" href="liaise.triage.html" />
     <link rel="prev" title="liaise.testing" href="liaise.testing.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -349,6 +350,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.triage.html">liaise.triage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
@@ -526,6 +528,12 @@ tell a running tick from a finished or an interrupted one. <a class="reference i
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.BUDGET_PURPOSE" title="liaise.tick.BUDGET_PURPOSE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BUDGET_PURPOSE</span></code></a></p></td>
 <td><p>The <code class="docutils literal notranslate"><span class="pre">purpose</span></code> of those messages, as the gate and the ledger see it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.TRIAGED_EVENT" title="liaise.tick.TRIAGED_EVENT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TRIAGED_EVENT</span></code></a></p></td>
+<td><p>a verdict applied; a case grouped under a lead; a grouped case settled once its lead is live.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.GROUP_LIVE_MESSAGE" title="liaise.tick.GROUP_LIVE_MESSAGE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GROUP_LIVE_MESSAGE</span></code></a></p></td>
+<td><p>What a grouped case is told once the case carrying it is live; <code class="docutils literal notranslate"><span class="pre">{ref}</span></code> names that case.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.DAILY_CAP_PRIORITY" title="liaise.tick.DAILY_CAP_PRIORITY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DAILY_CAP_PRIORITY</span></code></a></p></td>
 <td><p>news for the operator, not a call to act.</p></td>
@@ -716,6 +724,12 @@ per day (0.0.x H-4).</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.GROUP_LIVE_MESSAGE">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">GROUP_LIVE_MESSAGE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'This</span> <span class="pre">was</span> <span class="pre">handled</span> <span class="pre">together</span> <span class="pre">with</span> <span class="pre">{ref},</span> <span class="pre">and</span> <span class="pre">it</span> <span class="pre">is</span> <span class="pre">live</span> <span class="pre">now.</span> <span class="pre">Please</span> <span class="pre">try</span> <span class="pre">it</span> <span class="pre">and</span> <span class="pre">tell</span> <span class="pre">me</span> <span class="pre">if</span> <span class="pre">anything</span> <span class="pre">is</span> <span class="pre">still</span> <span class="pre">off.'</span></span><a class="headerlink" href="#liaise.tick.GROUP_LIVE_MESSAGE" title="Link to this definition">#</a></dt>
+<dd><p>What a grouped case is told once the case carrying it is live; <code class="docutils literal notranslate"><span class="pre">{ref}</span></code> names that case.</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="liaise.tick.ISSUE_DELIVERY_PER">
 <span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">ISSUE_DELIVERY_PER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'issue'</span></span><a class="headerlink" href="#liaise.tick.ISSUE_DELIVERY_PER" title="Link to this definition">#</a></dt>
 <dd><p>A deploy that runs once per tick, after every case of the subject has been collected,
@@ -851,7 +865,7 @@ case whose issue is closed is neither started nor nudged.</p>
 </dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="liaise.tick.RunStamps.lock_held">
-<span class="sig-name descname"><span class="pre">lock_held</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#liaise.tick.RunStamps.lock_held" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">lock_held</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#liaise.tick.RunStamps.lock_held" title="Link to this definition">#</a></dt>
 <dd><p>Whether a live process held the run lock when these were read; None when the lock
 was not checked.</p>
 </dd></dl>
@@ -885,6 +899,18 @@ to the owner, who is told once: a deleted or transferred issue never reads again
 <dt class="sig sig-object py" id="liaise.tick.TICK_ACTOR">
 <span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">TICK_ACTOR</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'liaise'</span></span><a class="headerlink" href="#liaise.tick.TICK_ACTOR" title="Link to this definition">#</a></dt>
 <dd><p>The actor of the entries the tick writes.</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="liaise.tick.TRIAGED_EVENT">
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">TRIAGED_EVENT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'triaged'</span></span><a class="headerlink" href="#liaise.tick.TRIAGED_EVENT" title="Link to this definition">#</a></dt>
+<dd><p>a verdict applied; a case grouped under a
+lead; a grouped case settled once its lead is live.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Ledger <code class="docutils literal notranslate"><span class="pre">note</span></code> events of triage (liaise #19)</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py class">
@@ -951,7 +977,7 @@ never removed. Raises <a class="reference internal" href="#liaise.tick.RunLockHe
 process too.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a>]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -970,7 +996,7 @@ process too.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.tick.run_once">
-<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">run_once</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">workspace_for&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sessions_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lost_run_deadline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=600)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">closed_recheck_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=3600)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_once"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.run_once" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">run_once</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subjects</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">processor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">resolver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">resolve_person&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workspace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">workspace_for&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labeler</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sessions_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbound_filters</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;function</span> <span class="pre">outside_a_case&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">outbound_policy&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">writing_card&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">deslop&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;function</span> <span class="pre">notify_recipient&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triage</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triage_ask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lost_run_deadline</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=600)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">closed_recheck_interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">datetime.timedelta(seconds=3600)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/tick.html#run_once"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.tick.run_once" title="Link to this definition">#</a></dt>
 <dd><p>One tick over <code class="docutils literal notranslate"><span class="pre">subjects</span></code> (slug to <a class="reference internal" href="liaise.subjects.html#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-class docutils literal notranslate"><span class="pre">Subject</span></code></a>), on the ledger <code class="docutils literal notranslate"><span class="pre">store</span></code>.</p>
 <p>See the module docstring for the steps. The seams, each with a working default:</p>
 <ul>
@@ -1062,11 +1088,11 @@ latest), the drafts waiting for the operator, the messages held in the outbox, a
       </div>
     </a>
     <a class="right-next"
-       href="liaise.vet.html"
+       href="liaise.triage.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">liaise.vet</p>
+        <p class="prev-next-title">liaise.triage</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>
@@ -1102,6 +1128,7 @@ latest), the drafts waiting for the operator, the messages held in the outbox, a
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.DFLT_STATUS_RECENT"><code class="docutils literal notranslate"><span class="pre">DFLT_STATUS_RECENT</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.Diversion"><code class="docutils literal notranslate"><span class="pre">Diversion</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.ELIGIBLE_STATES"><code class="docutils literal notranslate"><span class="pre">ELIGIBLE_STATES</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.GROUP_LIVE_MESSAGE"><code class="docutils literal notranslate"><span class="pre">GROUP_LIVE_MESSAGE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.ISSUE_DELIVERY_PER"><code class="docutils literal notranslate"><span class="pre">ISSUE_DELIVERY_PER</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.LEGACY_LAST_RUN_KEY"><code class="docutils literal notranslate"><span class="pre">LEGACY_LAST_RUN_KEY</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.LOST_RUN_DEADLINE"><code class="docutils literal notranslate"><span class="pre">LOST_RUN_DEADLINE</span></code></a></li>
@@ -1127,6 +1154,7 @@ latest), the drafts waiting for the operator, the messages held in the outbox, a
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.SEND_REFUSED_CAUSE"><code class="docutils literal notranslate"><span class="pre">SEND_REFUSED_CAUSE</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.STATE_READ_FAILURE_LIMIT"><code class="docutils literal notranslate"><span class="pre">STATE_READ_FAILURE_LIMIT</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.TICK_ACTOR"><code class="docutils literal notranslate"><span class="pre">TICK_ACTOR</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.TRIAGED_EVENT"><code class="docutils literal notranslate"><span class="pre">TRIAGED_EVENT</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.TickReport"><code class="docutils literal notranslate"><span class="pre">TickReport</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.Triage"><code class="docutils literal notranslate"><span class="pre">Triage</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.WorkspaceFactory"><code class="docutils literal notranslate"><span class="pre">WorkspaceFactory</span></code></a></li>

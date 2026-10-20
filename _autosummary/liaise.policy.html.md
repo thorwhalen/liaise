@@ -165,7 +165,7 @@ The resolved readers the finding’s entity is sealed from.
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
-#### *property* tainted *: [bool](https://docs.python.org/3/builtins/functions.html#bool) | [None](https://docs.python.org/3/builtins/constants.html#None)*
+#### *property* tainted *: [Optional](https://docs.python.org/3/library/typing.html#typing.Optional)[[bool](https://docs.python.org/3/builtins/functions.html#bool)]*
 
 Whether the run is tainted; `None` when unknown.
 
@@ -355,13 +355,13 @@ JSON-ready: what the ledger records for a gated message.
 
 Whether `label` is more restrictive than `clearance` (`None`: no ceiling).
 
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
 ```pycon
 >>> above("amber", "clear"), above("amber", "amber"), above("red", None)
 (True, False, False)
 ```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### liaise.policy.audience_hash(audience)
 
@@ -407,9 +407,6 @@ See the module docstring for what each input is. `_rules` is for the mutation
 checks of the test suite only (the table is not a seam); it must hold rules of the
 table by name.
 
-* **Return type:**
-  [`Verdict`](#liaise.policy.Verdict)
-
 ```pycon
 >>> from datetime import datetime, timezone
 >>> now = datetime(2026, 9, 15, tzinfo=timezone.utc)
@@ -423,6 +420,9 @@ table by name.
 >>> evaluate(message, audience=None, disclosure=ada, findings=(), provenance=False, now=now).rules
 ('irreversibility', 'unknown audience')
 ```
+
+* **Return type:**
+  [`Verdict`](#liaise.policy.Verdict)
 
 ### liaise.policy.facts_of(outbound, , audience, disclosure, findings, provenance, policy=None, now, identities=None)
 
@@ -446,9 +446,6 @@ The reader whose clearance is the content ceiling (discussion §4.4).
 the readers, an unresolved one at `clear`. The result’s `clearance` is `None`
 for the operator alone, and `clear` for anything public, defaulted or unresolved.
 
-* **Return type:**
-  [`Reader`](#liaise.policy.Reader)
-
 ```pycon
 >>> ada = {"people": {"ada": {"tier": "open", "clearance": "amber"}}}
 >>> email = {"ref": "email:ada", "scope": "named", "readers": ["email:ada"]}
@@ -459,6 +456,9 @@ Reader(clearance='amber', who='ada', person='ada')
 >>> least_cleared_reader({"ref": "github:example/app#1", "scope": "public"}, ada).clearance
 'clear'
 ```
+
+* **Return type:**
+  [`Reader`](#liaise.policy.Reader)
 
 ### liaise.policy.most_restrictive(flows)
 
@@ -481,10 +481,10 @@ The message as the payload hash sees it: recipients, copies, ref, title, text, a
 Copies and attachments are sorted, so a listing order does not void an approval; a
 message that differs in any of them does.
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
-
 ```pycon
 >>> payload_of({"ref": "github:example/app#12", "recipient": "ada", "text": "hi"})
 {'recipients': ['ada'], 'cc': [], 'bcc': [], 'ref': 'github:example/app#12', 'title': None, 'text': 'hi', 'attachments': []}
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

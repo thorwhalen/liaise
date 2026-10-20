@@ -316,11 +316,11 @@ the subscription the operator logged in with.
 The environment a run gets: `environ` without [`SCRUBBED_ENV_VARS`](#liaise.processor.SCRUBBED_ENV_VARS), plus
 [`CHILD_ENV_OVERRIDES`](#liaise.processor.CHILD_ENV_OVERRIDES).
 
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
-
 ```pycon
 >>> env = child_env({"PATH": "/bin", "ANTHROPIC_API_KEY": "k"})
 >>> sorted(env)
 ['CLAUDE_CODE_MAX_RETRIES', 'PATH']
 ```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]

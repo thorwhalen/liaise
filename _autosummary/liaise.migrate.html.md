@@ -161,9 +161,6 @@ becomes a `[section]` (dotted, as in `[policy.readiness]`), unless it is an
 bare, such as `github:pat`, is quoted. `None` values are left out, and so is a
 section with nothing left in it.
 
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
 ```pycon
 >>> print(dumps_toml({
 ...     "bindings": ["github:example/app"],
@@ -174,6 +171,9 @@ bindings = ["github:example/app"]
 [policy]
 people = { "github:pat" = "pat" }
 ```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### liaise.migrate.migrate_config(root=None, , apply=False, registry=None)
 

@@ -34,6 +34,7 @@
 <link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
@@ -43,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=9969ed3f"></script>
+    <script src="../_static/documentation_options.js?v=3d116926"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -57,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.18" />
+  <meta name="docsearch:version" content="0.1.19" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -349,6 +350,7 @@
 <li class="toctree-l2"><a class="reference internal" href="liaise.subjects.html">liaise.subjects</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.testing.html">liaise.testing</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.tick.html">liaise.tick</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.triage.html">liaise.triage</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.vet.html">liaise.vet</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.workspace.html">liaise.workspace</a></li>
 </ul>
@@ -718,7 +720,7 @@ disclosure could not be written to its recipients’ acquaint records; None othe
 </dl>
 <dl class="py property">
 <dt class="sig sig-object py" id="liaise.release.SendAttempt.outbound">
-<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outbound</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><span class="pre">Outbound</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><a class="headerlink" href="#liaise.release.SendAttempt.outbound" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">outbound</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="liaise.gate.html#liaise.gate.Outbound" title="liaise.gate.Outbound"><span class="pre">Outbound</span></a><span class="p"><span class="pre">]</span></span></span><a class="headerlink" href="#liaise.release.SendAttempt.outbound" title="Link to this definition">#</a></dt>
 <dd><p>The message as the gate’s filters left it, or None when the gate diverted it.</p>
 </dd></dl>
 
@@ -782,17 +784,17 @@ fails before it can ask. Nothing is cached, so a release asks again at send time
 <dt class="sig sig-object py" id="liaise.release.bounded_key">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">bounded_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#bounded_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.bounded_key" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">key</span></code>, or, when too long for correspond (a long subject slug), its head and a digest of it.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bounded_key</span><span class="p">(</span><span class="s2">"c/h1"</span><span class="p">)</span>
 <span class="go">'c/h1'</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="nb">len</span><span class="p">(</span><span class="n">bounded_key</span><span class="p">(</span><span class="s2">"s"</span> <span class="o">*</span> <span class="mi">200</span> <span class="o">+</span> <span class="s2">"-1/h1"</span><span class="p">))</span> <span class="o">&lt;=</span> <span class="mi">128</span>
 <span class="go">True</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -825,15 +827,15 @@ stores that key on whatever draft stays, so a second release reuses it.</p>
 <dt class="sig sig-object py" id="liaise.release.error_text">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">error_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">error</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#error_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.error_text" title="Link to this definition">#</a></dt>
 <dd><p>How liaise names an exception it recovered from: its class, then its message.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">error_text</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">"no such channel"</span><span class="p">))</span>
+<span class="go">'ValueError: no such channel'</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">error_text</span><span class="p">(</span><span class="ne">ValueError</span><span class="p">(</span><span class="s2">"no such channel"</span><span class="p">))</span>
-<span class="go">'ValueError: no such channel'</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -877,47 +879,47 @@ unkeyed, as before, and liaise never writes correspond’s own data root.</p>
 <dt class="sig sig-object py" id="liaise.release.github_repo">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">github_repo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#github_repo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.github_repo" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">owner/repo</span></code>, lower-cased, of the repository a GitHub reference names: itself or one of its issues.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">github_repo</span><span class="p">(</span><span class="s2">"github:Example/App#12"</span><span class="p">),</span> <span class="n">github_repo</span><span class="p">(</span><span class="s2">"github:example/app"</span><span class="p">)</span>
 <span class="go">('example/app', 'example/app')</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">github_repo</span><span class="p">(</span><span class="s2">"webinbox:example-site"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
 <span class="go">True</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Optional</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.release.next_attempt_key">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">next_attempt_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#next_attempt_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.next_attempt_key" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">key</span></code> for the message’s next attempt: <code class="docutils literal notranslate"><span class="pre">~2</span></code> added, or its attempt number raised.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12"</span><span class="p">),</span> <span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12~2"</span><span class="p">))</span>
+<span class="go">example/h3f9a0c12~2 example/h3f9a0c12~3</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12"</span><span class="p">),</span> <span class="n">next_attempt_key</span><span class="p">(</span><span class="s2">"example/h3f9a0c12~2"</span><span class="p">))</span>
-<span class="go">example/h3f9a0c12~2 example/h3f9a0c12~3</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="liaise.release.outbox_key">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">outbox_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">case_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">held</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#outbox_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.outbox_key" title="Link to this definition">#</a></dt>
 <dd><p>The key of an outbox item’s release: <code class="docutils literal notranslate"><span class="pre">&lt;case&gt;/&lt;held</span> <span class="pre">id&gt;</span></code>, the same on every try.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">outbox_key</span><span class="p">(</span><span class="s2">"example"</span><span class="p">,</span> <span class="s2">"h3f9a0c12"</span><span class="p">))</span>
+<span class="go">example/h3f9a0c12</span>
+</pre></div>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">outbox_key</span><span class="p">(</span><span class="s2">"example"</span><span class="p">,</span> <span class="s2">"h3f9a0c12"</span><span class="p">))</span>
-<span class="go">example/h3f9a0c12</span>
-</pre></div>
-</div>
 </dd></dl>
 
 <dl class="py function">
@@ -967,17 +969,17 @@ command that takes it off.</p>
 <dt class="sig sig-object py" id="liaise.release.sendable_ref">
 <span class="sig-prename descclassname"><span class="pre">liaise.release.</span></span><span class="sig-name descname"><span class="pre">sendable_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/release.html#sendable_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.release.sendable_ref" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">ref</span></code> as a GitHub issue or repository reference, stripped and lower-cased.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">sendable_ref</span><span class="p">(</span><span class="s2">" github:Example/App#12 "</span><span class="p">)</span>
 <span class="go">'github:example/app#12'</span>
 </pre></div>
 </div>
 <p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for anything else: another channel, a malformed reference, or an
 issue number that is not a positive whole number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -987,16 +989,16 @@ issue number that is not a positive whole number.</p>
 <p><code class="docutils literal notranslate"><span class="pre">serial</span></code> is how many entries the case had when the message was judged, so two sends
 of the same text on one case differ, while a tick that runs again over the same
 entries (after a crash) reuses the key and never posts twice.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">key</span> <span class="o">=</span> <span class="n">tick_send_key</span><span class="p">(</span><span class="s2">"app3"</span><span class="p">,</span> <span class="s2">"github:example/app#3"</span><span class="p">,</span> <span class="s2">"Fixed."</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">7</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"app3/"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">key</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">"/7"</span><span class="p">)</span>
 <span class="go">True</span>
 </pre></div>
 </div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">

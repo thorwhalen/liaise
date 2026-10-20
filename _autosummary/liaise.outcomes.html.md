@@ -213,4 +213,4 @@ to the reporter’s first notify address on one of `address_channels` (see
 Raises `ValueError` for an outcome kind outside the vocabulary.
 
 * **Return type:**
-  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[`Union`[[`Send`](#liaise.outcomes.Send), [`Transition`](#liaise.outcomes.Transition), [`NotifyOperator`](#liaise.outcomes.NotifyOperator), [`StoreDraft`](#liaise.outcomes.StoreDraft), [`Deliver`](#liaise.outcomes.Deliver), [`Defer`](#liaise.outcomes.Defer), [`DigestNote`](#liaise.outcomes.DigestNote)]]
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Send`](#liaise.outcomes.Send), [`Transition`](#liaise.outcomes.Transition), [`NotifyOperator`](#liaise.outcomes.NotifyOperator), [`StoreDraft`](#liaise.outcomes.StoreDraft), [`Deliver`](#liaise.outcomes.Deliver), [`Defer`](#liaise.outcomes.Defer), [`DigestNote`](#liaise.outcomes.DigestNote)]]
