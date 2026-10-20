@@ -86,7 +86,7 @@ roles = { pat = "partner" }
 | [`ReadinessPolicy`](#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](liaise.readiness.html.md#module-liaise.readiness)).                             |
 | [`ReviewPolicy`](#liaise.subjects.ReviewPolicy)([authors, repos, merge, ...])         | How a subject reviews the pull requests its partners open ([`liaise.review`](liaise.review.html.md#module-liaise.review)).              |
 | [`Subject`](#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                                        |
-| [`TriageConfig`](#liaise.subjects.TriageConfig)([enabled, label_prefix, max_turns])   | Whether and how a subject triages the cases that become ready together ([`liaise.triage`](liaise.triage.html.md#module-liaise.triage)). |
+| [`TriageConfig`](#liaise.subjects.TriageConfig)([enabled, label_prefix, ...])         | Whether and how a subject triages the cases that become ready together ([`liaise.triage`](liaise.triage.html.md#module-liaise.triage)). |
 | [`Workspace`](#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                                                         |
 
 ### Exceptions
@@ -400,14 +400,20 @@ the operator for any audience wider than them) or `send` (the subject waives tha
 * **Type:**
   What `policy.tainted_runs` may say
 
-### *class* liaise.subjects.TriageConfig(enabled=False, label_prefix='', max_turns=3)
+### *class* liaise.subjects.TriageConfig(enabled=False, label_prefix='', max_turns=3, ride_wait_states=('needs-partner', 'intake', 'working', 'paused'), ride_max_wait_days=7)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Whether and how a subject triages the cases that become ready together ([`liaise.triage`](liaise.triage.html.md#module-liaise.triage)).
 
 Off by default. `label_prefix` goes before the `kind:` / `size:` / `priority:`
-labels; `max_turns` caps the triage call.
+labels; `max_turns` caps the triage call. A case found to duplicate an open case
+rides with it (waits for it instead of running) while that case is in one of
+`ride_wait_states`, and for at most `ride_max_wait_days`.
+
+#### *property* ride_max_wait *: [timedelta](https://docs.python.org/3/library/datetime.html#datetime.timedelta)*
+
+How long a riding case waits for its lead before it is started on its own.
 
 ### liaise.subjects.UNBOUND_SLUG *= '(unbound)'*
 

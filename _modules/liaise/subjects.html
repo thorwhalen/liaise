@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=17aaaefc"></script>
+    <script src="../../_static/documentation_options.js?v=b3d22ae5"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -411,7 +411,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.20" />
+  <meta name="docsearch:version" content="0.1.21" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -753,6 +753,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">tomllib</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">types</span><span class="w"> </span><span class="kn">import</span> <span class="n">MappingProxyType</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Collection</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
@@ -938,12 +939,21 @@ window.runMermaid = runMermaid;</script>
 <span class="w">    </span><span class="sd">"""Whether and how a subject triages the cases that become ready together (:mod:`liaise.triage`).</span>
 
 <span class="sd">    Off by default. ``label_prefix`` goes before the ``kind:`` / ``size:`` / ``priority:``</span>
-<span class="sd">    labels; ``max_turns`` caps the triage call.</span>
+<span class="sd">    labels; ``max_turns`` caps the triage call. A case found to duplicate an open case</span>
+<span class="sd">    rides with it (waits for it instead of running) while that case is in one of</span>
+<span class="sd">    ``ride_wait_states``, and for at most ``ride_max_wait_days``.</span>
 <span class="sd">    """</span>
 
     <span class="n">enabled</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
     <span class="n">label_prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
-    <span class="n">max_turns</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span></div>
+    <span class="n">max_turns</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="n">ride_wait_states</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"needs-partner"</span><span class="p">,</span> <span class="s2">"intake"</span><span class="p">,</span> <span class="s2">"working"</span><span class="p">,</span> <span class="s2">"paused"</span><span class="p">)</span>
+    <span class="n">ride_max_wait_days</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">7</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">ride_max_wait</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">timedelta</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""How long a riding case waits for its lead before it is started on its own."""</span>
+        <span class="k">return</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ride_max_wait_days</span><span class="p">)</span></div>
 
 
 
@@ -1738,7 +1748,11 @@ window.runMermaid = runMermaid;</script>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_triage_from</span><span class="p">(</span><span class="n">raw</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">TriageConfig</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""``triage = true`` or a ``[triage]`` table (``enabled``, ``label_prefix``, ``max_turns``)."""</span>
+<span class="w">    </span><span class="sd">"""``triage = true`` or a ``[triage]`` table.</span>
+
+<span class="sd">    The table's keys are ``enabled``, ``label_prefix``, ``max_turns``,</span>
+<span class="sd">    ``ride_wait_states`` and ``ride_max_wait_days``.</span>
+<span class="sd">    """</span>
     <span class="n">value</span> <span class="o">=</span> <span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"triage"</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">TriageConfig</span><span class="p">(</span><span class="n">enabled</span><span class="o">=</span><span class="n">value</span><span class="p">)</span>
@@ -1748,6 +1762,20 @@ window.runMermaid = runMermaid;</script>
         <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
             <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: triage.max_turns must be a whole number, 1 or more, as in "</span>
             <span class="sa">f</span><span class="s2">"max_turns = 3; got </span><span class="si">{</span><span class="n">turns</span><span class="si">!r}</span><span class="s2">."</span>
+        <span class="p">)</span>
+    <span class="n">wait_days</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ride_max_wait_days"</span><span class="p">,</span> <span class="n">TriageConfig</span><span class="o">.</span><span class="n">ride_max_wait_days</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wait_days</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wait_days</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">wait_days</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: triage.ride_max_wait_days must be a whole number, 0 or more, as in "</span>
+            <span class="sa">f</span><span class="s2">"ride_max_wait_days = 7; got </span><span class="si">{</span><span class="n">wait_days</span><span class="si">!r}</span><span class="s2">."</span>
+        <span class="p">)</span>
+    <span class="n">wait_states</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ride_wait_states"</span><span class="p">,</span> <span class="n">TriageConfig</span><span class="o">.</span><span class="n">ride_wait_states</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">wait_states</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+        <span class="n">state</span> <span class="ow">in</span> <span class="n">CASE_STATES</span> <span class="k">for</span> <span class="n">state</span> <span class="ow">in</span> <span class="n">wait_states</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="n">ConfigError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: triage.ride_wait_states must be a list of case states, from "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">CASE_STATES</span><span class="p">)</span><span class="si">}</span><span class="s2">; got </span><span class="si">{</span><span class="n">wait_states</span><span class="si">!r}</span><span class="s2">."</span>
         <span class="p">)</span>
     <span class="n">prefix</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_prefix"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prefix</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
@@ -1760,6 +1788,8 @@ window.runMermaid = runMermaid;</script>
         <span class="p">),</span>
         <span class="n">label_prefix</span><span class="o">=</span><span class="n">prefix</span><span class="p">,</span>
         <span class="n">max_turns</span><span class="o">=</span><span class="n">turns</span><span class="p">,</span>
+        <span class="n">ride_wait_states</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">wait_states</span><span class="p">),</span>
+        <span class="n">ride_max_wait_days</span><span class="o">=</span><span class="n">wait_days</span><span class="p">,</span>
     <span class="p">)</span>
 
 

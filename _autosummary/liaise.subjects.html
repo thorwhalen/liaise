@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=17aaaefc"></script>
+    <script src="../_static/documentation_options.js?v=b3d22ae5"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -58,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.20" />
+  <meta name="docsearch:version" content="0.1.21" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -579,7 +579,7 @@ Every table has defaults, so a minimal subject file needs only:</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.Subject" title="liaise.subjects.Subject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subject</span></code></a>(slug, bindings, policy[, ...])</p></td>
 <td><p>A resolved subject: <code class="docutils literal notranslate"><span class="pre">subjects/&lt;slug&gt;.toml</span></code> with every default applied.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.TriageConfig" title="liaise.subjects.TriageConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TriageConfig</span></code></a>([enabled, label_prefix, max_turns])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.subjects.TriageConfig" title="liaise.subjects.TriageConfig"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TriageConfig</span></code></a>([enabled, label_prefix, ...])</p></td>
 <td><p>Whether and how a subject triages the cases that become ready together (<a class="reference internal" href="liaise.triage.html#module-liaise.triage" title="liaise.triage"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.triage</span></code></a>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.subjects.Workspace" title="liaise.subjects.Workspace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Workspace</span></code></a>([kind, path])</p></td>
@@ -1024,13 +1024,21 @@ the operator for any audience wider than them) or <code class="docutils literal 
 
 <dl class="py class">
 <dt class="sig sig-object py" id="liaise.subjects.TriageConfig">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">TriageConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_turns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#TriageConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.TriageConfig" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">liaise.subjects.</span></span><span class="sig-name descname"><span class="pre">TriageConfig</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">enabled</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_turns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ride_wait_states</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('needs-partner',</span> <span class="pre">'intake',</span> <span class="pre">'working',</span> <span class="pre">'paused')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ride_max_wait_days</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">7</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/subjects.html#TriageConfig"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.subjects.TriageConfig" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Whether and how a subject triages the cases that become ready together (<a class="reference internal" href="liaise.triage.html#module-liaise.triage" title="liaise.triage"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.triage</span></code></a>).</p>
 <p>Off by default. <code class="docutils literal notranslate"><span class="pre">label_prefix</span></code> goes before the <code class="docutils literal notranslate"><span class="pre">kind:</span></code> / <code class="docutils literal notranslate"><span class="pre">size:</span></code> / <code class="docutils literal notranslate"><span class="pre">priority:</span></code>
-labels; <code class="docutils literal notranslate"><span class="pre">max_turns</span></code> caps the triage call.</p>
+labels; <code class="docutils literal notranslate"><span class="pre">max_turns</span></code> caps the triage call. A case found to duplicate an open case
+rides with it (waits for it instead of running) while that case is in one of
+<code class="docutils literal notranslate"><span class="pre">ride_wait_states</span></code>, and for at most <code class="docutils literal notranslate"><span class="pre">ride_max_wait_days</span></code>.</p>
 <dl class="field-list simple">
 </dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="liaise.subjects.TriageConfig.ride_max_wait">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">ride_max_wait</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.timedelta" title="(in Python v3.15)"><span class="pre">timedelta</span></a></span><a class="headerlink" href="#liaise.subjects.TriageConfig.ride_max_wait" title="Link to this definition">#</a></dt>
+<dd><p>How long a riding case waits for its lead before it is started on its own.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py data">
@@ -1320,7 +1328,10 @@ closely.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.TAINTED_RUNS"><code class="docutils literal notranslate"><span class="pre">TAINTED_RUNS</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.TriageConfig"><code class="docutils literal notranslate"><span class="pre">TriageConfig</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.TriageConfig"><code class="docutils literal notranslate"><span class="pre">TriageConfig</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.TriageConfig.ride_max_wait"><code class="docutils literal notranslate"><span class="pre">TriageConfig.ride_max_wait</span></code></a></li>
+</ul>
+</li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.UNBOUND_SLUG"><code class="docutils literal notranslate"><span class="pre">UNBOUND_SLUG</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.WORKSPACE_KINDS"><code class="docutils literal notranslate"><span class="pre">WORKSPACE_KINDS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.subjects.Workspace"><code class="docutils literal notranslate"><span class="pre">Workspace</span></code></a></li>

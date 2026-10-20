@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=17aaaefc"></script>
+    <script src="../_static/documentation_options.js?v=b3d22ae5"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -58,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.20" />
+  <meta name="docsearch:version" content="0.1.21" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -538,12 +538,6 @@ tell a running tick from a finished or an interrupted one. <a class="reference i
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RIDES_OPEN_KEY" title="liaise.tick.RIDES_OPEN_KEY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RIDES_OPEN_KEY</span></code></a></p></td>
 <td><p>The grouping-note key marking a case that rides with an already-open duplicate.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.RIDE_WAIT_STATES" title="liaise.tick.RIDE_WAIT_STATES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RIDE_WAIT_STATES</span></code></a></p></td>
-<td><p>The lead states a riding case keeps waiting through; any other (but deployed) releases it.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.tick.RIDE_MAX_WAIT" title="liaise.tick.RIDE_MAX_WAIT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RIDE_MAX_WAIT</span></code></a></p></td>
-<td><p>How long a riding case waits for its lead before it is started on its own.</p></td>
-</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#liaise.tick.DAILY_CAP_PRIORITY" title="liaise.tick.DAILY_CAP_PRIORITY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DAILY_CAP_PRIORITY</span></code></a></p></td>
 <td><p>news for the operator, not a call to act.</p></td>
 </tr>
@@ -813,18 +807,6 @@ a rate limit, a login, an exception) counts nothing, and the case waits for the 
 <dt class="sig sig-object py" id="liaise.tick.RIDES_OPEN_KEY">
 <span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RIDES_OPEN_KEY</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'rides_open'</span></span><a class="headerlink" href="#liaise.tick.RIDES_OPEN_KEY" title="Link to this definition">#</a></dt>
 <dd><p>The grouping-note key marking a case that rides with an already-open duplicate.</p>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="liaise.tick.RIDE_MAX_WAIT">
-<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RIDE_MAX_WAIT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">datetime.timedelta(days=7)</span></span><a class="headerlink" href="#liaise.tick.RIDE_MAX_WAIT" title="Link to this definition">#</a></dt>
-<dd><p>How long a riding case waits for its lead before it is started on its own.</p>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="liaise.tick.RIDE_WAIT_STATES">
-<span class="sig-prename descclassname"><span class="pre">liaise.tick.</span></span><span class="sig-name descname"><span class="pre">RIDE_WAIT_STATES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('needs-partner',</span> <span class="pre">'intake',</span> <span class="pre">'working',</span> <span class="pre">'paused')</span></span><a class="headerlink" href="#liaise.tick.RIDE_WAIT_STATES" title="Link to this definition">#</a></dt>
-<dd><p>The lead states a riding case keeps waiting through; any other (but deployed) releases it.</p>
 </dd></dl>
 
 <dl class="py data">
@@ -1166,8 +1148,6 @@ latest), the drafts waiting for the operator, the messages held in the outbox, a
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.PR_ONLY_DELIVERY"><code class="docutils literal notranslate"><span class="pre">PR_ONLY_DELIVERY</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.REQUEST_WORK"><code class="docutils literal notranslate"><span class="pre">REQUEST_WORK</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RIDES_OPEN_KEY"><code class="docutils literal notranslate"><span class="pre">RIDES_OPEN_KEY</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RIDE_MAX_WAIT"><code class="docutils literal notranslate"><span class="pre">RIDE_MAX_WAIT</span></code></a></li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RIDE_WAIT_STATES"><code class="docutils literal notranslate"><span class="pre">RIDE_WAIT_STATES</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_DEPLOY_FAILED"><code class="docutils literal notranslate"><span class="pre">RUN_DEPLOY_FAILED</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_ID_SUFFIX_DIGITS"><code class="docutils literal notranslate"><span class="pre">RUN_ID_SUFFIX_DIGITS</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.tick.RUN_ISSUE_CLOSED"><code class="docutils literal notranslate"><span class="pre">RUN_ISSUE_CLOSED</span></code></a></li>

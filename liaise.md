@@ -1,4 +1,4 @@
-> built 2026-10-20 15:17 UTC from 8827eee (main) · liaise 0.1.20. Details: build_info.json
+> built 2026-10-20 17:46 UTC from fe7cda2 (main) · liaise 0.1.21. Details: build_info.json
 
 # index.html.md
 
@@ -9850,7 +9850,7 @@ roles = { pat = "partner" }
 | [`ReadinessPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.ReadinessPolicy)([quiet_minutes, go_minutes, ...])  | When a case is ready to dispatch (see [`liaise.readiness`](_autosummary/liaise.readiness.html.md#module-liaise.readiness)).                             |
 | [`ReviewPolicy`](_autosummary/liaise.subjects.html.md#liaise.subjects.ReviewPolicy)([authors, repos, merge, ...])         | How a subject reviews the pull requests its partners open ([`liaise.review`](_autosummary/liaise.review.html.md#module-liaise.review)).              |
 | [`Subject`](_autosummary/liaise.subjects.html.md#liaise.subjects.Subject)(slug, bindings, policy[, ...])             | A resolved subject: `subjects/<slug>.toml` with every default applied.                                                                                        |
-| [`TriageConfig`](_autosummary/liaise.subjects.html.md#liaise.subjects.TriageConfig)([enabled, label_prefix, max_turns])   | Whether and how a subject triages the cases that become ready together ([`liaise.triage`](_autosummary/liaise.triage.html.md#module-liaise.triage)). |
+| [`TriageConfig`](_autosummary/liaise.subjects.html.md#liaise.subjects.TriageConfig)([enabled, label_prefix, ...])         | Whether and how a subject triages the cases that become ready together ([`liaise.triage`](_autosummary/liaise.triage.html.md#module-liaise.triage)). |
 | [`Workspace`](_autosummary/liaise.subjects.html.md#liaise.subjects.Workspace)([kind, path])                            | Where a subject's runs do their work.                                                                                                                         |
 
 ### Exceptions
@@ -10164,14 +10164,20 @@ the operator for any audience wider than them) or `send` (the subject waives tha
 * **Type:**
   What `policy.tainted_runs` may say
 
-### *class* liaise.subjects.TriageConfig(enabled=False, label_prefix='', max_turns=3)
+### *class* liaise.subjects.TriageConfig(enabled=False, label_prefix='', max_turns=3, ride_wait_states=('needs-partner', 'intake', 'working', 'paused'), ride_max_wait_days=7)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Whether and how a subject triages the cases that become ready together ([`liaise.triage`](_autosummary/liaise.triage.html.md#module-liaise.triage)).
 
 Off by default. `label_prefix` goes before the `kind:` / `size:` / `priority:`
-labels; `max_turns` caps the triage call.
+labels; `max_turns` caps the triage call. A case found to duplicate an open case
+rides with it (waits for it instead of running) while that case is in one of
+`ride_wait_states`, and for at most `ride_max_wait_days`.
+
+#### *property* ride_max_wait *: [timedelta](https://docs.python.org/3/library/datetime.html#datetime.timedelta)*
+
+How long a riding case waits for its lead before it is started on its own.
 
 ### liaise.subjects.UNBOUND_SLUG *= '(unbound)'*
 
@@ -10646,8 +10652,6 @@ tell a running tick from a finished or an interrupted one. [`status_lines()`](_a
 | [`TRIAGED_EVENT`](_autosummary/liaise.tick.html.md#liaise.tick.TRIAGED_EVENT)            | a verdict applied; a case grouped under a lead; a grouped case settled once its lead is live.                                                                                  |
 | [`GROUP_LIVE_MESSAGE`](_autosummary/liaise.tick.html.md#liaise.tick.GROUP_LIVE_MESSAGE)       | What a grouped case is told once the case carrying it is live; `{ref}` names that case.                                                                                        |
 | [`RIDES_OPEN_KEY`](_autosummary/liaise.tick.html.md#liaise.tick.RIDES_OPEN_KEY)           | The grouping-note key marking a case that rides with an already-open duplicate.                                                                                                |
-| [`RIDE_WAIT_STATES`](_autosummary/liaise.tick.html.md#liaise.tick.RIDE_WAIT_STATES)         | The lead states a riding case keeps waiting through; any other (but deployed) releases it.                                                                                     |
-| [`RIDE_MAX_WAIT`](_autosummary/liaise.tick.html.md#liaise.tick.RIDE_MAX_WAIT)            | How long a riding case waits for its lead before it is started on its own.                                                                                                     |
 | [`DAILY_CAP_PRIORITY`](_autosummary/liaise.tick.html.md#liaise.tick.DAILY_CAP_PRIORITY)       | news for the operator, not a call to act.                                                                                                                                      |
 | [`SEND_REFUSED_CAUSE`](_autosummary/liaise.tick.html.md#liaise.tick.SEND_REFUSED_CAUSE)       | What a notification names a failed send by when the channel gave no error kind.                                                                                                |
 | [`RUN_STARTED`](_autosummary/liaise.tick.html.md#liaise.tick.RUN_STARTED)              | a start, a start that failed, a collection...                                                                                                                                  |
@@ -10807,14 +10811,6 @@ The permission a case’s reporter needs for the tick to start work on it.
 ### liaise.tick.RIDES_OPEN_KEY *= 'rides_open'*
 
 The grouping-note key marking a case that rides with an already-open duplicate.
-
-### liaise.tick.RIDE_MAX_WAIT *= datetime.timedelta(days=7)*
-
-How long a riding case waits for its lead before it is started on its own.
-
-### liaise.tick.RIDE_WAIT_STATES *= ('needs-partner', 'intake', 'working', 'paused')*
-
-The lead states a riding case keeps waiting through; any other (but deployed) releases it.
 
 ### liaise.tick.RUN_DEPLOY_FAILED *= 'deploy_failed'*
 
@@ -11581,18 +11577,16 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-10-20 15:17 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/8827eee0b44eb50f47ea7ef859ca45d47c647d95"><code>8827eee</code></a> on branch <code>main</code>, for **liaise 0.1.20** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 17:46 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/fe7cda2d65ecede4565d9c933d849833a1b63864"><code>fe7cda2</code></a> on branch <code>main</code>, for **liaise 0.1.21** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.1.20) is behind the latest release on PyPI (0.1.21): `pip install liaise` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/8827eee0b44eb50f47ea7ef859ca45d47c647d95"><code>8827eee0b44eb50f47ea7ef859ca45d47c647d95</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/fe7cda2d65ecede4565d9c933d849833a1b63864"><code>fe7cda2d65ecede4565d9c933d849833a1b63864</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -11603,15 +11597,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/39446632392">39446632392</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/39468539233">39468539233</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>8827eee0b44eb50f47ea7ef859ca45d47c647d95</code> (in the history of the built commit) |
+| Event commit | <code>fe7cda2d65ecede4565d9c933d849833a1b63864</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.21  |
+| epythet  | 0.2.22  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -11630,14 +11624,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.21/">0.1.21</a>, newer than the documented version (0.1.20).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.21/">0.1.21</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 8827eee0b44eb50f47ea7ef859ca45d47c647d95
-pip install "epythet==0.2.21"
+git checkout fe7cda2d65ecede4565d9c933d849833a1b63864
+pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 
