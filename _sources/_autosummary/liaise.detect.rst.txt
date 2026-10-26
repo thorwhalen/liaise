@@ -81,7 +81,6 @@ liaise.detect
       Normalised
       PathRule
       Scan
-      SecretRule
       View
    
    .. rubric:: Exceptions
