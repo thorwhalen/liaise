@@ -16,6 +16,7 @@ authors = [
 ]
 license = "MIT"
 dependencies = [
+    "config2py>=0.1.75",  # SECRET_RULES, the shared secret table
     "correspond>=0.0.6",
     "cw",
     "dol",
