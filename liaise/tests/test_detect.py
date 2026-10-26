@@ -1121,3 +1121,9 @@ def test_a_glued_term_has_the_fingerprint_the_term_has_anywhere():
 def test_a_srcset_candidate_is_read_once_with_its_attribute():
     text = '<img srcset="https://a.example.net/x.png 1x, https://a.example.net/HeronT.png 2x">'
     assert len(_link_terms(text)) == 1
+
+
+def test_the_shared_secret_table_still_holds_the_0_1_shapes_liaise_legacy_replays():
+    patterns = {rule.pattern for rule in SECRET_RULES}
+    assert set(TOKEN_SHAPES) <= patterns
+    assert PRIVATE_KEY_PATTERN in patterns

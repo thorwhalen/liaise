@@ -74,7 +74,7 @@ module imports neither acquaint nor correspond: ``disclosure`` is the JSON of
 **Sources.** The secret rules after the six 0.1 shapes and the private-key header adapt
 the regular expressions of the rules with the same or similar ids in gitleaks' default
 configuration (``config/gitleaks.toml``, MIT licence, copyright (c) 2019 Zachary Rice;
-the notice is reproduced beside :data:`SECRET_RULES`): capturing and trailing-terminator
+the notice is reproduced beside the table in config2py, :data:`config2py.SECRET_RULES`): capturing and trailing-terminator
 groups are dropped, since the scan adds its own word boundary, unescaped dots are
 escaped and unbounded repetitions are bounded. ``data/confusables.json`` is a selection
 of Unicode's confusables data (UTS #39, Unicode License v3; the notice travels in the
@@ -107,6 +107,9 @@ from itertools import compress, repeat
 from pathlib import Path
 from typing import Optional, Union
 from urllib.parse import unquote
+
+from config2py import SECRET_RULES as SHARED_SECRET_RULES
+from config2py import SecretRule
 
 #: The kinds a finding can have, in the order :data:`DFLT_DETECTORS` looks for them.
 KINDS = ("secret", "canary", "vocabulary", "exfiltration", "personal", "third_party")
@@ -1095,171 +1098,24 @@ def _holds_a_literal(
 # ---- secret ----
 
 
-@dataclass(frozen=True)
-class SecretRule:
-    """A secret's shape: ``rule`` names it in findings, ``pattern`` is its expression.
-
-    ``literals``: strings one of which every match contains (in case-folded text, with
-    ``ignore_case``). A text holding none is not scanned for the rule, which matters because
-    a pattern that starts at a word boundary cannot use the regular-expression engine's
-    fast search for a literal prefix. Empty: always scanned.
-
-    ``word_start``: a match must start a word. ``wrappable``: the rule is also looked for in
-    the message with line breaks, invisible characters and emphasis marks removed, so a
-    token split by them is found; its word boundary is then checked against the message.
-    A wrappable pattern must not fail after an unbounded repetition, or that scan, which
-    has no word boundary to anchor it, turns quadratic.
-    """
-
-    rule: str
-    pattern: str
-    literals: tuple[str, ...] = ()
-    word_start: bool = True
-    wrappable: bool = True
-    ignore_case: bool = False
-
-    def may_match(self, text: str) -> bool:
-        """Whether ``text`` holds one of :attr:`literals`, or the rule has none."""
-        return _holds_a_literal(text, self.literals, ignore_case=self.ignore_case)
-
-    @cached_property
-    def in_text(self) -> re.Pattern:
-        """The pattern as it is looked for in the message."""
-        return re.compile(rf"\b{self.pattern}" if self.word_start else self.pattern)
-
-    @cached_property
-    def in_stripped(self) -> re.Pattern:
-        """The pattern as it is looked for in the message with the strippable removed."""
-        return re.compile(self.pattern)
+@lru_cache(maxsize=None)
+def _in_text(rule: SecretRule) -> re.Pattern:
+    """``rule``'s pattern as it is looked for in the message."""
+    return re.compile(rf"\b{rule.pattern}" if rule.word_start else rule.pattern)
 
 
-# The rules after the 0.1 shapes adapt gitleaks' default configuration, under this notice:
-#
-#   MIT License
-#
-#   Copyright (c) 2019 Zachary Rice
-#
-#   Permission is hereby granted, free of charge, to any person obtaining a copy
-#   of this software and associated documentation files (the "Software"), to deal
-#   in the Software without restriction, including without limitation the rights
-#   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-#   copies of the Software, and to permit persons to whom the Software is
-#   furnished to do so, subject to the following conditions:
-#
-#   The above copyright notice and this permission notice shall be included in all
-#   copies or substantial portions of the Software.
-#
-#   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-#   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-#   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-#   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-#   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-#   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-#   SOFTWARE.
+@lru_cache(maxsize=None)
+def _in_stripped(rule: SecretRule) -> re.Pattern:
+    """``rule``'s pattern as it is looked for in the message with the strippable removed."""
+    return re.compile(rule.pattern)
 
-#: The secret rules :func:`secret_detector` uses by default: the 0.1 token shapes and
-#: private-key header, then distinctive-prefix rules adapted from gitleaks (the gitleaks id
-#: precedes each).
-SECRET_RULES: tuple[SecretRule, ...] = (
-    *(
-        SecretRule(rule, shape, literals)
-        for rule, shape, literals in zip(TOKEN_RULES, TOKEN_SHAPES, TOKEN_LITERALS)
-    ),
-    SecretRule(
-        "private-key",
-        PRIVATE_KEY_PATTERN,
-        ("-----BEGIN ",),
-        word_start=False,
-        wrappable=False,
-    ),
-    # gitlab-pat
-    SecretRule("gitlab-token", r"glpat-[\w-]{20}", ("glpat-",)),
-    # gcp-api-key
-    SecretRule("google-api-key", r"AIza[\w-]{35}", ("AIza",)),
-    # npm-access-token
-    SecretRule("npm-token", r"(?i:npm_[a-z0-9]{36})", ("npm_",), ignore_case=True),
-    # pypi-upload-token
-    SecretRule(
-        "pypi-token", r"pypi-AgEIcHlwaS5vcmc[\w-]{50,1000}", ("pypi-AgEIcHlwaS5vcmc",)
-    ),
-    # sendgrid-api-token
-    SecretRule("sendgrid-api-key", r"SG\.[A-Za-z0-9=_.-]{66}", ("SG.",)),
-    # age-secret-key
-    SecretRule(
-        "age-secret-key",
-        r"AGE-SECRET-KEY-1[QPZRY9X8GF2TVDW0S3JN54KHCE6MUA7L]{58}",
-        ("AGE-SECRET-KEY-1",),
-    ),
-    # telegram-bot-api-token, without its context words
-    SecretRule("telegram-bot-token", r"[0-9]{5,16}:A[\w-]{34}(?![\w-])", (":A",)),
-    # stripe-access-token
-    SecretRule(
-        "stripe-key",
-        r"(?:sk|rk)_(?:test|live|prod)_[A-Za-z0-9]{10,99}",
-        ("k_test_", "k_live_", "k_prod_"),
-    ),
-    # shopify-access-token
-    SecretRule("shopify-token", r"shpat_[a-fA-F0-9]{32}", ("shpat_",)),
-    # digitalocean-pat
-    SecretRule("digitalocean-token", r"dop_v1_[a-f0-9]{64}", ("dop_v1_",)),
-    # slack-webhook-url
-    SecretRule(
-        "slack-webhook",
-        r"(?:https?://)?hooks\.slack\.com/(?:services|workflows|triggers)"
-        r"/[A-Za-z0-9+/]{43,56}",
-        ("hooks.slack.com/",),
-    ),
-    # slack-app-token
-    SecretRule(
-        "slack-app-token",
-        r"(?i:xapp-\d-[A-Z0-9]{1,64}-\d{1,16}-[a-z0-9]{1,128})",
-        ("xapp-",),
-        ignore_case=True,
-    ),
-    # doppler-api-token
-    SecretRule("doppler-token", r"dp\.pt\.[A-Za-z0-9]{43}", ("dp.pt.",)),
-    # linear-api-key
-    SecretRule("linear-api-key", r"lin_api_[A-Za-z0-9]{40}", ("lin_api_",)),
-    # huggingface-organization-api-token
-    SecretRule("hugging-face-org-token", r"api_org_[A-Za-z]{34}", ("api_org_",)),
-    # aws-access-token, less the AKIA prefix the 0.1 rule has
-    SecretRule(
-        "aws-access-key-id",
-        r"(?:A3T[A-Z0-9]|ASIA|ABIA|ACCA)[A-Z2-7]{16}\b",
-        ("A3T", "ASIA", "ABIA", "ACCA"),
-    ),
-    # postman-api-token
-    SecretRule("postman-api-key", r"PMAK-[A-Fa-f0-9]{24}-[A-Fa-f0-9]{34}", ("PMAK-",)),
-    # grafana-service-account-token
-    SecretRule(
-        "grafana-service-account-token",
-        r"(?i:glsa_[a-z0-9]{32}_[a-f0-9]{8})",
-        ("glsa_",),
-        ignore_case=True,
-    ),
-    # perplexity-api-key
-    SecretRule("perplexity-api-key", r"pplx-[A-Za-z0-9]{48}", ("pplx-",)),
-    # sentry-user-token
-    SecretRule("sentry-user-token", r"sntryu_[a-f0-9]{64}", ("sntryu_",)),
-    # pulumi-api-token
-    SecretRule("pulumi-token", r"pul-[a-f0-9]{40}", ("pul-",)),
-    # vault-service-token
-    SecretRule("vault-token", r"hvs\.[\w-]{90,120}", ("hvs.",)),
-    # 1password-service-account-token
-    SecretRule(
-        "1password-service-account-token",
-        r"ops_eyJ[A-Za-z0-9+/]{250,}={0,3}",
-        ("ops_eyJ",),
-    ),
-    # jwt; not wrappable: its bounded parts would still make the unanchored scan slow
-    SecretRule(
-        "jwt",
-        r"ey[A-Za-z0-9]{17,4096}\.ey[A-Za-z0-9/\\_-]{17,4096}"
-        r"\.(?:[A-Za-z0-9/\\_-]{10,4096}={0,2})?",
-        (".ey",),
-        wrappable=False,
-    ),
-)
+
+#: The secret rules :func:`secret_detector` uses by default: config2py's shared table
+#: (:data:`config2py.SECRET_RULES`, where the gitleaks notice is reproduced beside it): the
+#: 0.1 token shapes and private-key header, then distinctive-prefix rules adapted from
+#: gitleaks. :data:`TOKEN_SHAPES` and :data:`PRIVATE_KEY_PATTERN` above stay as 0.1 had
+#: them, for :mod:`liaise.legacy`'s replay; a test holds the table to them.
+SECRET_RULES: tuple[SecretRule, ...] = SHARED_SECRET_RULES
 
 _WORD_CHAR = re.compile(r"\w")
 
@@ -1285,7 +1141,7 @@ def secret_detector(rules: Iterable[SecretRule] = SECRET_RULES) -> Detector:
         for reading in readings:
             for rule in rules:
                 if rule.may_match(reading.text):
-                    for match in rule.in_text.finditer(reading.text):
+                    for match in _in_text(rule).finditer(reading.text):
                         keep(rule.rule, *reading.source_span(*match.span()))
         wrappable = [rule for rule in rules if rule.wrappable]
         for reading in readings:
@@ -1295,7 +1151,7 @@ def secret_detector(rules: Iterable[SecretRule] = SECRET_RULES) -> Detector:
             for rule in wrappable:
                 if not rule.may_match(stripped.text):
                     continue
-                for match in rule.in_stripped.finditer(stripped.text):
+                for match in _in_stripped(rule).finditer(stripped.text):
                     start, end = stripped.source_span(*match.span())
                     if rule.word_start and start and _WORD_CHAR.match(text[start - 1]):
                         continue
