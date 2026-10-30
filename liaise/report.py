@@ -30,7 +30,9 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   **Compared** counts the shadow messages that carry that counterfactual; **shadow
   agreement** is the share of them where the policy and 0.1 are in the same flow class
   (:func:`liaise.legacy.flow_class`: sent, or held back), and a **missed finding** is one
-  0.1 would have sent where the policy found severity :data:`MISSED_SEVERITY` or above.
+  0.1 would have sent where the policy found severity :data:`MISSED_SEVERITY` or above in a
+  concern it would not release on a click (a finding routed ``approve``, such as a link to an
+  unfamiliar host, does not count: the operator can send it as written).
   Entries recorded before the counterfactual was are shadow but not compared.
 
 - **hook overrides**: writes the Claude Code hook (:mod:`liaise.hook`) asked the operator
@@ -56,7 +58,7 @@ from liaise.legacy import flow_class
 from liaise.ledger import Ledger
 from liaise.model import LedgerEntry
 from liaise.outbox import HOLD
-from liaise.policy import DELAY, SEND, SHADOW
+from liaise.policy import APPROVE, DELAY, SEND, SHADOW
 
 #: Decision 11: the fewest messages shadow mode must have seen before enforcing.
 MIN_SHADOW_MESSAGES = 30
@@ -152,13 +154,19 @@ def _records(
         yield message.subject, message.entries
 
 
-def _max_severity(detail: Mapping[str, Any]) -> int:
-    """The highest severity of a finding among a gate entry's concerns, 0 when none says."""
+def _max_severity(detail: Mapping[str, Any], *, hard_only: bool = False) -> int:
+    """The highest severity of a finding among a gate entry's concerns, 0 when none says.
+
+    ``hard_only`` skips the concerns routed ``approve`` (click-to-release: the operator can
+    send as written), so only what the policy would have revised, refused or otherwise not
+    let through on a click counts.
+    """
     severities = [
         finding.get("severity")
         for key in ("concerns", "settled")
         for concern in detail.get(key) or ()
         if isinstance(concern, Mapping)
+        and not (hard_only and concern.get("flow") == APPROVE)
         for finding in concern.get("findings") or ()
         if isinstance(finding, Mapping)
     ]
@@ -231,7 +239,7 @@ def gate_report(
                         )
                         counts["missed"] += (
                             flow_class(legacy) == flow_class(SEND)
-                            and _max_severity(detail) >= MISSED_SEVERITY
+                            and _max_severity(detail, hard_only=True) >= MISSED_SEVERITY
                         )
                 for rule in fired:
                     rules.setdefault(rule, _empty_rule())["fired"] += 1
