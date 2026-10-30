@@ -37,14 +37,14 @@ def _concern(rule, flow="approve"):
     }
 
 
-def _judged(minutes, *, text, rules=(), decision=None, mode="enforce", error=None, legacy=None, severity=None):
+def _judged(minutes, *, text, rules=(), decision=None, mode="enforce", error=None, legacy=None, severity=None, concern_flow="approve"):
     """A first judgement; ``legacy`` is 0.1's counterfactual flow, when the gate recorded one."""
     flow = "approve" if rules else "send"
     decision = decision or ("divert" if rules else "send")
     detail = {
         "decision": decision,
         "flow": flow,
-        "concerns": [_concern(rule) for rule in rules],
+        "concerns": [_concern(rule, concern_flow) for rule in rules],
         "settled": [],
         "verdict": {"flow": flow, "mode": mode},
         "approval": None,
@@ -235,7 +235,7 @@ def test_shadow_agreement_is_the_share_in_the_same_flow_class_as_0_1():
         _judged(0, text="a", mode="shadow", legacy="send"),  # both send: agree
         _judged(1, text="b", rules=("secrets",), mode="shadow", legacy="approve"),  # both held: agree
         _judged(2, text="c", rules=("irreversibility",), mode="shadow", legacy="send", severity=2),  # disagree
-        _judged(3, text="d", rules=("audience",), mode="shadow", legacy="send", severity=4),  # a missed finding
+        _judged(3, text="d", rules=("audience",), mode="shadow", legacy="send", severity=4, concern_flow="refuse"),  # a missed finding
         _judged(4, text="e", mode="enforce", legacy="approve"),  # not shadow: not compared
         _judged(5, text="f", mode="shadow"),  # before the counterfactual: shadow, not compared
     ]
@@ -249,10 +249,19 @@ def test_shadow_agreement_is_the_share_in_the_same_flow_class_as_0_1():
     assert "missed findings (0.1 would have sent, severity 4 or above): 1" in printed
 
 
+def test_a_click_to_release_finding_is_not_a_missed_finding():
+    """Decision 11 (#62): an approve-routed severity-4 finding (e.g. a link to an unknown
+    host) is something the operator can send as written, so it does not block enforcing."""
+    link = _judged(0, text="l", rules=("link-host",), mode="shadow", legacy="send", severity=4)
+    refused = _judged(1, text="r", rules=("secrets",), mode="shadow", legacy="send", severity=4, concern_flow="refuse")
+    assert gate_report(_ledger([link]))["missed_high_severity"] == 0
+    assert gate_report(_ledger([link, refused]))["missed_high_severity"] == 1
+
+
 def test_the_rollout_line_uses_the_compared_shadow_messages():
     clean = [_judged(i, text=f"m{i}", mode="shadow", legacy="send") for i in range(MIN_SHADOW_MESSAGES)]
     assert gate_report(_ledger(clean))["enforce"]["recommended"] is True
-    missed = clean + [_judged(99, text="x", rules=("secrets",), mode="shadow", legacy="send", severity=5)]
+    missed = clean + [_judged(99, text="x", rules=("secrets",), mode="shadow", legacy="send", severity=5, concern_flow="refuse")]
     enforce = gate_report(_ledger(missed))["enforce"]
     assert enforce["recommended"] is False and "1 missed finding" in enforce["reason"]
     few = gate_report(_ledger(clean[:-1] + [_judged(98, text="y", mode="shadow")]))["enforce"]
