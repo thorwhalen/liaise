@@ -41,7 +41,7 @@
   <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../../_static/documentation_options.js?v=842aa08f"></script>
+    <script src="../../_static/documentation_options.js?v=20522496"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -411,7 +411,7 @@ window.runMermaid = runMermaid;</script>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.22" />
+  <meta name="docsearch:version" content="0.1.23" />
   
     
     <script src="../../_static/searchtools.js"></script>
@@ -744,7 +744,9 @@ window.runMermaid = runMermaid;</script>
 <span class="sd">  **Compared** counts the shadow messages that carry that counterfactual; **shadow</span>
 <span class="sd">  agreement** is the share of them where the policy and 0.1 are in the same flow class</span>
 <span class="sd">  (:func:`liaise.legacy.flow_class`: sent, or held back), and a **missed finding** is one</span>
-<span class="sd">  0.1 would have sent where the policy found severity :data:`MISSED_SEVERITY` or above.</span>
+<span class="sd">  0.1 would have sent where the policy found severity :data:`MISSED_SEVERITY` or above in a</span>
+<span class="sd">  concern it would not release on a click (a finding routed ``approve``, such as a link to an</span>
+<span class="sd">  unfamiliar host, does not count: the operator can send it as written).</span>
 <span class="sd">  Entries recorded before the counterfactual was are shadow but not compared.</span>
 
 <span class="sd">- **hook overrides**: writes the Claude Code hook (:mod:`liaise.hook`) asked the operator</span>
@@ -770,7 +772,7 @@ window.runMermaid = runMermaid;</script>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.ledger</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ledger</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.model</span><span class="w"> </span><span class="kn">import</span> <span class="n">LedgerEntry</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">liaise.outbox</span><span class="w"> </span><span class="kn">import</span> <span class="n">HOLD</span>
-<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">DELAY</span><span class="p">,</span> <span class="n">SEND</span><span class="p">,</span> <span class="n">SHADOW</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">liaise.policy</span><span class="w"> </span><span class="kn">import</span> <span class="n">APPROVE</span><span class="p">,</span> <span class="n">DELAY</span><span class="p">,</span> <span class="n">SEND</span><span class="p">,</span> <span class="n">SHADOW</span>
 
 <span class="c1">#: Decision 11: the fewest messages shadow mode must have seen before enforcing.</span>
 <span class="n">MIN_SHADOW_MESSAGES</span> <span class="o">=</span> <span class="mi">30</span>
@@ -866,13 +868,19 @@ window.runMermaid = runMermaid;</script>
         <span class="k">yield</span> <span class="n">message</span><span class="o">.</span><span class="n">subject</span><span class="p">,</span> <span class="n">message</span><span class="o">.</span><span class="n">entries</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">_max_severity</span><span class="p">(</span><span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">"""The highest severity of a finding among a gate entry's concerns, 0 when none says."""</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_max_severity</span><span class="p">(</span><span class="n">detail</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">hard_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""The highest severity of a finding among a gate entry's concerns, 0 when none says.</span>
+
+<span class="sd">    ``hard_only`` skips the concerns routed ``approve`` (click-to-release: the operator can</span>
+<span class="sd">    send as written), so only what the policy would have revised, refused or otherwise not</span>
+<span class="sd">    let through on a click counts.</span>
+<span class="sd">    """</span>
     <span class="n">severities</span> <span class="o">=</span> <span class="p">[</span>
         <span class="n">finding</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"severity"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"concerns"</span><span class="p">,</span> <span class="s2">"settled"</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">concern</span> <span class="ow">in</span> <span class="n">detail</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">or</span> <span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">concern</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">hard_only</span> <span class="ow">and</span> <span class="n">concern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"flow"</span><span class="p">)</span> <span class="o">==</span> <span class="n">APPROVE</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">finding</span> <span class="ow">in</span> <span class="n">concern</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"findings"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">()</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">finding</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">)</span>
     <span class="p">]</span>
@@ -947,7 +955,7 @@ window.runMermaid = runMermaid;</script>
                         <span class="p">)</span>
                         <span class="n">counts</span><span class="p">[</span><span class="s2">"missed"</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span>
                             <span class="n">flow_class</span><span class="p">(</span><span class="n">legacy</span><span class="p">)</span> <span class="o">==</span> <span class="n">flow_class</span><span class="p">(</span><span class="n">SEND</span><span class="p">)</span>
-                            <span class="ow">and</span> <span class="n">_max_severity</span><span class="p">(</span><span class="n">detail</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MISSED_SEVERITY</span>
+                            <span class="ow">and</span> <span class="n">_max_severity</span><span class="p">(</span><span class="n">detail</span><span class="p">,</span> <span class="n">hard_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">MISSED_SEVERITY</span>
                         <span class="p">)</span>
                 <span class="k">for</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">fired</span><span class="p">:</span>
                     <span class="n">rules</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">rule</span><span class="p">,</span> <span class="n">_empty_rule</span><span class="p">())[</span><span class="s2">"fired"</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>

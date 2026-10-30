@@ -44,7 +44,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
 
-    <script src="../_static/documentation_options.js?v=842aa08f"></script>
+    <script src="../_static/documentation_options.js?v=20522496"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -58,7 +58,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.22" />
+  <meta name="docsearch:version" content="0.1.23" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -451,7 +451,9 @@ each verdict the gate records what liaise 0.1 would have decided (<a class="refe
 <strong>Compared</strong> counts the shadow messages that carry that counterfactual; **shadow
 agreement** is the share of them where the policy and 0.1 are in the same flow class
 (<a class="reference internal" href="liaise.legacy.html#liaise.legacy.flow_class" title="liaise.legacy.flow_class"><code class="xref py py-func docutils literal notranslate"><span class="pre">liaise.legacy.flow_class()</span></code></a>: sent, or held back), and a <strong>missed finding</strong> is one
-0.1 would have sent where the policy found severity <a class="reference internal" href="#liaise.report.MISSED_SEVERITY" title="liaise.report.MISSED_SEVERITY"><code class="xref py py-data docutils literal notranslate"><span class="pre">MISSED_SEVERITY</span></code></a> or above.
+0.1 would have sent where the policy found severity <a class="reference internal" href="#liaise.report.MISSED_SEVERITY" title="liaise.report.MISSED_SEVERITY"><code class="xref py py-data docutils literal notranslate"><span class="pre">MISSED_SEVERITY</span></code></a> or above in a
+concern it would not release on a click (a finding routed <code class="docutils literal notranslate"><span class="pre">approve</span></code>, such as a link to an
+unfamiliar host, does not count: the operator can send it as written).
 Entries recorded before the counterfactual was are shadow but not compared.</p></li>
 <li><p><strong>hook overrides</strong>: writes the Claude Code hook (<a class="reference internal" href="liaise.hook.html#module-liaise.hook" title="liaise.hook"><code class="xref py py-mod docutils literal notranslate"><span class="pre">liaise.hook</span></code></a>) asked the operator
 about and the operator let run, how many of them it could not read, and the rules among

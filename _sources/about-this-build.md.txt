@@ -5,19 +5,19 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-10-26 09:54 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/2f32f870822d8b578aff1566fd50f0ee05cf0ff4"><code>2f32f87</code></a> on branch <code>main</code>, for **liaise 0.1.22** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-30 13:37 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/b3ac219d975552e7d3b2c20265d7464dcbd00b16"><code>b3ac219</code></a> on branch <code>main</code>, for **liaise 0.1.23** (from <code>pyproject.toml</code>).
 
 :::{warning}
 The documentation and the package may be misaligned:
 
-- The documented version (0.1.22) is behind the latest release on PyPI (0.1.23): `pip install liaise` gives newer code than these docs describe.
+- The documented version (0.1.23) is behind the latest release on PyPI (0.1.24): `pip install liaise` gives newer code than these docs describe.
 :::
 
 ## Source
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/liaise/commit/2f32f870822d8b578aff1566fd50f0ee05cf0ff4"><code>2f32f870822d8b578aff1566fd50f0ee05cf0ff4</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/liaise/commit/b3ac219d975552e7d3b2c20265d7464dcbd00b16"><code>b3ac219d975552e7d3b2c20265d7464dcbd00b16</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
@@ -28,9 +28,9 @@ The documentation and the package may be misaligned:
 | | |
 |---|---|
 | Repository | <code>thorwhalen/liaise</code> |
-| Run | <a href="https://github.com/thorwhalen/liaise/actions/runs/40302849052">40302849052</a> |
+| Run | <a href="https://github.com/thorwhalen/liaise/actions/runs/41064471961">41064471961</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>2f32f870822d8b578aff1566fd50f0ee05cf0ff4</code> (in the history of the built commit) |
+| Event commit | <code>b3ac219d975552e7d3b2c20265d7464dcbd00b16</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -55,13 +55,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.23/">0.1.23</a>, newer than the documented version (0.1.22).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.24/">0.1.24</a>, newer than the documented version (0.1.23).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 2f32f870822d8b578aff1566fd50f0ee05cf0ff4
+git checkout b3ac219d975552e7d3b2c20265d7464dcbd00b16
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

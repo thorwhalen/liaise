@@ -1,4 +1,4 @@
-> built 2026-10-26 09:54 UTC from 2f32f87 (main) · liaise 0.1.22. Details: build_info.json
+> built 2026-10-30 13:37 UTC from b3ac219 (main) · liaise 0.1.23. Details: build_info.json
 
 # index.html.md
 
@@ -8973,7 +8973,9 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   **Compared** counts the shadow messages that carry that counterfactual; \*\*shadow
   agreement\*\* is the share of them where the policy and 0.1 are in the same flow class
   ([`liaise.legacy.flow_class()`](_autosummary/liaise.legacy.html.md#liaise.legacy.flow_class): sent, or held back), and a **missed finding** is one
-  0.1 would have sent where the policy found severity [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY) or above.
+  0.1 would have sent where the policy found severity [`MISSED_SEVERITY`](_autosummary/liaise.report.html.md#liaise.report.MISSED_SEVERITY) or above in a
+  concern it would not release on a click (a finding routed `approve`, such as a link to an
+  unfamiliar host, does not count: the operator can send it as written).
   Entries recorded before the counterfactual was are shadow but not compared.
 - **hook overrides**: writes the Claude Code hook ([`liaise.hook`](_autosummary/liaise.hook.html.md#module-liaise.hook)) asked the operator
   about and the operator let run, how many of them it could not read, and the rules among
@@ -11546,18 +11548,18 @@ The shared checkout `subject` works in, or None when its file names no workspace
 
 # About this build
 
-This documentation was built on **2026-10-26 09:54 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/2f32f870822d8b578aff1566fd50f0ee05cf0ff4"><code>2f32f87</code></a> on branch <code>main</code>, for **liaise 0.1.22** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-30 13:37 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/b3ac219d975552e7d3b2c20265d7464dcbd00b16"><code>b3ac219</code></a> on branch <code>main</code>, for **liaise 0.1.23** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.1.22) is behind the latest release on PyPI (0.1.23): `pip install liaise` gives newer code than these docs describe.
+- The documented version (0.1.23) is behind the latest release on PyPI (0.1.24): `pip install liaise` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/2f32f870822d8b578aff1566fd50f0ee05cf0ff4"><code>2f32f870822d8b578aff1566fd50f0ee05cf0ff4</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/liaise/commit/b3ac219d975552e7d3b2c20265d7464dcbd00b16"><code>b3ac219d975552e7d3b2c20265d7464dcbd00b16</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -11568,9 +11570,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/liaise</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/40302849052">40302849052</a>    |
+| Run          | <a href="https://github.com/thorwhalen/liaise/actions/runs/41064471961">41064471961</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>2f32f870822d8b578aff1566fd50f0ee05cf0ff4</code> (in the history of the built commit) |
+| Event commit | <code>b3ac219d975552e7d3b2c20265d7464dcbd00b16</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -11595,13 +11597,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.23/">0.1.23</a>, newer than the documented version (0.1.22).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.24/">0.1.24</a>, newer than the documented version (0.1.23).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout 2f32f870822d8b578aff1566fd50f0ee05cf0ff4
+git checkout b3ac219d975552e7d3b2c20265d7464dcbd00b16
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

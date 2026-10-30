@@ -32,7 +32,9 @@ pasted anywhere. What it counts (discussion 32 §5.7 and §7):
   **Compared** counts the shadow messages that carry that counterfactual; \*\*shadow
   agreement\*\* is the share of them where the policy and 0.1 are in the same flow class
   ([`liaise.legacy.flow_class()`](liaise.legacy.html.md#liaise.legacy.flow_class): sent, or held back), and a **missed finding** is one
-  0.1 would have sent where the policy found severity [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY) or above.
+  0.1 would have sent where the policy found severity [`MISSED_SEVERITY`](#liaise.report.MISSED_SEVERITY) or above in a
+  concern it would not release on a click (a finding routed `approve`, such as a link to an
+  unfamiliar host, does not count: the operator can send it as written).
   Entries recorded before the counterfactual was are shadow but not compared.
 - **hook overrides**: writes the Claude Code hook ([`liaise.hook`](liaise.hook.html.md#module-liaise.hook)) asked the operator
   about and the operator let run, how many of them it could not read, and the rules among
