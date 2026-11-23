@@ -27,6 +27,9 @@ One SSOT command tree, ``_dispatch_funcs``, of plain functions dispatched with `
     liaise review post REPO NUMBER [--justification TEXT] [--dry-run]
     liaise subject list
     liaise subject show SLUG
+    liaise chat run SLUG [--once] [--dry-run]
+    liaise chat log SLUG [--last N] [--kind KIND...] [--json]
+    liaise chat show SLUG
     liaise setup SUBJECT
     liaise migrate-config [--apply]
     liaise schedule install | uninstall | status
@@ -464,6 +467,98 @@ def subject_list(*, root: Optional[str] = None) -> str:
         inert = "" if subject.active else "  [inactive: active = false]"
         lines.append(f"{slug}\t{', '.join(subject.bindings)}{inert}{flag}")
     return "\n".join(lines)
+
+
+@_expected_errors(ConfigError)
+def chat_run(
+    slug: str,
+    *,
+    root: Optional[str] = None,
+    once: bool = False,
+    dry_run: bool = False,
+    registry: Optional[Mapping[str, Any]] = None,
+    answer: Optional[Callable[..., Any]] = None,
+    audit: Optional[Any] = None,
+    cursors: Optional[MutableMapping[str, str]] = None,
+    sends: Optional[MutableMapping[str, Any]] = None,
+    notify_fn: Optional[Callable[..., Any]] = None,
+    now: Optional[Callable[[], datetime]] = None,
+) -> str:
+    """Run the chat subject SLUG: answer its channel at once, logging every event (``liaise.chat``).
+
+    Runs until interrupted; ``--once`` makes one pass and waits for its answers.
+    ``--dry-run`` posts nothing and logs what it would post, as ``live = false`` in the
+    subject's ``[chat]`` table (the default) does.
+    """
+    from liaise import chat
+
+    summary = chat.run(
+        slug,
+        root=root,
+        once=once,
+        dry_run=dry_run,
+        registry=registry,
+        answer=answer,
+        audit=audit,
+        cursors=cursors,
+        sends=sends,
+        notify_fn=notify_fn,
+        now=now,
+    )
+    return " ".join(f"{key}={value}" for key, value in summary.items())
+
+
+@_expected_errors(ConfigError)
+def chat_log(
+    slug: str,
+    *,
+    root: Optional[str] = None,
+    last: int = 50,
+    kind: Optional[Sequence[str]] = None,
+    json: bool = False,
+    audit: Optional[Any] = None,
+) -> str:
+    """The last records of the chat subject SLUG's audit log: events, edits, decisions, refusals, answers, posts.
+
+    ``--kind`` keeps some kinds only (``event``, ``edit``, ``delete``, ``decision``,
+    ``refusal``, ``dispatch``, ``answer``, ``gate``, ``post``, ``limit``, ``error``),
+    ``--last 0`` shows them all, ``--json`` prints one JSON record per line.
+    """
+    import json as json_module
+
+    from liaise import chat
+
+    records = chat.log_lines(slug, root=root, last=last, kinds=tuple(kind or ()), audit=audit)
+    if json:
+        return "\n".join(json_module.dumps(r, ensure_ascii=False, default=str) for r in records)
+    return "\n".join(chat.describe(r) for r in records) or "(nothing logged)"
+
+
+@_expected_errors(ConfigError)
+def chat_show(slug: str, *, root: Optional[str] = None) -> str:
+    """The chat subject SLUG as liaise reads it: the channel, who is answered, the fence, the limits."""
+    from liaise import chat
+
+    subject, config = chat.load_chat(slug, root=root)
+    people = ", ".join(
+        f"{address} = {person} ({subject.policy.roles.get(person, 'no role')})"
+        for address, person in subject.policy.people.items()
+    )
+    return "\n".join(
+        [
+            f"chat subject: {slug}",
+            f"  channel: {subject.bindings[0]}",
+            f"  live: {config.live} (false: nothing is posted)",
+            f"  people: {people or NONE_SHOWN}",
+            f"  answered always: {', '.join(config.answer_roles)}; after {config.trigger!r}: {', '.join(config.trigger_roles)}",
+            f"  context_dir: {config.context_dir or NONE_SHOWN}",
+            f"  instructions: {config.instructions or NONE_SHOWN}",
+            f"  model: {config.model}, timeout {config.timeout_s} s",
+            f"  limits: {config.max_per_person_per_hour}/person/hour, {config.max_per_day}/day",
+            f"  audit log: {chat.state_dir_for(slug, config) / 'audit.jsonl'}",
+            f"  answer command: {' '.join(chat.answer_argv(config)[:2])} ... {' '.join(chat.answer_argv(config)[7:])}",
+        ]
+    )
 
 
 @_expected_errors(ConfigError)
@@ -1747,6 +1842,7 @@ _dispatch_funcs = {
         "reject-draft": message_reject_draft,
     },
     "subject": {"list": subject_list, "show": subject_show},
+    "chat": {"run": chat_run, "log": chat_log, "show": chat_show},
     "review": {"list": review_list, "show": review_show, "post": review_post},
     "gate": {"report": gate_report},
     "vet": vet,
@@ -1804,6 +1900,10 @@ _SEAMS = {
         "post": ("registry", "labeler", "store", "now", "confirm"),
     },
     "gate": {"report": ("store",)},
+    "chat": {
+        "run": ("registry", "answer", "audit", "cursors", "sends", "notify_fn", "now"),
+        "log": ("audit",),
+    },
     "vet": ("registry", "now", "disclosure", "store", "repo_of"),
     "setup": ("labeler",),
 }
@@ -1826,6 +1926,7 @@ def _hidden(seams: Mapping[str, Any]) -> dict[str, Any]:
 _READERS = {"action": "extend", "nargs": "+"}  # --to a --to b, or --to a b: both kept
 _ARGUMENTS = {
     "vet": {"to": _READERS, "cc": _READERS, "bcc": _READERS},
+    "chat": {"log": {"kind": _READERS}},
     "case": {
         "send-draft": {"index": {"type": int, "metavar": "INDEX"}},
         "reject-draft": {"index": {"type": int, "metavar": "INDEX"}},

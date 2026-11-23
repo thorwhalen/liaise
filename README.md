@@ -250,6 +250,30 @@ A subject's runs share its checkout (`workspace.path`, behind the `workspace=` s
 
 **Scheduling.** `liaise schedule install` sets up a launchd agent on macOS, or a systemd user timer on Linux, that runs `liaise run --once` every 2 minutes (`--interval-minutes` to change it). Both schedulers hand a job a nearly empty environment, so it snapshots `PATH`, `HOME` and the ntfy variable from your shell; install again after moving `gh` or `claude`. The job leaves detached runs alive when its tick exits (launchd's `AbandonProcessGroup`, systemd's `KillMode=process`). One tick runs at a time: the run lock is an operating-system lock on `state_dir/run.lock`, so a tick that finds another holding it does not start, and a lock goes away with the process that held it. `liaise case set-state` takes the lock too. `liaise schedule status` says `installed (outdated: re-run liaise schedule install)` for a job installed before 0.1, which lacks those settings.
 
+### The chat loop
+
+A second loop, for a channel where partners ask and your agent answers at once, from the team's shared material, while you are elsewhere. A chat subject is a subject file under `~/.config/liaise/chat/<slug>.toml`, so no tick polls it:
+
+```toml
+bindings = ["slack:C0123ABCD"]               # the one channel
+
+[policy]
+people = { "slack:U0AAAAAA1" = "pat", "slack:U0AAAAAA2" = "sam", "slack:U0AAAAAA3" = "you" }
+roles = { pat = "partner", sam = "partner", you = "operator" }
+permissions = { operator = ["report"] }
+default_reply_mode = "direct"
+leak_terms = ["a-private-codename"]
+canary_terms = ["CANARY-0000"]                # planted in private notes: never sent
+
+[chat]
+operator_name = "Pat's colleague"
+context_dir = "~/agent-context"               # the only directory the agent can read
+instructions = "~/.config/liaise/chat/team.md" # your own rules for this channel
+live = false                                  # true once you have watched it in the log
+```
+
+`liaise chat run team` listens to the channel (Socket Mode or the Events API on Slack, through correspond) and, for each message: logs it to an append-only JSON-lines file (edits with the wording before and after, deletions with what was deleted); answers a `partner` always, an `operator` only when the message starts with `agent:`, and nobody else, no bot, and nothing older than `stale_minutes`; refuses without asking the agent a message that tries to override its instructions or asks for a secret; asks a fresh, read-only `claude -p` (only `Read`, `Grep` and `Glob`, confined to `context_dir`, no MCP server, no settings, no session kept); puts the reply through the outbound gate with this subject's policy; and posts it in the message's thread. A question that would commit you (a decision, a date, money, access, a key) is passed to you instead: the channel is told, the agent's draft stays in the log, and you get a notification. With `live = false` (the default) or `--dry-run`, nothing is posted and what would have been is logged. `liaise chat log team` shows the log, `liaise chat show team` the subject. The design and its reasons: [ADR 0005](docs/adr/0005-chat-loop.md).
+
 ### Reviewing partner pull requests
 
 A partner has read access, so when they write code it arrives as a pull request from a fork, and nobody has looked at it. A `[review]` table on a subject has `liaise` review every pull request its partners open, adversarially, as a run on your machine under your `claude` login, and post the verdict on the pull request in plain language. Partners never merge; with `merge = "squash"`, `liaise` does, after approval, green checks and a veto window. The design and its reasons are [ADR 0004](docs/adr/0004-partner-pr-review.md).
@@ -303,6 +327,8 @@ run_tests = false                 # true lets the reviewer run the pull request'
 - `liaise review show REPO NUMBER`: every review of one pull request (verdict, summary, findings, the note for you), the verdicts held for you, then its case. It changes nothing.
 - `liaise review post REPO NUMBER [--justification TEXT] [--dry-run]`: post a verdict the gate held for you, once you confirm it at a terminal; the case moves to the verdict's state. `--dry-run` shows and asks nothing.
 - `liaise subject list` and `liaise subject show SLUG`: each subject as `liaise` reads it, defaults applied, with any binding that could never match.
+- `liaise chat run SLUG [--once] [--dry-run]`: run a chat subject (see [The chat loop](#the-chat-loop)) until interrupted; `--once` makes one pass. `--dry-run` posts nothing and logs what it would post.
+- `liaise chat log SLUG [--last N] [--kind KIND...] [--json]` and `liaise chat show SLUG`: a chat subject's audit log, and the subject as `liaise` reads it. They change nothing.
 - `liaise setup SUBJECT`: create the subject's claim labels, every state and review label and `liaise:hold` in each repository it binds or reviews. Safe to run again.
 - `liaise migrate-config [--apply]`: derive subject files from a 0.0.x configuration; a dry run unless `--apply`.
 - `liaise schedule install`, `liaise schedule uninstall` and `liaise schedule status`: manage the scheduled job. `status` says `installed (outdated: re-run liaise schedule install)` for a job installed by 0.0.x, which kills the runs its ticks start.
@@ -356,4 +382,4 @@ What the migration does:
 
 ## Design
 
-The seams, the decisions behind 0.1 and what comes next: [docs/adr/0001-liaise-0.1-seams.md](docs/adr/0001-liaise-0.1-seams.md). The outbound policy: [ADR 0002](docs/adr/0002-outbound-policy.md); the delay outbox: [ADR 0003](docs/adr/0003-delay-outbox.md); reviewing partner pull requests: [ADR 0004](docs/adr/0004-partner-pr-review.md).
+The seams, the decisions behind 0.1 and what comes next: [docs/adr/0001-liaise-0.1-seams.md](docs/adr/0001-liaise-0.1-seams.md). The outbound policy: [ADR 0002](docs/adr/0002-outbound-policy.md); the delay outbox: [ADR 0003](docs/adr/0003-delay-outbox.md); reviewing partner pull requests: [ADR 0004](docs/adr/0004-partner-pr-review.md); the chat loop: [ADR 0005](docs/adr/0005-chat-loop.md).
