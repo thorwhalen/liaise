@@ -528,9 +528,13 @@ def chat_log(
 
     from liaise import chat
 
-    records = chat.log_lines(slug, root=root, last=last, kinds=tuple(kind or ()), audit=audit)
+    records = chat.log_lines(
+        slug, root=root, last=last, kinds=tuple(kind or ()), audit=audit
+    )
     if json:
-        return "\n".join(json_module.dumps(r, ensure_ascii=False, default=str) for r in records)
+        return "\n".join(
+            json_module.dumps(r, ensure_ascii=False, default=str) for r in records
+        )
     return "\n".join(chat.describe(r) for r in records) or "(nothing logged)"
 
 
