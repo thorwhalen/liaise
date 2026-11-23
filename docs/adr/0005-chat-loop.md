@@ -51,6 +51,9 @@ Not seams: the screen's patterns and the notices (configuration), the audit reco
 
 ## Consequences
 
+- **What the adversarial review changed.** The agent's own posts are recognised by the ids of the messages it posted, not only by the platform's bot flag (with a person's token they are that person's). Live on Slack refuses a `poll` delivery (it reports no edit or deletion) and a token that is not a bot's; a dry run logs both as warnings. A post the channel refuses is an error, not a post. History that cannot be read counts as tainted. An answer the agent itself flags as an injection is held. Only allowlisted people's messages start followed threads, so nobody else's posts can crowd them out. Screen refusals count toward the limits. A torn last line of the log is skipped. A worker's crash is logged and told.
+- **Secrets the shared table does not know.** The gate detects secrets by the shapes of the shared secret table; one it lacks (an Azure SAS or storage key, at the time of writing) passes unless the subject lists a telltale literal in `leak_terms` (`sig=`, `AccountKey=`). Keep secrets out of `context_dir` in the first place.
+
 - Limits are per person per hour and per day, counted when an agent call is dispatched, since every call costs.
 - While the process is down, nothing is answered; on Socket Mode, Slack retries delivery for a while, and a message older than `stale_minutes` when it arrives is logged, not answered.
 - Replies in a thread under a message older than `thread_days` are not followed, so not logged.

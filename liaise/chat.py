@@ -125,6 +125,9 @@ CREATED, UPDATED, DELETED = "message.created", "message.updated", "message.delet
 DFLT_SCREEN = (
     r"\b(ignore|disregard|forget|override|bypass)\b[^\n]{0,40}\b(instructions?|rules|prompt|guardrails?|guidelines)\b",
     r"\b(system prompt|developer message|jailbreak|prompt injection)\b",
+    r"\b(disregard|forget|ignore)\b[^\n]{0,40}\b(told|said|above|earlier|before)\b",
+    r"\bnew (rule|instruction|policy)s?\b[^\n]{0,20}\bfrom\b",
+    r"(AccountKey|SharedAccessSignature|connection[_ ]?string|[?&]sig=|\bsig= )",
     r"\b(post|send|share|give|show|print|paste|reveal|dump|tell|what is|what's)\b[^\n]{0,30}\b(sas|api[ _-]?keys?|access[ _-]?keys?|account[ _-]?keys?|secrets?|passwords?|credentials?|connection strings?|private keys?|tokens?|signed urls?)\b",
 )
 DFLT_REFUSAL_NOTICE = (
@@ -287,7 +290,24 @@ class JsonlLog:
             return iter(())
         with self.path.open(encoding="utf-8") as file:
             lines = file.readlines()
-        return (json.loads(line) for line in lines if line.strip())
+        return iter(list(_records(lines)))
+
+
+def _records(lines: Iterable[str]):
+    """The JSON records of ``lines``; a line that is not one (a write torn by a crash) is skipped.
+
+    >>> list(_records(['{"kind": "a"}\\n', '{"kind": "b', '\\n']))
+    [{'kind': 'a'}]
+    """
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict):
+            yield record
 
 
 # ---- deciding ----
@@ -319,13 +339,24 @@ def _strip_trigger(text: str, trigger: str) -> Optional[str]:
 
 
 def decide(
-    event: Any, *, subject: Subject, chat: ChatConfig, now: datetime
+    event: Any,
+    *,
+    subject: Subject,
+    chat: ChatConfig,
+    now: datetime,
+    own: Iterable[str] = (),
 ) -> Decision:
-    """Whether ``event`` (a correspond ``Event``) gets an answer, by the rules in the module docstring."""
+    """Whether ``event`` (a correspond ``Event``) gets an answer, by the rules in the module docstring.
+
+    ``own`` are the ids of the messages the agent posted: never answered, whoever the
+    platform says wrote them (with a user's token, the agent's posts are that user's).
+    """
     message = getattr(event, "message", None)
     if event.kind != CREATED or message is None:
         return Decision(LOG, f"a {event.kind} event is logged, not answered")
     author = message.author
+    if message.id in set(own):
+        return Decision(LOG, "the agent's own post is not answered")
     if author.is_bot or author.is_self:
         return Decision(
             LOG, "a bot's message (the agent's own included) is not answered"
@@ -395,7 +426,8 @@ def _who(message: Any, subject: Subject) -> tuple[str, str]:
         ), "bot"
     people = {address_key(k): v for k, v in subject.policy.people.items()}
     person = people.get(address_key(f"{author.channel}:{author.native_id}"))
-    name = author.display_name or author.handle or person or "someone"
+    # The allowlist's name when there is one: a display name is chosen by its owner.
+    name = person or author.display_name or author.handle or "someone"
     return name, (
         subject.policy.roles.get(person, "unknown")
         if person
@@ -539,6 +571,7 @@ class _State:
     answers: list = field(
         default_factory=list
     )  # (at, person) of each agent call dispatched
+    own: set = field(default_factory=set)  # ids of the messages the agent posted
     noticed: dict = field(default_factory=dict)  # notice kind -> last time
     lock: threading.Lock = field(default_factory=threading.Lock)
 
@@ -554,11 +587,17 @@ class _State:
                     state.texts[_key(record.get("conversation"), message["id"])] = (
                         message.get("text")
                     )
-                    if not message.get("reply_to") and record.get("top_level"):
-                        state.roots[message["id"]] = record.get("sent_at")
+            elif kind == "thread":
+                state.roots[record.get("root")] = record.get("sent_at")
+            elif (
+                kind == "post"
+                and record.get("message_id")
+                and not record.get("dry_run")
+            ):
+                state.own.add(record["message_id"])
             elif kind in ("edit",):
                 state.texts[record.get("message_key")] = record.get("after")
-            elif kind == "dispatch":
+            elif kind in ("dispatch", "refusal") and record.get("by") != "agent":
                 state.answers.append((record.get("at"), record.get("person")))
         return state
 
@@ -636,6 +675,10 @@ def run(
         "errors": 0,
     }
 
+    def bump(name: str) -> None:
+        with state.lock:
+            counts[name] += 1
+
     def log(kind: str, **fields: Any) -> None:
         audit.append(
             {"at": _now(now).isoformat(), "kind": kind, "subject": slug, **fields}
@@ -670,7 +713,7 @@ def run(
                 sends=sends,
             )
         except Exception as error:
-            counts["errors"] += 1
+            bump("errors")
             log(
                 "error",
                 stage="post",
@@ -680,7 +723,22 @@ def run(
             )
             tell(f"a {purpose} could not be posted")
             return
-        counts["posted"] += 0 if result.dry_run else 1
+        if not result.ok:
+            bump("errors")
+            log(
+                "error",
+                stage="post",
+                purpose=purpose,
+                delivery_id=key,
+                error=f"the channel refused the post: {result.error or 'no reason given'}",
+            )
+            tell(f"a {purpose} could not be posted")
+            return
+        if not result.dry_run:
+            bump("posted")
+            if result.message_id:
+                with state.lock:
+                    state.own.add(result.message_id)
         log(
             "post",
             purpose=purpose,
@@ -716,6 +774,7 @@ def run(
         message = event.message
         key = event.delivery_id
         thread_ref, root_id = thread_of(message, ref)
+        unread = False
         try:
             history = [
                 m
@@ -726,8 +785,8 @@ def run(
                 )
                 if m.id != message.id
             ]
-        except Exception as error:  # a history that cannot be read: answer without it
-            history = []
+        except Exception as error:  # unread history: answer without it, as tainted
+            history, unread = [], True
             log(
                 "error",
                 stage="history",
@@ -735,8 +794,8 @@ def run(
                 error=f"{type(error).__name__}: {error}",
             )
         people = {address_key(k) for k in subject.policy.people}
-        tainted = any(
-            not (m.author.is_self or m.author.is_bot)
+        tainted = unread or any(
+            not (m.author.is_self or m.author.is_bot or m.id in state.own)
             and address_key(f"{m.author.channel}:{m.author.native_id}") not in people
             for m in history
         )
@@ -753,7 +812,7 @@ def run(
             if result is None:
                 raise RuntimeError("the answer is not of the schema's shape")
         except Exception as error:
-            counts["errors"] += 1
+            bump("errors")
             log(
                 "error",
                 stage="answer",
@@ -773,10 +832,26 @@ def run(
         log(
             "answer", delivery_id=key, person=decision.person, tainted=tainted, **result
         )
+        if result.get("injection_suspected") and result["action"] == "answer":
+            bump("held")
+            log(
+                "held",
+                delivery_id=key,
+                reason="the agent answered but suspected an injection",
+            )
+            tell("the agent suspected a prompt injection; its answer was held")
+            post(
+                thread_ref,
+                chat.notice(chat.held_notice),
+                reply_to=root_id,
+                purpose="held",
+                key=key,
+            )
+            return
         if result.get("injection_suspected"):
             tell("the agent suspected a prompt injection")
         if result["action"] == "escalate":
-            counts["held"] += 1
+            bump("held")
             tell("a question was passed to you")
             post(
                 thread_ref,
@@ -787,7 +862,7 @@ def run(
             )
             return
         if result["action"] == "decline":
-            counts["refused"] += 1
+            bump("refused")
             log(
                 "refusal",
                 delivery_id=key,
@@ -807,7 +882,7 @@ def run(
         )
         log("gate", delivery_id=key, **verdict)
         if verdict["route"] != "send":
-            counts["held"] += 1
+            bump("held")
             tell("a reply was held by the gate")
             post(
                 thread_ref,
@@ -817,7 +892,7 @@ def run(
                 key=key,
             )
             return
-        counts["answered"] += 1
+        bump("answered")
         post(
             thread_ref,
             text,
@@ -831,8 +906,7 @@ def run(
         with state.lock:
             if event.delivery_id in state.seen:
                 return
-            state.seen.add(event.delivery_id)
-        counts["events"] += 1
+        bump("events")
         message = event.message
         record = event.to_dict()
         record.pop("cursor", None)
@@ -847,6 +921,10 @@ def run(
             message=record.get("message"),
             payload=record.get("payload"),
         )
+        with (
+            state.lock
+        ):  # seen once logged: an event that failed before is delivered again
+            state.seen.add(event.delivery_id)
         if message is not None:
             mkey = _key(ref, message.id)
             if event.kind == UPDATED:
@@ -859,8 +937,6 @@ def run(
                     after=message.text,
                 )
             state.texts[mkey] = message.text
-            if top_level:
-                state.roots[message.id] = _iso(message.sent_at)
         if event.kind == DELETED:
             mid = event.payload.get("message_id")
             before = event.payload.get("previous_text", state.texts.get(_key(ref, mid)))
@@ -870,7 +946,9 @@ def run(
                 message_key=_key(ref, mid),
                 before=before,
             )
-        decision = decide(event, subject=subject, chat=chat, now=_now(now))
+        with state.lock:
+            own = set(state.own)
+        decision = decide(event, subject=subject, chat=chat, now=_now(now), own=own)
         log(
             "decision",
             delivery_id=event.delivery_id,
@@ -878,28 +956,14 @@ def run(
             reason=decision.reason,
             person=decision.person,
         )
+        if top_level and decision.person is not None and chat.threads:
+            # Followed: threads under an allowlisted person's message only, so nobody
+            # else's posts can push them out of the max_threads newest.
+            state.roots[message.id] = _iso(message.sent_at)
+            log("thread", root=message.id, sent_at=_iso(message.sent_at))
         if decision.action != ANSWER:
             return
         thread_ref, root_id = thread_of(message, ref)
-        why = screen(decision.text, chat.screen)
-        if why:
-            counts["refused"] += 1
-            log(
-                "refusal",
-                delivery_id=event.delivery_id,
-                person=decision.person,
-                by="screen",
-                reason=why,
-            )
-            tell("a message was refused by the screen")
-            post(
-                thread_ref,
-                chat.notice(chat.refusal_notice),
-                reply_to=root_id,
-                purpose="refusal",
-                key=event.delivery_id,
-            )
-            return
         limit = over_limit(decision.person, _now(now))
         if limit:
             log(
@@ -920,12 +984,50 @@ def run(
                     key=event.delivery_id,
                 )
             return
+        why = screen(decision.text, chat.screen)
+        if why:
+            with state.lock:  # a refusal counts toward the limits too: it posts
+                state.answers.append((_now(now).isoformat(), decision.person))
+            bump("refused")
+            log(
+                "refusal",
+                delivery_id=event.delivery_id,
+                person=decision.person,
+                by="screen",
+                reason=why,
+            )
+            tell("a message was refused by the screen")
+            post(
+                thread_ref,
+                chat.notice(chat.refusal_notice),
+                reply_to=root_id,
+                purpose="refusal",
+                key=event.delivery_id,
+            )
+            return
         with (
             state.lock
         ):  # counted when dispatched: every agent call costs, answered or not
             state.answers.append((_now(now).isoformat(), decision.person))
         log("dispatch", delivery_id=event.delivery_id, person=decision.person)
-        futures.append(pool.submit(answer_job, event, ref, decision))
+        future = pool.submit(answer_job, event, ref, decision)
+        future.add_done_callback(lambda done: failed(done, event.delivery_id))
+        futures.append(future)
+
+    def failed(done: Future, key: str) -> None:
+        error = done.exception()
+        if error is None:
+            return
+        bump("errors")
+        try:
+            log(
+                "error",
+                stage="worker",
+                delivery_id=key,
+                error=f"{type(error).__name__}: {error}",
+            )
+        finally:
+            tell("an answer crashed")
 
     def refs() -> list[str]:
         found = [channel]
@@ -938,6 +1040,9 @@ def run(
             found += [f"{channel}/{mid}" for _, mid in recent]
         return found
 
+    for warning in _preflight(channel, live=live, registry=registry):
+        log("warning", stage="start", reason=warning)
+        tell(warning)
     log("start", live=live, channel=channel, model=chat.model)
     passes = 0
     with ThreadPoolExecutor(max_workers=max(1, chat.concurrency)) as pool:
@@ -950,7 +1055,7 @@ def run(
                     ):
                         handle(event, ref, pool, futures)
                 except Exception as error:
-                    counts["errors"] += 1
+                    bump("errors")
                     log(
                         "error",
                         stage="listen",
@@ -960,11 +1065,41 @@ def run(
             passes += 1
             if once or (loops is not None and passes >= loops):
                 for future in futures:
-                    future.result()
+                    future.exception()  # waits; a failure was logged by its callback
                 break
             sleep(chat.interval_s)
     log("stop", **counts)
     return {"subject": slug, "live": live, "passes": passes, **counts}
+
+
+def _preflight(
+    channel: str, *, live: bool, registry: Optional[Mapping[str, Any]]
+) -> list[str]:
+    """What would make the audit or the own-post rule fail silently on this channel.
+
+    On Slack: a ``poll`` delivery reports no edit and no deletion (only ``events`` or
+    ``socket`` do), and a user token posts as that user rather than as a bot. Live, either
+    is refused (``ConfigError``); in a dry run, each is a warning the log records.
+    """
+    if not channel.startswith("slack:") or registry is not None:
+        return []  # only the real Slack adapter is checked
+    from correspond.registry import value
+
+    problems = []
+    delivery = value("slack", "delivery") or "poll"
+    if delivery not in ("events", "socket"):
+        problems.append(
+            f"slack delivery is {delivery!r}: edits and deletions are not reported, so the "
+            "audit log misses them; set CORRESPOND_SLACK_DELIVERY=socket (or events)"
+        )
+    token = value("slack", "token") or ""
+    if token and "xoxb-" not in token:
+        problems.append(
+            "the slack token is not a bot token (xoxb-): replies would post as a person"
+        )
+    if problems and live:
+        raise ConfigError("; ".join(problems))
+    return problems
 
 
 def _gate(
