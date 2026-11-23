@@ -91,8 +91,9 @@ def _fakes(root: Path, **overrides) -> dict:
 def test_the_command_tree_is_the_0_1_one():
     commands = cli._dispatch_funcs
     assert set(commands) == {
-        "run", "status", "hold", "unhold", "case", "message", "subject", "review", "gate", "vet", "hook", "setup", "migrate-config", "schedule"
+        "run", "status", "hold", "unhold", "case", "message", "subject", "review", "gate", "vet", "hook", "setup", "migrate-config", "schedule", "chat"
     }
+    assert set(commands["chat"]) == {"run", "log", "show"}
     assert set(commands["gate"]) == {"report"}
     assert set(commands["review"]) == {"list", "show", "post"}
     assert set(commands["case"]) == {"list", "show", "set-state", "send-draft", "reject-draft", "cancel-send"}
@@ -109,6 +110,15 @@ def test_run_takes_its_flags_and_hides_its_seams():
     for seam in (*seams, "--resolver", "--workspace", "--triage"):
         with pytest.raises(SystemExit):
             parser.parse_args(["run", seam, "x"])
+
+
+def test_chat_run_takes_its_flags_and_hides_its_seams():
+    parser = cw.mk_parser(cli._dispatch_funcs, config=cli._dispatch_config, prog="liaise")
+    parsed = parser.parse_args(["chat", "run", "team", "--once", "--dry-run"])
+    assert (parsed.slug, parsed.once, parsed.dry_run) == ("team", True, True)
+    for seam in ("--registry", "--answer", "--audit", "--cursors", "--sends", "--notify-fn", "--now"):
+        with pytest.raises(SystemExit):
+            parser.parse_args(["chat", "run", "team", seam, "x"])
 
 
 def test_the_case_commands_take_their_flags_and_hide_their_seams():
