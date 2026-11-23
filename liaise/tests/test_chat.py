@@ -409,7 +409,8 @@ def test_the_jsonl_log_only_appends(tmp_path):
     log.append({"kind": "a"})
     log.append({"kind": "b"})
     assert [r["kind"] for r in log] == ["a", "b"]
-    assert oct((tmp_path / "audit.jsonl").stat().st_mode & 0o777) == "0o600"
+    if sys.platform != "win32":  # Windows has no POSIX file modes
+        assert oct((tmp_path / "audit.jsonl").stat().st_mode & 0o777) == "0o600"
 
 
 # ---- dry run, limits, config ----
