@@ -10,6 +10,7 @@
 - [liaise](_autosummary/liaise.html.md): liaise: the loop between a non-technical partner and a coding agent, over conversations.
 - [liaise.access](_autosummary/liaise.access.html.md): Identity and access: who a message is from, and whether they may do what it asks.
 - [liaise.cases](_autosummary/liaise.cases.html.md): Cases as the operator sees and moves them: &#96;liaise case list&#96;, &#96;show&#96;, &#96;set-state&#96;, &#96;send-draft&#96; and...
+- [liaise.chat](_autosummary/liaise.chat.html.md): The chat loop: named people write in one channel, and the operator’s agent answers at once.
 - [liaise.cli](_autosummary/liaise.cli.html.md): The &#96;liaise&#96; command line (liaise 0.1).
 - [liaise.config](_autosummary/liaise.config.html.md): The global config, and the 0.0.x partner files &#96;liaise migrate-config&#96; reads.
 - [liaise.detect](_autosummary/liaise.detect.html.md): Detectors for outbound messages: what a message holds, reported without the value.
@@ -42,7 +43,7 @@
 - [liaise.vet](_autosummary/liaise.vet.html.md): Vetting a draft outside any case: the gate’s verdict, and nothing sent (discussion 32, §5.8).
 - [liaise.workspace](_autosummary/liaise.workspace.html.md): The checkout a subject’s runs share: one run at a time, and never beside a live session.
 - [For AI agents](ai-agents.html.md): &#96;liaise&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-30 13:37 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-23 08:44 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

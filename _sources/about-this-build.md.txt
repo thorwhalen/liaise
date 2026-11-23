@@ -5,19 +5,19 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-10-30 13:37 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/b3ac219d975552e7d3b2c20265d7464dcbd00b16"><code>b3ac219</code></a> on branch <code>main</code>, for **liaise 0.1.23** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-23 08:44 UTC** from commit <a href="https://github.com/thorwhalen/liaise/commit/36735739c78629500755269ff5765ba1b3004734"><code>3673573</code></a> on branch <code>main</code>, for **liaise 0.1.24** (from <code>pyproject.toml</code>).
 
 :::{warning}
 The documentation and the package may be misaligned:
 
-- The documented version (0.1.23) is behind the latest release on PyPI (0.1.24): `pip install liaise` gives newer code than these docs describe.
+- The documented version (0.1.24) is behind the latest release on PyPI (0.1.25): `pip install liaise` gives newer code than these docs describe.
 :::
 
 ## Source
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/liaise/commit/b3ac219d975552e7d3b2c20265d7464dcbd00b16"><code>b3ac219d975552e7d3b2c20265d7464dcbd00b16</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/liaise/commit/36735739c78629500755269ff5765ba1b3004734"><code>36735739c78629500755269ff5765ba1b3004734</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
@@ -28,18 +28,18 @@ The documentation and the package may be misaligned:
 | | |
 |---|---|
 | Repository | <code>thorwhalen/liaise</code> |
-| Run | <a href="https://github.com/thorwhalen/liaise/actions/runs/41064471961">41064471961</a> |
+| Run | <a href="https://github.com/thorwhalen/liaise/actions/runs/45140818136">45140818136</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>b3ac219d975552e7d3b2c20265d7464dcbd00b16</code> (in the history of the built commit) |
+| Event commit | <code>36735739c78629500755269ff5765ba1b3004734</code> (in the history of the built commit) |
 
 ## Tools
 
 | | |
 |---|---|
-| epythet | 0.2.22 |
+| epythet | 0.2.25 |
 | Sphinx | 9.1.1 |
 | docutils | 0.22.4 |
-| Python | 3.12.15 |
+| Python | 3.12.16 |
 
 ## Configuration as resolved
 
@@ -55,14 +55,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/liaise/0.1.24/">0.1.24</a>, newer than the documented version (0.1.23).
+Latest release: <a href="https://pypi.org/project/liaise/0.1.25/">0.1.25</a>, newer than the documented version (0.1.24).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/liaise && cd liaise
-git checkout b3ac219d975552e7d3b2c20265d7464dcbd00b16
-pip install "epythet==0.2.22"
+git checkout 36735739c78629500755269ff5765ba1b3004734
+pip install "epythet==0.2.25"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

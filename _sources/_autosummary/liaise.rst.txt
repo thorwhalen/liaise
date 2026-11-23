@@ -74,6 +74,7 @@
 
    access
    cases
+   chat
    cli
    config
    detect

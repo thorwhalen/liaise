@@ -8,6 +8,7 @@
 - [liaise](liaise.html.md): liaise: the loop between a non-technical partner and a coding agent, over conversations.
 - [liaise.access](liaise.access.html.md): Identity and access: who a message is from, and whether they may do what it asks.
 - [liaise.cases](liaise.cases.html.md): Cases as the operator sees and moves them: &#96;liaise case list&#96;, &#96;show&#96;, &#96;set-state&#96;, &#96;send-draft&#96; and...
+- [liaise.chat](liaise.chat.html.md): The chat loop: named people write in one channel, and the operator’s agent answers at once.
 - [liaise.cli](liaise.cli.html.md): The &#96;liaise&#96; command line (liaise 0.1).
 - [liaise.config](liaise.config.html.md): The global config, and the 0.0.x partner files &#96;liaise migrate-config&#96; reads.
 - [liaise.detect](liaise.detect.html.md): Detectors for outbound messages: what a message holds, reported without the value.

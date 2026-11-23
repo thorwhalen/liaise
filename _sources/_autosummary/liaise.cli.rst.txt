@@ -33,6 +33,9 @@ liaise.cli
       case_send_draft
       case_set_state
       case_show
+      chat_log
+      chat_run
+      chat_show
       confirm_at_terminal
       edit_in_editor
       gate_report

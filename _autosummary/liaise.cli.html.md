@@ -30,6 +30,9 @@ liaise review show REPO NUMBER
 liaise review post REPO NUMBER [--justification TEXT] [--dry-run]
 liaise subject list
 liaise subject show SLUG
+liaise chat run SLUG [--once] [--dry-run]
+liaise chat log SLUG [--last N] [--kind KIND...] [--json]
+liaise chat show SLUG
 liaise setup SUBJECT
 liaise migrate-config [--apply]
 liaise schedule install | uninstall | status
@@ -76,6 +79,9 @@ traceback.
 | [`case_send_draft`](#liaise.cli.case_send_draft)(case_id, \*index[, edit, ...])      | Send a draft you approved: CASE_ID's draft INDEX, or its only one, through the gate.                         |
 | [`case_set_state`](#liaise.cli.case_set_state)(case_id, state, \*[, reason, ...])   | Move CASE_ID to STATE, as you: how a case in needs-owner, or deployed, moves on.                             |
 | [`case_show`](#liaise.cli.case_show)(case_id, \*[, root, store])               | CASE_ID as the ledger holds it: what a notification from liaise leaves out.                                  |
+| [`chat_log`](#liaise.cli.chat_log)(slug, \*[, root, last, kind, json, ...])   | The last records of the chat subject SLUG's audit log: events, edits, decisions, refusals, answers, posts.   |
+| [`chat_run`](#liaise.cli.chat_run)(slug, \*[, root, once, dry_run, ...])      | Run the chat subject SLUG: answer its channel at once, logging every event (`liaise.chat`).                  |
+| [`chat_show`](#liaise.cli.chat_show)(slug, \*[, root])                         | The chat subject SLUG as liaise reads it: the channel, who is answered, the fence, the limits.               |
 | [`confirm_at_terminal`](#liaise.cli.confirm_at_terminal)(preview)                        | Show `preview` and ask, at the operator's terminal, whether to send it; True for yes.                        |
 | [`edit_in_editor`](#liaise.cli.edit_in_editor)(text)                                | `text` as the operator leaves it in their editor: `$VISUAL`, `$EDITOR`, else vi.                             |
 | [`gate_report`](#liaise.cli.gate_report)(\*[, subject, since, root, store])      | What the outbound gate did, in counts: judged, released, rejected, per rule, and whether to enforce.         |
@@ -266,6 +272,35 @@ Its state, the reason of its last escalation, its last failed deploy with the co
 output, each draft waiting for you with its text, and its latest entries. A
 notification names the case and points here: nothing a case holds goes to the
 notification service. It changes nothing.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.chat_log(slug, , root=None, last=50, kind=None, json=False, audit=None)
+
+The last records of the chat subject SLUG’s audit log: events, edits, decisions, refusals, answers, posts.
+
+`--kind` keeps some kinds only (`event`, `edit`, `delete`, `decision`,
+`refusal`, `dispatch`, `answer`, `gate`, `post`, `limit`, `error`),
+`--last 0` shows them all, `--json` prints one JSON record per line.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.chat_run(slug, , root=None, once=False, dry_run=False, registry=None, answer=None, audit=None, cursors=None, sends=None, notify_fn=None, now=None)
+
+Run the chat subject SLUG: answer its channel at once, logging every event (`liaise.chat`).
+
+Runs until interrupted; `--once` makes one pass and waits for its answers.
+`--dry-run` posts nothing and logs what it would post, as `live = false` in the
+subject’s `[chat]` table (the default) does.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### liaise.cli.chat_show(slug, , root=None)
+
+The chat subject SLUG as liaise reads it: the channel, who is answered, the fence, the limits.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

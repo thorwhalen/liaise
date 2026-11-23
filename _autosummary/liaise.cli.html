@@ -30,8 +30,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d75fae25" />
     <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
@@ -39,12 +39,12 @@
     <link rel="stylesheet" type="text/css" href="../_static/epythet.css?v=be2741c3" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
 
-    <script src="../_static/documentation_options.js?v=20522496"></script>
+    <script src="../_static/documentation_options.js?v=ebdbb45b"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -54,11 +54,11 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="liaise.config" href="liaise.config.html" />
-    <link rel="prev" title="liaise.cases" href="liaise.cases.html" />
+    <link rel="prev" title="liaise.chat" href="liaise.chat.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="color-scheme" content="light dark"/>
   <meta name="docsearch:language" content="en"/>
-  <meta name="docsearch:version" content="0.1.23" />
+  <meta name="docsearch:version" content="0.1.24" />
   
     
     <script src="../_static/searchtools.js"></script>
@@ -106,7 +106,7 @@
   
     <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
-  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
     <span class="fa-solid fa-bars"></span>
   </button>
   
@@ -176,14 +176,14 @@
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
   <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
-    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
   </ul>
 </div></div>
       
@@ -218,7 +218,7 @@
   
 
   
-    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
       <span class="fa-solid fa-outdent"></span>
     </button>
   
@@ -232,7 +232,7 @@
       
       
       
-      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
       <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
         
 
@@ -275,14 +275,14 @@
 
 <div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
   <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
-    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
-    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
-    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
   </button>
   <ul class="dropdown-menu dropdown-menu-end">
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
-    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
   </ul>
 </div></div>
         
@@ -322,6 +322,7 @@
 <li class="toctree-l1 current active has-children"><a class="reference internal" href="liaise.html">liaise</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="liaise.access.html">liaise.access</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.cases.html">liaise.cases</a></li>
+<li class="toctree-l2"><a class="reference internal" href="liaise.chat.html">liaise.chat</a></li>
 <li class="toctree-l2 current active"><a aria-current="page" class="current reference internal" href="#">liaise.cli</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.config.html">liaise.config</a></li>
 <li class="toctree-l2"><a class="reference internal" href="liaise.detect.html">liaise.detect</a></li>
@@ -392,7 +393,7 @@
     
     <li class="breadcrumb-item breadcrumb-home">
       <a href="../index.html" class="nav-link" aria-label="Home">
-        <i class="fa-solid fa-home"></i>
+        <i class="fa-solid fa-house"></i>
       </a>
     </li>
     
@@ -447,6 +448,9 @@
 <span class="n">liaise</span> <span class="n">review</span> <span class="n">post</span> <span class="n">REPO</span> <span class="n">NUMBER</span> <span class="p">[</span><span class="o">--</span><span class="n">justification</span> <span class="n">TEXT</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="nb">list</span>
 <span class="n">liaise</span> <span class="n">subject</span> <span class="n">show</span> <span class="n">SLUG</span>
+<span class="n">liaise</span> <span class="n">chat</span> <span class="n">run</span> <span class="n">SLUG</span> <span class="p">[</span><span class="o">--</span><span class="n">once</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">dry</span><span class="o">-</span><span class="n">run</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">chat</span> <span class="n">log</span> <span class="n">SLUG</span> <span class="p">[</span><span class="o">--</span><span class="n">last</span> <span class="n">N</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">kind</span> <span class="n">KIND</span><span class="o">...</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">json</span><span class="p">]</span>
+<span class="n">liaise</span> <span class="n">chat</span> <span class="n">show</span> <span class="n">SLUG</span>
 <span class="n">liaise</span> <span class="n">setup</span> <span class="n">SUBJECT</span>
 <span class="n">liaise</span> <span class="n">migrate</span><span class="o">-</span><span class="n">config</span> <span class="p">[</span><span class="o">--</span><span class="n">apply</span><span class="p">]</span>
 <span class="n">liaise</span> <span class="n">schedule</span> <span class="n">install</span> <span class="o">|</span> <span class="n">uninstall</span> <span class="o">|</span> <span class="n">status</span>
@@ -532,82 +536,91 @@ traceback.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.case_show" title="liaise.cli.case_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">case_show</span></code></a>(case_id, *[, root, store])</p></td>
 <td><p>CASE_ID as the ledger holds it: what a notification from liaise leaves out.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.confirm_at_terminal" title="liaise.cli.confirm_at_terminal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">confirm_at_terminal</span></code></a>(preview)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.chat_log" title="liaise.cli.chat_log"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chat_log</span></code></a>(slug, *[, root, last, kind, json, ...])</p></td>
+<td><p>The last records of the chat subject SLUG's audit log: events, edits, decisions, refusals, answers, posts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.chat_run" title="liaise.cli.chat_run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chat_run</span></code></a>(slug, *[, root, once, dry_run, ...])</p></td>
+<td><p>Run the chat subject SLUG: answer its channel at once, logging every event (<code class="docutils literal notranslate"><span class="pre">liaise.chat</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.chat_show" title="liaise.cli.chat_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">chat_show</span></code></a>(slug, *[, root])</p></td>
+<td><p>The chat subject SLUG as liaise reads it: the channel, who is answered, the fence, the limits.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.confirm_at_terminal" title="liaise.cli.confirm_at_terminal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">confirm_at_terminal</span></code></a>(preview)</p></td>
 <td><p>Show <code class="docutils literal notranslate"><span class="pre">preview</span></code> and ask, at the operator's terminal, whether to send it; True for yes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.edit_in_editor" title="liaise.cli.edit_in_editor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">edit_in_editor</span></code></a>(text)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.edit_in_editor" title="liaise.cli.edit_in_editor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">edit_in_editor</span></code></a>(text)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> as the operator leaves it in their editor: <code class="docutils literal notranslate"><span class="pre">$VISUAL</span></code>, <code class="docutils literal notranslate"><span class="pre">$EDITOR</span></code>, else vi.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.gate_report" title="liaise.cli.gate_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gate_report</span></code></a>(*[, subject, since, root, store])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.gate_report" title="liaise.cli.gate_report"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gate_report</span></code></a>(*[, subject, since, root, store])</p></td>
 <td><p>What the outbound gate did, in counts: judged, released, rejected, per rule, and whether to enforce.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.hold" title="liaise.cli.hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hold</span></code></a>(scope, *[, mode, reason, root, store])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.hold" title="liaise.cli.hold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hold</span></code></a>(scope, *[, mode, reason, root, store])</p></td>
 <td><p>Stop work in SCOPE until <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">unhold</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.hook_install" title="liaise.cli.hook_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_install</span></code></a>(*[, settings])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.hook_install" title="liaise.cli.hook_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_install</span></code></a>(*[, settings])</p></td>
 <td><p>Add liaise's PreToolUse and PostToolUse hooks to Claude Code's settings (<code class="docutils literal notranslate"><span class="pre">~/.claude/settings.json</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.hook_status" title="liaise.cli.hook_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_status</span></code></a>(*[, settings])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.hook_status" title="liaise.cli.hook_status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_status</span></code></a>(*[, settings])</p></td>
 <td><p>Whether liaise's hooks are in Claude Code's settings: installed, outdated or missing, per event.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.hook_uninstall" title="liaise.cli.hook_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_uninstall</span></code></a>(*[, settings])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.hook_uninstall" title="liaise.cli.hook_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hook_uninstall</span></code></a>(*[, settings])</p></td>
 <td><p>Remove liaise's hooks from Claude Code's settings, keeping everything else.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_list" title="liaise.cli.message_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_list</span></code></a>(*[, state, root, store])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_list" title="liaise.cli.message_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_list</span></code></a>(*[, state, root, store])</p></td>
 <td><p>Every message sent or held outside a case, a line each: id, state, and where it goes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_reject_draft" title="liaise.cli.message_reject_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_reject_draft</span></code></a>(message_id, *[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_reject_draft" title="liaise.cli.message_reject_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_reject_draft</span></code></a>(message_id, *[, ...])</p></td>
 <td><p>Decline a held message, recording <code class="docutils literal notranslate"><span class="pre">--reason</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_send" title="liaise.cli.message_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send</span></code></a>(recipient, *[, ref, text, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_send" title="liaise.cli.message_send"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send</span></code></a>(recipient, *[, ref, text, ...])</p></td>
 <td><p>Send a message to PERSON outside any case, through the gate, or hold it for the operator.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_send_draft" title="liaise.cli.message_send_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send_draft</span></code></a>(message_id, *[, edit, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_send_draft" title="liaise.cli.message_send_draft"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_send_draft</span></code></a>(message_id, *[, edit, ...])</p></td>
 <td><p>Send a held message you approved, through the gate, as <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">send-draft</span></code> does.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.message_show" title="liaise.cli.message_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_show</span></code></a>(message_id, *[, root, store])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.message_show" title="liaise.cli.message_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">message_show</span></code></a>(message_id, *[, root, store])</p></td>
 <td><p>MESSAGE_ID as the ledger holds it: where it goes, why it is held, its text, its entries.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.migrate_config" title="liaise.cli.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>(*[, root, apply])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.migrate_config" title="liaise.cli.migrate_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">migrate_config</span></code></a>(*[, root, apply])</p></td>
 <td><p>Derive 0.1 subject files from a 0.0.x configuration, and print the plan.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.review_list" title="liaise.cli.review_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">review_list</span></code></a>(*[, subject, root, labeler, store])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.review_list" title="liaise.cli.review_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">review_list</span></code></a>(*[, subject, root, labeler, store])</p></td>
 <td><p>The open pull requests each reviewed subject's partners have, with their review state.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.review_post" title="liaise.cli.review_post"><code class="xref py py-obj docutils literal notranslate"><span class="pre">review_post</span></code></a>(repo, number, *[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.review_post" title="liaise.cli.review_post"><code class="xref py py-obj docutils literal notranslate"><span class="pre">review_post</span></code></a>(repo, number, *[, ...])</p></td>
 <td><p>Post a verdict the gate held for you, once you confirm it at a terminal.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.review_show" title="liaise.cli.review_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">review_show</span></code></a>(repo, number, *[, root, store])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.review_show" title="liaise.cli.review_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">review_show</span></code></a>(repo, number, *[, root, store])</p></td>
 <td><p>Every review of one pull request, then its case as <code class="docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">case</span> <span class="pre">show</span></code> prints it.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.run" title="liaise.cli.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(*[, root, once, dry_run, subject, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.run" title="liaise.cli.run"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run</span></code></a>(*[, root, once, dry_run, subject, ...])</p></td>
 <td><p>One tick: take in what arrived, collect finished runs, start ready cases, deploy, label.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_install" title="liaise.cli.schedule_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_install</span></code></a>(*[, root, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_install" title="liaise.cli.schedule_install"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_install</span></code></a>(*[, root, ...])</p></td>
 <td><p>Install the scheduled <code class="code docutils literal notranslate"><span class="pre">liaise</span> <span class="pre">run</span> <span class="pre">--once</span></code> job (launchd on macOS, systemd on Linux).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_status_cmd" title="liaise.cli.schedule_status_cmd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_status_cmd</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_status_cmd" title="liaise.cli.schedule_status_cmd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_status_cmd</span></code></a>()</p></td>
 <td><p>Whether the scheduled job is installed.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.schedule_uninstall" title="liaise.cli.schedule_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_uninstall</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.schedule_uninstall" title="liaise.cli.schedule_uninstall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">schedule_uninstall</span></code></a>()</p></td>
 <td><p>Remove the scheduled job.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.setup" title="liaise.cli.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>(subject, *[, root, labeler])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.setup" title="liaise.cli.setup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup</span></code></a>(subject, *[, root, labeler])</p></td>
 <td><p>Create SUBJECT's labels in each GitHub repository it binds.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.status" title="liaise.cli.status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status</span></code></a>(*[, root, store, now])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.status" title="liaise.cli.status"><code class="xref py py-obj docutils literal notranslate"><span class="pre">status</span></code></a>(*[, root, store, now])</p></td>
 <td><p>What the ledger says, changing nothing: the last run, holds, runs, cases, what waits on you.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.subject_list" title="liaise.cli.subject_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_list</span></code></a>(*[, root])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.subject_list" title="liaise.cli.subject_list"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_list</span></code></a>(*[, root])</p></td>
 <td><p>Every configured subject with its bindings, flagging an inactive one and any binding that could never match.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.subject_show" title="liaise.cli.subject_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_show</span></code></a>(slug, *[, root])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.subject_show" title="liaise.cli.subject_show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">subject_show</span></code></a>(slug, *[, root])</p></td>
 <td><p>The subject SLUG as liaise reads it, every default applied, and its binding problems.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.unhold" title="liaise.cli.unhold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unhold</span></code></a>(scope, *[, root, store])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.unhold" title="liaise.cli.unhold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unhold</span></code></a>(scope, *[, root, store])</p></td>
 <td><p>Lift the hold on SCOPE, whoever set it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#liaise.cli.vet" title="liaise.cli.vet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vet</span></code></a>(*[, ref, to, cc, bcc, project, title, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#liaise.cli.vet" title="liaise.cli.vet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vet</span></code></a>(*[, ref, to, cc, bcc, project, title, ...])</p></td>
 <td><p>Vet a draft for REF outside any case: the gate's verdict, the audience in words, the readers.</p></td>
 </tr>
 </tbody>
@@ -817,6 +830,45 @@ A dry run takes no lock.</p>
 output, each draft waiting for you with its text, and its latest entries. A
 notification names the case and points here: nothing a case holds goes to the
 notification service. It changes nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.chat_log">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">chat_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slug</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">last</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#chat_log"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.chat_log" title="Link to this definition">#</a></dt>
+<dd><p>The last records of the chat subject SLUG’s audit log: events, edits, decisions, refusals, answers, posts.</p>
+<p><code class="docutils literal notranslate"><span class="pre">--kind</span></code> keeps some kinds only (<code class="docutils literal notranslate"><span class="pre">event</span></code>, <code class="docutils literal notranslate"><span class="pre">edit</span></code>, <code class="docutils literal notranslate"><span class="pre">delete</span></code>, <code class="docutils literal notranslate"><span class="pre">decision</span></code>,
+<code class="docutils literal notranslate"><span class="pre">refusal</span></code>, <code class="docutils literal notranslate"><span class="pre">dispatch</span></code>, <code class="docutils literal notranslate"><span class="pre">answer</span></code>, <code class="docutils literal notranslate"><span class="pre">gate</span></code>, <code class="docutils literal notranslate"><span class="pre">post</span></code>, <code class="docutils literal notranslate"><span class="pre">limit</span></code>, <code class="docutils literal notranslate"><span class="pre">error</span></code>),
+<code class="docutils literal notranslate"><span class="pre">--last</span> <span class="pre">0</span></code> shows them all, <code class="docutils literal notranslate"><span class="pre">--json</span></code> prints one JSON record per line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.chat_run">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">chat_run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slug</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">once</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dry_run</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">answer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">audit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cursors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sends</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">notify_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#chat_run"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.chat_run" title="Link to this definition">#</a></dt>
+<dd><p>Run the chat subject SLUG: answer its channel at once, logging every event (<code class="docutils literal notranslate"><span class="pre">liaise.chat</span></code>).</p>
+<p>Runs until interrupted; <code class="docutils literal notranslate"><span class="pre">--once</span></code> makes one pass and waits for its answers.
+<code class="docutils literal notranslate"><span class="pre">--dry-run</span></code> posts nothing and logs what it would post, as <code class="docutils literal notranslate"><span class="pre">live</span> <span class="pre">=</span> <span class="pre">false</span></code> in the
+subject’s <code class="docutils literal notranslate"><span class="pre">[chat]</span></code> table (the default) does.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="liaise.cli.chat_show">
+<span class="sig-prename descclassname"><span class="pre">liaise.cli.</span></span><span class="sig-name descname"><span class="pre">chat_show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slug</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/liaise/cli.html#chat_show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#liaise.cli.chat_show" title="Link to this definition">#</a></dt>
+<dd><p>The chat subject SLUG as liaise reads it: the channel, who is answered, the fence, the limits.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -1220,12 +1272,12 @@ about ran. It always exits 0, and fails closed (<code class="docutils literal no
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="liaise.cases.html"
+       href="liaise.chat.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">liaise.cases</p>
+        <p class="prev-next-title">liaise.chat</p>
       </div>
     </a>
     <a class="right-next"
@@ -1244,7 +1296,7 @@ about ran. It always exits 0, and fails closed (<code class="docutils literal no
             
             
               
-                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
                 <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
 
 
@@ -1276,6 +1328,9 @@ about ran. It always exits 0, and fails closed (<code class="docutils literal no
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.case_send_draft"><code class="docutils literal notranslate"><span class="pre">case_send_draft()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.case_set_state"><code class="docutils literal notranslate"><span class="pre">case_set_state()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.case_show"><code class="docutils literal notranslate"><span class="pre">case_show()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.chat_log"><code class="docutils literal notranslate"><span class="pre">chat_log()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.chat_run"><code class="docutils literal notranslate"><span class="pre">chat_run()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.chat_show"><code class="docutils literal notranslate"><span class="pre">chat_show()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.confirm_at_terminal"><code class="docutils literal notranslate"><span class="pre">confirm_at_terminal()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.edit_in_editor"><code class="docutils literal notranslate"><span class="pre">edit_in_editor()</span></code></a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#liaise.cli.gate_report"><code class="docutils literal notranslate"><span class="pre">gate_report()</span></code></a></li>
@@ -1327,8 +1382,8 @@ about ran. It always exits 0, and fails closed (<code class="docutils literal no
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1340,7 +1395,7 @@ about ran. It always exits 0, and fails closed (<code class="docutils literal no
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
 </p></div>
       
     </div>

@@ -1,0 +1,36 @@
+liaise.chat
+===========
+
+.. automodule:: liaise.chat
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ANSWER
+      LOG
+      ANSWER_ACTIONS
+      ANSWER_SCHEMA
+      ANSWER_ENV
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      claude_answer
+      compose_prompt
+      decide
+      describe
+      load_chat
+      run
+      screen
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      ChatConfig
+      Decision
+      JsonlLog
+   

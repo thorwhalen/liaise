@@ -1496,6 +1496,7 @@ Raises `ValueError` for a scope outside the accepted forms.
 | [`access`](liaise.access.html.md#module-liaise.access)         | Identity and access: who a message is from, and whether they may do what it asks.                                    |
 |--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------|
 | [`cases`](liaise.cases.html.md#module-liaise.cases)           | Cases as the operator sees and moves them: `liaise case list`, `show`, `set-state`, `send-draft` and `reject-draft`. |
+| [`chat`](liaise.chat.html.md#module-liaise.chat)             | The chat loop: named people write in one channel, and the operator's agent answers at once.                          |
 | [`cli`](liaise.cli.html.md#module-liaise.cli)               | The `liaise` command line (liaise 0.1).                                                                              |
 | [`config`](liaise.config.html.md#module-liaise.config)         | The global config, and the 0.0.x partner files `liaise migrate-config` reads.                                        |
 | [`detect`](liaise.detect.html.md#module-liaise.detect)         | Detectors for outbound messages: what a message holds, reported without the value.                                   |
